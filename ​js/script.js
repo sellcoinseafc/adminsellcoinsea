@@ -80,7 +80,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem("admin_theme");
     if (savedTheme === "light") {
         document.body.classList.add("light-theme");
-        document.getElementById("themeToggleBtn").innerText = "☀️";
+        const themeBtn = document.getElementById("themeToggleBtn");
+        if (themeBtn) themeBtn.innerText = "☀️";
     }
 
     const savedLang = localStorage.getItem("admin_lang") || "ar";
@@ -111,16 +112,19 @@ function switchTab(tabId, element) {
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
     
-    document.getElementById(tabId).classList.add("active");
+    const targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.add("active");
     element.classList.add("active");
 
-    // تحديث مسار التنقل (Breadcrumb)
     const activeText = element.querySelector("span:nth-child(2)").innerText;
-    document.getElementById("pageTitleHeading").innerText = activeText;
-    document.getElementById("breadcrumbActive").innerText = activeText;
+    const titleHeading = document.getElementById("pageTitleHeading");
+    const breadcrumbActive = document.getElementById("breadcrumbActive");
+    if (titleHeading) titleHeading.innerText = activeText;
+    if (breadcrumbActive) breadcrumbActive.innerText = activeText;
 
     if (window.innerWidth <= 992) {
-        document.getElementById("sidebar").classList.remove("mobile-open");
+        const sidebar = document.getElementById("sidebar");
+        if (sidebar) sidebar.classList.remove("mobile-open");
     }
 }
 
@@ -128,7 +132,8 @@ function toggleTheme() {
     document.body.classList.toggle("light-theme");
     const isLight = document.body.classList.contains("light-theme");
     localStorage.setItem("admin_theme", isLight ? "light" : "dark");
-    document.getElementById("themeToggleBtn").innerText = isLight ? "☀️" : "🌙";
+    const themeBtn = document.getElementById("themeToggleBtn");
+    if (themeBtn) themeBtn.innerText = isLight ? "☀️" : "🌙";
 }
 
 function toggleLanguage() {
@@ -139,8 +144,10 @@ function toggleLanguage() {
 
 function applyLanguage(lang) {
     const htmlRoot = document.getElementById("htmlRoot");
-    htmlRoot.setAttribute("lang", lang);
-    htmlRoot.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    if (htmlRoot) {
+        htmlRoot.setAttribute("lang", lang);
+        htmlRoot.setAttribute("dir", lang === "ar" ? "rtl" : "ltr");
+    }
 
     const indicator = document.getElementById("langTextIndicator");
     if (indicator) {
@@ -161,18 +168,4 @@ function applyLanguage(lang) {
     });
 
     updateLiveDatetime();
-}
-
-function openOrderDetails(orderId) {
-    document.getElementById("selectedOrderIdDisplay").innerText = `#${orderId}`;
-    document.getElementById("orderDetailsView").style.display = "block";
-    document.getElementById("orderDetailsView").scrollIntoView({ behavior: 'smooth' });
-}
-
-function closeOrderDetails() {
-    document.getElementById("orderDetailsView").style.display = "none";
-}
-
-function openCustomerProfile() {
-    alert("سيتم فتح ملف العميل الكامل هنا...");
 }
