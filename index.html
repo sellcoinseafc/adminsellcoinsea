@@ -308,6 +308,7 @@
             border-radius: 18px;
             padding: 16px;
             box-shadow: var(--box-glow);
+            margin-bottom: 16px;
         }
 
         .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -323,6 +324,29 @@
         .badge-review { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
         .badge-progress { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
         .badge-completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+
+        .btn-action {
+            background: rgba(99, 102, 241, 0.1); color: var(--primary);
+            border: 1px solid rgba(99, 102, 241, 0.2); padding: 5px 10px;
+            border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer;
+        }
+        .btn-action:hover { background: var(--primary); color: #fff; }
+
+        .form-control, select.form-control {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--card-border);
+            padding: 8px 12px; border-radius: 10px; color: var(--text-main); font-size: 12px; outline: none;
+        }
+
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .detail-section {
+            background: var(--input-bg); border: 1px solid var(--card-border); padding: 12px; border-radius: 12px; font-size: 11.5px;
+        }
+        .detail-section h3 { font-size: 12.5px; font-weight: 800; color: var(--primary); margin-bottom: 6px; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(100%); }
@@ -340,6 +364,7 @@
 </head>
 <body>
 
+    <!-- القائمة الجانبية (12 قسماً) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2 data-i18n="brandTitle">لوحة التحكم</h2>
@@ -372,6 +397,7 @@
 
     <main class="main-wrapper" id="mainWrapper">
         
+        <!-- الشريط العلوي -->
         <header class="top-navbar">
             <div class="nav-right">
                 <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
@@ -401,6 +427,7 @@
             </div>
         </div>
 
+        <!-- 1. لوحة التحكم (Dashboard) -->
         <div id="dashboardTab" class="tab-content active">
             <div class="stats-top-grid">
                 <div class="stat-box"><div class="stat-content"><span data-i18n="statTotalOrders">إجمالي الطلبات</span><h3>1,420</h3></div><div class="stat-circle-icon" style="background: rgba(99, 102, 241, 0.15); color: var(--primary);">📦</div></div>
@@ -460,20 +487,219 @@
             </div>
         </div>
 
-        <div id="ordersTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuOrders">إدارة الطلبات</h2></div></div>
-        <div id="customersTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuCustomers">قائمة العملاء</h2></div></div>
-        <div id="reviewsTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuReviews">إدارة التقييمات</h2></div></div>
-        <div id="reportsTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuReports">التقارير الشاملة</h2></div></div>
-        <div id="pricesTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuPrices">إدارة الأسعار</h2></div></div>
-        <div id="devicesTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuDevices">إدارة الأجهزة</h2></div></div>
-        <div id="paymentsTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuPayments">وسائل الدفع</h2></div></div>
-        <div id="statusesTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuStatuses">حالات الطلب</h2></div></div>
-        <div id="templatesTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuTemplates">قوالب الرسائل</h2></div></div>
-        <div id="settingsTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuSettings">الإعدادات</h2></div></div>
-        <div id="logsTab" class="tab-content"><div class="card-panel"><h2 data-i18n="menuLogs">سجل النشاط</h2></div></div>
+        <!-- 2. الطلبات (Orders) -->
+        <div id="ordersTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2 data-i18n="menuOrders">إدارة الطلبات</h2></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>رقم الطلب</th><th>التاريخ</th><th>العميل</th><th>الدولة</th><th>الجهاز</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>آخر تحديث</th><th>إدارة</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#12548</td><td>2026-06-07</td><td>أحمد محمد</td><td>السعودية</td><td>PlayStation</td><td>1,000,000</td><td>50 ر.س</td><td><span class="badge badge-new">جديد</span></td><td>منذ 3 دق</td>
+                                <td><button class="btn-action" onclick="openOrderDetails('12548')">عرض الملف</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- صفحة تفاصيل الطلب الكاملة -->
+            <div class="card-panel" id="orderDetailsView" style="display: none;">
+                <div class="panel-header">
+                    <h2>تفاصيل الطلب الكاملة: <span id="selectedOrderIdDisplay" style="color: var(--primary);">#12548</span></h2>
+                    <button class="btn-action" onclick="closeOrderDetails()">إغلاق الملف</button>
+                </div>
+                <div class="order-details-grid">
+                    <div class="detail-section"><h3>👤 بيانات العميل</h3><p>الاسم: أحمد محمد<br>الجوال: +966500000000<br>الدولة: السعودية</p></div>
+                    <div class="detail-section"><h3>🎮 بيانات EA</h3><p>الإيميل: user@ea.com<br>كلمة المرور: ********<br>الأكواد: 1234|5678|9012</p></div>
+                    <div class="detail-section"><h3>💳 وسيلة الدفع</h3><p>التحويل البنكي المحلي<br>الآيبان: SA03...<br>البنك: الراجحي</p></div>
+                    <div class="detail-section"><h3>📜 سجل الحالات</h3><p>• إنشاء الطلب (06:00)<br>• قيد المراجعة (06:05)</p></div>
+                    <div class="detail-section"><h3>✉️ الرسائل</h3><p>تم إرسال رسالة واتساب للعميل بنجاح.</p></div>
+                    <div class="detail-section"><h3>📋 سجل النشاط</h3><p>• تم التعديل بواسطة مدير النظام</p></div>
+                    <div class="detail-section" style="grid-column: 1/-1;"><h3>📌 الملاحظات</h3><textarea class="form-control" placeholder="أدخل ملاحظات الإدارة الداخلية هنا..."></textarea></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. العملاء (Customers) -->
+        <div id="customersTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2 data-i18n="menuCustomers">قائمة العملاء</h2></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>الاسم</th><th>الجوال</th><th>الدولة</th><th>عدد الطلبات</th><th>الطلبات الحالية</th><th>المكتملة</th><th>الملغية</th><th>آخر طلب</th><th>التفاصيل</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>أحمد محمد</td><td>+966500000000</td><td>السعودية</td><td>12</td><td>1</td><td>11</td><td>0</td><td>اليوم</td>
+                                <td><button class="btn-action" onclick="openCustomerProfile()">ملف العميل</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. التقييمات (Reviews) -->
+        <div id="reviewsTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2 data-i18n="menuReviews">إدارة التقييمات</h2></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>النجوم</th><th>العميل</th><th>الطلب</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>⭐⭐⭐⭐⭐</td><td>أحمد محمد</td><td>#12548</td><td>اليوم</td><td><span class="badge badge-new">بانتظار الموافقة</span></td>
+                                <td>
+                                    <button class="btn-action" style="background:#10b981; color:#fff;">نشر</button>
+                                    <button class="btn-action" style="background:#ef4444; color:#fff;">رفض</button>
+                                    <button class="btn-action" style="background:#f59e0b; color:#fff;">أرشفة</button>
+                                    <button class="btn-action">تعديل</button>
+                                    <button class="btn-action" style="color:#ef4444;">حذف</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. التقارير (Reports) -->
+        <div id="reportsTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuReports">التقارير الشاملة والرسوم البيانية</h2>
+                <div class="stats-top-grid" style="margin-top: 15px;">
+                    <div class="stat-box"><div class="stat-content"><span>الطلبات</span><h3>نشط</h3></div></div>
+                    <div class="stat-box"><div class="stat-content"><span>الكميات</span><h3>ممتاز</h3></div></div>
+                    <div class="stat-box"><div class="stat-content"><span>المبالغ</span><h3>1.2M+ ر.س</h3></div></div>
+                    <div class="stat-box"><div class="stat-content"><span>العملاء</span><h3>532</h3></div></div>
+                    <div class="stat-box"><div class="stat-content"><span>الدول</span><h3>السعودية، الإمارات</h3></div></div>
+                    <div class="stat-box"><div class="stat-content"><span>الأجهزة</span><h3>PlayStation</h3></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. الأسعار (Prices) -->
+        <div id="pricesTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuPrices">إدارة الأسعار والحدود</h2>
+                <div class="form-grid" style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div><label>سعر المليون (ر.س)</label><input type="text" class="form-control" value="50"></div>
+                    <div><label>الحد الأدنى للبيع</label><input type="text" class="form-control" value="100,000"></div>
+                    <div><label>الحد الأعلى للبيع</label><input type="text" class="form-control" value="10,000,000"></div>
+                    <div><label>العملة الافتراضية</label><input type="text" class="form-control" value="SAR"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. الأجهزة (Devices) -->
+        <div id="devicesTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h2 data-i18n="menuDevices">إدارة منصات الألعاب</h2>
+                    <button class="btn-action" style="background:var(--primary); color:#fff;">+ إضافة جهاز جديد</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>اسم الجهاز</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
+                        <tbody>
+                            <tr><td>PlayStation</td><td><span class="badge badge-completed">مفعل</span></td><td><button class="btn-action">تعطيل</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                            <tr><td>Xbox</td><td><span class="badge badge-completed">مفعل</span></td><td><button class="btn-action">تعطيل</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                            <tr><td>PC</td><td><span class="badge badge-completed">مفعل</span></td><td><button class="btn-action">تعطيل</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 8. وسائل الدفع (Payments) -->
+        <div id="paymentsTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h2 data-i18n="menuPayments">إدارة وسائل الدفع والمحافظ</h2>
+                    <button class="btn-action" style="background:var(--primary); color:#fff;">+ إضافة وسيلة دفع</button>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>وسيلة الدفع</th><th>التصنيف</th><th>الحالة</th><th>الإجراءات</th></tr></thead>
+                        <tbody>
+                            <tr><td>التحويل البنكي المحلي</td><td>بنكي</td><td><span class="badge badge-completed">ظاهر</span></td><td><button class="btn-action">تعديل</button> <button class="btn-action">إخفاء</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                            <tr><td>PayPal</td><td>إلكتروني</td><td><span class="badge badge-completed">ظاهر</span></td><td><button class="btn-action">تعديل</button> <button class="btn-action">إخفاء</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                            <tr><td>USDT</td><td>عملات رقمية</td><td><span class="badge badge-completed">ظاهر</span></td><td><button class="btn-action">تعديل</button> <button class="btn-action">إخفاء</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                            <tr><td>Western Union</td><td>دولي</td><td><span class="badge badge-completed">ظاهر</span></td><td><button class="btn-action">تعديل</button> <button class="btn-action">إخفاء</button> <button class="btn-action" style="color:#ef4444;">حذف</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. حالات الطلب (Statuses) -->
+        <div id="statusesTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuStatuses">إدارة حالات الطلب المتقدمة</h2>
+                <p style="font-size:12px; color:var(--text-muted); margin-bottom: 15px;">التحكم بالألوان، الأيقونات، رسائل الواتساب، إشعارات البريد، والتتبع.</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>الحالة</th><th>اللون</th><th>إشعار واتساب</th><th>إشعار بريد</th><th>صفحة التتبع</th><th>نهائية؟</th></tr></thead>
+                        <tbody>
+                            <tr><td>بانتظار المراجعة</td><td><span class="badge badge-review">أصفر</span></td><td>❌</td><td>✅</td><td>✅</td><td>❌</td></tr>
+                            <tr><td>طلب جديد</td><td><span class="badge badge-new">أزرق</span></td><td>✅</td><td>✅</td><td>✅</td><td>❌</td></tr>
+                            <tr><td>جاري سحب الكوينز</td><td><span class="badge badge-progress">بنفسجي</span></td><td>✅</td><td>❌</td><td>✅</td><td>❌</td></tr>
+                            <tr><td>مكتمل</td><td><span class="badge badge-completed">أخضر</span></td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. قوالب الرسائل (Templates) -->
+        <div id="templatesTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuTemplates">إدارة قوالب رسائل الواتساب والبريد</h2>
+                <div class="form-grid" style="margin-top: 15px; display: grid; gap: 15px;">
+                    <div><label>رسالة إنشاء الطلب</label><textarea class="form-control">مرحباً {name}، تم استلام طلبك برقم {orderId} بنجاح.</textarea></div>
+                    <div><label>رسالة طلب جديد</label><textarea class="form-control">عزيزي العميل، طلبك قيد المراجعة والتحقق.</textarea></div>
+                    <div><label>رسالة اكتمال الطلب</label><textarea class="form-control">عزيزي {name}، تم إنجاز طلبك وتحويل المبلغ لحسابك بنجاح.</textarea></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. الإعدادات (Settings) -->
+        <div id="settingsTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuSettings">إعدادات النظام والمتجر الشاملة</h2>
+                <div class="form-grid" style="margin-top: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                    <div><label>حالة استقبال الطلبات</label><select class="form-control"><option>مفتوح ومتاح</option><option>مغلق للصيانة</option></select></div>
+                    <div><label>اللغة الافتراضية</label><select class="form-control"><option>العربية</option><option>English</option></select></div>
+                    <div><label>اسم المتجر</label><input type="text" class="form-control" value="FUT Coins Store"></div>
+                    <div><label>المنطقة الزمنية</label><input type="text" class="form-control" value="Asia/Riyadh"></div>
+                    <div><label>البريد الرسمي</label><input type="text" class="form-control" value="mt.samicoins@gmail.com"></div>
+                    <div><label>مفاتيح خدمات API</label><input type="text" class="form-control" value="live_key_99882233"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12. سجل النشاط (Logs) -->
+        <div id="logsTab" class="tab-content">
+            <div class="card-panel">
+                <h2 data-i18n="menuLogs">سجل النشاط والعمليات الشامل</h2>
+                <div class="table-responsive" style="margin-top: 15px;">
+                    <table>
+                        <thead><tr><th>المسؤول</th><th>العملية</th><th>التفاصيل</th><th>الوقت والتاريخ</th></tr></thead>
+                        <tbody>
+                            <tr><td>مدير النظام</td><td>تغيير حالة طلب</td><td>غيّر حالة الطلب #12548 من جديد إلى قيد التنفيذ</td><td>06:25 PM | 04-06-2026</td></tr>
+                            <tr><td>مدير النظام</td><td>تسجيل دخول</td><td>تم تسجيل الدخول بنجاح عبر النظام الآمن</td><td>06:00 PM | 04-06-2026</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
     </main>
 
+    <!-- البرمجة وتفاعل اللغات والتبويبات -->
     <script>
         const translations = {
             ar: {
@@ -645,6 +871,25 @@
             });
 
             updateLiveDatetime();
+        }
+
+        function openOrderDetails(orderId) {
+            const display = document.getElementById("selectedOrderIdDisplay");
+            const view = document.getElementById("orderDetailsView");
+            if (display) display.innerText = `#${orderId}`;
+            if (view) {
+                view.style.display = "block";
+                view.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function closeOrderDetails() {
+            const view = document.getElementById("orderDetailsView");
+            if (view) view.style.display = "none";
+        }
+
+        function openCustomerProfile() {
+            alert("سيتم فتح ملف العميل الكامل هنا...");
         }
     </script>
 </body>
