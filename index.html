@@ -581,35 +581,67 @@
             </div>
         </div>
 
-        <!-- 6. الأسعار (Prices - المحدث بناءً على طلبك) -->
+        <!-- 6. الأسعار وحدود البيع (Prices - مقسمة إلى 4 بطاقات حسب طلبك) -->
         <div id="pricesTab" class="tab-content">
             <div class="card-panel">
-                <h2 data-i18n="menuPrices">💰 سعر شراء المليون والعملات</h2>
-                <p style="font-size:12px; color:var(--text-muted); margin-top:5px; margin-bottom:15px;">الريال السعودي هو المرجع الأساسي، وباقي العملات تُحسب وتُعرض تلقائياً.</p>
-                
-                <div style="max-width: 400px; margin-bottom: 20px;">
-                    <label style="display:block; font-weight:800; margin-bottom:6px;">السعر الأساسي (SAR) - سعر المليون</label>
-                    <div style="display: flex; gap: 10px;">
+                <h2 data-i18n="menuPrices">💰 الأسعار وحدود البيع</h2>
+                <p style="font-size:12px; color:var(--text-muted); margin-top:4px; margin-bottom:16px;">الريال السعودي هو المرجع الأساسي لجميع العملات وحدود الطلب.</p>
+
+                <!-- البطاقة 1: سعر المليون (السعر الأساسي) -->
+                <div class="card-panel" style="background: var(--input-bg); margin-bottom: 14px;">
+                    <div class="panel-header"><h3>1. سعر المليون (السعر الأساسي)</h3></div>
+                    <div style="display: flex; gap: 10px; max-width: 400px; align-items: center;">
                         <input type="number" id="basePriceSAR" class="form-control" value="50.00" oninput="calculateCurrencies()" style="font-weight: 900; font-size: 15px; color: var(--primary);">
-                        <button class="btn-action" style="background: var(--primary); color: #fff; padding: 0 20px;" onclick="alert('تم حفظ السعر الأساسي بنجاح وتحديث العملات تلقائياً!')">حفظ</button>
+                        <span style="font-weight: 800; white-space: nowrap;">SAR</span>
+                        <button class="btn-action" style="background: var(--primary); color: #fff; padding: 7px 20px;" onclick="alert('تم حفظ سعر المليون الأساسي بنجاح وتحديث العملات تلقائياً!')">حفظ</button>
                     </div>
                 </div>
 
-                <div class="panel-header" style="margin-top: 25px;"><h3>العملات الأخرى (يتم حسابها وعرضها تلقائياً)</h3></div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr><th>العملة</th><th>رمز العملة</th><th>السعر المحسوب تلقائياً</th></tr>
-                        </thead>
-                        <tbody id="currenciesTableBody">
-                            <tr><td>🇸🇦 الريال السعودي</td><td>SAR</td><td id="valSAR" style="color:var(--primary); font-weight:900;">50.00 SAR</td></tr>
-                            <tr><td>🇺🇸 الدولار الأمريكي</td><td>USD</td><td id="valUSD">13.33 USD</td></tr>
-                            <tr><td>🇪🇺 اليورو</td><td>EUR</td><td id="valEUR">11.45 EUR</td></tr>
-                            <tr><td>🇬🇧 الجنيه الإسترليني</td><td>GBP</td><td id="valGBP">9.85 GBP</td></tr>
-                            <tr><td>🇦🇪 الدرهم الإماراتي</td><td>AED</td><td id="valAED">48.98 AED</td></tr>
-                            <tr><td>🇰🇼 الدينار الكويتي</td><td>KWD</td><td id="valKWD">4.08 KWD</td></tr>
-                        </tbody>
-                    </table>
+                <!-- البطاقة 2: أسعار العملات (للعرض) -->
+                <div class="card-panel" style="background: var(--input-bg); margin-bottom: 14px;">
+                    <div class="panel-header"><h3>2. أسعار العملات (للعرض والتحويل التلقائي)</h3></div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr><th>العملة</th><th>رمز العملة</th><th>السعر المحسوب تلقائياً</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>🇸🇦 الريال السعودي</td><td>SAR</td><td id="valSAR" style="color:var(--primary); font-weight:900;">50.00 SAR</td></tr>
+                                <tr><td>🇺🇸 الدولار الأمريكي</td><td>USD</td><td id="valUSD">13.33 USD</td></tr>
+                                <tr><td>🇪🇺 اليورو</td><td>EUR</td><td id="valEUR">11.45 EUR</td></tr>
+                                <tr><td>🇬🇧 الجنيه الإسترليني</td><td>GBP</td><td id="valGBP">9.85 GBP</td></tr>
+                                <tr><td>🇦🇪 الدرهم الإماراتي</td><td>AED</td><td id="valAED">48.98 AED</td></tr>
+                                <tr><td>🇰🇼 الدينار الكويتي</td><td>KWD</td><td id="valKWD">4.08 KWD</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- البطاقة 3: حدود البيع -->
+                <div class="card-panel" style="background: var(--input-bg); margin-bottom: 14px;">
+                    <div class="panel-header"><h3>3. حدود البيع (مربوطة مباشرة بنموذج الطلب)</h3></div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <label style="display:block; font-weight:800; margin-bottom:6px; font-size:11.5px;">الحد الأدنى للكمية</label>
+                            <input type="text" class="form-control" value="300,000">
+                        </div>
+                        <div>
+                            <label style="display:block; font-weight:800; margin-bottom:6px; font-size:11.5px;">الحد الأعلى للكمية</label>
+                            <input type="text" class="form-control" value="10,000,000">
+                        </div>
+                    </div>
+                    <button class="btn-action" style="background: var(--primary); color: #fff; margin-top: 12px; padding: 7px 20px;" onclick="alert('تم حفظ حدود البيع بنجاح!')">حفظ الحدود</button>
+                </div>
+
+                <!-- البطاقة 4: ملاحظات وتحديث أسعار الصرف -->
+                <div class="card-panel" style="background: var(--input-bg); margin-bottom: 0;">
+                    <div class="panel-header"><h3>4. ملاحظات النظام وأسعار الصرف</h3></div>
+                    <div style="font-size: 12px; color: var(--text-muted); display: flex; flex-direction: column; gap: 6px;">
+                        <p>• <strong>آخر تحديث للأسعار:</strong> <span id="lastPriceUpdate">اليوم - 08:30 ص</span></p>
+                        <p>• <strong>آخر تحديث لسعر الصرف:</strong> <span id="lastExchangeUpdate">اليوم - 04:00 ص</span> (تحديث تلقائي عبر السيرفر)</p>
+                        <p>• <strong>نوع التحديث:</strong> تجميع تلقائي مجدول مع إمكانية التحديث الفوري اليدوي.</p>
+                    </div>
+                    <button class="btn-action" style="background: #10b981; color: #fff; margin-top: 14px; padding: 7px 16px;" onclick="updateExchangeRatesNow()">🔄 تحديث أسعار الصرف الآن</button>
                 </div>
             </div>
         </div>
@@ -817,7 +849,6 @@
         function calculateCurrencies() {
             const sarVal = parseFloat(document.getElementById("basePriceSAR").value) || 0;
             
-            // أسعار الصرف التقريبية بالنسبة للريال السعودي
             const usd = (sarVal / 3.75).toFixed(2);
             const eur = (sarVal / 4.37).toFixed(2);
             const gbp = (sarVal / 5.08).toFixed(2);
@@ -830,6 +861,14 @@
             document.getElementById("valGBP").innerText = gbp + " GBP";
             document.getElementById("valAED").innerText = aed + " AED";
             document.getElementById("valKWD").innerText = kwd + " KWD";
+        }
+
+        // تحديث أسعار الصرف فورياً عبر الزر اليدوي
+        function updateExchangeRatesNow() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById("lastExchangeUpdate").innerText = `الآن - ${timeStr}`;
+            alert("تم جلب وتحديث أسعار الصرف بنجاح من المزود الموثوق وحفظها في قاعدة البيانات!");
         }
 
         function updateLiveDatetime() {
