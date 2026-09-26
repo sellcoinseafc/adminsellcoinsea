@@ -11,6 +11,41 @@
 </head>  
 <body>  
 
+<!-- شاشة تسجيل الدخول الأجهزة والأمان (Login Screen) -->
+<div class="login-overlay active" id="loginOverlay">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-brand"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> SAMI COINS V2</div>
+            <p>لوحة التحكم والإدارة المشفرة</p>
+        </div>
+        
+        <div id="loginErrorAlert" class="badge badge-error" style="display:none; width:100%; padding:10px; margin-bottom:15px; text-align:center;">
+            بيانات الدخول غير صحيحة أو الحساب معطل.
+        </div>
+
+        <form id="loginForm" onsubmit="handleEmailLogin(event)">
+            <div class="form-group">
+                <label><i class="fa-solid fa-envelope"></i> البريد الإلكتروني للمشرف</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="admin@samicoins.com" required>
+            </div>
+            <div class="form-group">
+                <label><i class="fa-solid fa-lock"></i> كلمة المرور</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-custom" style="width:100%; justify-content:center; padding:12px; margin-top:10px;">
+                <i class="fa-solid fa-right-to-bracket"></i> تسجيل الدخول بالإيميل
+            </button>
+        </form>
+
+        <div class="login-divider"><span>أو</span></div>
+
+        <button type="button" class="btn-google-login" onclick="handleGoogleLogin()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            تسجيل الدخول بواسطة Google
+        </button>
+    </div>
+</div>
+
 <!-- نافذة تفاصيل الطلب المتطورة والتحكم المباشر V2 -->  
 <div class="modal-overlay" id="orderDetailModal">  
     <div class="modal-card modal-card-large">  
@@ -92,16 +127,16 @@
 
     <ul class="sidebar-menu">  
         <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> الرئيسية والإحصائيات</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> جميع الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>  
+        <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>  
         <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات تحتاج تحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>  
         <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والعروض</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> البنوك والمحافظ</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('adminsTab', this)"><i class="fa-solid fa-user-shield" style="color:#38bdf8;"></i> إدارة المشرفين</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('auditLogTab', this)"><i class="fa-solid fa-clipboard-list" style="color:#a855f7;"></i> سجل النظام (Audit Log)</a></li>  
+        <li><a class="sidebar-link" onclick="switchTab('productsTab', this)"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> منتجات سحب الكوينز 🆕</a></li>
+        <li><a class="sidebar-link" onclick="switchTab('adminsTab', this)"><i class="fa-solid fa-user-shield" style="color:#38bdf8;"></i> إدارة المشرفين 🆕</a></li>  
+        <li><a class="sidebar-link" onclick="switchTab('auditLogTab', this)"><i class="fa-solid fa-clipboard-list" style="color:#a855f7;"></i> سجل النظام Audit 🆕</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل الحالات</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> الإعدادات العامة</a></li>  
+        <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والإعدادات</a></li>  
     </ul>  
 
     <div style="padding: 15px; margin-top: auto;">  
@@ -281,32 +316,10 @@
         </div>  
     </div>  
 
-    <!-- 5. الأسعار والمخزون وإدارة العروض -->  
+    <!-- 5. الأسعار والعروض الترويجية -->  
     <div id="pricingTab" class="tab-content">  
         <div class="card-panel">  
-            <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحدود ومدة السحب والعروض</h2></div>  
-            <div class="form-grid-2" style="margin-bottom: 20px;">  
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">  
-                    <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>  
-                    <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="psRate" class="form-control" value="200"></div>  
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">  
-                        <div class="form-group"><label>الحد الأدنى</label><input type="text" id="psMin" class="form-control" value="100,000"></div>  
-                        <div class="form-group"><label>الحد الأعلى</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>  
-                    </div>  
-                    <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="psDuration" class="form-control" value="3 - 5 أيام عمل"></div>  
-                </div>  
-
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">  
-                    <h3 style="font-size:0.95rem; font-weight:900; color:#e81123; margin-bottom:14px;"><i class="fa-solid fa-desktop"></i> PC (الحاسب الشخصي)</h3>  
-                    <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="pcRate" class="form-control" value="150"></div>  
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">  
-                        <div class="form-group"><label>الحد الأدنى</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>  
-                        <div class="form-group"><label>الحد الأعلى</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>  
-                    </div>  
-                    <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="pcDuration" class="form-control" value="2 - 4 أيام عمل"></div>  
-                </div>  
-            </div>  
-
+            <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إدارة العروض الترويجية والإعلانات</h2></div>  
             <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">  
                 <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية ووقت الانتهاء</h3>  
                 <div class="form-grid-2">  
@@ -355,7 +368,49 @@
         </div>  
     </div>  
 
-    <!-- 7. إدارة المشرفين والصلاحيات (قسم جديد V2) -->  
+    <!-- 7. قسم جديد: منتجات سحب الكوينز V2 (جديد) -->
+    <div id="productsTab" class="tab-content">
+        <div class="card-panel">
+            <div class="panel-header">
+                <h2><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> إعدادات منتجات سحب الكوينز الديناميكية (`system/settings`)</h2>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">المنتجات والأسعار والمدد المستقلة لكل منصة تُحفظ ديناميكياً وتزامَن مع المتجر المباشر.</p>
+
+            <div class="form-grid-2" style="margin-bottom: 20px;">  
+                <!-- منتج PlayStation -->
+                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">  
+                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> منتج PlayStation & Xbox</h3>  
+                    <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="psRate" class="form-control" value="200"></div>  
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">  
+                        <div class="form-group"><label>الحد الأدنى للكمية</label><input type="text" id="psMin" class="form-control" value="100,000"></div>  
+                        <div class="form-group"><label>الحد الأعلى للكمية</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>  
+                    </div>  
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="form-group"><label>مدة السحب</label><input type="text" id="psWithdrawDuration" class="form-control" value="3 - 5 أيام عمل"></div>  
+                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="psTransferDuration" class="form-control" value="24 ساعة"></div>  
+                    </div>
+                </div>  
+
+                <!-- منتج PC -->
+                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">  
+                    <h3 style="font-size:1rem; font-weight:900; color:#e81123; margin-bottom:14px;"><i class="fa-solid fa-desktop"></i> منتج PC (الحاسب الشخصي)</h3>  
+                    <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="pcRate" class="form-control" value="150"></div>  
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">  
+                        <div class="form-group"><label>الحد الأدنى للكمية</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>  
+                        <div class="form-group"><label>الحد الأعلى للكمية</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>  
+                    </div>  
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="form-group"><label>مدة السحب</label><input type="text" id="pcWithdrawDuration" class="form-control" value="2 - 4 أيام عمل"></div>  
+                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="pcTransferDuration" class="form-control" value="24 ساعة"></div>  
+                    </div>
+                </div>  
+            </div>  
+
+            <button class="btn-custom" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ منتجات الكوينز ومزامنتها</button>
+        </div>
+    </div>
+
+    <!-- 8. إدارة المشرفين والصلاحيات (قسم جديد V2) -->  
     <div id="adminsTab" class="tab-content">  
         <div class="card-panel">  
             <div class="panel-header">  
@@ -376,7 +431,7 @@
         </div>  
     </div>  
 
-    <!-- 8. سجل النظام وحركات الأمان Audit Log (قسم جديد V2) -->  
+    <!-- 9. سجل النظام وحركات الأمان Audit Log (قسم جديد V2) -->  
     <div id="auditLogTab" class="tab-content">  
         <div class="card-panel">  
             <div class="panel-header">  
@@ -399,7 +454,7 @@
         </div>  
     </div>  
 
-    <!-- 9. رسائل حالات الطلب والتنبيهات -->  
+    <!-- 10. رسائل حالات الطلب والتنبيهات -->  
     <div id="statusMessagesTab" class="tab-content">  
         <div class="card-panel">  
             <div class="panel-header"><h2><i class="fa-solid fa-message"></i> إدارة رسائل حالات الطلب والتنبيهات للعملاء</h2></div>  
@@ -413,32 +468,29 @@
         </div>  
     </div>  
 
-    <!-- 10. الشروط والأحكام -->  
+    <!-- 11. الشروط والإعدادات -->  
     <div id="termsTab" class="tab-content">  
         <div class="card-panel">  
-            <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>  
+            <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام والإعدادات العامة</h2></div>  
             <div class="form-group">  
-                <label>أضف شرطاً جديداً:</label>  
+                <label>أضف شرطاً جديداً للمتجر:</label>  
                 <div style="display:flex; gap:10px;">  
                     <input type="text" id="newTermInput" class="form-control" placeholder="أدخل نص الشرط الجديد...">  
                     <button class="btn-custom" onclick="addNewTerm()"><i class="fa-solid fa-plus"></i> إضافة</button>  
                 </div>  
             </div>  
-            <div style="margin-top:20px;">  
+            <div style="margin-top:20px; margin-bottom:25px;">  
                 <div id="termsListContainer" style="display:flex; flex-direction:column; gap:8px;"></div>  
             </div>  
-        </div>  
-    </div>  
 
-    <!-- 11. إعدادات المتجر العامة -->  
-    <div id="settingsTab" class="tab-content">  
-        <div class="card-panel">  
-            <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة</h2></div>  
-            <div class="form-grid-2">  
-                <div class="form-group"><label>اسم المتجر</label><input type="text" id="storeNameInput" class="form-control" value="SAMI COINS"></div>  
-                <div class="form-group"><label>رقم واتساب الدعم</label><input type="text" id="storeWhatsappInput" class="form-control" value="966570770465"></div>  
-            </div>  
-            <button class="btn-custom" style="margin-top: 15px;" onclick="saveGeneralSettings()"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>  
+            <div style="border-top: 1.5px solid var(--card-border); padding-top:20px;">
+                <h3 style="font-size:1rem; font-weight:900; margin-bottom:12px;"><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة</h3>
+                <div class="form-grid-2">  
+                    <div class="form-group"><label>اسم المتجر</label><input type="text" id="storeNameInput" class="form-control" value="SAMI COINS"></div>  
+                    <div class="form-group"><label>رقم واتساب الدعم</label><input type="text" id="storeWhatsappInput" class="form-control" value="966570770465"></div>  
+                </div>  
+                <button class="btn-custom" style="margin-top: 10px;" onclick="saveGeneralSettings()"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>  
+            </div>
         </div>  
     </div>  
 
