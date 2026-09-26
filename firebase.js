@@ -1,20 +1,20 @@
-// firebase.js
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
+// إعدادات الاتصال بمشروع Firebase الخاص بك
 const firebaseConfig = {
-  apiKey: "AIzaSyCbd15z0Z1Snz_ogiXDagxCF0Q8lIsXQ1s",
-  authDomain: "sellcoins-26318.firebaseapp.com",
-  projectId: "sellcoins-26318",
-  storageBucket: "sellcoins-26318.firebasestorage.app",
-  messagingSenderId: "88434852153",
-  appId: "1:88434852153:web:59d105040e2345759fe8e8"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-const app = initializeApp(firebaseConfig);
+// تهيئة تطبيق الفايربيز
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { db, auth };
+export { app, db, auth };
