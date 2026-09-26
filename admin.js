@@ -51,7 +51,6 @@ window.switchTab = function(tabId, element) {
     if(titleHead && element) titleHead.innerText = element.innerText.trim();
     if(breadcrumbActive && element) breadcrumbActive.innerText = element.innerText.trim();
 
-    // إغلاق القائمة التلقائي في الجوال عند اختيار قسم
     window.toggleSidebar(false);
 };
 
@@ -338,9 +337,13 @@ function sortOrdersNewestFirst() {
 function updateDashboardStats() {
     sortOrdersNewestFirst();
     let countNew = ordersData.filter(o => o.status === 'new').length;
-    let countReview = ordersData.filter(o => o.status === 'review').length;
     let countProgress = ordersData.filter(o => o.status === 'progress').length;
-    let countCompleted = ordersData.filter(o => o.status === 'completed').length;
+    let countFinished = ordersData.filter(o => o.status === 'finished').length;
+    let countCancelled = ordersData.filter(o => o.status === 'cancelled').length;
+    let countTransferred = ordersData.filter(o => o.status === 'transferred').length;
+
+    let transferNeededList = ordersData.filter(o => o.status === 'finished' || (Number(o.withdrawnQty) >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
+    let countTransferNeeded = transferNeededList.length;
 
     const sbBadge = document.getElementById("sidebarNewOrdersBadge");
     if(sbBadge) {
@@ -352,34 +355,35 @@ function updateDashboardStats() {
         }
     }
 
-    let transferNeededList = ordersData.filter(o => o.status === 'finished' || (Number(o.withdrawnQty) >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
-    
     const transferBadgeCount = document.getElementById("transferBadgeCount");
     const transferHeaderBadge = document.getElementById("transferHeaderBadge");
-    if(transferBadgeCount) transferBadgeCount.innerText = transferNeededList.length;
-    if(transferHeaderBadge) transferHeaderBadge.innerText = `${transferNeededList.length} طلبات بحاجة للتحويل`;
+    if(transferBadgeCount) transferBadgeCount.innerText = countTransferNeeded;
+    if(transferHeaderBadge) transferHeaderBadge.innerText = `${countTransferNeeded} طلبات بحاجة للتحويل`;
 
     const banner = document.getElementById("urgentTransferBanner");
     const bannerTransferText = document.getElementById("bannerTransferText");
     if(banner && bannerTransferText) {
-        if(transferNeededList.length > 0) {
+        if(countTransferNeeded > 0) {
             banner.style.display = "flex";
-            bannerTransferText.innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل من تاريخ الانتهاء.`;
+            bannerTransferText.innerText = `لديك ${countTransferNeeded} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل من تاريخ الانتهاء.`;
         } else {
             banner.style.display = "none";
         }
     }
 
-    let totalCompletedCoins = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.totalQty || 0), 0);
-    let totalTransferredMoney = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => {
+    let totalCompletedCoins = ordersData.filter(o => o.status === 'completed' || o.status === 'finished' || o.status === 'transferred').reduce((sum, o) => sum + (o.totalQty || 0), 0);
+    let totalTransferredMoney = ordersData.filter(o => o.status === 'transferred' || o.status === 'completed').reduce((sum, o) => {
         let p = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
         return sum + p;
     }, 0);
 
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
-    if(document.getElementById("statReviewOrders")) document.getElementById("statReviewOrders").innerText = countReview;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
-    if(document.getElementById("statCompletedOrders")) document.getElementById("statCompletedOrders").innerText = countCompleted;
+    if(document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
+    if(document.getElementById("statCancelledOrders")) document.getElementById("statCancelledOrders").innerText = countCancelled;
+    if(document.getElementById("statTransferNeededOrders")) document.getElementById("statTransferNeededOrders").innerText = countTransferNeeded;
+    if(document.getElementById("statTransferredOrders")) document.getElementById("statTransferredOrders").innerText = countTransferred;
+
     if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
     if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
 
@@ -541,6 +545,7 @@ function getStatusBadge(status) {
         case 'review': return '<span class="badge badge-review">انتظار المراجعة</span>';
         case 'progress': return '<span class="badge badge-progress">قيد التنفيذ</span>';
         case 'finished': return '<span class="badge badge-finished">تم الانتهاء</span>';
+        case 'cancelled': return '<span class="badge badge-cancelled">ملغي</span>';
         case 'transferred': return '<span class="badge badge-transferred">تم التحويل</span>';
         case 'completed': return '<span class="badge badge-completed">مكتمل</span>';
         default: return '<span class="badge badge-new">طلب جديد</span>';
@@ -694,6 +699,7 @@ window.openOrderModal = function(index) {
                     <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
                     <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
                     <option value="finished" ${order.status==='finished'?'selected':''}>تم الانتهاء</option>
+                    <option value="cancelled" ${order.status==='cancelled'?'selected':''}>ملغي</option>
                     <option value="transferred" ${order.status==='transferred'?'selected':''}>تم التحويل</option>
                     <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل (رقم 6)</option>
                 </select>
