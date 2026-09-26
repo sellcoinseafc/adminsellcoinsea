@@ -32,11 +32,11 @@ let storeTerms = [
     "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
 ];
 let pricingConfig = {
-    psRate: "200", pcRate: "150",
-    psMin: "100,000", psMax: "5,000,000",
-    pcMin: "100,000", pcMax: "1,000,000",
+    psRate: 200, pcRate: 150,
+    psMin: 100000, psMax: 5000000,
+    pcMin: 100000, pcMax: 1000000,
     psDuration: "3 - 5 أيام عمل", pcDuration: "2 - 4 أيام عمل",
-    promoActive: false, promoRate: "220", promoExpiry: "", promoText: "🔥 عرض لفترة محدودة!"
+    promoActive: false, promoRate: 220, promoExpiry: "", promoText: "🔥 عرض لفترة محدودة!"
 };
 
 let ordersData = []; 
@@ -54,7 +54,41 @@ window.copyDirect = function(text) {
     navigator.clipboard.writeText(text);
 };
 
-// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings) بالشكل المطلوب
+// دالة عامة لحفظ كامل الإعدادات في Firestore
+async function saveAllSettingsToFirestore() {
+    try {
+        const config = {
+            storeOpen: isStoreOpen,
+            psRate: Number(document.getElementById("psRate")?.value || pricingConfig.psRate),
+            pcRate: Number(document.getElementById("pcRate")?.value || pricingConfig.pcRate),
+
+            psMin: Number(String(document.getElementById("psMin")?.value || pricingConfig.psMin).replace(/,/g,"")),
+            psMax: Number(String(document.getElementById("psMax")?.value || pricingConfig.psMax).replace(/,/g,"")),
+            pcMin: Number(String(document.getElementById("pcMin")?.value || pricingConfig.pcMin).replace(/,/g,"")),
+            pcMax: Number(String(document.getElementById("pcMax")?.value || pricingConfig.pcMax).replace(/,/g,"")),
+
+            psDuration: document.getElementById("psDuration")?.value || pricingConfig.psDuration,
+            pcDuration: document.getElementById("pcDuration")?.value || pricingConfig.pcDuration,
+
+            promoActive: document.getElementById("promoActiveSelect")?.value === "true",
+            promoRate: Number(document.getElementById("promoRateInput")?.value || pricingConfig.promoRate),
+            promoExpiry: document.getElementById("promoExpiryInput")?.value || "",
+            promoText: document.getElementById("promoText")?.value || pricingConfig.promoText,
+
+            banks: banksList,
+            wallets: walletsList,
+            customPayments: customPaymentsList,
+            terms: storeTerms,
+            updatedAt: serverTimestamp()
+        };
+
+        await setDoc(doc(db, "system", "settings"), config);
+    } catch (err) {
+        console.error("Error saving settings:", err);
+    }
+}
+
+// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings)
 function initSystemSettingsListener() {
     const settingsRef = doc(db, "system", "settings");
     onSnapshot(settingsRef, (docSnap) => {
@@ -90,18 +124,7 @@ function initSystemSettingsListener() {
         } else {
             setDoc(settingsRef, {
                 storeOpen: true,
-                psRate: pricingConfig.psRate,
-                pcRate: pricingConfig.pcRate,
-                psMin: pricingConfig.psMin,
-                psMax: pricingConfig.psMax,
-                pcMin: pricingConfig.pcMin,
-                pcMax: pricingConfig.pcMax,
-                psDuration: pricingConfig.psDuration,
-                pcDuration: pricingConfig.pcDuration,
-                promoActive: pricingConfig.promoActive,
-                promoRate: pricingConfig.promoRate,
-                promoExpiry: pricingConfig.promoExpiry,
-                promoText: pricingConfig.promoText,
+                ...pricingConfig,
                 banks: banksList,
                 wallets: walletsList,
                 customPayments: customPaymentsList,
@@ -112,44 +135,6 @@ function initSystemSettingsListener() {
     }, (error) => {
         console.error("Error loading settings from Firestore:", error);
     });
-}
-
-// تحديث الإعدادات في Firestore مباشرة بالحقول المطلوبة تماماً
-async function saveSettingsToFirestore(updatedFields) {
-    try {
-        const settingsRef = doc(db, "system", "settings");
-        await updateDoc(settingsRef, {
-            ...updatedFields,
-            updatedAt: serverTimestamp()
-        });
-    } catch (err) {
-        try {
-            const settingsRef = doc(db, "system", "settings");
-            await setDoc(settingsRef, {
-                storeOpen: isStoreOpen,
-                psRate: pricingConfig.psRate,
-                pcRate: pricingConfig.pcRate,
-                psMin: pricingConfig.psMin,
-                psMax: pricingConfig.psMax,
-                pcMin: pricingConfig.pcMin,
-                pcMax: pricingConfig.pcMax,
-                psDuration: pricingConfig.psDuration,
-                pcDuration: pricingConfig.pcDuration,
-                promoActive: pricingConfig.promoActive,
-                promoRate: pricingConfig.promoRate,
-                promoExpiry: pricingConfig.promoExpiry,
-                promoText: pricingConfig.promoText,
-                banks: banksList,
-                wallets: walletsList,
-                customPayments: customPaymentsList,
-                terms: storeTerms,
-                ...updatedFields,
-                updatedAt: serverTimestamp()
-            });
-        } catch(e) {
-            console.error("Fallback save failed:", e);
-        }
-    }
 }
 
 function updateStoreStatusUI() {
@@ -168,7 +153,7 @@ function updateStoreStatusUI() {
 window.toggleStoreStatus = async function() {
     isStoreOpen = !isStoreOpen;
     updateStoreStatusUI();
-    await saveSettingsToFirestore({ storeOpen: isStoreOpen });
+    await saveAllSettingsToFirestore();
     alert(isStoreOpen ? "🟢 تم فتح المتجر وتحديث قاعدة البيانات!" : "🔴 تم إغلاق المتجر وتحديث قاعدة البيانات!");
 };
 
@@ -801,14 +786,14 @@ window.toggleArchive = async function(index) {
     }
 };
 
-// إدارة الأسعار وحفظها في Firestore بالهيكل المطلوب تماماً
+// إدارة الأسعار وحفظها في Firestore
 function populatePricingUI() {
     if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.psRate;
     if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pcRate;
-    if(document.getElementById("psMin")) document.getElementById("psMin").value = pricingConfig.psMin;
-    if(document.getElementById("psMax")) document.getElementById("psMax").value = pricingConfig.psMax;
-    if(document.getElementById("pcMin")) document.getElementById("pcMin").value = pricingConfig.pcMin;
-    if(document.getElementById("pcMax")) document.getElementById("pcMax").value = pricingConfig.pcMax;
+    if(document.getElementById("psMin")) document.getElementById("psMin").value = formatCoinsNumber(pricingConfig.psMin);
+    if(document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(pricingConfig.psMax);
+    if(document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(pricingConfig.pcMin);
+    if(document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(pricingConfig.pcMax);
     if(document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.psDuration;
     if(document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pcDuration;
 
@@ -818,28 +803,34 @@ function populatePricingUI() {
     if(document.getElementById("promoText")) document.getElementById("promoText").value = pricingConfig.promoText;
 }
 
-window.savePricingConfig = async function() {
-    const updatedPricing = {
-        psRate: document.getElementById("psRate")?.value || "200",
-        pcRate: document.getElementById("pcRate")?.value || "150",
-        psMin: document.getElementById("psMin")?.value || "100,000",
-        psMax: document.getElementById("psMax")?.value || "5,000,000",
-        pcMin: document.getElementById("pcMin")?.value || "100,000",
-        pcMax: document.getElementById("pcMax")?.value || "1,000,000",
-        psDuration: document.getElementById("psDuration")?.value || "3 - 5 أيام عمل",
-        pcDuration: document.getElementById("pcDuration")?.value || "2 - 4 أيام عمل",
-        promoActive: document.getElementById("promoActiveSelect")?.value === "true",
-        promoRate: document.getElementById("promoRateInput")?.value || "220",
-        promoExpiry: document.getElementById("promoExpiryInput")?.value || "",
-        promoText: document.getElementById("promoText")?.value || "🔥 عرض لفترة محدودة!",
-        banks: banksList,
-        wallets: walletsList,
-        customPayments: customPaymentsList,
-        terms: storeTerms
-    };
+window.savePricingConfig = async function () {
+  const config = {
+    storeOpen: isStoreOpen,
+    psRate: Number(document.getElementById("psRate").value),
+    pcRate: Number(document.getElementById("pcRate").value),
 
-    await saveSettingsToFirestore(updatedPricing);
-    alert("✨ تم حفظ ومزامنة إعدادات المتجر في Firestore بنجاح!");
+    psMin: Number(document.getElementById("psMin").value.replace(/,/g,"")),
+    psMax: Number(document.getElementById("psMax").value.replace(/,/g,"")),
+    pcMin: Number(document.getElementById("pcMin").value.replace(/,/g,"")),
+    pcMax: Number(document.getElementById("pcMax").value.replace(/,/g,"")),
+
+    psDuration: document.getElementById("psDuration").value,
+    pcDuration: document.getElementById("pcDuration").value,
+
+    promoActive: document.getElementById("promoActiveSelect").value === "true",
+    promoRate: Number(document.getElementById("promoRateInput").value),
+    promoExpiry: document.getElementById("promoExpiryInput").value,
+    promoText: document.getElementById("promoText").value,
+
+    banks: banksList,
+    wallets: walletsList,
+    customPayments: customPaymentsList,
+    terms: storeTerms,
+    updatedAt: serverTimestamp()
+  };
+
+  await setDoc(doc(db, "system", "settings"), config);
+  alert("✅ تم حفظ الإعدادات ومزامنتها مع صفحة الطلبات");
 };
 
 window.saveStatusMessages = function() {
@@ -869,14 +860,14 @@ window.addBank = async function() {
         banksList.push(i.value.trim()); 
         i.value=""; 
         renderBanks(); 
-        await saveSettingsToFirestore({ banks: banksList });
+        await saveAllSettingsToFirestore();
     }
 };
 
 window.deleteBank = async function(i) {
     banksList.splice(i, 1);
     renderBanks();
-    await saveSettingsToFirestore({ banks: banksList });
+    await saveAllSettingsToFirestore();
 };
 
 // إدارة المحافظ في Firestore
@@ -893,14 +884,14 @@ window.addWallet = async function() {
         walletsList.push(i.value.trim()); 
         i.value=""; 
         renderWallets(); 
-        await saveSettingsToFirestore({ wallets: walletsList });
+        await saveAllSettingsToFirestore();
     }
 };
 
 window.deleteWallet = async function(i) {
     walletsList.splice(i, 1);
     renderWallets();
-    await saveSettingsToFirestore({ wallets: walletsList });
+    await saveAllSettingsToFirestore();
 };
 
 // طرق الدفع المخصصة في Firestore
@@ -917,14 +908,14 @@ window.addCustomPaymentMethod = async function() {
         customPaymentsList.push(i.value.trim()); 
         i.value=""; 
         renderCustomPayments(); 
-        await saveSettingsToFirestore({ customPayments: customPaymentsList });
+        await saveAllSettingsToFirestore();
     }
 };
 
 window.deleteCustomPayment = async function(i) {
     customPaymentsList.splice(i, 1);
     renderCustomPayments();
-    await saveSettingsToFirestore({ customPayments: customPaymentsList });
+    await saveAllSettingsToFirestore();
 };
 
 // شروط الخدمة في Firestore
@@ -941,14 +932,14 @@ window.addNewTerm = async function() {
         storeTerms.push(i.value.trim()); 
         i.value=""; 
         renderTerms(); 
-        await saveSettingsToFirestore({ terms: storeTerms });
+        await saveAllSettingsToFirestore();
     }
 };
 
 window.deleteTerm = async function(i) {
     storeTerms.splice(i, 1);
     renderTerms();
-    await saveSettingsToFirestore({ terms: storeTerms });
+    await saveAllSettingsToFirestore();
 };
 
 function updateLiveDatetime() {
