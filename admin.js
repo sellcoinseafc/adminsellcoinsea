@@ -76,7 +76,7 @@ let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بي�
 function initAuthGuard() {
   if (!auth) return;
 
-  // التعامل مع نتيجة إعادة التوجيه لـ Google Redirect في حالة استخدام الهاتف
+  // معالجة نتيجة إعادة التوجيه لـ Google Redirect في حالة متصفحات الجوال
   getRedirectResult(auth).catch((err) => {
     console.error("Redirect Result Error:", err);
   });
@@ -85,6 +85,7 @@ function initAuthGuard() {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
       try {
+        // قراءة مستند الأدمن مباشرة بـ user.uid الحقيقي الصادر من Firebase Authentication
         const adminDoc = await getDoc(doc(db, "admins", user.uid));
         if (adminDoc.exists()) {
           const data = adminDoc.data();
@@ -97,7 +98,7 @@ function initAuthGuard() {
           currentAdmin = { uid: user.uid, ...data };
           await updateDoc(doc(db, "admins", user.uid), { lastLogin: serverTimestamp() });
         } else {
-          // الحساب الأول في النظام يتم تعيينه كـ Owner تلقائياً
+          // في حال كان تسجيل دخول لأول مرة بالحساب (أو المالك) يتم إنشاء المستند بـ user.uid الحقيقي
           currentAdmin = {
             uid: user.uid,
             name: user.displayName || user.email.split('@')[0],
@@ -154,7 +155,7 @@ window.handleGoogleLogin = async function () {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile) {
-      // التوجيه المباشر للهواتف الذكية لمنع حظر Popup
+      // استخدام إعادة التوجيه التلقائي للهواتف الذكية تجنباً لحظر النوافذ المنبثقة
       await signInWithRedirect(auth, provider);
     } else {
       try {
@@ -191,7 +192,7 @@ function updateSidebarAdminUI() {
 }
 
 function applyRolePermissions() {
-  // تقييد إمكانية رؤية وتبويب إدارة المشرفين والإعدادات للأدمن العادي
+  // تقييد إمكانية رؤية وتبويب إدارة المشرفين للأدمن العادي
   const adminTabLink = document.querySelector(".sidebar-menu li:nth-child(8)");
   if (adminTabLink) {
     adminTabLink.style.display = currentAdmin.role === "owner" ? "block" : "none";
@@ -337,18 +338,18 @@ window.handleCreateAdmin = async function (e) {
   }
 
   try {
-    // 1. إنشاء تطبيق فايربيز ثانوي حتى لا يتم تسجيل خروج الأدمن الحالي عند إنشاء حساب جديد
+    // 1. إنشاء تطبيق فايربيز فرعي لتجنب تسجيل خروج الأدمن الحالي عند إنشاء الحساب الجديد
     const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(auth.app.options, "SecondaryAuthApp");
     const secondaryAuth = getAuth(secondaryApp);
 
-    // 2. إنشاء الحساب رسمياً في Firebase Authentication
+    // 2. إنشاء المستخدم رسمياً في Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     const newUid = userCredential.user.uid;
 
-    // 3. تسجيل الخروج من التطبيق الثانوي
+    // 3. تسجيل الخروج من التطبيق الفرعي
     await signOut(secondaryAuth);
 
-    // 4. حفظ مستند المشرف بنفس الـ UID الحقيقي الصادر من Firebase Authentication
+    // 4. حفظ مستند المشرف بالمعرف الحقيقي (user.uid) الصادر من Firebase Authentication
     await setDoc(doc(db, "admins", newUid), {
       name,
       email,
