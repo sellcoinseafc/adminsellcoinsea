@@ -72,6 +72,15 @@ let pricingConfig = {
   promoText: "🔥 عرض لفترة محدودة!"
 };
 
+const DEFAULT_STATUS_MESSAGES = {
+  new: "مرحباً {name} 👋، تم استلام طلبك رقم #{ref} بنجاح، وسنبدأ بمراجعته والتنفيذ قريباً.",
+  review: "مرحباً {name} 👋، طلبك رقم #{ref} حالياً في مرحلة المراجعة والتحقق من بيانات الحساب.",
+  progress: "مرحباً {name} 👋، تم البدء بتنفيذ طلبك رقم #{ref} (سحب الكوينز). يُرجى عدم دخول الحساب حالياً لضمان سلامة العملية.",
+  finished: "مرحباً {name} 👋، أبشرك! تم الانتهاء من سحب الكوينز لطلبك رقم #{ref} بنجاح 🎉. يرجى تزويدنا برقم الحساب/الآيبان للتحويل.",
+  transferred: "مرحباً {name} 👋، تم تحويل المبلغ المستحق لطلبك رقم #{ref} إلى حسابك البنكي/المحفظة بنجاح 💵.",
+  completed: "مرحباً {name} 👋، تم إكمال طلبك رقم #{ref} بالكامل. شكراً لثقتك بنا ونتطلع لخدمتك مجدداً! ❤️"
+};
+
 let ordersData = [];
 let adminsData = [];
 let auditLogsData = [];
@@ -84,7 +93,18 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 3) بدء التشغيل السريع وحارس الأمان المحدث (initAuthGuard)
+// 3) دالة نسخ رقم الطلب الموحدة في جميع اللوحة
+// ==========================================================================
+window.copyOrderRef = async function (ref) {
+  if (!ref) return;
+  const cleanRef = String(ref).replace('#', '').trim();
+  navigator.clipboard.writeText(cleanRef);
+  await logAuditEvent("نسخ رقم الطلب", cleanRef, `تم نسخ رقم الطلب #${cleanRef} إلى الحافظة`);
+  alert(`📋 تم نسخ رقم الطلب (#${cleanRef}) للحافظة بنجاح!`);
+};
+
+// ==========================================================================
+// 4) بدء التشغيل وحارس الأمان المحدث (initAuthGuard)
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -110,10 +130,10 @@ function initAuthGuard() {
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
-      // 🛑 الفحص الفوري للبريد الإلكتروني
+      // 🛑 حظر فوري لأي بريد خارج القائمة المسموحة
       if (!ALLOWED_EMAILS.includes(user.email)) {
         await signOut(auth);
-        alert("غير مصرح لك بدخول لوحة التحكم");
+        alert("⚠️ غير مصرح لك بدخول لوحة التحكم.");
         if (loginOverlay) loginOverlay.classList.add("active");
         return;
       }
@@ -137,7 +157,7 @@ function initAuthGuard() {
           updateSidebarAdminUI();
           applyRolePermissions();
           
-          // 🚀 بدء المزامنة المباشرة للبيانات فور التوثيق
+          // 🚀 بدء المزامنة المباشرة فور تسجيل الدخول
           startAllListeners();
           
           await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
@@ -247,7 +267,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 4) سجل النظام الأمني التلقائي (Audit Log System)
+// 5) سجل النظام الأمني التلقائي (Audit Log System)
 // ==========================================================================
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
@@ -298,7 +318,7 @@ function renderAuditLogsTable(filterText = "") {
       <td><span style="font-size:0.78rem; color:var(--text-muted);">${log.timeString || '---'}</span></td>
       <td><b>${log.user || 'مشرف'}</b></td>
       <td><span class="badge badge-review">${log.action}</span></td>
-      <td><code style="color:var(--primary);">${log.targetOrder || 'عام'}</code></td>
+      <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${log.targetOrder}')" title="اضغط للنسخ">#${log.targetOrder || 'عام'}</code></td>
       <td><span style="font-size:0.75rem; color:var(--text-muted);">${log.details || '---'}</span></td>
     </tr>
   `).join('');
@@ -309,7 +329,7 @@ window.filterAuditLogs = function (query) {
 };
 
 // ==========================================================================
-// 5) إدارة المشرفين والصلاحيات (`admins/{uid}` + Firebase Auth)
+// 6) إدارة المشرفين والصلاحيات
 // ==========================================================================
 function initAdminsListener() {
   return onSnapshot(collection(db, "admins"), (snapshot) => {
@@ -343,7 +363,7 @@ function renderAdminsTable() {
         <td><span style="font-size:0.78rem; color:var(--text-muted);">${lastLoginStr}</span></td>
         <td>
           ${!isOwner ? `
-            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}',${admin.active})">
+            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}', ${admin.active})">
               ${admin.active !== false ? 'تعطيل' : 'تفعيل'}
             </button>
             <button class="btn-action" style="color:var(--danger);" onclick="deleteAdminDoc('${admin.uid}', '${admin.name}')">حذف</button>
@@ -395,18 +415,16 @@ window.handleCreateAdmin = async function (e) {
     });
 
     await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role}) - UID: ${newUid}`);
-    alert(`✅ تم إنشاء حساب المشرف (${name}) في Firebase Auth و Firestore بالـ UID الحقيقي بنجاح!`);
+    alert(`✅ تم إنشاء حساب المشرف (${name}) بالـ UID الحقيقي بنجاح!`);
     window.closeAddAdminModal();
     document.getElementById("addAdminForm")?.reset();
   } catch (err) {
     console.error("Error creating admin:", err);
     let msg = "❌ حدث خطأ أثناء إنشاء المشرف.";
     if (err.code === "auth/email-already-in-use") {
-      msg = "❌ البريد الإلكتروني مستخدم بالفعل في Firebase Authentication.";
+      msg = "❌ البريد الإلكتروني مستخدم بالفعل.";
     } else if (err.code === "auth/weak-password") {
       msg = "❌ كلمة المرور ضعيفة (يجب أن تكون 6 خانات على الأقل).";
-    } else if (err.code === "auth/invalid-email") {
-      msg = "❌ صيغة البريد الإلكتروني غير صحيحة.";
     }
     alert(msg);
   }
@@ -434,7 +452,7 @@ window.deleteAdminDoc = async function (uid, name) {
 };
 
 // ==========================================================================
-// 6) المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
+// 7) المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
@@ -565,7 +583,7 @@ function updateDashboardStats() {
 }
 
 // ==========================================================================
-// 7) عداد التحويل المالي التنازلي
+// 8) عداد التحويل المالي التنازلي
 // ==========================================================================
 function getTransferTimeRemaining(finishedAt) {
   if (!finishedAt) return `<span class="countdown-pill"><i class="fa-solid fa-clock"></i> بدأ العد من لحظة الانتهاء</span>`;
@@ -600,7 +618,7 @@ function renderTransferAlertsTable(list) {
 
     return `
       <tr>
-        <td><code style="color:var(--primary);">${order.reference}</code></td>
+        <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
         <td><b>${order.name}</b></td>
         <td style="direction:ltr; text-align:right;">${order.phone}</td>
         <td style="color:var(--primary); font-weight:900;">${order.totalPrice}</td>
@@ -613,7 +631,7 @@ function renderTransferAlertsTable(list) {
 }
 
 // ==========================================================================
-// 8) عرض جدول الطلبات الشامل والفلترة
+// 9) عرض جدول الطلبات الشامل والفلترة (مع إمكانية ضغط النسخ)
 // ==========================================================================
 window.renderOrdersTables = function () {
   sortOrdersNewestFirst();
@@ -637,7 +655,7 @@ window.renderOrdersTables = function () {
         let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
         return `
           <tr>
-            <td><code style="color:var(--primary);">${order.reference}</code></td>
+            <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
             <td><b>${order.name}</b></td>
             <td>${order.platform}</td>
             <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
@@ -662,7 +680,7 @@ window.renderOrdersTables = function () {
         let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
         return `
           <tr>
-            <td><code style="color:var(--primary);">${order.reference}</code></td>
+            <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
             <td><b>${order.name}</b></td>
             <td style="direction:ltr; text-align:right;">${order.phone}</td>
             <td>${order.platform}</td>
@@ -709,7 +727,7 @@ function getErrorBadge(code) {
 }
 
 // ==========================================================================
-// 9) الثيم والألوان الرسمية للمنصات (PlayStation, Xbox, PC)
+// 10) الثيم والألوان الرسمية للمنصات (PlayStation, Xbox, PC)
 // ==========================================================================
 function getPlatformTheme(platformName) {
   const plat = String(platformName || "").toLowerCase();
@@ -741,7 +759,7 @@ function getPlatformTheme(platformName) {
 }
 
 // ==========================================================================
-// 10) نافذة عرض تفاصيل الطلب المتطورة كلياً V3.0
+// 11) نافذة عرض تفاصيل الطلب V3.0
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -750,7 +768,9 @@ window.openOrderModal = function (index) {
   const titleEl = document.getElementById("modalOrderIdTitle");
 
   if (!modal || !body) return;
-  if (titleEl) titleEl.innerText = "عرض تفاصيل الطلب";
+  if (titleEl) {
+    titleEl.innerHTML = `عرض تفاصيل الطلب (<span class="copyable-box" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب" style="cursor:pointer; color:var(--primary); font-weight:900;">#${order.reference}</span>)`;
+  }
 
   const rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== undefined ? Number(order.withdrawnQty) : 0;
   const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
@@ -759,7 +779,7 @@ window.openOrderModal = function (index) {
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const theme = getPlatformTheme(order.platform);
 
-  // 1. صف الأزرار الرئيسية في الأعلى (نسخ / ترحيل / إتلاف)
+  // 1. أزرار التحكم في الأعلى
   const actionsRowHtml = `
     <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:14px;">
       <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
@@ -774,7 +794,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 2. حالات الطلب والخطأ مباشرة تحت صف الأزرار في الأعلى
+  // 2. حالات الطلب والخطأ تحت الأزرار
   const statusControlsRowHtml = `
     <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; background:var(--input-bg); padding:14px; border-radius:14px; border:1px solid var(--card-border);">
       <div class="form-group" style="margin-bottom:0;">
@@ -801,14 +821,13 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 3. بطاقة معلومات الطلب الرسمية (جميع القيم باللون الأبيض الصريح #ffffff)
+  // 3. بطاقة بيانات الطلب (رقم الطلب قابل للنسخ بالضغط)
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
-      <!-- الصف الأول: رقم الطلب + اسم العميل + رقم الجوال باللون الأبيض -->
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب</span>
-          <code style="color:#ffffff; font-size:1.05rem; font-weight:900;">#${order.reference}</code>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب (اضغط للنسخ)</span>
+          <code class="copyable-box" style="color:#ffffff; font-size:1.05rem; font-weight:900; cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code>
         </div>
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">اسم العميل</span>
@@ -820,7 +839,6 @@ window.openOrderModal = function (index) {
         </div>
       </div>
 
-      <!-- الصف الثاني: اسم الجهاز + الكمية + المبلغ باللون الأبيض -->
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; text-align:center; align-items:center;">
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">اسم الجهاز / المنصة</span>
@@ -840,7 +858,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 4. مربعات إحصائيات عملية السحب
+  // 4. إحصائيات السحب
   const withdrawalStatsHtml = `
     <div class="responsive-grid-3" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
       <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
@@ -858,7 +876,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 5. بيانات حساب EA الخاصة بالعميل (الضغط على المربع ينسخ)
+  // 5. بيانات EA الحساسة
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
   const codesList = order.backupCodes || [];
@@ -878,19 +896,16 @@ window.openOrderModal = function (index) {
         </button>
       </div>
 
-      <!-- البريد الإلكتروني -->
       <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')" title="اضغط للنسخ">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني (EA Email):</span>
         <code style="font-size:0.95rem; font-weight:800; color:#ffffff; display:block; margin-top:2px;">${emailVal}</code>
       </div>
 
-      <!-- كلمة المرور -->
       <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')" title="اضغط للنسخ">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور (EA Password):</span>
         <code style="font-size:0.95rem; font-weight:800; color:var(--warning); display:block; margin-top:2px;">${passVal}</code>
       </div>
 
-      <!-- الأكواد الاحتياطية -->
       <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">الأكواد الاحتياطية (Backup Codes):</span>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px;">
@@ -905,7 +920,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 6. بيانات الحساب البنكي / المحفظة
+  // 6. بيانات الحساب البنكي
   let pd = order.paymentDetails || {};
   let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
   let beneficiaryName = pd.name || order.name || "العميل";
@@ -933,7 +948,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 7. شريط إنجاز السحب وتعديل الكمية فقط
+  // 7. التحكم والتعديل
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
 
   const controlsHtml = `
@@ -966,7 +981,113 @@ window.openOrderModal = function (index) {
 };
 
 // ==========================================================================
-// 11) الدوال المساعدة للنسخ والتحديث
+// 12) حفظ التعديلات وإظهار مربع رسالة العميل التلقائي عبر الواتساب
+// ==========================================================================
+window.saveOrderModalChanges = async function (index) {
+  let order = ordersData[index];
+  let newStatus = document.getElementById("modalStatusSelect").value;
+  let newError = document.getElementById("modalErrorSelect").value;
+  let oldStatus = order.status;
+  let withdrawnInput = document.getElementById("modalWithdrawnInput");
+
+  let updateData = {
+    status: newStatus,
+    errorCode: newError,
+    updatedAt: serverTimestamp()
+  };
+
+  if (withdrawnInput) {
+    let rawVal = withdrawnInput.value.replace(/,/g, '');
+    let newWithdrawn = rawVal !== "" ? parseInt(rawVal) || 0 : 0;
+    updateData.withdrawnQty = newWithdrawn;
+  }
+
+  if (oldStatus !== newStatus) {
+    if (newStatus === 'finished' && !order.finishedAt) {
+      updateData.finishedAt = new Date().toISOString();
+    }
+    await logAuditEvent("تحديث حالة طلب", order.reference, `تغيير الحالة من (${oldStatus}) إلى (${newStatus})`);
+  }
+
+  try {
+    const orderRef = doc(db, "orders", order.id);
+    await updateDoc(orderRef, updateData);
+    
+    window.closeOrderModal();
+    alert("✅ تم حفظ التحديثات بنجاح!");
+
+    // 📱 إظهار مربع التنبيه والرسالة التلقائية للعميل
+    triggerStatusMessageModal(order, newStatus);
+  } catch (err) {
+    console.error("Error updating order:", err);
+    alert("❌ حدث خطأ أثناء التحديث.");
+  }
+};
+
+// ==========================================================================
+// 13) إعداد نافذة إرسال رسائل حالات الطلبات عبر WhatsApp للعميل
+// ==========================================================================
+function formatWhatsAppPhone(phone) {
+  let clean = String(phone || '').replace(/[^0-9]/g, '');
+  if (clean.startsWith('05')) {
+    clean = '966' + clean.substring(1);
+  } else if (clean.startsWith('5')) {
+    clean = '966' + clean;
+  }
+  return clean;
+}
+
+function triggerStatusMessageModal(order, status) {
+  let savedMessages = JSON.parse(localStorage.getItem("sami_coins_status_messages") || "{}");
+  let template = savedMessages[status] || DEFAULT_STATUS_MESSAGES[status] || DEFAULT_STATUS_MESSAGES['new'];
+
+  let messageText = template
+    .replace(/{name}/g, order.name || 'عميلنا العزيز')
+    .replace(/{ref}/g, order.reference || '')
+    .replace(/{qty}/g, formatCoinsNumber(order.totalQty))
+    .replace(/{price}/g, order.totalPrice || '');
+
+  let cleanPhone = formatWhatsAppPhone(order.phone);
+  let whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`;
+
+  const modalHtml = `
+    <div id="customerMessageModal" class="modal-overlay active" style="z-index: 100000;">
+      <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+          <h3 style="color:var(--primary); font-size:1.1rem;"><i class="fa-brands fa-whatsapp"></i> رسالة حالة الطلب جاهزة للعميل</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('customerMessageModal').remove()">✕</button>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">تم تجهيز النص المخصص للعميل <b>${order.name}</b> (${order.phone}) بناءً على حالة الطلب الجديدة:</p>
+        
+        <textarea id="generatedStatusMessageArea" class="form-control" rows="5" style="font-size:0.9rem; line-height:1.6; margin-bottom:16px; color:#ffffff; background:rgba(0,0,0,0.3); border:1px solid var(--primary);">${messageText}</textarea>
+        
+        <div style="display:flex; gap:10px;">
+          <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1px solid rgba(56, 189, 248, 0.4);" onclick="copyGeneratedMessage()">
+            <i class="fa-solid fa-copy"></i> نسخ النص
+          </button>
+          <a href="${whatsappUrl}" target="_blank" class="btn-custom" style="flex:1.5; background:#25D366; color:#000; font-weight:900; text-decoration:none; justify-content:center;">
+            <i class="fa-brands fa-whatsapp"></i> إرسال عبر الواتساب
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const existing = document.getElementById("customerMessageModal");
+  if (existing) existing.remove();
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+window.copyGeneratedMessage = function () {
+  const area = document.getElementById("generatedStatusMessageArea");
+  if (area) {
+    navigator.clipboard.writeText(area.value);
+    alert("📋 تم نسخ النص للحافظة بنجاح!");
+  }
+};
+
+// ==========================================================================
+// 14) باقي الدوال المساعدة للنسخ والتحكم
 // ==========================================================================
 window.copyEaAccountData = async function (index) {
   const order = ordersData[index];
@@ -1016,43 +1137,6 @@ window.calcRemaining = function (index, input) {
   input.value = withdrawn > 0 ? formatCoinsNumber(withdrawn) : '';
 };
 
-window.saveOrderModalChanges = async function (index) {
-  let order = ordersData[index];
-  let newStatus = document.getElementById("modalStatusSelect").value;
-  let newError = document.getElementById("modalErrorSelect").value;
-  let oldStatus = order.status;
-  let withdrawnInput = document.getElementById("modalWithdrawnInput");
-
-  let updateData = {
-    status: newStatus,
-    errorCode: newError,
-    updatedAt: serverTimestamp()
-  };
-
-  if (withdrawnInput) {
-    let rawVal = withdrawnInput.value.replace(/,/g, '');
-    let newWithdrawn = rawVal !== "" ? parseInt(rawVal) || 0 : 0;
-    updateData.withdrawnQty = newWithdrawn;
-  }
-
-  if (oldStatus !== newStatus) {
-    if (newStatus === 'finished' && !order.finishedAt) {
-      updateData.finishedAt = new Date().toISOString();
-    }
-    await logAuditEvent("تحديث حالة طلب", order.reference, `تغيير الحالة من (${oldStatus}) إلى (${newStatus})`);
-  }
-
-  try {
-    const orderRef = doc(db, "orders", order.id);
-    await updateDoc(orderRef, updateData);
-    alert("✅ تم حفظ التحديثات بنجاح!");
-    window.closeOrderModal();
-  } catch (err) {
-    console.error("Error updating order:", err);
-    alert("❌ حدث خطأ أثناء التحديث.");
-  }
-};
-
 window.closeOrderModal = function () {
   const modal = document.getElementById("orderDetailModal");
   if (modal) modal.classList.remove("active");
@@ -1090,7 +1174,7 @@ window.toggleArchive = async function (index) {
 };
 
 // ==========================================================================
-// 12) ملفات العملاء وسجل الحركات
+// 15) ملفات العملاء وسجل الحركات
 // ==========================================================================
 function renderClientsList(searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
@@ -1155,7 +1239,7 @@ window.openClientDetail = function (phone) {
           <tbody>
             ${clientOrders.map(o => `
               <tr>
-                <td><code style="color:var(--primary);">${o.reference}</code></td>
+                <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${o.reference}')" title="اضغط لنسخ رقم الطلب">#${o.reference}</code></td>
                 <td>${o.platform}</td>
                 <td><b>${formatCoinsNumber(o.totalQty)}</b></td>
                 <td>${o.totalPrice}</td>
@@ -1178,7 +1262,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 13) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
+// 16) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -1412,7 +1496,7 @@ window.saveGeneralSettings = async function () {
 };
 
 // ==========================================================================
-// 14) التنقل والتصفح والبحث الشامل
+// 17) التنقل والتصفح والبحث الشامل
 // ==========================================================================
 function updateLiveDatetime() {
   const now = new Date();
@@ -1486,7 +1570,7 @@ window.handleGlobalSearch = function (query) {
     let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
     return `
       <tr>
-        <td><code style="color:var(--primary);">${order.reference}</code></td>
+        <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
         <td><b>${order.name}</b></td>
         <td style="direction:ltr; text-align:right;">${order.phone}</td>
         <td>${order.platform}</td>
@@ -1509,6 +1593,6 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 15) بدء التشغيل الحصري
+// 18) البدء التلقائي للحارس الأمني
 // ==========================================================================
 initAuthGuard();
