@@ -4,7 +4,6 @@ import {
   doc,
   getDocs,
   updateDoc,
-  deleteDoc,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
@@ -21,7 +20,7 @@ async function testConnection() {
 }
 testConnection();
 
-// إدارة حالة المتجر (الإعدادات العامة تبقى طبيعية)
+// إدارة حالة المتجر
 let isStoreOpen = localStorage.getItem("sami_coins_store_status") !== "closed";
 
 function updateStoreStatusUI() {
@@ -44,7 +43,6 @@ window.toggleStoreStatus = function() {
     alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات!");
 };
 
-// مصدر البيانات للطلبات (بدون LocalStorage نهائياً)
 let ordersData = []; 
 
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
@@ -57,7 +55,19 @@ let storeTerms = [
 ];
 let stockData = { PlayStation: 0, PC: 0 };
 
-// المزامنة المباشرة واللحظية للطلبات من Firestore عبر onSnapshot
+// دالة تنسيق الأرقام (الفواصل الثلاثية مثل 1,000,000)
+function formatCoinsNumber(num) {
+    if(num === "" || num === null || isNaN(num)) return "";
+    return Number(num).toLocaleString('en-US');
+}
+
+// دالة النسخ الصامت الفوري
+window.copyDirect = function(text) {
+    if(!text || text === "[محذوف أمنياً]") return;
+    navigator.clipboard.writeText(text);
+};
+
+// المزامنة المباشرة للطلبات من Firestore
 function initOrdersListener() {
     const ref = collection(db, "orders");
     onSnapshot(ref, (snapshot) => {
@@ -75,7 +85,10 @@ function initOrdersListener() {
                 errorCode: data.errorCode || "none",
                 email: data.email || "",
                 pass: data.password || data.pass || "",
-                withdrawnQty: data.withdrawnQty || 0,
+                backupCodes: data.backupCodes || ["12345678", "87654321", "11223344"],
+                paymentMethod: data.paymentMethod || "تحويل بنكي",
+                paymentDetails: data.paymentDetails || { bank: "مصرف الراجحي", name: data.customerName || "عميل", iban: "SA0380000000608010123456" },
+                withdrawnQty: data.withdrawnQty !== undefined ? data.withdrawnQty : "",
                 auditLogs: data.auditLogs || [{ action: "إنشاء الطلب", user: "النظام", time: new Date().toLocaleString() }],
                 finishedAt: data.finishedAt || null,
                 archived: data.archived || false,
@@ -116,7 +129,7 @@ function updateDashboardStats() {
         }
     }
 
-    let transferNeededList = ordersData.filter(o => o.status === 'finished' || (o.withdrawnQty >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
+    let transferNeededList = ordersData.filter(o => o.status === 'finished' || (Number(o.withdrawnQty) >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
     
     const transferBadgeCount = document.getElementById("transferBadgeCount");
     const transferHeaderBadge = document.getElementById("transferHeaderBadge");
@@ -144,11 +157,11 @@ function updateDashboardStats() {
     if(document.getElementById("statReviewOrders")) document.getElementById("statReviewOrders").innerText = countReview;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
     if(document.getElementById("statCompletedOrders")) document.getElementById("statCompletedOrders").innerText = countCompleted;
-    if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = totalCompletedCoins.toLocaleString();
+    if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
     if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
 
-    if(document.getElementById("stockPS")) document.getElementById("stockPS").innerText = stockData.PlayStation.toLocaleString();
-    if(document.getElementById("stockPC")) document.getElementById("stockPC").innerText = stockData.PC.toLocaleString();
+    if(document.getElementById("stockPS")) document.getElementById("stockPS").innerText = formatCoinsNumber(stockData.PlayStation);
+    if(document.getElementById("stockPC")) document.getElementById("stockPC").innerText = formatCoinsNumber(stockData.PC);
 
     renderTransferAlertsTable(transferNeededList);
 }
@@ -168,7 +181,7 @@ function renderTransferAlertsTable(list) {
         return;
     }
     tbody.innerHTML = "";
-    list.forEach((order, index) => {
+    list.forEach((order) => {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
         let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
         tbody.innerHTML += `
@@ -219,7 +232,7 @@ window.renderOrdersTables = function() {
                         <td>#${order.id}</td>
                         <td><b>${order.name}</b></td>
                         <td>${order.platform}</td>
-                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
                         <td style="color:var(--primary);">${order.totalPrice}</td>
                         <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
@@ -246,7 +259,7 @@ window.renderOrdersTables = function() {
                         <td>#${order.id}</td>
                         <td><b>${order.name}</b></td>
                         <td>${order.platform}</td>
-                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
                         <td style="color:var(--primary);">${order.totalPrice}</td>
                         <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td>
@@ -285,42 +298,110 @@ function getErrorBadge(code) {
     }
 }
 
+// دالة لتوليد التدرج اللوني للمربع بناءً على النسبة المئوية
+function getDynamicBoxStyle(percent) {
+    let r = Math.round(239 - (239 - 16) * (percent / 100));
+    let g = Math.round(68 + (185 - 68) * (percent / 100));
+    let b = Math.round(68 + (129 - 68) * (percent / 100));
+    return `background: rgba(${r}, ${g}, ${b}, 0.22); border: 1.5px solid rgb(${r}, ${g}, ${b}); padding: 18px; border-radius: 18px; margin-bottom: 18px;`;
+}
+
+// نافذة تفاصيل الطلب الاحترافية حسب التعديلات المعتمدة
 window.openOrderModal = function(index) {
     const order = ordersData[index];
     const modal = document.getElementById("orderDetailModal");
     const body = document.getElementById("modalOrderBody");
     if(!modal || !body) return;
-    const remaining = order.totalQty - (order.withdrawnQty || 0);
 
-    let logsHtml = (order.auditLogs || []).map(l => `<li style="font-size:0.78rem; color:var(--text-muted);">${l.time} - ${l.action} (${l.user})</li>`).join("");
+    const rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== null && !isNaN(order.withdrawnQty) ? Number(order.withdrawnQty) : 0;
+    const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
+    const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
+    const isCompleted = remaining === 0 && rawWithdrawn > 0;
+
+    // ألوان البنر العلوي حسب المنصة
+    let platformClass = "ps-theme";
+    let platformIcon = "fa-brands fa-playstation";
+    let platformColor = "#0070d1";
+    if(order.platform === 'Xbox' || order.platform === 'xbox') { platformClass = "xbox-theme"; platformIcon = "fa-brands fa-xbox"; platformColor = "#107c10"; }
+    else if(order.platform === 'PC' || order.platform === 'pc') { platformClass = "pc-theme"; platformIcon = "fa-solid fa-computer"; platformColor = "#e81123"; }
+
+    let codesHtml = (order.backupCodes || []).map(code => `
+        <div class="admin-credential-banner" style="flex:1; text-align:center; margin-bottom:0;" onclick="copyDirect('${code}')" title="انقر لنسخ الكود صامتاً">
+            <span class="cred-title">كود احتياطي</span>
+            <code class="cred-val" style="color:var(--primary); font-size:0.95rem;">${code}</code>
+        </div>
+    `).join('');
+
+    let showBoxStyle = (order.status === 'progress' || order.status === 'finished' || order.status === 'transferred') ? 'block' : 'none';
+    let boxDynamicStyle = getDynamicBoxStyle(percent);
+
+    let withdrawnBox = `
+        <div id="withdrawnCardBox" style="display: ${showBoxStyle}; ${boxDynamicStyle}">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:12px; text-align:center;">
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
+                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية الإجمالية</span>
+                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;">${formatCoinsNumber(order.totalQty)}</b>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
+                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية المسحوبة</span>
+                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;" id="withdrawnDisplay">${formatCoinsNumber(rawWithdrawn)} (${percent}%)</b>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
+                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية المتبقية</span>
+                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;" id="remainingDisplay">${formatCoinsNumber(remaining)}</b>
+                </div>
+            </div>
+
+            <!-- شريط التقدم المتحرك المتدرج -->
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBarFill" style="width: ${percent}%;"></div>
+            </div>
+
+            ${isCompleted ? '<div style="background: rgba(16, 185, 129, 0.35); border: 1px solid #10b981; color: #ffffff; padding: 10px; border-radius: 10px; text-align: center; font-weight: 900; margin-bottom: 12px;"><i class="fa-solid fa-circle-check"></i> ✅ تم إنجاز وسحب كامل الكمية بنجاح!</div>' : ''}
+
+            <div class="form-group" style="margin-bottom:0; display:flex; flex-direction:column; align-items:center;">
+                <label style="color: #ffffff !important; font-weight: 900; align-self: flex-start; margin-bottom: 6px;">تعديل الكمية المسحوبة:</label>
+                <div style="display: flex; align-items: center; gap: 10px; justify-content: center; width: 100%;">
+                    <input type="text" id="modalWithdrawnInput" class="form-control" value="${order.withdrawnQty !== "" && order.withdrawnQty !== undefined ? formatCoinsNumber(order.withdrawnQty) : ''}" placeholder="" oninput="calcRemaining(${index}, this)" style="color: #ffffff; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.3); text-align: center; max-width: 200px; font-weight: 900; font-size: 1.1rem;">
+                    <span style="color: #ffffff; font-weight: 900; font-size: 1rem; background: rgba(0,0,0,0.4); padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2);">كوينز</span>
+                </div>
+            </div>
+        </div>
+    `;
 
     let sensitiveContent = order.sensitiveDeleted ? 
-        `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900;">⚠️ تم إتلاف وحذف البيانات الحساسة أمنياً.</div>` :
-        `<div style="background:var(--input-bg); padding:14px; border-radius:12px; margin-bottom:12px; border:1.5px solid var(--card-border);">
-            <strong style="color:var(--primary); display:block; margin-bottom:8px;"><i class="fa-solid fa-key"></i> بيانات الحساب:</strong>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <span>الإيميل: <code>${order.email || '---'}</code></span>
-                <button class="copy-btn" onclick="copyToClipboard('${order.email}', 'الإيميل')">نسخ الإيميل</button>
+        `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900; margin-bottom:14px;">⚠️ تم إتلاف وحذف البيانات الحساسة أمنياً.</div>` :
+        `<div style="margin-bottom:14px;">
+            <div style="font-size:0.95rem; font-weight:900; margin-bottom:10px;"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> بيانات الحساب الحساسة (انقر للنسخ الصامت):</div>
+            <div class="admin-credential-banner" onclick="copyDirect('${order.email}')" title="انقر لنسخ الإيميل صامتاً">
+                <span class="cred-title"><i class="fa-solid fa-envelope"></i> إيميل حساب EA</span>
+                <code class="cred-val" style="color:var(--text-main);">${order.email || '---'}</code>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <span>كلمة المرور: <code style="color:#f59e0b; font-weight:900;">${order.pass || '---'}</code></span>
-                <button class="copy-btn" onclick="copyToClipboard('${order.pass}', 'الباسورد')">نسخ الباسورد</button>
+            <div class="admin-credential-banner" onclick="copyDirect('${order.pass}')" title="انقر لنسخ كلمة المرور صامتاً">
+                <span class="cred-title"><i class="fa-solid fa-key"></i> كلمة المرور</span>
+                <code class="cred-val" style="color:#f59e0b; font-weight:900;">${order.pass || '---'}</code>
+            </div>
+            <div style="margin-bottom:14px;">
+                <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">الأكواد الاحتياطية:</span>
+                <div style="display:flex; gap:10px;">${codesHtml}</div>
             </div>
         </div>`;
 
-    let withdrawnBox = order.status === 'progress' ? `
-        <div style="background:rgba(0,255,135,0.05); padding:14px; border-radius:12px; border:1.5px solid var(--primary); margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span>الإجمالية: <b>${order.totalQty.toLocaleString()}</b></span>
-                <span style="color:#f59e0b;">المتبقية: <b id="remainingDisplay">${remaining.toLocaleString()}</b></span>
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-                <label>تحديث الكمية المسحوبة:</label>
-                <input type="number" id="modalWithdrawnInput" class="form-control" value="${order.withdrawnQty || 0}" oninput="calcRemaining(${index}, this)">
-            </div>
-        </div>` : "";
+    // بيانات التحويل والاستلام (في الأسفل تماماً)
+    let pd = order.paymentDetails || {};
+    let paymentDetailsHtml = `
+        <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:16px; padding:16px; margin-top:16px;">
+            <strong style="font-size:0.9rem; color:#38bdf8; display:block; margin-bottom:10px;"><i class="fa-solid fa-wallet"></i> بيانات التحويل والاستلام (${order.paymentMethod}):</strong>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="color:var(--text-muted)">البنك / المحفظة:</span> <b>${pd.bank || pd.wallet || '-'}</b></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="color:var(--text-muted)">اسم المستفيد:</span> <b>${pd.name || '-'}</b></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted)">رقم الآيبان أو الحساب:</span> <code onclick="copyDirect('${pd.iban || pd.phone || '-'}')" style="cursor:pointer; color:var(--primary);" title="انقر للنسخ">${pd.iban || pd.phone || '-'}</code></div>
+        </div>
+    `;
+
+    let logsHtml = (order.auditLogs || []).map(l => `<li style="font-size:0.78rem; color:var(--text-muted);">${l.time} - ${l.action} (${l.user})</li>`).join("");
 
     body.innerHTML = `
+        <!-- أزرار الإجراءات الإضافية -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:16px;">
             <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
                 <i class="fa-solid fa-cloud-arrow-up"></i> ترحيل للشيت
@@ -333,22 +414,40 @@ window.openOrderModal = function(index) {
             </button>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; background:var(--input-bg); padding:12px; border-radius:12px;">
-            <div><strong>المرجع:</strong> <code style="color:var(--primary);">${order.reference}</code></div>
-            <div><strong>رقم الطلب:</strong> #${order.id}</div>
-            <div><strong>العميل:</strong> ${order.name}</div>
-            <div><strong>الجوال:</strong> ${order.phone}</div>
-            <div><strong>المنصة:</strong> ${order.platform}</div>
-            <div><strong>المبلغ:</strong> <span style="color:var(--primary);">${order.totalPrice}</span></div>
+        <!-- البنر العلوي الملون حسب المنصة -->
+        <div class="admin-summary-banner ${platformClass}">
+            <div class="admin-banner-item">
+                <i class="${platformIcon}" style="color: ${platformColor};"></i>
+                <div class="admin-banner-label">المنصة المحددة</div>
+                <div class="admin-banner-value">${order.platform}</div>
+            </div>
+            <div class="admin-banner-item" style="border-right: 1px solid var(--card-border); border-left: 1px solid var(--card-border);">
+                <i class="fa-solid fa-coins" style="color: var(--primary);"></i>
+                <div class="admin-banner-label">الكمية الإجمالية</div>
+                <div class="admin-banner-value" style="color: var(--primary);">${formatCoinsNumber(order.totalQty)}</div>
+            </div>
+            <div class="admin-banner-item">
+                <i class="fa-solid fa-money-bill-wave" style="color: #38bdf8;"></i>
+                <div class="admin-banner-label">المبلغ المستحق</div>
+                <div class="admin-banner-value" style="color: #38bdf8;">${order.totalPrice}</div>
+            </div>
+        </div>
+
+        <!-- معلومات العميل والمرجع (على سطر واحد ومنظمة) -->
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; background:var(--input-bg); padding:16px; border-radius:16px; border:1.5px solid var(--card-border); text-align:center;">
+            <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">المرجع</span><code style="color:var(--primary); font-size:0.88rem;">${order.reference}</code></div>
+            <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">العميل</span><b style="font-size:0.88rem;">${order.name}</b></div>
+            <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">الجوال</span><span style="direction:ltr; font-size:0.85rem; font-weight:800;">${order.phone}</span></div>
+            <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">رقم الطلب</span><b style="font-size:0.88rem;">#${order.id}</b></div>
         </div>
 
         ${sensitiveContent}
-        ${withdrawnBox}
 
-        <div class="form-grid-2">
-            <div class="form-group">
+        <!-- حالات الطلب وخطأ الحساب -->
+        <div class="form-grid-2" style="margin-bottom:16px;">
+            <div class="form-group" style="margin-bottom:0;">
                 <label>حالة الطلب:</label>
-                <select id="modalStatusSelect" class="form-control">
+                <select id="modalStatusSelect" class="form-control" onchange="toggleStatusBox(this.value)">
                     <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
                     <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
                     <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
@@ -357,7 +456,7 @@ window.openOrderModal = function(index) {
                     <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل (رقم 6)</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom:0;">
                 <label>حالة الخطأ:</label>
                 <select id="modalErrorSelect" class="form-control" style="border-color:#ef4444;">
                     <option value="none" ${order.errorCode==='none'?'selected':''}>سليم</option>
@@ -369,22 +468,61 @@ window.openOrderModal = function(index) {
             </div>
         </div>
 
+        <!-- مربع الكمية المتقدم والشريط المتدرج وتحديث اللون لحظياً -->
+        ${withdrawnBox}
+
         <div style="margin-top:12px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
             <strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;"><i class="fa-solid fa-history"></i> سجل التغييرات (Audit Log):</strong>
             <ul style="padding-right:15px; max-height:80px; overflow-y:auto;">${logsHtml}</ul>
         </div>
 
-        <button class="btn-custom" style="width:100%; justify-content:center; margin-top:14px;" onclick="saveOrderModalChanges(${index})"><i class="fa-solid fa-floppy-disk"></i> حفظ التحديثات وتسجيل السجل</button>
+        <!-- بيانات التحويل والاستلام في الأسفل تماماً -->
+        ${paymentDetailsHtml}
+
+        <button class="btn-custom" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
+            <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التحديثات وتسجيل السجل
+        </button>
     `;
     modal.classList.add("active");
 };
 
 window.calcRemaining = function(index, input) {
-    let withdrawn = parseInt(input.value) || 0;
+    let rawVal = input.value.replace(/,/g, '');
+    let withdrawn = parseInt(rawVal) || 0;
     const total = ordersData[index].totalQty;
     if(withdrawn > total) withdrawn = total;
-    const remDisp = document.getElementById("remainingDisplay");
-    if(remDisp) remDisp.innerText = (total - withdrawn).toLocaleString();
+    
+    input.value = withdrawn > 0 ? formatCoinsNumber(withdrawn) : '';
+
+    const rem = Math.max(0, total - withdrawn);
+    const percent = total > 0 ? Math.min(100, Math.round((withdrawn / total) * 100)) : 0;
+    
+    const wDisp = document.getElementById("withdrawnDisplay");
+    const rDisp = document.getElementById("remainingDisplay");
+    if(wDisp) wDisp.innerText = formatCoinsNumber(withdrawn) + ` (${percent}%)`;
+    if(rDisp) rDisp.innerText = formatCoinsNumber(rem);
+    
+    const fill = document.getElementById("progressBarFill");
+    if(fill) fill.style.width = percent + "%";
+
+    const box = document.getElementById("withdrawnCardBox");
+    if(box) {
+        let r = Math.round(239 - (239 - 16) * (percent / 100));
+        let g = Math.round(68 + (185 - 68) * (percent / 100));
+        let b = Math.round(68 + (129 - 68) * (percent / 100));
+        box.style.background = `rgba(${r}, ${g}, ${b}, 0.22)`;
+        box.style.borderColor = `rgb(${r}, ${g}, ${b})`;
+    }
+};
+
+window.toggleStatusBox = function(status) {
+    const wrapper = document.getElementById("withdrawnCardBox");
+    if(!wrapper) return;
+    if(status === 'progress' || status === 'finished' || status === 'transferred') {
+        wrapper.style.display = 'block';
+    } else {
+        wrapper.style.display = 'none';
+    }
 };
 
 window.saveOrderModalChanges = async function(index) {
@@ -401,8 +539,9 @@ window.saveOrderModalChanges = async function(index) {
     };
 
     if(withdrawnInput) {
-        let oldWithdrawn = order.withdrawnQty || 0;
-        let newWithdrawn = parseInt(withdrawnInput.value) || 0;
+        let rawVal = withdrawnInput.value.replace(/,/g, '');
+        let newWithdrawn = rawVal !== "" ? parseInt(rawVal) || 0 : 0;
+        let oldWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== undefined ? Number(order.withdrawnQty) : 0;
         let diff = newWithdrawn - oldWithdrawn;
         let platform = order.platform;
         if(stockData[platform] !== undefined) {
@@ -471,7 +610,7 @@ window.destroySensitiveData = async function(index) {
     }
 };
 
-// ملف العملاء (بناءً على البيانات المزامنة من Firestore)
+// ملف العملاء
 function renderClientsList(searchQuery = "") {
     const tbody = document.getElementById("clientsTableBody");
     if(!tbody) return;
@@ -505,7 +644,7 @@ function renderClientsList(searchQuery = "") {
                 <td><b>${client.name}</b></td>
                 <td style="direction:ltr; text-align:right;">${client.phone}</td>
                 <td>${client.ordersCount}</td>
-                <td style="color:#f59e0b;">${client.totalCoins.toLocaleString()}</td>
+                <td style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
                 <td style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
                 <td><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
             </tr>
@@ -525,7 +664,7 @@ window.openClientDetail = function(phone) {
     if(body) {
         let tableHtml = `<div class="table-responsive"><table><thead><tr><th>المرجع</th><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>`;
         clientOrders.forEach(o => {
-            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${o.totalQty.toLocaleString()}</b></td><td>${o.totalPrice}</td><td>${getStatusBadge(o.status)}</td></tr>`;
+            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${formatCoinsNumber(o.totalQty)}</b></td><td>${o.totalPrice}</td><td>${getStatusBadge(o.status)}</td></tr>`;
         });
         tableHtml += `</tbody></table></div>`;
         body.innerHTML = tableHtml;
@@ -547,10 +686,6 @@ window.toggleArchive = async function(index) {
     } catch(err) {
         console.error("Error toggling archive:", err);
     }
-};
-
-window.copyToClipboard = function(text, label) {
-    navigator.clipboard.writeText(text).then(() => alert(`📋 تم نسخ ${label}.`));
 };
 
 window.savePricingConfig = function() {
@@ -707,7 +842,7 @@ window.handleGlobalSearch = function(query) {
                 <td>#${order.id}</td>
                 <td><b>${order.name}</b></td>
                 <td>${order.platform}</td>
-                <td><b>${order.totalQty.toLocaleString()}</b></td>
+                <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
                 <td style="color:var(--primary);">${order.totalPrice}</td>
                 <td>${getStatusBadge(order.status)}</td>
                 <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
