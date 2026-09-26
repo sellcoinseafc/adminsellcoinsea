@@ -1,8 +1,10 @@
+// firebase.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
+  apiKey: "AIzaSyCbd15z0Z1Snz_ogiXDagxCF0Q8lIsXQ1s",
   authDomain: "sellcoins-26318.firebaseapp.com",
   projectId: "sellcoins-26318",
   storageBucket: "sellcoins-26318.firebasestorage.app",
@@ -11,4 +13,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const db = getFirestore(app);
+
+export { db };
