@@ -17,37 +17,70 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 // ==========================================
-// 0. نظام حماية وتسجيل الدخول (Firebase Auth)
+// 0. التحكم بالواجهة والقائمة الجانبية للجوال
+// ==========================================
+window.toggleSidebar = function(forceState) {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    if (!sidebar || !overlay) return;
+
+    if (typeof forceState === "boolean") {
+        if (forceState) {
+            sidebar.classList.add("mobile-open");
+            overlay.classList.add("active");
+        } else {
+            sidebar.classList.remove("mobile-open");
+            overlay.classList.remove("active");
+        }
+    } else {
+        sidebar.classList.toggle("mobile-open");
+        overlay.classList.toggle("active");
+    }
+};
+
+window.switchTab = function(tabId, element) {
+    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+    document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
+    
+    const targetTab = document.getElementById(tabId);
+    if(targetTab) targetTab.classList.add("active");
+    if(element) element.classList.add("active");
+    
+    const titleHead = document.getElementById("pageTitleHeading");
+    const breadcrumbActive = document.getElementById("breadcrumbActive");
+    if(titleHead && element) titleHead.innerText = element.innerText.trim();
+    if(breadcrumbActive && element) breadcrumbActive.innerText = element.innerText.trim();
+
+    // إغلاق القائمة التلقائي في الجوال عند اختيار قسم
+    window.toggleSidebar(false);
+};
+
+// ==========================================
+// 1. نظام حماية وتسجيل الدخول (Firebase Auth)
 // ==========================================
 const googleProvider = new GoogleAuthProvider();
 
-// مراقبة حالة المصادقة والتحقق من الوصول
 onAuthStateChanged(auth, (user) => {
   const loginScreen = document.getElementById("loginScreen");
   const adminAppWrapper = document.getElementById("adminAppWrapper");
 
   if (user) {
-    // المستخدم مسجل الدخول -> إخفاء شاشة الدخول وإظهار اللوحة
     if (loginScreen) loginScreen.style.display = "none";
     if (adminAppWrapper) adminAppWrapper.style.display = "block";
 
-    // تحديث بيانات المستخدم في القائمة الجانبية إن وجدت
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarAvatar = document.getElementById("sidebarUserAvatar");
     if (sidebarName) sidebarName.innerText = user.displayName || user.email.split('@')[0];
     if (sidebarAvatar) sidebarAvatar.innerText = (user.displayName || user.email)[0].toUpperCase();
 
-    // تشغيل استماع قاعدة البيانات والإعدادات فور تأكيد الهوية المصرح لها
     initSystemSettingsListener();
     initOrdersListener();
   } else {
-    // المستخدم غير مسجل -> إظهار شاشة الدخول وإخفاء اللوحة لحماية البيانات
     if (loginScreen) loginScreen.style.display = "flex";
     if (adminAppWrapper) adminAppWrapper.style.display = "none";
   }
 });
 
-// تسجيل الدخول بواسطة Google
 document.getElementById("btnGoogleLogin")?.addEventListener("click", async () => {
   const errorMsg = document.getElementById("loginErrorMsg");
   if (errorMsg) errorMsg.style.display = "none";
@@ -62,7 +95,6 @@ document.getElementById("btnGoogleLogin")?.addEventListener("click", async () =>
   }
 });
 
-// تسجيل الدخول بواسطة البريد الإلكتروني وكلمة المرور
 document.getElementById("emailLoginForm")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const errorMsg = document.getElementById("loginErrorMsg");
@@ -84,7 +116,6 @@ document.getElementById("emailLoginForm")?.addEventListener("submit", async (e) 
   }
 });
 
-// تسجيل الخروج
 document.getElementById("btnLogout")?.addEventListener("click", async () => {
   try {
     await signOut(auth);
@@ -93,19 +124,149 @@ document.getElementById("btnLogout")?.addEventListener("click", async () => {
   }
 });
 
-// اختبار اتصال فايربيز
-async function testConnection() {
-  try {
-    const snapshot = await getDocs(collection(db, "orders"));
-    console.log("Firestore Connected ✅");
-    console.log("Orders count:", snapshot.size);
-  } catch (err) {
-    console.error("Connection Error:", err);
-  }
-}
-testConnection();
+// ==========================================
+// 2. معالجات الجداول للتوافق مع الجوال (data-label)
+// ==========================================
+function renderOrdersTables() {
+    sortOrdersNewestFirst();
+    const dashBody = document.getElementById("dashboardOrdersTableBody");
+    const fullBody = document.getElementById("fullOrdersTableBody");
+    const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
+    
+    let filteredOrders = ordersData;
+    if(statusFilter !== "all") {
+        filteredOrders = ordersData.filter(o => o.status === statusFilter);
+    }
 
-// متغيرات النظام والإعدادات الافتراضية
+    if(dashBody) {
+        if(ordersData.length === 0) {
+            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
+        } else {
+            dashBody.innerHTML = "";
+            let topRecent = ordersData.slice(0, 5);
+            topRecent.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+
+                dashBody.innerHTML += `
+                    <tr>
+                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="رقم الطلب">#${order.id}</td>
+                        <td data-label="اسم العميل"><b>${order.name}</b></td>
+                        <td data-label="المنصة">${order.platform}</td>
+                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="الحالة"><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    if(fullBody) {
+        if(filteredOrders.length === 0) {
+            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
+        } else {
+            fullBody.innerHTML = "";
+            filteredOrders.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+
+                fullBody.innerHTML += `
+                    <tr>
+                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="رقم الطلب">#${order.id}</td>
+                        <td data-label="اسم العميل"><b>${order.name}</b></td>
+                        <td data-label="المنصة">${order.platform}</td>
+                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="الحالة والأخطاء"><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td data-label="الإجراءات">
+                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
+                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    updateDashboardStats();
+    renderClientsList();
+}
+
+function renderTransferAlertsTable(list) {
+    const tbody = document.getElementById("transferAlertsTableBody");
+    if(!tbody) return;
+    if(list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = "";
+    list.forEach((order) => {
+        let actualIndex = ordersData.findIndex(o => o.id === order.id);
+        let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
+        tbody.innerHTML += `
+            <tr>
+                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                <td data-label="رقم الطلب">#${order.id}</td>
+                <td data-label="اسم العميل"><b>${order.name}</b></td>
+                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${order.phone}</td>
+                <td data-label="المبلغ المستحق" style="color:var(--primary);">${order.totalPrice}</td>
+                <td data-label="المدة المتبقية"><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
+                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+            </tr>
+        `;
+    });
+}
+
+function renderClientsList(searchQuery = "") {
+    const tbody = document.getElementById("clientsTableBody");
+    if(!tbody) return;
+    let clientsMap = {};
+    ordersData.forEach(o => {
+        let phoneKey = o.phone ? o.phone.trim() : "unknown";
+        if(!clientsMap[phoneKey]) {
+            clientsMap[phoneKey] = { name: o.name, phone: phoneKey, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
+        }
+        clientsMap[phoneKey].ordersCount += 1;
+        clientsMap[phoneKey].totalCoins += (o.totalQty || 0);
+        let pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
+        clientsMap[phoneKey].totalPaid += pVal;
+        clientsMap[phoneKey].orders.push(o);
+    });
+
+    let clientsArray = Object.values(clientsMap);
+    if(searchQuery.trim() !== "") {
+        clientsArray = clientsArray.filter(c => c.name.includes(searchQuery) || c.phone.includes(searchQuery));
+    }
+
+    if(clientsArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = "";
+    clientsArray.forEach((client) => {
+        tbody.innerHTML += `
+            <tr>
+                <td data-label="اسم العميل"><b>${client.name}</b></td>
+                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${client.phone}</td>
+                <td data-label="عدد الطلبات">${client.ordersCount}</td>
+                <td data-label="إجمالي الكوينز" style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
+                <td data-label="إجمالي المدفوعات" style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
+                <td data-label="الإجراء"><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
+            </tr>
+        `;
+    });
+}
+
+// باقي منطق الإعدادات وقاعدة البيانات دون تغيير...
 let isStoreOpen = true;
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
 let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
@@ -119,7 +280,6 @@ let pricingConfig = {
     psRate: 200, pcRate: 150,
     psMin: 100000, psMax: 5000000,
     pcMin: 100000, pcMax: 1000000,
-    // المدد المنفصلة لكل منصة
     psWithdrawDuration: "3 - 5 أيام عمل",
     psTransferDuration: "24 ساعة",
     pcWithdrawDuration: "2 - 4 أيام عمل",
@@ -130,19 +290,16 @@ let pricingConfig = {
 let ordersData = []; 
 let stockData = { PlayStation: 0, PC: 0 };
 
-// دالة تنسيق الأرقام (الفواصل الثلاثية مثل 1,000,000)
 function formatCoinsNumber(num) {
     if(num === "" || num === null || isNaN(num)) return "";
     return Number(num).toLocaleString('en-US');
 }
 
-// دالة النسخ الصامت الفوري
 window.copyDirect = function(text) {
     if(!text || text === "[محذوف أمنياً]") return;
     navigator.clipboard.writeText(text);
 };
 
-// دالة عامة لحفظ كامل الإعدادات في Firestore
 async function saveAllSettingsToFirestore() {
     try {
         const config = {
@@ -178,7 +335,6 @@ async function saveAllSettingsToFirestore() {
     }
 }
 
-// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings)
 function initSystemSettingsListener() {
     const settingsRef = doc(db, "system", "settings");
     onSnapshot(settingsRef, (docSnap) => {
@@ -251,7 +407,6 @@ window.toggleStoreStatus = async function() {
     alert(isStoreOpen ? "🟢 تم فتح المتجر وتحديث قاعدة البيانات!" : "🔴 تم إغلاق المتجر وتحديث قاعدة البيانات!");
 };
 
-// 2. حساب الستوك (المخزون) تلقائياً من الطلبات النشطة حصرياً
 function calculateDynamicStock() {
     let psStock = 0;
     let pcStock = 0;
@@ -275,7 +430,6 @@ function calculateDynamicStock() {
     stockData.PC = pcStock;
 }
 
-// 3. المزامنة المباشرة للطلبات من Firestore (`orders`)
 function initOrdersListener() {
     const ref = collection(db, "orders");
     onSnapshot(ref, (snapshot) => {
@@ -382,109 +536,6 @@ window.filterOrdersByStatus = function(status) {
     renderOrdersTables();
 };
 
-function renderTransferAlertsTable(list) {
-    const tbody = document.getElementById("transferAlertsTableBody");
-    if(!tbody) return;
-    if(list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = "";
-    list.forEach((order) => {
-        let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
-        tbody.innerHTML += `
-            <tr>
-                <td><code style="color:var(--primary);">${order.reference}</code></td>
-                <td>#${order.id}</td>
-                <td><b>${order.name}</b></td>
-                <td style="direction:ltr; text-align:right;">${order.phone}</td>
-                <td style="color:var(--primary);">${order.totalPrice}</td>
-                <td><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr} (3 - 5 أيام عمل)</span></td>
-                <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
-            </tr>
-        `;
-    });
-}
-
-window.openOrderModalById = function(id) {
-    let idx = ordersData.findIndex(o => o.id === id);
-    if(idx !== -1) window.openOrderModal(idx);
-};
-
-window.renderOrdersTables = function() {
-    sortOrdersNewestFirst();
-    const dashBody = document.getElementById("dashboardOrdersTableBody");
-    const fullBody = document.getElementById("fullOrdersTableBody");
-    const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
-    
-    let filteredOrders = ordersData;
-    if(statusFilter !== "all") {
-        filteredOrders = ordersData.filter(o => o.status === statusFilter);
-    }
-
-    if(dashBody) {
-        if(ordersData.length === 0) {
-            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
-        } else {
-            dashBody.innerHTML = "";
-            let topRecent = ordersData.slice(0, 5);
-            topRecent.forEach((order) => {
-                let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-                dashBody.innerHTML += `
-                    <tr>
-                        <td><code style="color:var(--primary);">${order.reference}</code></td>
-                        <td>#${order.id}</td>
-                        <td><b>${order.name}</b></td>
-                        <td>${order.platform}</td>
-                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td style="color:var(--primary);">${order.totalPrice}</td>
-                        <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
-                    </tr>
-                `;
-            });
-        }
-    }
-
-    if(fullBody) {
-        if(filteredOrders.length === 0) {
-            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
-        } else {
-            fullBody.innerHTML = "";
-            filteredOrders.forEach((order) => {
-                let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-                fullBody.innerHTML += `
-                    <tr>
-                        <td><code style="color:var(--primary);">${order.reference}</code></td>
-                        <td>#${order.id}</td>
-                        <td><b>${order.name}</b></td>
-                        <td>${order.platform}</td>
-                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td style="color:var(--primary);">${order.totalPrice}</td>
-                        <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td>
-                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل والنسخ</button>
-                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-    }
-
-    updateDashboardStats();
-    renderClientsList();
-};
-
 function getStatusBadge(status) {
     switch(status) {
         case 'new': return '<span class="badge badge-new">طلب جديد</span>';
@@ -505,13 +556,6 @@ function getErrorBadge(code) {
         case 'err_market': return '<span class="badge badge-error">❌ سوق الانتقالات مغلق</span>';
         default: return '<span class="badge badge-success">✔ سليم</span>';
     }
-}
-
-function getDynamicBoxStyle(percent) {
-    let r = Math.round(239 - (239 - 16) * (percent / 100));
-    let g = Math.round(68 + (185 - 68) * (percent / 100));
-    let b = Math.round(68 + (129 - 68) * (percent / 100));
-    return `background: rgba(${r}, ${g}, ${b}, 0.22); border: 1.5px solid rgb(${r}, ${g}, ${b}); padding: 18px; border-radius: 18px; margin-bottom: 18px;`;
 }
 
 window.openOrderModal = function(index) {
@@ -539,22 +583,21 @@ window.openOrderModal = function(index) {
     `).join('');
 
     let showBoxStyle = (order.status === 'progress' || order.status === 'finished' || order.status === 'transferred') ? 'block' : 'none';
-    let boxDynamicStyle = getDynamicBoxStyle(percent);
 
     let withdrawnBox = `
-        <div id="withdrawnCardBox" style="display: ${showBoxStyle}; ${boxDynamicStyle}">
+        <div id="withdrawnCardBox" style="display: ${showBoxStyle}; padding: 16px; border-radius: 16px; margin-bottom: 18px; background: rgba(0,255,135,0.1); border: 1px solid var(--primary);">
             <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:12px; text-align:center;">
-                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
-                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية الإجمالية</span>
-                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;">${formatCoinsNumber(order.totalQty)}</b>
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 12px;">
+                    <span style="font-size: 0.72rem; color: #ffffff; opacity: 0.8; display: block;">الكمية الإجمالية</span>
+                    <b style="font-size: 0.88rem; color: #ffffff; font-weight: 900;">${formatCoinsNumber(order.totalQty)}</b>
                 </div>
-                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
-                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية المسحوبة</span>
-                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;" id="withdrawnDisplay">${formatCoinsNumber(rawWithdrawn)} (${percent}%)</b>
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 12px;">
+                    <span style="font-size: 0.72rem; color: #ffffff; opacity: 0.8; display: block;">المسحوبة</span>
+                    <b style="font-size: 0.88rem; color: #ffffff; font-weight: 900;" id="withdrawnDisplay">${formatCoinsNumber(rawWithdrawn)} (${percent}%)</b>
                 </div>
-                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 12px;">
-                    <span style="font-size: 0.75rem; color: #ffffff; opacity: 0.8; display: block;">الكمية المتبقية</span>
-                    <b style="font-size: 0.95rem; color: #ffffff; font-weight: 900;" id="remainingDisplay">${formatCoinsNumber(remaining)}</b>
+                <div style="background: rgba(0, 0, 0, 0.25); border: 1.5px solid rgba(255, 255, 255, 0.2); padding: 8px; border-radius: 12px;">
+                    <span style="font-size: 0.72rem; color: #ffffff; opacity: 0.8; display: block;">المتبقية</span>
+                    <b style="font-size: 0.88rem; color: #ffffff; font-weight: 900;" id="remainingDisplay">${formatCoinsNumber(remaining)}</b>
                 </div>
             </div>
 
@@ -577,7 +620,7 @@ window.openOrderModal = function(index) {
     let sensitiveContent = order.sensitiveDeleted ? 
         `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900; margin-bottom:14px;">⚠️ تم إتلاف وحذف البيانات الحساسة أمنياً.</div>` :
         `<div style="margin-bottom:14px;">
-            <div style="font-size:0.95rem; font-weight:900; margin-bottom:10px;"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> بيانات الحساب الحساسة (انقر للنسخ الصامت):</div>
+            <div style="font-size:0.95rem; font-weight:900; margin-bottom:10px;"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> بيانات الحساب الحساسة:</div>
             <div class="admin-credential-banner" onclick="copyDirect('${order.email}')" title="انقر لنسخ الإيميل صامتاً">
                 <span class="cred-title"><i class="fa-solid fa-envelope"></i> إيميل حساب EA</span>
                 <code class="cred-val" style="color:var(--text-main);">${order.email || '---'}</code>
@@ -588,7 +631,7 @@ window.openOrderModal = function(index) {
             </div>
             <div style="margin-bottom:14px;">
                 <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">الأكواد الاحتياطية:</span>
-                <div style="display:flex; gap:10px;">${codesHtml}</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">${codesHtml}</div>
             </div>
         </div>`;
 
@@ -605,37 +648,37 @@ window.openOrderModal = function(index) {
     let logsHtml = (order.auditLogs || []).map(l => `<li style="font-size:0.78rem; color:var(--text-muted);">${l.time} - ${l.action} (${l.user})</li>`).join("");
 
     body.innerHTML = `
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-bottom:16px;">
             <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
-                <i class="fa-solid fa-cloud-arrow-up"></i> ترحيل للشيت
+                <i class="fa-solid fa-cloud-arrow-up"></i> الشيت
             </button>
             <button class="btn-custom" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
-                <i class="fa-solid fa-copy"></i> نسخ احتياطي
+                <i class="fa-solid fa-copy"></i> نسخ
             </button>
             <button class="btn-custom" style="background:linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
-                <i class="fa-solid fa-shield-halved"></i> إتلاف حساس
+                <i class="fa-solid fa-shield-halved"></i> إتلاف
             </button>
         </div>
 
         <div class="admin-summary-banner ${platformClass}">
             <div class="admin-banner-item">
                 <i class="${platformIcon}" style="color: ${platformColor};"></i>
-                <div class="admin-banner-label">المنصة المحددة</div>
+                <div class="admin-banner-label">المنصة</div>
                 <div class="admin-banner-value">${order.platform}</div>
             </div>
-            <div class="admin-banner-item" style="border-right: 1px solid var(--card-border); border-left: 1px solid var(--card-border);">
+            <div class="admin-banner-item">
                 <i class="fa-solid fa-coins" style="color: var(--primary);"></i>
-                <div class="admin-banner-label">الكمية الإجمالية</div>
+                <div class="admin-banner-label">الكمية</div>
                 <div class="admin-banner-value" style="color: var(--primary);">${formatCoinsNumber(order.totalQty)}</div>
             </div>
             <div class="admin-banner-item">
                 <i class="fa-solid fa-money-bill-wave" style="color: #38bdf8;"></i>
-                <div class="admin-banner-label">المبلغ المستحق</div>
+                <div class="admin-banner-label">المبلغ</div>
                 <div class="admin-banner-value" style="color: #38bdf8;">${order.totalPrice}</div>
             </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; background:var(--input-bg); padding:16px; border-radius:16px; border:1.5px solid var(--card-border); text-align:center;">
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:18px; background:var(--input-bg); padding:12px; border-radius:16px; border:1.5px solid var(--card-border); text-align:center;">
             <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">المرجع</span><code style="color:var(--primary); font-size:0.88rem;">${order.reference}</code></div>
             <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">العميل</span><b style="font-size:0.88rem;">${order.name}</b></div>
             <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">الجوال</span><span style="direction:ltr; font-size:0.85rem; font-weight:800;">${order.phone}</span></div>
@@ -671,14 +714,14 @@ window.openOrderModal = function(index) {
         ${withdrawnBox}
 
         <div style="margin-top:12px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
-            <strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;"><i class="fa-solid fa-history"></i> سجل التغييرات (Audit Log):</strong>
+            <strong style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:4px;"><i class="fa-solid fa-history"></i> سجل التغييرات:</strong>
             <ul style="padding-right:15px; max-height:80px; overflow-y:auto;">${logsHtml}</ul>
         </div>
 
         ${paymentDetailsHtml}
 
         <button class="btn-custom" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
-            <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التحديثات وتسجيل السجل
+            <i class="fa-solid fa-floppy-disk"></i> حفظ التحديثات
         </button>
     `;
     modal.classList.add("active");
@@ -702,15 +745,6 @@ window.calcRemaining = function(index, input) {
     
     const fill = document.getElementById("progressBarFill");
     if(fill) fill.style.width = percent + "%";
-
-    const box = document.getElementById("withdrawnCardBox");
-    if(box) {
-        let r = Math.round(239 - (239 - 16) * (percent / 100));
-        let g = Math.round(68 + (185 - 68) * (percent / 100));
-        let b = Math.round(68 + (129 - 68) * (percent / 100));
-        box.style.background = `rgba(${r}, ${g}, ${b}, 0.22)`;
-        box.style.borderColor = `rgb(${r}, ${g}, ${b})`;
-    }
 };
 
 window.toggleStatusBox = function(status) {
@@ -802,85 +836,6 @@ window.destroySensitiveData = async function(index) {
     }
 };
 
-// ملف العملاء
-function renderClientsList(searchQuery = "") {
-    const tbody = document.getElementById("clientsTableBody");
-    if(!tbody) return;
-    let clientsMap = {};
-    ordersData.forEach(o => {
-        let phoneKey = o.phone ? o.phone.trim() : "unknown";
-        if(!clientsMap[phoneKey]) {
-            clientsMap[phoneKey] = { name: o.name, phone: phoneKey, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
-        }
-        clientsMap[phoneKey].ordersCount += 1;
-        clientsMap[phoneKey].totalCoins += (o.totalQty || 0);
-        let pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
-        clientsMap[phoneKey].totalPaid += pVal;
-        clientsMap[phoneKey].orders.push(o);
-    });
-
-    let clientsArray = Object.values(clientsMap);
-    if(searchQuery.trim() !== "") {
-        clientsArray = clientsArray.filter(c => c.name.includes(searchQuery) || c.phone.includes(searchQuery));
-    }
-
-    if(clientsArray.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = "";
-    clientsArray.forEach((client) => {
-        tbody.innerHTML += `
-            <tr>
-                <td><b>${client.name}</b></td>
-                <td style="direction:ltr; text-align:right;">${client.phone}</td>
-                <td>${client.ordersCount}</td>
-                <td style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
-                <td style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
-                <td><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
-            </tr>
-        `;
-    });
-}
-
-window.filterClients = function(query) { renderClientsList(query); };
-
-window.openClientDetail = function(phone) {
-    let clientOrders = ordersData.filter(o => o.phone === phone);
-    if(clientOrders.length === 0) return;
-    const clientName = clientOrders[0].name;
-    const titleEl = document.getElementById("clientModalTitle");
-    const body = document.getElementById("clientModalBody");
-    if(titleEl) titleEl.innerText = `سجل العميل الفريد: ${clientName} (${phone})`;
-    if(body) {
-        let tableHtml = `<div class="table-responsive"><table><thead><tr><th>المرجع</th><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>`;
-        clientOrders.forEach(o => {
-            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${formatCoinsNumber(o.totalQty)}</b></td><td>${o.totalPrice}</td><td>${getStatusBadge(o.status)}</td></tr>`;
-        });
-        tableHtml += `</tbody></table></div>`;
-        body.innerHTML = tableHtml;
-    }
-    const clientModal = document.getElementById("clientDetailModal");
-    if(clientModal) clientModal.classList.add("active");
-};
-
-window.closeClientModal = function() {
-    const modal = document.getElementById("clientDetailModal");
-    if(modal) modal.classList.remove("active");
-};
-
-window.toggleArchive = async function(index) {
-    let order = ordersData[index];
-    try {
-        const orderRef = doc(db, "orders", order.id);
-        await updateDoc(orderRef, { archived: !order.archived });
-    } catch(err) {
-        console.error("Error toggling archive:", err);
-    }
-};
-
-// إدارة الأسعار والمدد وحفظها في Firestore
 function populatePricingUI() {
     if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.psRate;
     if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pcRate;
@@ -889,7 +844,6 @@ function populatePricingUI() {
     if(document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(pricingConfig.pcMin);
     if(document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(pricingConfig.pcMax);
     
-    // تعبئة حقول المدد الأربعة الجديدة في لوحة التحكم
     if(document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = pricingConfig.psWithdrawDuration;
     if(document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = pricingConfig.psTransferDuration;
     if(document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = pricingConfig.pcWithdrawDuration;
@@ -913,7 +867,6 @@ window.savePricingConfig = async function () {
       pcMin: Number(document.getElementById("pcMin").value.replace(/,/g,"")),
       pcMax: Number(document.getElementById("pcMax").value.replace(/,/g,"")),
 
-      // حفظ المدد الأربعة الجديدة المنفصلة
       psWithdrawDuration: document.getElementById("psWithdrawDuration").value,
       psTransferDuration: document.getElementById("psTransferDuration").value,
       pcWithdrawDuration: document.getElementById("pcWithdrawDuration").value,
@@ -952,7 +905,6 @@ window.saveStatusMessages = function() {
     alert("✨ تم حفظ رسائل الحالات بنجاح!");
 };
 
-// إدارة البنوك في Firestore
 function renderBanks() {
     const c = document.getElementById("banksListContainer");
     if(!c) return;
@@ -976,7 +928,6 @@ window.deleteBank = async function(i) {
     await saveAllSettingsToFirestore();
 };
 
-// إدارة المحافظ في Firestore
 function renderWallets() {
     const c = document.getElementById("walletsListContainer");
     if(!c) return;
@@ -1000,7 +951,6 @@ window.deleteWallet = async function(i) {
     await saveAllSettingsToFirestore();
 };
 
-// طرق الدفع المخصصة في Firestore
 function renderCustomPayments() {
     const c = document.getElementById("customPayMethodsContainer");
     if(!c) return;
@@ -1024,7 +974,6 @@ window.deleteCustomPayment = async function(i) {
     await saveAllSettingsToFirestore();
 };
 
-// شروط الخدمة في Firestore
 function renderTerms() {
     const c = document.getElementById("termsListContainer");
     if(!c) return;
@@ -1056,29 +1005,6 @@ function updateLiveDatetime() {
 setInterval(updateLiveDatetime, 1000);
 updateLiveDatetime();
 
-window.switchTab = function(tabId, element) {
-    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
-    document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
-    const targetTab = document.getElementById(tabId);
-    if(targetTab) targetTab.classList.add("active");
-    if(element) element.classList.add("active");
-    const titleHead = document.getElementById("pageTitleHeading");
-    const breadcrumbActive = document.getElementById("breadcrumbActive");
-    if(titleHead && element) titleHead.innerText = element.innerText.trim();
-    if(breadcrumbActive && element) breadcrumbActive.innerText = element.innerText.trim();
-    if (window.innerWidth <= 992) {
-        const sb = document.getElementById("sidebar");
-        if(sb) sb.classList.remove("mobile-open");
-    }
-};
-
-window.toggleSidebar = function() {
-    const s = document.getElementById("sidebar"), m = document.getElementById("mainWrapper");
-    if(!s || !m) return;
-    if (window.innerWidth <= 992) s.classList.toggle("mobile-open");
-    else { s.classList.toggle("collapsed"); m.classList.toggle("full-width"); }
-};
-
 window.toggleTheme = function() {
     document.body.classList.toggle("light-mode");
     const isLight = document.body.classList.contains("light-mode");
@@ -1101,14 +1027,14 @@ window.handleGlobalSearch = function(query) {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
         fullBody.innerHTML += `
             <tr>
-                <td><code style="color:var(--primary);">${order.reference}</code></td>
-                <td>#${order.id}</td>
-                <td><b>${order.name}</b></td>
-                <td>${order.platform}</td>
-                <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                <td style="color:var(--primary);">${order.totalPrice}</td>
-                <td>${getStatusBadge(order.status)}</td>
-                <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
+                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                <td data-label="رقم الطلب">#${order.id}</td>
+                <td data-label="اسم العميل"><b>${order.name}</b></td>
+                <td data-label="المنصة">${order.platform}</td>
+                <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                <td data-label="الحالة">${getStatusBadge(order.status)}</td>
+                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
             </tr>
         `;
     });
