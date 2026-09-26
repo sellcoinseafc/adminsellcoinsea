@@ -6,8 +6,7 @@
     <title>Sami Coins | Ultimate Admin Dashboard V2.0</title>  
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">  
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">  
-    <link rel="stylesheet" href="style.css">  
-    <link rel="stylesheet" href="admin.css">  
+    <link rel="stylesheet" href="./style.css">  
 </head>  
 <body>  
 
@@ -19,7 +18,7 @@
             <p>لوحة التحكم والإدارة المشفرة</p>
         </div>
         
-        <div id="loginErrorAlert" class="badge badge-error" style="display:none; width:100%; padding:10px; margin-bottom:15px; text-align:center;">
+        <div id="loginErrorAlert" class="badge badge-error" style="display:none; width:100%; padding:10px; margin-bottom:15px; text-align:center; white-space:normal; line-height:1.5;">
             بيانات الدخول غير صحيحة أو الحساب معطل.
         </div>
 
@@ -132,7 +131,7 @@
         <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والعروض</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> البنوك والمحافظ</a></li>  
-        <li><a class="sidebar-link" onclick="switchTab('productsTab', this)"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> منتجات سحب الكوينز 🆕</a></li>
+        <li><a class="sidebar-link" onclick="switchTab('productsTab', this)"><i class="fa-solid fa-layer-group" style="color:var(--primary);"></i> منتجات سحب الكوينز 🆕</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('adminsTab', this)"><i class="fa-solid fa-user-shield" style="color:#38bdf8;"></i> إدارة المشرفين 🆕</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('auditLogTab', this)"><i class="fa-solid fa-clipboard-list" style="color:#a855f7;"></i> سجل النظام Audit 🆕</a></li>  
         <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل الحالات</a></li>  
@@ -368,7 +367,7 @@
         </div>  
     </div>  
 
-    <!-- 7. قسم جديد: منتجات سحب الكوينز V2 (جديد) -->
+    <!-- 7. قسم جديد: منتجات سحب الكوينز V2 -->
     <div id="productsTab" class="tab-content">
         <div class="card-panel">
             <div class="panel-header">
@@ -410,7 +409,7 @@
         </div>
     </div>
 
-    <!-- 8. إدارة المشرفين والصلاحيات (قسم جديد V2) -->  
+    <!-- 8. إدارة المشرفين والصلاحيات -->  
     <div id="adminsTab" class="tab-content">  
         <div class="card-panel">  
             <div class="panel-header">  
@@ -431,7 +430,7 @@
         </div>  
     </div>  
 
-    <!-- 9. سجل النظام وحركات الأمان Audit Log (قسم جديد V2) -->  
+    <!-- 9. سجل النظام وحركات الأمان Audit Log -->  
     <div id="auditLogTab" class="tab-content">  
         <div class="card-panel">  
             <div class="panel-header">  
@@ -496,8 +495,7 @@
 
 </main>  
 
-<!-- السكربتات المودولية للفايربيز والإدارة -->  
-<script type="module" src="./firebase.js"></script>  
+<!-- السكربت المودولي للوحة التحكم -->  
 <script type="module" src="./admin.js"></script>  
 
 </body>  
