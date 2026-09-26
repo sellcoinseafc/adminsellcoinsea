@@ -1,19 +1,24 @@
 /* ==========================================================================
-   1. المتغيرات والأنماط الأساسية
+   1. المتغيرات والتصاميم المظلمة المطابقة للصورة
    ========================================================================== */
 :root {
-    --bg-color: #04060b;
-    --card-bg: #0b101b;
+    --bg-color: #060913;
+    --card-bg: #0d1322;
     --card-border: rgba(255, 255, 255, 0.08);
-    --input-bg: #131b2e;
+    --input-bg: #121a2d;
     --primary: #00ff87;
     --primary-hover: #00cc6a;
-    --text-main: #f8fafc;
-    --text-muted: #8a99ad;
-    --sidebar-width: 280px;
-    --excel-line-border: rgba(255, 255, 255, 0.12);
-    --excel-row-hover: rgba(0, 255, 135, 0.06);
-    --excel-header-bg: #111827;
+    --text-main: #f1f5f9;
+    --text-muted: #7e8c9f;
+    --sidebar-width: 240px;
+    
+    --table-row-bg: #0f172a;
+    --table-row-hover: #17233d;
+    
+    --neon-blue: #00a2ff;
+    --neon-purple: #a855f7;
+    --neon-green: #00ff87;
+    --neon-orange: #f59e0b;
 }
 
 body.light-mode {
@@ -23,9 +28,8 @@ body.light-mode {
     --input-bg: #f8fafc;
     --text-main: #0f172a;
     --text-muted: #64748b;
-    --excel-line-border: rgba(0, 0, 0, 0.12);
-    --excel-row-hover: rgba(0, 0, 0, 0.03);
-    --excel-header-bg: #e2e8f0;
+    --table-row-bg: #ffffff;
+    --table-row-hover: #f1f5f9;
 }
 
 * {
@@ -41,244 +45,54 @@ html, body {
     background-color: var(--bg-color);
     color: var(--text-main);
     font-family: 'Tajawal', sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ==========================================================================
-   2. الهيدر الثابت
+   2. القائمة الجانبية (Sidebar Image Style)
    ========================================================================== */
-.top-navbar {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    height: 65px;
-    background: var(--card-bg);
-    border-bottom: 1.5px solid var(--card-border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    z-index: 1000;
-    backdrop-filter: blur(10px);
-}
-
-.mobile-header-title {
-    display: none;
-    font-weight: 900;
-    font-size: 1rem;
-    color: var(--text-main);
-}
-
-.nav-right, .nav-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.toggle-sidebar-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--card-border);
-    color: var(--text-main);
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.toggle-sidebar-btn:active {
-    transform: scale(0.95);
-}
-
-.store-status-btn {
-    border: none;
-    padding: 8px 14px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.82rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-}
-
-.store-status-btn.open {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid #10b981;
-}
-
-.store-status-btn.closed {
-    background: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid #ef4444;
-}
-
-.search-box {
-    position: relative;
-    width: 220px;
-}
-
-.search-box input {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1px solid var(--card-border);
-    padding: 8px 36px 8px 12px;
-    border-radius: 10px;
-    color: var(--text-main);
-    font-size: 0.82rem;
-    outline: none;
-}
-
-.search-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 0.85rem;
-}
-
-.live-datetime-pill {
-    background: var(--input-bg);
-    border: 1px solid var(--card-border);
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    color: var(--primary);
-}
-
-.nav-icon-btn {
-    background: var(--input-bg);
-    border: 1px solid var(--card-border);
-    color: var(--text-main);
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-}
-
-.logout-btn {
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.3) !important;
-    font-size: 0.85rem;
-    padding: 6px 12px;
-    width: auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 800;
-}
-
-/* ==========================================================================
-   3. القائمة الجانبية (Sidebar)
-   ========================================================================== */
-.sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.65);
-    backdrop-filter: blur(4px);
-    z-index: 1040;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-}
-
-.sidebar-overlay.active {
-    opacity: 1;
-    visibility: visible;
-}
-
 .sidebar {
     position: fixed;
     top: 0;
     right: 0;
     bottom: 0;
     width: var(--sidebar-width);
-    background: var(--card-bg);
-    border-left: 1.5px solid var(--card-border);
+    background: #080d1a;
+    border-left: 1px solid var(--card-border);
     z-index: 1050;
     display: flex;
     flex-direction: column;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 20px 14px;
 }
 
-.sidebar-header {
+.brand-logo-box {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px;
-    border-bottom: 1px solid var(--card-border);
-}
-
-.sidebar-brand {
-    font-weight: 900;
-    font-size: 1.1rem;
-    color: var(--primary);
-}
-
-.sidebar-close-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    color: #fff;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: none;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
+    margin-bottom: 25px;
 }
 
-.sidebar-user {
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-bottom: 1px solid var(--card-border);
-}
-
-.user-avatar {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
-    color: #04060b;
+.brand-logo-text {
     font-weight: 900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1.6rem;
+    color: #ffffff;
+    letter-spacing: 2px;
+    line-height: 1;
 }
 
-.user-info strong {
-    display: block;
-    font-size: 0.9rem;
-}
-
-.user-info span {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+.brand-logo-sub {
+    font-weight: 900;
+    font-size: 1.3rem;
+    color: #f59e0b;
+    letter-spacing: 4px;
+    line-height: 1;
 }
 
 .sidebar-menu {
     list-style: none;
-    padding: 15px 10px;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
     flex-grow: 1;
 }
 
@@ -287,382 +101,487 @@ html, body {
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    color: var(--text-muted);
+    color: #94a3b8;
     text-decoration: none;
     border-radius: 12px;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 0.88rem;
     cursor: pointer;
-    margin-bottom: 4px;
     transition: all 0.2s ease;
 }
 
-.sidebar-link.active, .sidebar-link:hover {
-    background: rgba(0, 255, 135, 0.1);
-    color: var(--primary);
+.sidebar-link.active {
+    background: #00d26a;
+    color: #04060b;
+    box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3);
+}
+
+.sidebar-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.sidebar-footer-user {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+}
+
+.user-avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #334155;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.user-info-sm strong {
+    display: block;
+    font-size: 0.82rem;
+    color: #fff;
+}
+
+.user-info-sm span {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.btn-logout-icon {
+    background: transparent;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+    margin-right: auto;
+    font-size: 0.95rem;
 }
 
 /* ==========================================================================
-   4. المحتوى الرئيسي والبطاقات التفاعلية
+   3. الهيدر العلوى والشريط
    ========================================================================== */
 .main-wrapper {
     margin-right: var(--sidebar-width);
-    padding-top: 85px;
-    padding-left: 20px;
-    padding-right: 20px;
-    padding-bottom: 40px;
-    transition: margin-right 0.3s ease;
+    padding: 20px 24px;
 }
 
-.urgent-banner {
-    background: rgba(245, 158, 11, 0.12);
-    border: 1.5px solid #f59e0b;
-    border-radius: 16px;
-    padding: 14px 20px;
-    margin-bottom: 20px;
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-}
-
-.content-header {
-    margin-bottom: 24px;
-}
-
-.content-header h1 {
-    font-size: 1.4rem;
-    font-weight: 900;
-}
-
-.breadcrumb {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-top: 4px;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
-    margin-bottom: 24px;
-}
-
-.stat-card {
-    background: var(--card-bg);
-    border: 1.5px solid var(--card-border);
-    border-radius: 16px;
-    padding: 16px;
+.top-navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.top-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+}
+
+.user-status-dot {
+    width: 8px;
+    height: 8px;
+    background: #00ff87;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #00ff87;
+}
+
+.live-datetime-pill {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   4. البطاقات الأربع العلوية المطابقة للصورة (Glow KPI Cards)
+   ========================================================================== */
+.stats-grid-image {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card-img {
+    background: #0d1527;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.stat-card:hover {
+.stat-card-img:hover {
     transform: translateY(-3px);
-    border-color: var(--primary);
-    box-shadow: 0 8px 20px rgba(0, 255, 135, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
 }
 
-.stat-info span {
+.stat-img-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.icon-purple { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.3); }
+.icon-gold { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); }
+.icon-blue { background: rgba(0, 162, 255, 0.15); color: #00a2ff; border: 1px solid rgba(0, 162, 255, 0.3); }
+.icon-green { background: rgba(0, 255, 135, 0.15); color: #00ff87; border: 1px solid rgba(0, 255, 135, 0.3); }
+
+.stat-img-info span {
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 700;
     display: block;
 }
 
-.stat-info h3 {
-    font-size: 1.3rem;
+.stat-img-info h3 {
+    font-size: 1.35rem;
     font-weight: 900;
-    margin-top: 4px;
-}
-
-.stat-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-}
-
-.card-panel {
-    background: var(--card-bg);
-    border: 1.5px solid var(--card-border);
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 24px;
-}
-
-.panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 18px;
-}
-
-.panel-header h2 {
-    font-size: 1.05rem;
-    font-weight: 900;
+    color: #fff;
+    margin-top: 2px;
 }
 
 /* ==========================================================================
-   5. تصميم جداول أسطر Excel الاحترافية (Professional Grid Layout)
+   5. لوحة إدارة الطلبات المظلمة المزودة بشريط البحث والمجموعة
    ========================================================================== */
-.table-responsive {
-    width: 100%;
-    overflow-x: auto;
-    border-radius: 14px;
-    border: 1.5px solid var(--excel-line-border);
-    background: var(--card-bg);
-}
-
-.excel-grid-table {
-    width: 100%;
-    border-collapse: collapse;
-    text-align: right;
-    font-size: 0.85rem;
-}
-
-.excel-grid-table th {
-    background: var(--excel-header-bg);
-    color: var(--text-main);
-    font-weight: 900;
-    padding: 12px 14px;
-    border-bottom: 2px solid var(--excel-line-border);
-    border-left: 1px solid var(--excel-line-border);
-    white-space: nowrap;
-}
-
-.excel-grid-table th:last-child {
-    border-left: none;
-}
-
-.excel-grid-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--excel-line-border);
-    border-left: 1px solid var(--excel-line-border);
-    white-space: nowrap;
-    transition: background 0.15s ease;
-}
-
-.excel-grid-table td:last-child {
-    border-left: none;
-}
-
-.excel-grid-table tbody tr {
-    transition: background 0.15s ease;
-}
-
-.excel-grid-table tbody tr:hover {
-    background: var(--excel-row-hover);
-}
-
-/* ==========================================================================
-   6. عناصر النماذج والشارات
-   ========================================================================== */
-.form-grid-2 {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-}
-
-.form-group {
-    margin-bottom: 14px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 0.8rem;
-    font-weight: 800;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
-.form-control {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1.5px solid var(--card-border);
-    border-radius: 12px;
-    padding: 10px 14px;
-    color: var(--text-main);
-    font-size: 0.88rem;
-    outline: none;
-    font-family: 'Tajawal', sans-serif;
-}
-
-.btn-custom {
-    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
-    color: #04060b;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 12px;
-    font-weight: 900;
-    font-size: 0.88rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-action {
-    background: rgba(255, 255, 255, 0.05);
+.main-orders-panel {
+    background: #090e1a;
     border: 1px solid var(--card-border);
-    color: var(--text-main);
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.badge {
-    padding: 4px 10px;
     border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 800;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.badge-new { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
-.badge-review { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
-.badge-progress { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid #a855f7; }
-.badge-finished { background: rgba(0, 255, 135, 0.15); color: #00ff87; border: 1px solid #00ff87; }
-.badge-transferred { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
-.badge-completed { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
-.badge-error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
-.badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-.badge-archived { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid #94a3b8; }
-.badge-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
-
-/* ==========================================================================
-   7. النوافذ المنبثقة (Modals)
-   ========================================================================== */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.75);
-    backdrop-filter: blur(5px);
-    z-index: 2000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-}
-
-.modal-overlay.active {
-    display: flex;
-}
-
-.modal-card {
-    background: var(--card-bg);
-    border: 1.5px solid var(--card-border);
-    border-radius: 20px;
-    width: 100%;
-    max-width: 650px;
-    max-height: 90vh;
-    overflow-y: auto;
     padding: 24px;
 }
 
-.modal-header {
+.orders-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.modal-close-btn {
-    background: transparent;
-    border: none;
+.orders-title {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #fff;
+}
+
+.orders-subtitle {
+    font-size: 0.8rem;
     color: var(--text-muted);
-    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.btn-create-order {
+    background: #00ff87;
+    color: #04060b;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 15px rgba(0, 255, 135, 0.25);
+}
+
+.orders-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-search-input {
+    position: relative;
+    flex-grow: 1;
+    min-width: 280px;
+}
+
+.filter-search-input input {
+    width: 100%;
+    background: #0d1527;
+    border: 1px solid var(--card-border);
+    padding: 10px 40px 10px 14px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.83rem;
+    outline: none;
+}
+
+.search-icon-green {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00ff87;
+    font-size: 0.9rem;
+}
+
+.filter-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.date-picker-box {
+    background: #0d1527;
+    border: 1px solid var(--card-border);
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-select {
+    background: #0d1527;
+    border: 1px solid var(--card-border);
+    padding: 9px 12px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.8rem;
+    outline: none;
     cursor: pointer;
 }
 
-.admin-summary-banner {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    background: var(--input-bg);
-    border: 1.5px solid var(--card-border);
-    border-radius: 16px;
-    padding: 14px;
-    margin-bottom: 18px;
-    text-align: center;
+.filter-refresh-btn {
+    background: #0d1527;
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
 
-.admin-banner-item i {
-    font-size: 1.2rem;
-    margin-bottom: 4px;
+/* ==========================================================================
+   6. جدول أسطر الطلبات المظلم المطابق للصورة 100%
+   ========================================================================== */
+.table-responsive-container {
+    width: 100%;
+    overflow-x: auto;
 }
 
-.admin-banner-label {
+.image-style-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 6px;
+    text-align: right;
+    font-size: 0.84rem;
+}
+
+.image-style-table th {
+    padding: 12px;
+    color: var(--text-muted);
+    font-weight: 800;
+    font-size: 0.78rem;
+    border: none;
+    white-space: nowrap;
+}
+
+.image-style-table tbody tr {
+    background: #0c1220;
+    transition: background 0.2s ease;
+}
+
+.image-style-table tbody tr:hover {
+    background: #121b2e;
+}
+
+.image-style-table td {
+    padding: 12px;
+    white-space: nowrap;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.image-style-table td:first-child {
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-right: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.image-style-table td:last-child {
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+/* أزرار الحالات والأيقونات الفاخرة المترجمة من الصورة */
+.order-id-highlight {
+    color: #00ff87;
+    font-weight: 900;
+    font-size: 0.88rem;
+}
+
+.client-name-cell strong {
+    display: block;
+    color: #fff;
+}
+
+.client-name-cell span {
     font-size: 0.72rem;
     color: var(--text-muted);
 }
 
-.admin-banner-value {
-    font-size: 0.95rem;
-    font-weight: 900;
+.platform-pill-img {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
 }
 
-.admin-credential-banner {
-    background: var(--input-bg);
-    border: 1px dashed var(--card-border);
-    padding: 10px 14px;
-    border-radius: 12px;
-    margin-bottom: 8px;
+.platform-pill-img i { font-size: 1rem; }
+.platform-ps { color: #0070d1; }
+.platform-xbox { color: #107c10; }
+.platform-pc { color: #00a2ff; }
+
+/* شارات الحالة المنحنية المضيئة (Status Pills) */
+.status-pill-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-progress-img { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); }
+.status-new-img { background: rgba(0, 162, 255, 0.15); color: #00a2ff; border: 1px solid rgba(0, 162, 255, 0.4); }
+.status-finished-img { background: rgba(0, 255, 135, 0.15); color: #00ff87; border: 1px solid rgba(0, 255, 135, 0.4); }
+.status-transferred-img { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+/* شريط التقدم النيون في جدول الصفوف */
+.table-progress-wrapper {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
+    gap: 8px;
+    width: 110px;
 }
 
-.cred-title {
-    font-size: 0.78rem;
-    color: var(--text-muted);
-}
-
-.cred-val {
-    font-family: monospace;
-    font-weight: bold;
-}
-
-.progress-bar-container {
-    height: 8px;
+.table-progress-bar {
+    flex-grow: 1;
+    height: 6px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 12px;
 }
 
-.progress-bar-fill {
+.table-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #00ff87, #60efff);
-    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.fill-orange { background: #f59e0b; }
+.fill-green { background: #00ff87; }
+.fill-blue { background: #00a2ff; }
+
+/* أزرار الإجراءات الثلاثية المصغرة */
+.action-buttons-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-icon-circle {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-icon-circle:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #00ff87;
+}
+
+/* شريط الترقيم في الأسفل */
+.orders-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--card-border);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pag-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #0d1527;
+    border: 1px solid var(--card-border);
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.pag-btn.active {
+    background: #00ff87;
+    color: #04060b;
+    border-color: #00ff87;
 }
 
 /* ==========================================================================
-   8. تجاوب الجوال الشامل
+   7. تجاوب الجوال الشامل
    ========================================================================== */
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
+    .stats-grid-image {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
     .sidebar {
         transform: translateX(100%);
     }
@@ -671,91 +590,12 @@ html, body {
         transform: translateX(0);
     }
 
-    .sidebar-close-btn {
-        display: flex;
-    }
-
     .main-wrapper {
         margin-right: 0 !important;
-        padding-left: 12px;
-        padding-right: 12px;
+        padding: 12px;
     }
 
-    .mobile-header-title {
-        display: block;
-    }
-
-    .search-box, .live-datetime-pill {
-        display: none;
-    }
-
-    .logout-btn span {
-        display: none;
-    }
-
-    .flex-mobile-column {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 12px;
-    }
-
-    .responsive-table, 
-    .responsive-table tbody, 
-    .responsive-table tr, 
-    .responsive-table td {
-        display: block;
-        width: 100%;
-    }
-
-    .responsive-table thead {
-        display: none;
-    }
-
-    .responsive-table tr {
-        background: var(--card-bg);
-        border: 1.5px solid var(--card-border);
-        border-radius: 16px;
-        padding: 14px;
-        margin-bottom: 14px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .responsive-table td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 8px 0;
-        border-bottom: 1px dashed var(--card-border);
-        border-left: none;
-        font-size: 0.85rem;
-    }
-
-    .responsive-table td:last-child {
-        border-bottom: none;
-        padding-top: 12px;
-        justify-content: flex-end;
-        gap: 8px;
-    }
-
-    .responsive-table td::before {
-        content: attr(data-label);
-        font-weight: 800;
-        color: var(--text-muted);
-        font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    .top-navbar {
-        padding: 0 10px;
-    }
-
-    .btn-custom {
-        width: 100%;
-        justify-content: center;
+    .stats-grid-image {
+        grid-template-columns: 1fr;
     }
 }
