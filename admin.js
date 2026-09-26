@@ -104,7 +104,7 @@ window.copyOrderRef = async function (ref) {
 };
 
 // ==========================================================================
-// 4) بدء التشغيل وحارس الأمان المحدث (initAuthGuard)
+// 4) حارس الأمان والتوثيق المحدث بالمنطق المضمون (initAuthGuard)
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -130,44 +130,53 @@ function initAuthGuard() {
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
-      // 🛑 حظر فوري لأي بريد خارج القائمة المسموحة
+      // 1. الفحص المبدئي القاطع للبريد الإلكتروني
       if (!ALLOWED_EMAILS.includes(user.email)) {
         await signOut(auth);
-        alert("⚠️ غير مصرح لك بدخول لوحة التحكم.");
+        alert("غير مصرح لك بدخول لوحة التحكم");
         if (loginOverlay) loginOverlay.classList.add("active");
         return;
       }
 
       try {
+        // 2. مطابقة الـ UID الحقيقي للحساب في مجموعة admins
         const adminRef = doc(db, "admins", user.uid);
-        const adminDoc = await getDoc(adminRef);
+        const adminSnap = await getDoc(adminRef);
 
-        if (adminDoc.exists()) {
-          const data = adminDoc.data();
-          if (data.active === false) {
-            showLoginError("⚠️ هذا الحساب معطل من قبل مالك النظام.");
-            await signOut(auth);
-            if (loginOverlay) loginOverlay.classList.add("active");
-            return;
-          }
-          currentAdmin = { uid: user.uid, ...data };
-          await updateDoc(adminRef, { lastLogin: serverTimestamp() });
-          
-          if (loginOverlay) loginOverlay.classList.remove("active");
-          updateSidebarAdminUI();
-          applyRolePermissions();
-          
-          // 🚀 بدء المزامنة المباشرة فور تسجيل الدخول
-          startAllListeners();
-          
-          await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
-        } else {
-          showLoginError("⚠️ هذا الحساب غير مصرح له بالدخول للوحة التحكم.");
+        if (!adminSnap.exists()) {
+          alert("هذا الحساب غير مصرح له بدخول لوحة التحكم (مستند المشرف غير موجود)");
           await signOut(auth);
           if (loginOverlay) loginOverlay.classList.add("active");
+          return;
         }
+
+        const data = adminSnap.data();
+
+        // 3. التحقق من حالة تفعيل المشرف
+        if (data.active === false) {
+          alert("هذا الحساب معطل من قبل مالك النظام");
+          await signOut(auth);
+          if (loginOverlay) loginOverlay.classList.add("active");
+          return;
+        }
+
+        currentAdmin = { uid: user.uid, ...data };
+
+        // 4. تحديث آخر تسجيل دخول
+        await updateDoc(adminRef, {
+          lastLogin: serverTimestamp()
+        });
+
+        // 5. رفع الشاشة المعتمة وتمرير الدخول وإطلاق المستمعات المباشرة
+        if (loginOverlay) loginOverlay.classList.remove("active");
+        updateSidebarAdminUI();
+        applyRolePermissions();
+        startAllListeners();
+
+        await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
+
       } catch (err) {
-        console.error("Auth Guard Firestore Error:", err);
+        console.error("Auth Guard Error:", err);
         showLoginError("⚠️ خطأ في التحقق من صلاحيات الحساب: " + err.message);
         await signOut(auth);
         if (loginOverlay) loginOverlay.classList.add("active");
