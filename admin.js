@@ -17,7 +17,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 // ==========================================
-// 0. التحكم بالواجهة والقائمة الجانبية للجوال
+// 0. التحكم بالواجهة والقائمة الجانبية
 // ==========================================
 window.toggleSidebar = function(forceState) {
     const sidebar = document.getElementById("sidebar");
@@ -41,7 +41,6 @@ window.toggleSidebar = function(forceState) {
 window.switchTab = function(tabId, element) {
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
-    document.querySelectorAll(".bottom-nav-item").forEach(item => item.classList.remove("active"));
     
     const targetTab = document.getElementById(tabId);
     if(targetTab) targetTab.classList.add("active");
@@ -65,12 +64,10 @@ onAuthStateChanged(auth, (user) => {
 
     const sidebarName = document.getElementById("sidebarUserName");
     const sidebarAvatar = document.getElementById("sidebarUserAvatar");
-    const topNavAvatar = document.getElementById("topNavUserAvatar");
     
     let uName = user.displayName || user.email.split('@')[0];
     if (sidebarName) sidebarName.innerText = uName;
     if (sidebarAvatar) sidebarAvatar.innerText = uName[0].toUpperCase();
-    if (topNavAvatar) topNavAvatar.innerText = uName[0].toUpperCase();
 
     initSystemSettingsListener();
     initOrdersListener();
@@ -146,10 +143,7 @@ let pricingConfig = {
     promoActive: false, promoRate: 220, promoExpiry: "", promoText: "🔥 عرض لفترة محدودة!"
 };
 
-let ordersData = []; 
-let stockData = { PlayStation: 0, PC: 0 };
-let barChartInstance = null;
-let donutChartInstance = null;
+let ordersData = [];
 
 function formatCoinsNumber(num) {
     if(num === "" || num === null || isNaN(num)) return "0";
@@ -268,29 +262,6 @@ window.toggleStoreStatus = async function() {
     alert(isStoreOpen ? "🟢 تم فتح المتجر وتحديث قاعدة البيانات!" : "🔴 تم إغلاق المتجر وتحديث قاعدة البيانات!");
 };
 
-function calculateDynamicStock() {
-    let psStock = 0;
-    let pcStock = 0;
-
-    ordersData.forEach(o => {
-        if (o.status === 'new' || o.status === 'review' || o.status === 'progress') {
-            let total = Number(o.totalQty) || 0;
-            let withdrawn = Number(o.withdrawnQty) || 0;
-            let pending = Math.max(0, total - withdrawn);
-
-            let plat = String(o.platform || "").toLowerCase();
-            if (plat.includes('pc') || plat.includes('حاسب')) {
-                pcStock += pending;
-            } else {
-                psStock += pending;
-            }
-        }
-    });
-
-    stockData.PlayStation = psStock;
-    stockData.PC = pcStock;
-}
-
 function initOrdersListener() {
     const ref = collection(db, "orders");
     onSnapshot(ref, (snapshot) => {
@@ -321,7 +292,6 @@ function initOrdersListener() {
                 ...data
             };
         });
-        calculateDynamicStock();
         updateDashboardStats();
         renderOrdersTables();
     }, (error) => {
@@ -344,7 +314,6 @@ function updateDashboardStats() {
     let countProgress = ordersData.filter(o => o.status === 'progress').length;
     let countFinished = ordersData.filter(o => o.status === 'finished').length;
     let countCancelled = ordersData.filter(o => o.status === 'cancelled').length;
-    let countTransferred = ordersData.filter(o => o.status === 'transferred').length;
 
     let transferNeededList = ordersData.filter(o => o.status === 'finished' || (Number(o.withdrawnQty) >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
     let countTransferNeeded = transferNeededList.length;
@@ -376,20 +345,15 @@ function updateDashboardStats() {
     }
 
     let totalCompletedCoins = ordersData.filter(o => o.status === 'completed' || o.status === 'finished' || o.status === 'transferred').reduce((sum, o) => sum + (o.totalQty || 0), 0);
-    let totalWithdrawnQtySum = ordersData.reduce((sum, o) => sum + (Number(o.withdrawnQty) || 0), 0);
-    let totalQtySum = ordersData.reduce((sum, o) => sum + (Number(o.totalQty) || 0), 0);
-    let remainingCoinsSum = Math.max(0, totalQtySum - totalWithdrawnQtySum);
 
     let totalTransferredMoney = ordersData.filter(o => o.status === 'transferred' || o.status === 'completed').reduce((sum, o) => {
         let p = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
         return sum + p;
     }, 0);
 
-    // تحديث الأرقام بجميع البطاقات
     if(document.getElementById("statAllOrders")) document.getElementById("statAllOrders").innerText = countAll;
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
-    if(document.getElementById("statProgressOrders2")) document.getElementById("statProgressOrders2").innerText = countProgress;
     if(document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
     if(document.getElementById("statCancelledOrders")) document.getElementById("statCancelledOrders").innerText = countCancelled;
     if(document.getElementById("statTransferNeededOrders")) document.getElementById("statTransferNeededOrders").innerText = countTransferNeeded;
@@ -397,149 +361,11 @@ function updateDashboardStats() {
     if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
     if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " SAR";
 
-    // القسم 7 — ملخص الكوينز
-    if(document.getElementById("summaryWithdrawnQty")) document.getElementById("summaryWithdrawnQty").innerText = formatCoinsNumber(totalWithdrawnQtySum);
-    if(document.getElementById("summaryRemainingQty")) document.getElementById("summaryRemainingQty").innerText = formatCoinsNumber(remainingCoinsSum);
-    let coinsPercent = totalQtySum > 0 ? Math.min(100, Math.round((totalWithdrawnQtySum / totalQtySum) * 100)) : 0;
-    if(document.getElementById("summaryProgressPercent")) document.getElementById("summaryProgressPercent").innerText = coinsPercent + "%";
-    if(document.getElementById("summaryProgressFill")) document.getElementById("summaryProgressFill").style.width = coinsPercent + "%";
-
-    // القسم 8 — المنصات الأكثر طلباً
-    let psCount = ordersData.filter(o => o.platform === 'PlayStation').length;
-    let xboxCount = ordersData.filter(o => o.platform === 'Xbox').length;
-    let pcCount = ordersData.filter(o => o.platform === 'PC').length;
-    let totalPlat = countAll || 1;
-
-    let psPct = Math.round((psCount / totalPlat) * 100);
-    let xboxPct = Math.round((xboxCount / totalPlat) * 100);
-    let pcPct = Math.round((pcCount / totalPlat) * 100);
-
-    if(document.getElementById("rankPsPercent")) document.getElementById("rankPsPercent").innerText = psPct + "%";
-    if(document.getElementById("rankPsOrders")) document.getElementById("rankPsOrders").innerText = psCount + " طلب";
-    if(document.getElementById("rankPsFill")) document.getElementById("rankPsFill").style.width = psPct + "%";
-
-    if(document.getElementById("rankXboxPercent")) document.getElementById("rankXboxPercent").innerText = xboxPct + "%";
-    if(document.getElementById("rankXboxOrders")) document.getElementById("rankXboxOrders").innerText = xboxCount + " طلب";
-    if(document.getElementById("rankXboxFill")) document.getElementById("rankXboxFill").style.width = xboxPct + "%";
-
-    if(document.getElementById("rankPcPercent")) document.getElementById("rankPcPercent").innerText = pcPct + "%";
-    if(document.getElementById("rankPcOrders")) document.getElementById("rankPcOrders").innerText = pcCount + " طلب";
-    if(document.getElementById("rankPcFill")) document.getElementById("rankPcFill").style.width = pcPct + "%";
-
-    // القسم 5 — أحدث 5 طلبات
-    renderLatest5Orders();
-    // القسم 9 — النشاطات الحية
-    renderActivityFeed();
-
     renderTransferAlertsTable(transferNeededList);
-    renderChartsData(psPct, xboxPct, pcPct, countAll);
-}
-
-function renderLatest5Orders() {
-    const container = document.getElementById("latestOrdersContainer");
-    if(!container) return;
-    let latest = ordersData.slice(0, 5);
-    if(latest.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:10px;">لا توجد طلبات حديثة.</div>`;
-        return;
-    }
-    container.innerHTML = "";
-    latest.forEach(o => {
-        let actualIndex = ordersData.findIndex(item => item.id === o.id);
-        let platIcon = "fa-brands fa-playstation";
-        if(o.platform === 'Xbox') platIcon = "fa-brands fa-xbox";
-        else if(o.platform === 'PC') platIcon = "fa-brands fa-windows";
-
-        container.innerHTML += `
-            <div class="latest-order-item" onclick="openOrderModal(${actualIndex})">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="${platIcon} order-platform-ic"></i>
-                    <div>
-                        <span class="order-id-badge">#${o.reference}</span>
-                        <div class="order-client-name">${o.name}</div>
-                    </div>
-                </div>
-                <div style="text-align:left;">
-                    <strong style="color:var(--primary); font-size:0.85rem;">${formatCoinsNumber(o.totalQty)}</strong>
-                    <div style="font-size:0.7rem; color:var(--text-muted);">${o.totalPrice}</div>
-                </div>
-            </div>
-        `;
-    });
-}
-
-function renderActivityFeed() {
-    const container = document.getElementById("activityFeedContainer");
-    if(!container) return;
-    let allLogs = [];
-    ordersData.forEach(o => {
-        if(o.auditLogs) {
-            o.auditLogs.forEach(l => {
-                allLogs.push({ text: `${l.action} من طلب #${o.reference}`, time: l.time });
-            });
-        }
-    });
-
-    if(allLogs.length === 0) {
-        container.innerHTML = `<div class="activity-feed-item"><span class="feed-txt">لا توجد تحديثات حية مؤخراً</span></div>`;
-        return;
-    }
-
-    container.innerHTML = "";
-    allLogs.slice(0, 4).forEach(item => {
-        container.innerHTML += `
-            <div class="activity-feed-item">
-                <span class="feed-dot dot-green"></span>
-                <span class="feed-txt">${item.text}</span>
-                <span class="feed-time">${item.time}</span>
-            </div>
-        `;
-    });
-}
-
-function renderChartsData(psPct, xboxPct, pcPct, totalCount) {
-    if(document.getElementById("donutTotalCount")) document.getElementById("donutTotalCount").innerText = totalCount;
-    if(document.getElementById("legPsPercent")) document.getElementById("legPsPercent").innerText = psPct + "%";
-    if(document.getElementById("legXboxPercent")) document.getElementById("legXboxPercent").innerText = xboxPct + "%";
-    if(document.getElementById("legPcPercent")) document.getElementById("legPcPercent").innerText = pcPct + "%";
-
-    const barCtx = document.getElementById('ordersBarChart')?.getContext('2d');
-    if (barCtx) {
-        if (barChartInstance) barChartInstance.destroy();
-        barChartInstance = new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: ['18 SEP', '19 SEP', '20 SEP', '21 SEP', '22 SEP', '23 SEP', '24 SEP'],
-                datasets: [{
-                    data: [12, 18, 25, 20, 28, 22, totalCount || 17],
-                    backgroundColor: '#00FF87',
-                    borderRadius: 6
-                }]
-            },
-            options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
-        });
-    }
-
-    const donutCtx = document.getElementById('platformDonutChart')?.getContext('2d');
-    if (donutCtx) {
-        if (donutChartInstance) donutChartInstance.destroy();
-        donutChartInstance = new Chart(donutCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['PlayStation', 'Xbox', 'PC'],
-                datasets: [{
-                    data: [psPct || 45, xboxPct || 30, pcPct || 25],
-                    backgroundColor: ['#0070d1', '#107c10', '#00a2ff'],
-                    borderWidth: 0
-                }]
-            },
-            options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
-        });
-    }
 }
 
 window.filterOrdersByStatus = function(status) {
-    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[1].querySelector('a'));
+    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[0].querySelector('a'));
     const statusFilter = document.getElementById("orderStatusFilter");
     if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
