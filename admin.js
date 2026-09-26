@@ -37,7 +37,7 @@ onAuthStateChanged(auth, (user) => {
     if (sidebarName) sidebarName.innerText = user.displayName || user.email.split('@')[0];
     if (sidebarAvatar) sidebarAvatar.innerText = (user.displayName || user.email)[0].toUpperCase();
 
-    // تشغيل استماع قاعدة البيانات والإعدادات فور تأكيد الهوية
+    // تشغيل استماع قاعدة البيانات والإعدادات فور تأكيد الهوية المصرح لها
     initSystemSettingsListener();
     initOrdersListener();
   } else {
@@ -172,7 +172,7 @@ async function saveAllSettingsToFirestore() {
             updatedAt: serverTimestamp()
         };
 
-        await setDoc(doc(db, "system", "settings"), config);
+        await setDoc(doc(db, "system", "settings"), config, { merge: true });
     } catch (err) {
         console.error("Error saving settings:", err);
     }
@@ -224,7 +224,7 @@ function initSystemSettingsListener() {
                 customPayments: customPaymentsList,
                 terms: storeTerms,
                 updatedAt: serverTimestamp()
-            });
+            }, { merge: true });
         }
     }, (error) => {
         console.error("Error loading settings from Firestore:", error);
@@ -902,36 +902,41 @@ function populatePricingUI() {
 }
 
 window.savePricingConfig = async function () {
-  const config = {
-    storeOpen: isStoreOpen,
-    psRate: Number(document.getElementById("psRate").value),
-    pcRate: Number(document.getElementById("pcRate").value),
+  try {
+    const config = {
+      storeOpen: isStoreOpen,
+      psRate: Number(document.getElementById("psRate").value),
+      pcRate: Number(document.getElementById("pcRate").value),
 
-    psMin: Number(document.getElementById("psMin").value.replace(/,/g,"")),
-    psMax: Number(document.getElementById("psMax").value.replace(/,/g,"")),
-    pcMin: Number(document.getElementById("pcMin").value.replace(/,/g,"")),
-    pcMax: Number(document.getElementById("pcMax").value.replace(/,/g,"")),
+      psMin: Number(document.getElementById("psMin").value.replace(/,/g,"")),
+      psMax: Number(document.getElementById("psMax").value.replace(/,/g,"")),
+      pcMin: Number(document.getElementById("pcMin").value.replace(/,/g,"")),
+      pcMax: Number(document.getElementById("pcMax").value.replace(/,/g,"")),
 
-    // حفظ المدد الأربعة الجديدة المنفصلة
-    psWithdrawDuration: document.getElementById("psWithdrawDuration").value,
-    psTransferDuration: document.getElementById("psTransferDuration").value,
-    pcWithdrawDuration: document.getElementById("pcWithdrawDuration").value,
-    pcTransferDuration: document.getElementById("pcTransferDuration").value,
+      // حفظ المدد الأربعة الجديدة المنفصلة
+      psWithdrawDuration: document.getElementById("psWithdrawDuration").value,
+      psTransferDuration: document.getElementById("psTransferDuration").value,
+      pcWithdrawDuration: document.getElementById("pcWithdrawDuration").value,
+      pcTransferDuration: document.getElementById("pcTransferDuration").value,
 
-    promoActive: document.getElementById("promoActiveSelect").value === "true",
-    promoRate: Number(document.getElementById("promoRateInput").value),
-    promoExpiry: document.getElementById("promoExpiryInput").value,
-    promoText: document.getElementById("promoText").value,
+      promoActive: document.getElementById("promoActiveSelect").value === "true",
+      promoRate: Number(document.getElementById("promoRateInput").value),
+      promoExpiry: document.getElementById("promoExpiryInput").value,
+      promoText: document.getElementById("promoText").value,
 
-    banks: banksList,
-    wallets: walletsList,
-    customPayments: customPaymentsList,
-    terms: storeTerms,
-    updatedAt: serverTimestamp()
-  };
+      banks: banksList,
+      wallets: walletsList,
+      customPayments: customPaymentsList,
+      terms: storeTerms,
+      updatedAt: serverTimestamp()
+    };
 
-  await setDoc(doc(db, "system", "settings"), config);
-  alert("✅ تم حفظ الإعدادات ومزامنتها مع صفحة الطلبات");
+    await setDoc(doc(db, "system", "settings"), config, { merge: true });
+    alert("تم حفظ الإعدادات بنجاح");
+  } catch (err) {
+    console.error("Error saving pricing config:", err);
+    alert("❌ حدث خطأ أثناء حفظ الإعدادات في قاعدة البيانات.");
+  }
 };
 
 window.saveStatusMessages = function() {
