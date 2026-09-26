@@ -28,7 +28,15 @@ import {
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // ==========================================================================
-// 1. المتغيرات العامة وحالة النظام والمشرف الحالي
+// 1) قائمة الإيميلات المصرح لها بدخول لوحة التحكم حكراً
+// ==========================================================================
+const ALLOWED_EMAILS = [
+  "mt.samicoins@gmail.com",
+  "psnsa7@gmail.com"
+];
+
+// ==========================================================================
+// 2) المتغيرات العامة وحالة النظام والمشرف الحالي
 // ==========================================================================
 let currentAdmin = {
   uid: null,
@@ -76,7 +84,7 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 2. البدء الفوري والسريع لمستمعات البيانات فور توثيق الدخول
+// 3) بدء التشغيل السريع وحارس الأمان المحدث (initAuthGuard)
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -102,6 +110,14 @@ function initAuthGuard() {
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
+      // 🛑 الفحص الفوري للبريد الإلكتروني
+      if (!ALLOWED_EMAILS.includes(user.email)) {
+        await signOut(auth);
+        alert("غير مصرح لك بدخول لوحة التحكم");
+        if (loginOverlay) loginOverlay.classList.add("active");
+        return;
+      }
+
       try {
         const adminRef = doc(db, "admins", user.uid);
         const adminDoc = await getDoc(adminRef);
@@ -121,7 +137,7 @@ function initAuthGuard() {
           updateSidebarAdminUI();
           applyRolePermissions();
           
-          // 🚀 تشغيل المزامنة المباشرة فوراً بعد التحقق لمنع تأخير تحضير البيانات
+          // 🚀 بدء المزامنة المباشرة للبيانات فور التوثيق
           startAllListeners();
           
           await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
@@ -231,7 +247,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 3. نظام سجل النظام الأمني التلقائي (Audit Log System)
+// 4) سجل النظام الأمني التلقائي (Audit Log System)
 // ==========================================================================
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
@@ -293,7 +309,7 @@ window.filterAuditLogs = function (query) {
 };
 
 // ==========================================================================
-// 4. إدارة المشرفين والصلاحيات (`admins/{uid}` + Firebase Auth)
+// 5) إدارة المشرفين والصلاحيات (`admins/{uid}` + Firebase Auth)
 // ==========================================================================
 function initAdminsListener() {
   return onSnapshot(collection(db, "admins"), (snapshot) => {
@@ -418,7 +434,7 @@ window.deleteAdminDoc = async function (uid, name) {
 };
 
 // ==========================================================================
-// 5. المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
+// 6) المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
@@ -549,7 +565,7 @@ function updateDashboardStats() {
 }
 
 // ==========================================================================
-// 6. عداد التحويل المالي التنازلي
+// 7) عداد التحويل المالي التنازلي
 // ==========================================================================
 function getTransferTimeRemaining(finishedAt) {
   if (!finishedAt) return `<span class="countdown-pill"><i class="fa-solid fa-clock"></i> بدأ العد من لحظة الانتهاء</span>`;
@@ -597,7 +613,7 @@ function renderTransferAlertsTable(list) {
 }
 
 // ==========================================================================
-// 7. عرض جدول الطلبات الشامل والفلترة
+// 8) عرض جدول الطلبات الشامل والفلترة
 // ==========================================================================
 window.renderOrdersTables = function () {
   sortOrdersNewestFirst();
@@ -693,7 +709,7 @@ function getErrorBadge(code) {
 }
 
 // ==========================================================================
-// 8. الثيم والألوان الرسمية للمنصات (PlayStation, Xbox, PC)
+// 9) الثيم والألوان الرسمية للمنصات (PlayStation, Xbox, PC)
 // ==========================================================================
 function getPlatformTheme(platformName) {
   const plat = String(platformName || "").toLowerCase();
@@ -725,7 +741,7 @@ function getPlatformTheme(platformName) {
 }
 
 // ==========================================================================
-// 9. نافذة عرض تفاصيل الطلب المتطورة كلياً V3.0
+// 10) نافذة عرض تفاصيل الطلب المتطورة كلياً V3.0
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -917,7 +933,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 7. شريط إنجاز السحب وتعديل الكمية فقط (إلغاء حقل الكمية المتبقية المكرر في الأسفل)
+  // 7. شريط إنجاز السحب وتعديل الكمية فقط
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
 
   const controlsHtml = `
@@ -950,7 +966,7 @@ window.openOrderModal = function (index) {
 };
 
 // ==========================================================================
-// 10. الدوال المساعدة للنسخ والتحديث
+// 11) الدوال المساعدة للنسخ والتحديث
 // ==========================================================================
 window.copyEaAccountData = async function (index) {
   const order = ordersData[index];
@@ -1074,7 +1090,7 @@ window.toggleArchive = async function (index) {
 };
 
 // ==========================================================================
-// 11. ملفات العملاء وسجل الحركات
+// 12) ملفات العملاء وسجل الحركات
 // ==========================================================================
 function renderClientsList(searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
@@ -1162,7 +1178,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 12. إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
+// 13) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -1396,7 +1412,7 @@ window.saveGeneralSettings = async function () {
 };
 
 // ==========================================================================
-// 13. التنقل والتصفح والبحث الشامل
+// 14) التنقل والتصفح والبحث الشامل
 // ==========================================================================
 function updateLiveDatetime() {
   const now = new Date();
@@ -1493,6 +1509,6 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 14. بدء التشغيل التلقائي وحارس الأمان
+// 15) بدء التشغيل الحصري
 // ==========================================================================
 initAuthGuard();
