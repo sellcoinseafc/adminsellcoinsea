@@ -32,9 +32,11 @@ let storeTerms = [
     "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
 ];
 let pricingConfig = {
-    ps: { rate: "200", min: "100,000", max: "5,000,000", duration: "3 - 5 أيام عمل" },
-    pc: { rate: "150", min: "100,000", max: "1,000,000", duration: "2 - 4 أيام عمل" },
-    promo: { active: "false", rate: "220", expiry: "", text: "🔥 عرض لفترة محدودة!" }
+    psRate: "200", pcRate: "150",
+    psMin: "100,000", psMax: "5,000,000",
+    pcMin: "100,000", pcMax: "1,000,000",
+    psDuration: "3 - 5 أيام عمل", pcDuration: "2 - 4 أيام عمل",
+    promoActive: false, promoRate: "220", promoExpiry: "", promoText: "🔥 عرض لفترة محدودة!"
 };
 
 let ordersData = []; 
@@ -52,18 +54,32 @@ window.copyDirect = function(text) {
     navigator.clipboard.writeText(text);
 };
 
-// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings)
+// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings) بالشكل المطلوب
 function initSystemSettingsListener() {
     const settingsRef = doc(db, "system", "settings");
     onSnapshot(settingsRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             isStoreOpen = data.storeOpen !== undefined ? data.storeOpen : true;
-            banksList = data.banksList || banksList;
-            walletsList = data.walletsList || walletsList;
-            customPaymentsList = data.customPaymentsList || customPaymentsList;
-            storeTerms = data.storeTerms || storeTerms;
-            pricingConfig = data.pricing || pricingConfig;
+            banksList = data.banks || banksList;
+            walletsList = data.wallets || walletsList;
+            customPaymentsList = data.customPayments || customPaymentsList;
+            storeTerms = data.terms || storeTerms;
+            
+            pricingConfig = {
+                psRate: data.psRate !== undefined ? data.psRate : pricingConfig.psRate,
+                pcRate: data.pcRate !== undefined ? data.pcRate : pricingConfig.pcRate,
+                psMin: data.psMin !== undefined ? data.psMin : pricingConfig.psMin,
+                psMax: data.psMax !== undefined ? data.psMax : pricingConfig.psMax,
+                pcMin: data.pcMin !== undefined ? data.pcMin : pricingConfig.pcMin,
+                pcMax: data.pcMax !== undefined ? data.pcMax : pricingConfig.pcMax,
+                psDuration: data.psDuration !== undefined ? data.psDuration : pricingConfig.psDuration,
+                pcDuration: data.pcDuration !== undefined ? data.pcDuration : pricingConfig.pcDuration,
+                promoActive: data.promoActive !== undefined ? data.promoActive : pricingConfig.promoActive,
+                promoRate: data.promoRate !== undefined ? data.promoRate : pricingConfig.promoRate,
+                promoExpiry: data.promoExpiry !== undefined ? data.promoExpiry : pricingConfig.promoExpiry,
+                promoText: data.promoText !== undefined ? data.promoText : pricingConfig.promoText
+            };
             
             updateStoreStatusUI();
             renderBanks();
@@ -74,11 +90,22 @@ function initSystemSettingsListener() {
         } else {
             setDoc(settingsRef, {
                 storeOpen: true,
-                banksList,
-                walletsList,
-                customPaymentsList,
-                storeTerms,
-                pricing: pricingConfig,
+                psRate: pricingConfig.psRate,
+                pcRate: pricingConfig.pcRate,
+                psMin: pricingConfig.psMin,
+                psMax: pricingConfig.psMax,
+                pcMin: pricingConfig.pcMin,
+                pcMax: pricingConfig.pcMax,
+                psDuration: pricingConfig.psDuration,
+                pcDuration: pricingConfig.pcDuration,
+                promoActive: pricingConfig.promoActive,
+                promoRate: pricingConfig.promoRate,
+                promoExpiry: pricingConfig.promoExpiry,
+                promoText: pricingConfig.promoText,
+                banks: banksList,
+                wallets: walletsList,
+                customPayments: customPaymentsList,
+                terms: storeTerms,
                 updatedAt: serverTimestamp()
             });
         }
@@ -87,7 +114,7 @@ function initSystemSettingsListener() {
     });
 }
 
-// تحديث الإعدادات في Firestore مباشرة
+// تحديث الإعدادات في Firestore مباشرة بالحقول المطلوبة تماماً
 async function saveSettingsToFirestore(updatedFields) {
     try {
         const settingsRef = doc(db, "system", "settings");
@@ -100,11 +127,22 @@ async function saveSettingsToFirestore(updatedFields) {
             const settingsRef = doc(db, "system", "settings");
             await setDoc(settingsRef, {
                 storeOpen: isStoreOpen,
-                banksList,
-                walletsList,
-                customPaymentsList,
-                storeTerms,
-                pricing: pricingConfig,
+                psRate: pricingConfig.psRate,
+                pcRate: pricingConfig.pcRate,
+                psMin: pricingConfig.psMin,
+                psMax: pricingConfig.psMax,
+                pcMin: pricingConfig.pcMin,
+                pcMax: pricingConfig.pcMax,
+                psDuration: pricingConfig.psDuration,
+                pcDuration: pricingConfig.pcDuration,
+                promoActive: pricingConfig.promoActive,
+                promoRate: pricingConfig.promoRate,
+                promoExpiry: pricingConfig.promoExpiry,
+                promoText: pricingConfig.promoText,
+                banks: banksList,
+                wallets: walletsList,
+                customPayments: customPaymentsList,
+                terms: storeTerms,
                 ...updatedFields,
                 updatedAt: serverTimestamp()
             });
@@ -140,7 +178,6 @@ function calculateDynamicStock() {
     let pcStock = 0;
 
     ordersData.forEach(o => {
-        // تحسب فقط من: طلب جديد، بانتظار المراجعة، قيد التنفيذ
         if (o.status === 'new' || o.status === 'review' || o.status === 'progress') {
             let total = Number(o.totalQty) || 0;
             let withdrawn = Number(o.withdrawnQty) || 0;
@@ -150,7 +187,6 @@ function calculateDynamicStock() {
             if (plat.includes('pc') || plat.includes('حاسب')) {
                 pcStock += pending;
             } else {
-                // PlayStation & Xbox
                 psStock += pending;
             }
         }
@@ -765,32 +801,45 @@ window.toggleArchive = async function(index) {
     }
 };
 
-// إدارة الأسعار وحفظها في Firestore
+// إدارة الأسعار وحفظها في Firestore بالهيكل المطلوب تماماً
 function populatePricingUI() {
-    if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.ps.rate;
-    if(document.getElementById("psMin")) document.getElementById("psMin").value = pricingConfig.ps.min;
-    if(document.getElementById("psMax")) document.getElementById("psMax").value = pricingConfig.ps.max;
-    if(document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.ps.duration;
+    if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.psRate;
+    if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pcRate;
+    if(document.getElementById("psMin")) document.getElementById("psMin").value = pricingConfig.psMin;
+    if(document.getElementById("psMax")) document.getElementById("psMax").value = pricingConfig.psMax;
+    if(document.getElementById("pcMin")) document.getElementById("pcMin").value = pricingConfig.pcMin;
+    if(document.getElementById("pcMax")) document.getElementById("pcMax").value = pricingConfig.pcMax;
+    if(document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.psDuration;
+    if(document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pcDuration;
 
-    if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pc.rate;
-    if(document.getElementById("pcMin")) document.getElementById("pcMin").value = pricingConfig.pc.min;
-    if(document.getElementById("pcMax")) document.getElementById("pcMax").value = pricingConfig.pc.max;
-    if(document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pc.duration;
-
-    if(document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = pricingConfig.promo.active;
-    if(document.getElementById("promoRateInput")) document.getElementById("promoRateInput").value = pricingConfig.promo.rate;
-    if(document.getElementById("promoExpiryInput")) document.getElementById("promoExpiryInput").value = pricingConfig.promo.expiry || "";
-    if(document.getElementById("promoText")) document.getElementById("promoText").value = pricingConfig.promo.text;
+    if(document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = pricingConfig.promoActive ? "true" : "false";
+    if(document.getElementById("promoRateInput")) document.getElementById("promoRateInput").value = pricingConfig.promoRate;
+    if(document.getElementById("promoExpiryInput")) document.getElementById("promoExpiryInput").value = pricingConfig.promoExpiry || "";
+    if(document.getElementById("promoText")) document.getElementById("promoText").value = pricingConfig.promoText;
 }
 
 window.savePricingConfig = async function() {
-    pricingConfig = {
-        ps: { rate: document.getElementById("psRate")?.value, min: document.getElementById("psMin")?.value, max: document.getElementById("psMax")?.value, duration: document.getElementById("psDuration")?.value },
-        pc: { rate: document.getElementById("pcRate")?.value, min: document.getElementById("pcMin")?.value, max: document.getElementById("pcMax")?.value, duration: document.getElementById("pcDuration")?.value },
-        promo: { active: document.getElementById("promoActiveSelect")?.value, rate: document.getElementById("promoRateInput")?.value, expiry: document.getElementById("promoExpiryInput")?.value, text: document.getElementById("promoText")?.value }
+    const updatedPricing = {
+        psRate: document.getElementById("psRate")?.value || "200",
+        pcRate: document.getElementById("pcRate")?.value || "150",
+        psMin: document.getElementById("psMin")?.value || "100,000",
+        psMax: document.getElementById("psMax")?.value || "5,000,000",
+        pcMin: document.getElementById("pcMin")?.value || "100,000",
+        pcMax: document.getElementById("pcMax")?.value || "1,000,000",
+        psDuration: document.getElementById("psDuration")?.value || "3 - 5 أيام عمل",
+        pcDuration: document.getElementById("pcDuration")?.value || "2 - 4 أيام عمل",
+        promoActive: document.getElementById("promoActiveSelect")?.value === "true",
+        promoRate: document.getElementById("promoRateInput")?.value || "220",
+        promoExpiry: document.getElementById("promoExpiryInput")?.value || "",
+        promoText: document.getElementById("promoText")?.value || "🔥 عرض لفترة محدودة!",
+        banks: banksList,
+        wallets: walletsList,
+        customPayments: customPaymentsList,
+        terms: storeTerms
     };
-    await saveSettingsToFirestore({ pricing: pricingConfig });
-    alert("✨ تم الحفظ ومزامنة الأسعار والعروض مباشرة في قاعدة البيانات بنجاح!");
+
+    await saveSettingsToFirestore(updatedPricing);
+    alert("✨ تم حفظ ومزامنة إعدادات المتجر في Firestore بنجاح!");
 };
 
 window.saveStatusMessages = function() {
@@ -820,14 +869,14 @@ window.addBank = async function() {
         banksList.push(i.value.trim()); 
         i.value=""; 
         renderBanks(); 
-        await saveSettingsToFirestore({ banksList });
+        await saveSettingsToFirestore({ banks: banksList });
     }
 };
 
 window.deleteBank = async function(i) {
     banksList.splice(i, 1);
     renderBanks();
-    await saveSettingsToFirestore({ banksList });
+    await saveSettingsToFirestore({ banks: banksList });
 };
 
 // إدارة المحافظ في Firestore
@@ -844,14 +893,14 @@ window.addWallet = async function() {
         walletsList.push(i.value.trim()); 
         i.value=""; 
         renderWallets(); 
-        await saveSettingsToFirestore({ walletsList });
+        await saveSettingsToFirestore({ wallets: walletsList });
     }
 };
 
 window.deleteWallet = async function(i) {
     walletsList.splice(i, 1);
     renderWallets();
-    await saveSettingsToFirestore({ walletsList });
+    await saveSettingsToFirestore({ wallets: walletsList });
 };
 
 // طرق الدفع المخصصة في Firestore
@@ -868,14 +917,14 @@ window.addCustomPaymentMethod = async function() {
         customPaymentsList.push(i.value.trim()); 
         i.value=""; 
         renderCustomPayments(); 
-        await saveSettingsToFirestore({ customPaymentsList });
+        await saveSettingsToFirestore({ customPayments: customPaymentsList });
     }
 };
 
 window.deleteCustomPayment = async function(i) {
     customPaymentsList.splice(i, 1);
     renderCustomPayments();
-    await saveSettingsToFirestore({ customPaymentsList });
+    await saveSettingsToFirestore({ customPayments: customPaymentsList });
 };
 
 // شروط الخدمة في Firestore
@@ -892,14 +941,14 @@ window.addNewTerm = async function() {
         storeTerms.push(i.value.trim()); 
         i.value=""; 
         renderTerms(); 
-        await saveSettingsToFirestore({ storeTerms });
+        await saveSettingsToFirestore({ terms: storeTerms });
     }
 };
 
 window.deleteTerm = async function(i) {
     storeTerms.splice(i, 1);
     renderTerms();
-    await saveSettingsToFirestore({ storeTerms });
+    await saveSettingsToFirestore({ terms: storeTerms });
 };
 
 function updateLiveDatetime() {
