@@ -155,30 +155,29 @@
             <!-- 1. الرئيسية والإحصائيات -->
             <div id="dashboardTab" class="tab-content active">
                 
-                <!-- إحصائيات الحالات المطلوبة كاملاً -->
                 <div class="stats-grid">
                     <div class="stat-card" onclick="filterOrdersByStatus('new')">
-                        <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="statNewOrders">0</h3></div>
+                        <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="statNewOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
                     </div>
                     <div class="stat-card" onclick="filterOrdersByStatus('progress')">
-                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrders">0</h3></div>
+                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
                     </div>
                     <div class="stat-card" onclick="filterOrdersByStatus('finished')">
-                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrders">0</h3></div>
+                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-circle-check"></i></div>
                     </div>
                     <div class="stat-card" onclick="filterOrdersByStatus('cancelled')">
-                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrders">0</h3></div>
+                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;"><i class="fa-solid fa-ban"></i></div>
                     </div>
                     <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
-                        <div class="stat-info"><span>تحتاج تحويل</span><h3 id="statTransferNeededOrders">0</h3></div>
+                        <div class="stat-info"><span>تحتاج تحويل</span><h3 id="statTransferNeededOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
                     </div>
                     <div class="stat-card" onclick="filterOrdersByStatus('transferred')">
-                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrders">0</h3></div>
+                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrdersDash">0</h3></div>
                         <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-money-bill-transfer"></i></div>
                     </div>
                     <div class="stat-card">
@@ -206,7 +205,7 @@
                     </div>
                 </div>
 
-                <!-- جدول أحدث الطلبات بنمط أسطر Excel -->
+                <!-- جدول أحدث الطلبات المستلمة -->
                 <div class="card-panel">
                     <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة</h2></div>
                     <div class="table-responsive">
@@ -222,21 +221,50 @@
                 </div>
             </div>
 
-            <!-- 2. إدارة الطلبات (الجدول الشامل بأسلوب Excel Grid) -->
+            <!-- 2. قسم إدارة الطلبات (مدمج بالإحصائيات القابلة للضغط + جدول Excel احترافي) -->
             <div id="ordersTab" class="tab-content">
+                
+                <!-- شريط الإحصائيات الفوري والتفاعلي داخل إدارة الطلبات -->
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card" onclick="filterOrdersByStatus('all')">
+                        <div class="stat-info"><span>جميع الطلبات (انقر لعرض الكل)</span><h3 id="statAllOrders" style="color:var(--text-main);">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(255, 255, 255, 0.08); color: var(--text-main);"><i class="fa-solid fa-list-check"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('new')">
+                        <div class="stat-info"><span>طلبات جديدة</span><h3 id="statNewOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('progress')">
+                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('finished')">
+                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('transferred')">
+                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('cancelled')">
+                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;"><i class="fa-solid fa-ban"></i></div>
+                    </div>
+                </div>
+
                 <div class="card-panel">
                     <div class="panel-header flex-mobile-column">
-                        <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل (أسلوب Excel)</h2>
+                        <h2><i class="fa-solid fa-table-cells" style="color:var(--primary);"></i> جدول الطلبات التفصيلي (تنسيق Excel الشبكي)</h2>
                         <div style="display:flex; gap:8px; width: 100%; max-width: 220px;">
-                            <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:100%;" onchange="renderOrdersTables()">
-                                <option value="all">جميع الحالات</option>
-                                <option value="new">طلبات جديدة</option>
-                                <option value="review">انتظار المراجعة</option>
-                                <option value="progress">قيد التنفيذ</option>
-                                <option value="finished">تم الانتهاء</option>
-                                <option value="cancelled">الطلبات الملغية</option>
-                                <option value="transferred">تم التحويل</option>
-                                <option value="completed">مكتمل</option>
+                            <select id="orderStatusFilter" class="form-control" style="padding:8px 12px; font-size:0.82rem; width:100%;" onchange="renderOrdersTables()">
+                                <option value="all">📊 عرض كافة الحالات</option>
+                                <option value="new">🔔 طلبات جديدة</option>
+                                <option value="review">⏳ انتظار المراجعة</option>
+                                <option value="progress">⚙️ قيد التنفيذ</option>
+                                <option value="finished">✅ تم الانتهاء</option>
+                                <option value="transferred">💳 تم التحويل</option>
+                                <option value="cancelled">❌ طلبات ملغية</option>
+                                <option value="completed">🏆 مكتمل نهائياً</option>
                             </select>
                         </div>
                     </div>
