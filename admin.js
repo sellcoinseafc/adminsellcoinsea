@@ -34,7 +34,7 @@ let currentAdmin = {
   uid: null,
   name: "مشرف النظام",
   email: "",
-  role: "admin" // "owner" | "admin"
+  role: "admin"
 };
 
 let isStoreOpen = true;
@@ -68,10 +68,10 @@ let ordersData = [];
 let adminsData = [];
 let auditLogsData = [];
 let stockData = { PlayStation: 0, PC: 0 };
-let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بيانات EA للطلبات
+let revealedSensitiveOrders = new Set();
 
 // ==========================================================================
-// 2. نظام تسجيل الدخول وحارس الأمان (Firebase Auth & Protection)
+// 2. حارس الأمان وتأمين اللوحة الصارم (Security Authorization Guard)
 // ==========================================================================
 function initAuthGuard() {
   if (!auth) return;
@@ -104,31 +104,21 @@ function initAuthGuard() {
           }
           currentAdmin = { uid: user.uid, ...data };
           await updateDoc(adminRef, { lastLogin: serverTimestamp() });
+          if (loginOverlay) loginOverlay.classList.remove("active");
+          updateSidebarAdminUI();
+          applyRolePermissions();
+          await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
         } else {
-          currentAdmin = {
-            uid: user.uid,
-            name: user.displayName || user.email.split('@')[0],
-            email: user.email,
-            role: "owner",
-            active: true
-          };
-          await setDoc(adminRef, {
-            name: currentAdmin.name,
-            email: currentAdmin.email,
-            role: "owner",
-            active: true,
-            createdAt: serverTimestamp(),
-            lastLogin: serverTimestamp()
-          });
+          // 🔒 حظر أي حساب غير موجود مسبقاً في admins
+          showLoginError("⚠️ هذا الحساب غير مصرح له بالدخول للوحة التحكم.");
+          await signOut(auth);
+          if (loginOverlay) loginOverlay.classList.add("active");
         }
-
-        if (loginOverlay) loginOverlay.classList.remove("active");
-        updateSidebarAdminUI();
-        applyRolePermissions();
-        await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
       } catch (err) {
         console.error("Auth Guard Firestore Error:", err);
-        showLoginError("خطأ أثناء قراءة صلاحيات المستند: " + err.message);
+        showLoginError("⚠️ خطأ في التحقق من صلاحيات الحساب: " + err.message);
+        await signOut(auth);
+        if (loginOverlay) loginOverlay.classList.add("active");
       }
     } else {
       if (loginOverlay) loginOverlay.classList.add("active");
@@ -412,13 +402,16 @@ window.deleteAdminDoc = async function (uid, name) {
 };
 
 // ==========================================================================
-// 5. المزامنة المباشرة للطلبات وحساب الستوك والعدادات
+// 5. المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
   onSnapshot(ref, (snapshot) => {
     ordersData = snapshot.docs.map(docSnap => {
       const data = docSnap.data();
+      let formattedPrice = data.price || data.totalPrice || "0 ريال";
+      formattedPrice = String(formattedPrice).replace(/ر\.س|ريال سعودي|SAR/g, "ريال").trim();
+
       return {
         id: docSnap.id,
         reference: data.orderId || docSnap.id,
@@ -426,7 +419,7 @@ function initOrdersListener() {
         phone: data.phone || "",
         platform: data.platform || "PlayStation",
         totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
-        totalPrice: data.price || data.totalPrice || "0 ر.س",
+        totalPrice: formattedPrice,
         status: data.status || "new",
         errorCode: data.errorCode || "none",
         email: data.email || "",
@@ -531,7 +524,7 @@ function updateDashboardStats() {
   if (document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
   if (document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
   if (document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
-  if (document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
+  if (document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ريال";
 
   if (document.getElementById("stockPS")) document.getElementById("stockPS").innerText = formatCoinsNumber(stockData.PlayStation) + " كوينز";
   if (document.getElementById("stockPC")) document.getElementById("stockPC").innerText = formatCoinsNumber(stockData.PC) + " كوينز";
@@ -690,7 +683,7 @@ function getPlatformTheme(platformName) {
   const plat = String(platformName || "").toLowerCase();
   if (plat.includes("playstation") || plat.includes("ps") || plat.includes("بلايستيشن") || plat.includes("سوني")) {
     return {
-      bg: "linear-gradient(135deg, rgba(0, 67, 156, 0.3) 0%, rgba(0, 112, 209, 0.18) 100%)",
+      bg: "linear-gradient(135deg, rgba(0, 67, 156, 0.35) 0%, rgba(0, 112, 209, 0.2) 100%)",
       border: "#0070D1",
       textColor: "#60A5FA",
       badgeBg: "rgba(0, 112, 209, 0.25)",
@@ -698,7 +691,7 @@ function getPlatformTheme(platformName) {
     };
   } else if (plat.includes("xbox") || plat.includes("إكس بوكس") || plat.includes("اكس بوكس")) {
     return {
-      bg: "linear-gradient(135deg, rgba(16, 124, 16, 0.3) 0%, rgba(18, 146, 18, 0.18) 100%)",
+      bg: "linear-gradient(135deg, rgba(16, 124, 16, 0.35) 0%, rgba(18, 146, 18, 0.2) 100%)",
       border: "#107C10",
       textColor: "#4ADE80",
       badgeBg: "rgba(16, 124, 16, 0.25)",
@@ -706,7 +699,7 @@ function getPlatformTheme(platformName) {
     };
   } else {
     return {
-      bg: "linear-gradient(135deg, rgba(184, 46, 46, 0.3) 0%, rgba(232, 17, 35, 0.18) 100%)",
+      bg: "linear-gradient(135deg, rgba(184, 46, 46, 0.35) 0%, rgba(232, 17, 35, 0.2) 100%)",
       border: "#E81123",
       textColor: "#F87171",
       badgeBg: "rgba(232, 17, 35, 0.25)",
@@ -716,13 +709,16 @@ function getPlatformTheme(platformName) {
 }
 
 // ==========================================================================
-// 9. نافذة عرض الطلب والتفاصيل المعدلة كلياً V2.5
+// 9. نافذة عرض تفاصيل الطلب المعدلة للجوال (عرض تفاصيل الطلب V3)
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
   const modal = document.getElementById("orderDetailModal");
   const body = document.getElementById("modalOrderBody");
+  const titleEl = document.getElementById("modalOrderIdTitle");
+
   if (!modal || !body) return;
+  if (titleEl) titleEl.innerText = "عرض تفاصيل الطلب";
 
   const rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== undefined ? Number(order.withdrawnQty) : 0;
   const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
@@ -731,79 +727,79 @@ window.openOrderModal = function (index) {
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const theme = getPlatformTheme(order.platform);
 
-  // 1. شريط الأزرار العلوي (نسخ بيانات EA - ترحيل الطلب - إتلاف أمني في صف واحد)
+  // 1. صف الأزرار الرئيسية في الأعلى (نسخ / ترحيل / إتلاف)
   const actionsRowHtml = `
-    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:nowrap; align-items:center;">
-      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
-        <i class="fa-solid fa-copy"></i> نسخ كافة بيانات الحساب
+    <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:16px;">
+      <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
+        <i class="fa-solid fa-copy"></i> نسخ
       </button>
-      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(245, 158, 11, 0.15); color:var(--warning); border:1.5px solid rgba(245, 158, 11, 0.4);" onclick="toggleArchive(${index}); openOrderModal(${index});">
-        <i class="fa-solid fa-box-archive"></i> ${order.archived ? 'إلغاء الترحيل' : 'ترحيل الطلب'}
+      <button class="btn-custom" style="flex:1; background:rgba(245, 158, 11, 0.15); color:var(--warning); border:1.5px solid rgba(245, 158, 11, 0.4);" onclick="toggleArchive(${index}); openOrderModal(${index});">
+        <i class="fa-solid fa-box-archive"></i> ${order.archived ? 'إلغاء الترحيل' : 'ترحيل'}
       </button>
-      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(239, 68, 68, 0.15); color:var(--danger); border:1.5px solid rgba(239, 68, 68, 0.4);" onclick="destroySensitiveData(${index})">
-        <i class="fa-solid fa-fire"></i> إتلاف البيانات الحساسة
+      <button class="btn-custom" style="flex:1; background:rgba(239, 68, 68, 0.15); color:var(--danger); border:1.5px solid rgba(239, 68, 68, 0.4);" onclick="destroySensitiveData(${index})">
+        <i class="fa-solid fa-fire"></i> إتلاف
       </button>
     </div>
   `;
 
-  // 2. بطاقات هويّة المنصة والمعلومات (صف 1: رقم الطلب/اسم العميل/الجوال - صف 2: المنصة/الكمية/السعر)
+  // 2. بطاقة معلومات الطلب والعميل (متوافقة مع الجوال)
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
       <!-- الصف الأول: رقم الطلب + اسم العميل + رقم الجوال -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
+      <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">رقم الطلب</span>
-          <code style="color:${theme.textColor}; font-size:1.05rem; font-weight:900;">#${order.reference}</code>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب</span>
+          <code style="color:${theme.textColor}; font-size:1rem; font-weight:900;">#${order.reference}</code>
         </div>
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">اسم العميل</span>
-          <b style="font-size:1rem; color:#fff;">${order.name}</b>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">اسم العميل</span>
+          <b style="font-size:0.95rem; color:#fff;">${order.name}</b>
         </div>
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">رقم الجوال</span>
-          <span style="direction:ltr; font-size:0.95rem; font-weight:900; color:${theme.textColor};">${order.phone}</span>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الجوال</span>
+          <span style="direction:ltr; font-size:0.9rem; font-weight:900; color:${theme.textColor};">${order.phone}</span>
         </div>
       </div>
 
       <!-- الصف الثاني: المنصة + الكمية + السعر -->
-      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; text-align:center; align-items:center;">
+      <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; text-align:center; align-items:center;">
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">المنصة المستهدفة</span>
-          <span style="display:inline-flex; align-items:center; gap:6px; background:${theme.badgeBg}; color:${theme.textColor}; padding:4px 14px; border-radius:20px; font-weight:900; font-size:0.88rem; border:1px solid ${theme.border};">
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">المنصة المستهدفة</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; background:${theme.badgeBg}; color:${theme.textColor}; padding:4px 12px; border-radius:20px; font-weight:900; font-size:0.85rem; border:1px solid ${theme.border};">
             <i class="${theme.icon}"></i> ${order.platform}
           </span>
         </div>
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية الإجمالية</span>
-          <b style="font-size:1.1rem; color:var(--primary); font-weight:900;">${formatCoinsNumber(order.totalQty)} كوينز</b>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية الإجمالية</span>
+          <b style="font-size:1rem; color:var(--primary); font-weight:900;">${formatCoinsNumber(order.totalQty)} كوينز</b>
         </div>
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">السعر الإجمالي</span>
-          <b style="font-size:1.1rem; color:#38bdf8; font-weight:900;">${order.totalPrice}</b>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">السعر الإجمالي</span>
+          <b style="font-size:1rem; color:#38bdf8; font-weight:900;">${order.totalPrice}</b>
         </div>
       </div>
     </div>
   `;
 
-  // 3. مربعات حالة عملية السحب الإحصائية (الكمية كم / المسحوب كم / المتبقي كم في صف واحد)
+  // 3. مربعات حالة عملية السحب (الكمية كم / المسحوب كم / المتبقي كم في صف واحد متجاوب)
   const withdrawalStatsHtml = `
-    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:16px;">
-      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
-        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المطلوبة</span>
-        <h4 style="font-size:1.15rem; font-weight:900; color:var(--primary);">${formatCoinsNumber(order.totalQty)}</h4>
+    <div class="responsive-grid-3" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المطلوب سحبها</span>
+        <h4 style="font-size:1.1rem; font-weight:900; color:var(--primary);">${formatCoinsNumber(order.totalQty)}</h4>
       </div>
-      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
-        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المسحوبة</span>
-        <h4 style="font-size:1.15rem; font-weight:900; color:#38bdf8;">${formatCoinsNumber(rawWithdrawn)}</h4>
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المسحوبة حتى الآن</span>
+        <h4 style="font-size:1.1rem; font-weight:900; color:#38bdf8;">${formatCoinsNumber(rawWithdrawn)}</h4>
       </div>
-      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
-        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المتبقية</span>
-        <h4 style="font-size:1.15rem; font-weight:900; color:var(--warning);">${formatCoinsNumber(remaining)}</h4>
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المتبقية</span>
+        <h4 style="font-size:1.1rem; font-weight:900; color:var(--warning);">${formatCoinsNumber(remaining)}</h4>
       </div>
     </div>
   `;
 
-  // 4. بيانات EA مرتبة بشكل واضح جداً (الإيميل -> تحته كلمة المرور -> تحته الأكواد)
+  // 4. مربعات بيانات حساب EA (الضغط على المربع نفسه ينسخ تلقائياً)
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
   const codesList = order.backupCodes || [];
@@ -814,42 +810,35 @@ window.openOrderModal = function (index) {
     </div>
   ` : `
     <div class="ea-sensitive-box" style="margin-bottom:16px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--card-border);">
-        <strong style="color:var(--blue); font-size:1rem; display:flex; align-items:center; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--card-border);">
+        <strong style="color:var(--blue); font-size:0.95rem; display:flex; align-items:center; gap:8px;">
           <i class="fa-solid fa-shield-halved"></i> بيانات حساب EA الخاصة بالعميل
         </strong>
         <button class="btn-action" style="color:var(--primary);" onclick="toggleRevealSensitive(${index})">
-          <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'}"></i> ${isRevealed ? 'إخفاء البيانات' : '👁 إظهار البيانات'}
+          <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'}"></i> ${isRevealed ? 'إخفاء' : '👁 إظهار البيانات'}
         </button>
       </div>
 
-      <!-- السطر الأول: البريد الإلكتروني -->
-      <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني (EA Email):</span>
-          <code style="font-size:0.95rem; font-weight:800; color:#fff;">${emailVal}</code>
-        </div>
-        ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')"><i class="fa-regular fa-copy"></i> نسخ البريد</button>` : ''}
+      <!-- البريد الإلكتروني (مربع قابل للضغط للنسخ) -->
+      <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')" title="اضغط للنسخ">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني (EA Email):</span>
+        <code style="font-size:0.95rem; font-weight:800; color:#fff; display:block; margin-top:2px;">${emailVal}</code>
       </div>
 
-      <!-- السطر الثاني (تحته): كلمة المرور -->
-      <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور (EA Password):</span>
-          <code style="font-size:0.95rem; font-weight:800; color:var(--warning);">${passVal}</code>
-        </div>
-        ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')"><i class="fa-regular fa-copy"></i> نسخ كلمة المرور</button>` : ''}
+      <!-- كلمة المرور (تحته مباشرة ومربع قابل للضغط للنسخ) -->
+      <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')" title="اضغط للنسخ">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور (EA Password):</span>
+        <code style="font-size:0.95rem; font-weight:800; color:var(--warning); display:block; margin-top:2px;">${passVal}</code>
       </div>
 
-      <!-- السطر الثالث (تحته): الأكواد الاحتياطية -->
+      <!-- الأكواد الاحتياطية (مربعات قابلة للضغط للنسخ) -->
       <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">الأكواد الاحتياطية (Backup Codes):</span>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:8px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px;">
           ${codesList.map((code, cIdx) => `
-            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); padding:8px; border-radius:8px; text-align:center;">
+            <div class="copyable-box" style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); padding:8px; border-radius:8px; text-align:center;" onclick="copySensitiveData('${code}', 'كود احتياطي', '${order.reference}')" title="اضغط للنسخ">
               <span style="font-size:0.68rem; color:var(--text-muted); display:block;">كود ${cIdx + 1}</span>
-              <strong style="color:var(--primary); font-size:0.92rem;">${isRevealed ? code : '••••••••'}</strong>
-              ${isRevealed ? `<button class="copy-btn" style="margin-top:4px; font-size:0.68rem;" onclick="copySensitiveData('${code}', 'كود احتياطي', '${order.reference}')">نسخ</button>` : ''}
+              <strong style="color:var(--primary); font-size:0.9rem;">${isRevealed ? code : '••••••••'}</strong>
             </div>
           `).join('')}
         </div>
@@ -857,45 +846,40 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 5. تفاصيل الدفع والتحويل مع أزرار نسخ المحفظة/الآيبان المباشرة
+  // 5. بيانات الحساب البنكي / المحفظة (مربع قابل للضغط للنسخ)
   let pd = order.paymentDetails || {};
   let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
   let beneficiaryName = pd.name || order.name || "العميل";
   let payoutAddress = pd.iban || pd.phone || pd.cryptoAddress || "غير مدخل";
 
   const payoutSectionHtml = `
-    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:14px; padding:16px; margin-bottom:16px;">
-      <strong style="font-size:0.92rem; color:var(--blue); display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:14px; padding:14px; margin-bottom:16px;">
+      <strong style="font-size:0.9rem; color:var(--blue); display:flex; align-items:center; gap:8px; margin-bottom:10px;">
         <i class="fa-solid fa-wallet"></i> بيانات الحساب البنكي / المحفظة لاستلام المستحقات
       </strong>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
+      <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
         <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
           <span style="font-size:0.75rem; color:var(--text-muted); display:block;">وسيلة الدفع / البنك:</span>
-          <b style="font-size:0.9rem; color:#fff;">${bankOrWallet}</b>
+          <b style="font-size:0.88rem; color:#fff;">${bankOrWallet}</b>
         </div>
         <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">اسم صاحب الحساب / المستفيد:</span>
-          <b style="font-size:0.9rem; color:#fff;">${beneficiaryName}</b>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">اسم المستفيد:</span>
+          <b style="font-size:0.88rem; color:#fff;">${beneficiaryName}</b>
         </div>
       </div>
-      <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">الآيبان / رقم الحساب / المحفظة:</span>
-          <code style="color:var(--primary); font-size:1rem; font-weight:900;">${payoutAddress}</code>
-        </div>
-        <button class="copy-btn" style="padding:6px 14px; font-size:0.8rem;" onclick="copyPayoutInfo('${payoutAddress}', 'بيانات الدفع والتحويل', '${order.reference}')">
-          <i class="fa-regular fa-copy"></i> نسخ رقم الحساب / الآيبان
-        </button>
+      <div class="copyable-box" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid var(--card-border);" onclick="copyPayoutInfo('${payoutAddress}', 'رقم الحساب / الآيبان', '${order.reference}')" title="اضغط للنسخ">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">الآيبان / رقم الحساب / المحفظة (اضغط للنسخ):</span>
+        <code style="color:var(--primary); font-size:0.95rem; font-weight:900; display:block; margin-top:2px;">${payoutAddress}</code>
       </div>
     </div>
   `;
 
-  // 6. أدوات تحديث حالة الطلب والكمية
+  // 6. التحكم بنسب الإنجاز والحالات
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
 
   const controlsHtml = `
     <div class="progress-bar-wrapper">
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:900;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:900;">
         <span>نسبة إنجاز عملية السحب:</span>
         <span style="color:var(--primary);">${formatCoinsNumber(rawWithdrawn)} / ${formatCoinsNumber(order.totalQty)} كوينز (${percent}%)</span>
       </div>
@@ -904,19 +888,19 @@ window.openOrderModal = function (index) {
       </div>
     </div>
 
-    <div class="form-grid-2" style="margin-bottom:16px;">
-      <div class="form-group">
+    <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div class="form-group" style="margin-bottom:0;">
         <label>تعديل الكمية المسحوبة (كوينز):</label>
         <input type="text" id="modalWithdrawnInput" class="form-control" value="${rawWithdrawn ? formatCoinsNumber(rawWithdrawn) : ''}" placeholder="أدخل الكمية المسحوبة..." oninput="calcRemaining(${index}, this)">
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:0;">
         <label>الكمية المتبقية للسحب:</label>
         <input type="text" id="modalRemainingDisplay" class="form-control" value="${formatCoinsNumber(remaining)}" readonly style="color:var(--warning); background:rgba(0,0,0,0.2);">
       </div>
     </div>
 
-    <div class="form-grid-2" style="margin-bottom:16px;">
-      <div class="form-group">
+    <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div class="form-group" style="margin-bottom:0;">
         <label>حالة الطلب:</label>
         <select id="modalStatusSelect" class="form-control">
           <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
@@ -927,7 +911,7 @@ window.openOrderModal = function (index) {
           <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل نهائياً</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:0;">
         <label>حالة الخطأ (إن وجد):</label>
         <select id="modalErrorSelect" class="form-control">
           <option value="none" ${order.errorCode==='none'?'selected':''}>سليم - لا توجد أخطاء</option>
@@ -939,7 +923,7 @@ window.openOrderModal = function (index) {
       </div>
     </div>
 
-    <div style="display:flex; gap:10px; margin-top:18px;">
+    <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn-custom" style="flex:1; justify-content:center; padding:12px;" onclick="saveOrderModalChanges(${index})">
         <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التحديثات
       </button>
@@ -951,7 +935,7 @@ window.openOrderModal = function (index) {
 };
 
 // ==========================================================================
-// 10. الدوال المساعدة للنسخ وإدارة الحسابات
+// 10. الدوال المساعدة للنسخ التلقائي
 // ==========================================================================
 window.copyEaAccountData = async function (index) {
   const order = ordersData[index];
@@ -964,14 +948,14 @@ window.copyEaAccountData = async function (index) {
 
   navigator.clipboard.writeText(formattedText);
   await logAuditEvent("نسخ بيانات EA الكاملة", order.reference, "تم نسخ الإيميل والباسورد والأكواد دفعة واحدة");
-  alert("📋 تم نسخ كافة بيانات حساب EA (الإيميل، كلمة المرور، والأكواد الاحتياطية) إلى الحافظة بنجاح!");
+  alert("📋 تم نسخ كافة بيانات الحساب للحافظة بنجاح!");
 };
 
 window.copyPayoutInfo = async function (text, label, orderRef) {
   if (!text || text === "غير مدخل") return;
   navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label}`);
-  alert(`📋 تم نسخ ${label} (${text}) إلى الحافظة بنجاح!`);
+  alert(`📋 تم نسخ ${label} (${text}) بنجاح!`);
 };
 
 window.toggleRevealSensitive = async function (index) {
@@ -989,7 +973,7 @@ window.copySensitiveData = async function (text, label, orderRef) {
   if (!text || text.includes("•••")) return;
   navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label} إلى الحافظة`);
-  alert(`📋 تم نسخ ${label} إلى الحافظة بنجاح.`);
+  alert(`📋 تم نسخ ${label} بنجاح!`);
 };
 
 window.calcRemaining = function (index, input) {
@@ -1034,7 +1018,7 @@ window.saveOrderModalChanges = async function (index) {
   try {
     const orderRef = doc(db, "orders", order.id);
     await updateDoc(orderRef, updateData);
-    alert("✅ تم حفظ التحديثات وتسجيل الحركة بنجاح!");
+    alert("✅ تم حفظ التحديثات بنجاح!");
     window.closeOrderModal();
   } catch (err) {
     console.error("Error updating order:", err);
@@ -1114,7 +1098,7 @@ function renderClientsList(searchQuery = "") {
       <td style="direction:ltr; text-align:right;">${c.phone}</td>
       <td><b>${c.ordersCount}</b></td>
       <td style="color:var(--primary);">${formatCoinsNumber(c.totalCoins)}</td>
-      <td style="color:var(--blue);">${c.totalPaid.toLocaleString()} SAR</td>
+      <td style="color:var(--blue);">${c.totalPaid.toLocaleString()} ريال</td>
       <td><span style="font-size:0.78rem; color:var(--text-muted);">${c.lastOrder?.toDate ? c.lastOrder.toDate().toLocaleDateString('en-GB') : 'مؤخراً'}</span></td>
       <td><button class="btn-action" onclick="openClientDetail('${c.phone}')"><i class="fa-solid fa-list"></i> عرض السجل</button></td>
     </tr>
