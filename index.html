@@ -10,11 +10,11 @@
 </head>
 <body>
 
-    <!-- نافذة تفاصيل الطلب المتطورة -->
+    <!-- نافذة تفاصيل الطلب المتطورة الاحترافية -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modalOrderIdTitle">تفاصيل الطلب</h3>
+                <h3 id="modalOrderIdTitle">تفاصيل الطلب والتحكم المباشر</h3>
                 <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
             </div>
             <div id="modalOrderBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
@@ -70,7 +70,7 @@
             </div>
         </header>
 
-        <!-- تنبيه عاجل يظهر فوق لوحة التحكم إذا كانت هناك طلبات تحتاج تحويل -->
+        <!-- تنبيه عاجل للتحويلات المالية -->
         <div id="urgentTransferBanner" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%); border:1.5px solid #f59e0b; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
             <div style="display:flex; align-items:center; gap:12px;">
                 <i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b;"></i>
@@ -146,7 +146,7 @@
             </div>
         </div>
 
-        <!-- 2. إدارة الطلبات (مع فلتر وحالة العرض) -->
+        <!-- 2. إدارة الطلبات -->
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
@@ -176,7 +176,7 @@
             </div>
         </div>
 
-        <!-- 3. قسم طلبات تحتاج تحويل الجديد (مع عداد الـ 3-5 أيام من finishedAt) -->
+        <!-- 3. قسم طلبات تحتاج تحويل -->
         <div id="transferAlertsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
@@ -197,7 +197,7 @@
             </div>
         </div>
 
-        <!-- 4. ملف العميل (بدون تكرار) -->
+        <!-- 4. ملف العميل -->
         <div id="customerProfileTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات (بدون تكرار)</h2></div>
