@@ -35,7 +35,11 @@ let pricingConfig = {
     psRate: 200, pcRate: 150,
     psMin: 100000, psMax: 5000000,
     pcMin: 100000, pcMax: 1000000,
-    psDuration: "3 - 5 أيام عمل", pcDuration: "2 - 4 أيام عمل",
+    // المدد المنفصلة لكل منصة
+    psWithdrawDuration: "3 - 5 أيام عمل",
+    psTransferDuration: "24 ساعة",
+    pcWithdrawDuration: "2 - 4 أيام عمل",
+    pcTransferDuration: "24 ساعة",
     promoActive: false, promoRate: 220, promoExpiry: "", promoText: "🔥 عرض لفترة محدودة!"
 };
 
@@ -67,8 +71,10 @@ async function saveAllSettingsToFirestore() {
             pcMin: Number(String(document.getElementById("pcMin")?.value || pricingConfig.pcMin).replace(/,/g,"")),
             pcMax: Number(String(document.getElementById("pcMax")?.value || pricingConfig.pcMax).replace(/,/g,"")),
 
-            psDuration: document.getElementById("psDuration")?.value || pricingConfig.psDuration,
-            pcDuration: document.getElementById("pcDuration")?.value || pricingConfig.pcDuration,
+            psWithdrawDuration: document.getElementById("psWithdrawDuration")?.value || pricingConfig.psWithdrawDuration,
+            psTransferDuration: document.getElementById("psTransferDuration")?.value || pricingConfig.psTransferDuration,
+            pcWithdrawDuration: document.getElementById("pcWithdrawDuration")?.value || pricingConfig.pcWithdrawDuration,
+            pcTransferDuration: document.getElementById("pcTransferDuration")?.value || pricingConfig.pcTransferDuration,
 
             promoActive: document.getElementById("promoActiveSelect")?.value === "true",
             promoRate: Number(document.getElementById("promoRateInput")?.value || pricingConfig.promoRate),
@@ -107,8 +113,12 @@ function initSystemSettingsListener() {
                 psMax: data.psMax !== undefined ? data.psMax : pricingConfig.psMax,
                 pcMin: data.pcMin !== undefined ? data.pcMin : pricingConfig.pcMin,
                 pcMax: data.pcMax !== undefined ? data.pcMax : pricingConfig.pcMax,
-                psDuration: data.psDuration !== undefined ? data.psDuration : pricingConfig.psDuration,
-                pcDuration: data.pcDuration !== undefined ? data.pcDuration : pricingConfig.pcDuration,
+                
+                psWithdrawDuration: data.psWithdrawDuration !== undefined ? data.psWithdrawDuration : pricingConfig.psWithdrawDuration,
+                psTransferDuration: data.psTransferDuration !== undefined ? data.psTransferDuration : pricingConfig.psTransferDuration,
+                pcWithdrawDuration: data.pcWithdrawDuration !== undefined ? data.pcWithdrawDuration : pricingConfig.pcWithdrawDuration,
+                pcTransferDuration: data.pcTransferDuration !== undefined ? data.pcTransferDuration : pricingConfig.pcTransferDuration,
+                
                 promoActive: data.promoActive !== undefined ? data.promoActive : pricingConfig.promoActive,
                 promoRate: data.promoRate !== undefined ? data.promoRate : pricingConfig.promoRate,
                 promoExpiry: data.promoExpiry !== undefined ? data.promoExpiry : pricingConfig.promoExpiry,
@@ -786,7 +796,7 @@ window.toggleArchive = async function(index) {
     }
 };
 
-// إدارة الأسعار وحفظها في Firestore
+// إدارة الأسعار والمدد وحفظها في Firestore
 function populatePricingUI() {
     if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.psRate;
     if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pcRate;
@@ -794,8 +804,12 @@ function populatePricingUI() {
     if(document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(pricingConfig.psMax);
     if(document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(pricingConfig.pcMin);
     if(document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(pricingConfig.pcMax);
-    if(document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.psDuration;
-    if(document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pcDuration;
+    
+    // تعبئة حقول المدد الأربعة الجديدة في لوحة التحكم
+    if(document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = pricingConfig.psWithdrawDuration;
+    if(document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = pricingConfig.psTransferDuration;
+    if(document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = pricingConfig.pcWithdrawDuration;
+    if(document.getElementById("pcTransferDuration")) document.getElementById("pcTransferDuration").value = pricingConfig.pcTransferDuration;
 
     if(document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = pricingConfig.promoActive ? "true" : "false";
     if(document.getElementById("promoRateInput")) document.getElementById("promoRateInput").value = pricingConfig.promoRate;
@@ -814,8 +828,11 @@ window.savePricingConfig = async function () {
     pcMin: Number(document.getElementById("pcMin").value.replace(/,/g,"")),
     pcMax: Number(document.getElementById("pcMax").value.replace(/,/g,"")),
 
-    psDuration: document.getElementById("psDuration").value,
-    pcDuration: document.getElementById("pcDuration").value,
+    // حفظ المدد الأربعة الجديدة المنفصلة
+    psWithdrawDuration: document.getElementById("psWithdrawDuration").value,
+    psTransferDuration: document.getElementById("psTransferDuration").value,
+    pcWithdrawDuration: document.getElementById("pcWithdrawDuration").value,
+    pcTransferDuration: document.getElementById("pcTransferDuration").value,
 
     promoActive: document.getElementById("promoActiveSelect").value === "true",
     promoRate: Number(document.getElementById("promoRateInput").value),
