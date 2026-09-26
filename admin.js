@@ -1,4 +1,4 @@
-import { db } from "./firebase.js";
+import { db, auth } from "./firebase.js";
 import {
   collection,
   doc,
@@ -8,6 +8,90 @@ import {
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+
+// ==========================================
+// 0. نظام حماية وتسجيل الدخول (Firebase Auth)
+// ==========================================
+const googleProvider = new GoogleAuthProvider();
+
+// مراقبة حالة المصادقة والتحقق من الوصول
+onAuthStateChanged(auth, (user) => {
+  const loginScreen = document.getElementById("loginScreen");
+  const adminAppWrapper = document.getElementById("adminAppWrapper");
+
+  if (user) {
+    // المستخدم مسجل الدخول -> إخفاء شاشة الدخول وإظهار اللوحة
+    if (loginScreen) loginScreen.style.display = "none";
+    if (adminAppWrapper) adminAppWrapper.style.display = "block";
+
+    // تحديث بيانات المستخدم في القائمة الجانبية إن وجدت
+    const sidebarName = document.getElementById("sidebarUserName");
+    const sidebarAvatar = document.getElementById("sidebarUserAvatar");
+    if (sidebarName) sidebarName.innerText = user.displayName || user.email.split('@')[0];
+    if (sidebarAvatar) sidebarAvatar.innerText = (user.displayName || user.email)[0].toUpperCase();
+
+    // تشغيل استماع قاعدة البيانات والإعدادات فور تأكيد الهوية
+    initSystemSettingsListener();
+    initOrdersListener();
+  } else {
+    // المستخدم غير مسجل -> إظهار شاشة الدخول وإخفاء اللوحة لحماية البيانات
+    if (loginScreen) loginScreen.style.display = "flex";
+    if (adminAppWrapper) adminAppWrapper.style.display = "none";
+  }
+});
+
+// تسجيل الدخول بواسطة Google
+document.getElementById("btnGoogleLogin")?.addEventListener("click", async () => {
+  const errorMsg = document.getElementById("loginErrorMsg");
+  if (errorMsg) errorMsg.style.display = "none";
+  try {
+    await signInWithPopup(auth, googleProvider);
+  } catch (error) {
+    console.error("Google Login Error:", error);
+    if (errorMsg) {
+      errorMsg.innerText = "فشل تسجيل الدخول عبر Google: " + (error.message || "حدث خطأ غير متوقع");
+      errorMsg.style.display = "block";
+    }
+  }
+});
+
+// تسجيل الدخول بواسطة البريد الإلكتروني وكلمة المرور
+document.getElementById("emailLoginForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorMsg = document.getElementById("loginErrorMsg");
+  if (errorMsg) errorMsg.style.display = "none";
+
+  const email = document.getElementById("loginEmail")?.value.trim();
+  const password = document.getElementById("loginPassword")?.value.trim();
+
+  if (!email || !password) return;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (error) {
+    console.error("Email Login Error:", error);
+    if (errorMsg) {
+      errorMsg.innerText = "خطأ في بيانات الدخول: البريد أو كلمة المرور غير صحيحة.";
+      errorMsg.style.display = "block";
+    }
+  }
+});
+
+// تسجيل الخروج
+document.getElementById("btnLogout")?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Logout Error:", error);
+  }
+});
 
 // اختبار اتصال فايربيز
 async function testConnection() {
@@ -1024,7 +1108,3 @@ window.handleGlobalSearch = function(query) {
         `;
     });
 };
-
-// بدء التشغيل والاستماع الفوري
-initSystemSettingsListener();
-initOrdersListener();
