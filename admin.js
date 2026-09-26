@@ -41,6 +41,7 @@ window.toggleSidebar = function(forceState) {
 window.switchTab = function(tabId, element) {
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
+    document.querySelectorAll(".bottom-nav-item").forEach(item => item.classList.remove("active"));
     
     const targetTab = document.getElementById(tabId);
     if(targetTab) targetTab.classList.add("active");
@@ -63,13 +64,13 @@ onAuthStateChanged(auth, (user) => {
     if (adminAppWrapper) adminAppWrapper.style.display = "block";
 
     const sidebarName = document.getElementById("sidebarUserName");
-    const topNavName = document.getElementById("topNavUserName");
     const sidebarAvatar = document.getElementById("sidebarUserAvatar");
+    const topNavAvatar = document.getElementById("topNavUserAvatar");
     
     let uName = user.displayName || user.email.split('@')[0];
     if (sidebarName) sidebarName.innerText = uName;
-    if (topNavName) topNavName.innerText = uName;
     if (sidebarAvatar) sidebarAvatar.innerText = uName[0].toUpperCase();
+    if (topNavAvatar) topNavAvatar.innerText = uName[0].toUpperCase();
 
     initSystemSettingsListener();
     initOrdersListener();
@@ -147,6 +148,8 @@ let pricingConfig = {
 
 let ordersData = []; 
 let stockData = { PlayStation: 0, PC: 0 };
+let barChartInstance = null;
+let donutChartInstance = null;
 
 function formatCoinsNumber(num) {
     if(num === "" || num === null || isNaN(num)) return "0";
@@ -251,10 +254,10 @@ function updateStoreStatusUI() {
     if (!btn || !txt) return;
     if (isStoreOpen) {
         btn.className = "store-status-btn open";
-        txt.innerText = "المتجر مفتوح";
+        txt.innerHTML = `<span class="status-dot-green"></span><span>المتجر مفتوح</span>`;
     } else {
         btn.className = "store-status-btn closed";
-        txt.innerText = "المتجر مغلق";
+        txt.innerHTML = `<span class="status-dot-green" style="background:#ef4444; box-shadow:0 0 8px #ef4444;"></span><span>المتجر مغلق</span>`;
     }
 }
 
@@ -373,30 +376,170 @@ function updateDashboardStats() {
     }
 
     let totalCompletedCoins = ordersData.filter(o => o.status === 'completed' || o.status === 'finished' || o.status === 'transferred').reduce((sum, o) => sum + (o.totalQty || 0), 0);
+    let totalWithdrawnQtySum = ordersData.reduce((sum, o) => sum + (Number(o.withdrawnQty) || 0), 0);
+    let totalQtySum = ordersData.reduce((sum, o) => sum + (Number(o.totalQty) || 0), 0);
+    let remainingCoinsSum = Math.max(0, totalQtySum - totalWithdrawnQtySum);
+
     let totalTransferredMoney = ordersData.filter(o => o.status === 'transferred' || o.status === 'completed').reduce((sum, o) => {
         let p = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
         return sum + p;
     }, 0);
 
+    // تحديث الأرقام بجميع البطاقات
     if(document.getElementById("statAllOrders")) document.getElementById("statAllOrders").innerText = countAll;
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
+    if(document.getElementById("statProgressOrders2")) document.getElementById("statProgressOrders2").innerText = countProgress;
     if(document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
     if(document.getElementById("statCancelledOrders")) document.getElementById("statCancelledOrders").innerText = countCancelled;
     if(document.getElementById("statTransferNeededOrders")) document.getElementById("statTransferNeededOrders").innerText = countTransferNeeded;
-    if(document.getElementById("statTransferredOrders")) document.getElementById("statTransferredOrders").innerText = countTransferred;
 
     if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
     if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " SAR";
 
-    if(document.getElementById("stockPS")) document.getElementById("stockPS").innerText = formatCoinsNumber(stockData.PlayStation);
-    if(document.getElementById("stockPC")) document.getElementById("stockPC").innerText = formatCoinsNumber(stockData.PC);
+    // القسم 7 — ملخص الكوينز
+    if(document.getElementById("summaryWithdrawnQty")) document.getElementById("summaryWithdrawnQty").innerText = formatCoinsNumber(totalWithdrawnQtySum);
+    if(document.getElementById("summaryRemainingQty")) document.getElementById("summaryRemainingQty").innerText = formatCoinsNumber(remainingCoinsSum);
+    let coinsPercent = totalQtySum > 0 ? Math.min(100, Math.round((totalWithdrawnQtySum / totalQtySum) * 100)) : 0;
+    if(document.getElementById("summaryProgressPercent")) document.getElementById("summaryProgressPercent").innerText = coinsPercent + "%";
+    if(document.getElementById("summaryProgressFill")) document.getElementById("summaryProgressFill").style.width = coinsPercent + "%";
+
+    // القسم 8 — المنصات الأكثر طلباً
+    let psCount = ordersData.filter(o => o.platform === 'PlayStation').length;
+    let xboxCount = ordersData.filter(o => o.platform === 'Xbox').length;
+    let pcCount = ordersData.filter(o => o.platform === 'PC').length;
+    let totalPlat = countAll || 1;
+
+    let psPct = Math.round((psCount / totalPlat) * 100);
+    let xboxPct = Math.round((xboxCount / totalPlat) * 100);
+    let pcPct = Math.round((pcCount / totalPlat) * 100);
+
+    if(document.getElementById("rankPsPercent")) document.getElementById("rankPsPercent").innerText = psPct + "%";
+    if(document.getElementById("rankPsOrders")) document.getElementById("rankPsOrders").innerText = psCount + " طلب";
+    if(document.getElementById("rankPsFill")) document.getElementById("rankPsFill").style.width = psPct + "%";
+
+    if(document.getElementById("rankXboxPercent")) document.getElementById("rankXboxPercent").innerText = xboxPct + "%";
+    if(document.getElementById("rankXboxOrders")) document.getElementById("rankXboxOrders").innerText = xboxCount + " طلب";
+    if(document.getElementById("rankXboxFill")) document.getElementById("rankXboxFill").style.width = xboxPct + "%";
+
+    if(document.getElementById("rankPcPercent")) document.getElementById("rankPcPercent").innerText = pcPct + "%";
+    if(document.getElementById("rankPcOrders")) document.getElementById("rankPcOrders").innerText = pcCount + " طلب";
+    if(document.getElementById("rankPcFill")) document.getElementById("rankPcFill").style.width = pcPct + "%";
+
+    // القسم 5 — أحدث 5 طلبات
+    renderLatest5Orders();
+    // القسم 9 — النشاطات الحية
+    renderActivityFeed();
 
     renderTransferAlertsTable(transferNeededList);
+    renderChartsData(psPct, xboxPct, pcPct, countAll);
+}
+
+function renderLatest5Orders() {
+    const container = document.getElementById("latestOrdersContainer");
+    if(!container) return;
+    let latest = ordersData.slice(0, 5);
+    if(latest.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:10px;">لا توجد طلبات حديثة.</div>`;
+        return;
+    }
+    container.innerHTML = "";
+    latest.forEach(o => {
+        let actualIndex = ordersData.findIndex(item => item.id === o.id);
+        let platIcon = "fa-brands fa-playstation";
+        if(o.platform === 'Xbox') platIcon = "fa-brands fa-xbox";
+        else if(o.platform === 'PC') platIcon = "fa-brands fa-windows";
+
+        container.innerHTML += `
+            <div class="latest-order-item" onclick="openOrderModal(${actualIndex})">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="${platIcon} order-platform-ic"></i>
+                    <div>
+                        <span class="order-id-badge">#${o.reference}</span>
+                        <div class="order-client-name">${o.name}</div>
+                    </div>
+                </div>
+                <div style="text-align:left;">
+                    <strong style="color:var(--primary); font-size:0.85rem;">${formatCoinsNumber(o.totalQty)}</strong>
+                    <div style="font-size:0.7rem; color:var(--text-muted);">${o.totalPrice}</div>
+                </div>
+            </div>
+        `;
+    });
+}
+
+function renderActivityFeed() {
+    const container = document.getElementById("activityFeedContainer");
+    if(!container) return;
+    let allLogs = [];
+    ordersData.forEach(o => {
+        if(o.auditLogs) {
+            o.auditLogs.forEach(l => {
+                allLogs.push({ text: `${l.action} من طلب #${o.reference}`, time: l.time });
+            });
+        }
+    });
+
+    if(allLogs.length === 0) {
+        container.innerHTML = `<div class="activity-feed-item"><span class="feed-txt">لا توجد تحديثات حية مؤخراً</span></div>`;
+        return;
+    }
+
+    container.innerHTML = "";
+    allLogs.slice(0, 4).forEach(item => {
+        container.innerHTML += `
+            <div class="activity-feed-item">
+                <span class="feed-dot dot-green"></span>
+                <span class="feed-txt">${item.text}</span>
+                <span class="feed-time">${item.time}</span>
+            </div>
+        `;
+    });
+}
+
+function renderChartsData(psPct, xboxPct, pcPct, totalCount) {
+    if(document.getElementById("donutTotalCount")) document.getElementById("donutTotalCount").innerText = totalCount;
+    if(document.getElementById("legPsPercent")) document.getElementById("legPsPercent").innerText = psPct + "%";
+    if(document.getElementById("legXboxPercent")) document.getElementById("legXboxPercent").innerText = xboxPct + "%";
+    if(document.getElementById("legPcPercent")) document.getElementById("legPcPercent").innerText = pcPct + "%";
+
+    const barCtx = document.getElementById('ordersBarChart')?.getContext('2d');
+    if (barCtx) {
+        if (barChartInstance) barChartInstance.destroy();
+        barChartInstance = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['18 SEP', '19 SEP', '20 SEP', '21 SEP', '22 SEP', '23 SEP', '24 SEP'],
+                datasets: [{
+                    data: [12, 18, 25, 20, 28, 22, totalCount || 17],
+                    backgroundColor: '#00FF87',
+                    borderRadius: 6
+                }]
+            },
+            options: { plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    const donutCtx = document.getElementById('platformDonutChart')?.getContext('2d');
+    if (donutCtx) {
+        if (donutChartInstance) donutChartInstance.destroy();
+        donutChartInstance = new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['PlayStation', 'Xbox', 'PC'],
+                datasets: [{
+                    data: [psPct || 45, xboxPct || 30, pcPct || 25],
+                    backgroundColor: ['#0070d1', '#107c10', '#00a2ff'],
+                    borderWidth: 0
+                }]
+            },
+            options: { cutout: '75%', plugins: { legend: { display: false } }, responsive: true, maintainAspectRatio: false }
+        });
+    }
 }
 
 window.filterOrdersByStatus = function(status) {
-    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[0].querySelector('a'));
+    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[1].querySelector('a'));
     const statusFilter = document.getElementById("orderStatusFilter");
     if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
@@ -407,68 +550,33 @@ function renderOrdersTables() {
     const fullBody = document.getElementById("fullOrdersTableBody");
     const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
     const platformFilter = document.getElementById("orderPlatformFilter")?.value || "all";
-    
-    let filteredOrders = ordersData;
-    if(statusFilter !== "all") {
-        filteredOrders = filteredOrders.filter(o => o.status === statusFilter);
-    }
-    if(platformFilter !== "all") {
-        filteredOrders = filteredOrders.filter(o => o.platform === platformFilter);
-    }
-
-    if(document.getElementById("paginationCountDisplay")) document.getElementById("paginationCountDisplay").innerText = filteredOrders.length;
-    if(document.getElementById("paginationTotalDisplay")) document.getElementById("paginationTotalDisplay").innerText = ordersData.length;
 
     if(fullBody) {
-        if(filteredOrders.length === 0) {
-            fullBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:30px;">لا توجد طلبات مسجلة أو مطابقة للفلتر المحدد.</td></tr>`;
+        let filtered = ordersData;
+        if(statusFilter !== "all") filtered = filtered.filter(o => o.status === statusFilter);
+        if(platformFilter !== "all") filtered = filtered.filter(o => o.platform === platformFilter);
+
+        if(filtered.length === 0) {
+            fullBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:30px;">لا توجد طلبات مسجلة حالياً.</td></tr>`;
         } else {
             fullBody.innerHTML = "";
-            filteredOrders.forEach((order) => {
+            filtered.forEach((order) => {
                 let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== null && !isNaN(order.withdrawnQty) ? Number(order.withdrawnQty) : 0;
-                let percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
+                let statusBadge = getStatusBadge(order.status);
+                let dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') : '---';
                 
-                let progressClass = "fill-orange";
-                if(percent === 100) progressClass = "fill-green";
-                else if(percent === 0) progressClass = "fill-blue";
-
-                let platIcon = "fa-brands fa-playstation platform-ps";
-                if(order.platform === 'Xbox') platIcon = "fa-brands fa-xbox platform-xbox";
-                else if(order.platform === 'PC') platIcon = "fa-brands fa-windows platform-pc";
-
-                let createDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') + ' ' + new Date(order.createdAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
-                let updateDateStr = order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('en-GB') + ' ' + new Date(order.updatedAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
-
                 fullBody.innerHTML += `
                     <tr>
-                        <td><input type="checkbox"></td>
-                        <td><span class="order-id-highlight">#${order.reference}</span></td>
-                        <td class="client-name-cell">
-                            <strong>${order.name}</strong>
-                            <span>${order.email || 'no-email@domain.com'}</span>
-                        </td>
-                        <td><span class="platform-pill-img"><i class="${platIcon}"></i> ${order.platform}</span></td>
-                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td style="color:#fff; font-weight:800;">${order.totalPrice}</td>
-                        <td>${getImageStatusPill(order.status)}</td>
-                        <td>
-                            <div class="table-progress-wrapper">
-                                <span style="font-size:0.75rem; font-weight:bold; color:#fff; width:32px;">${percent}%</span>
-                                <div class="table-progress-bar">
-                                    <div class="table-progress-fill ${progressClass}" style="width:${percent}%;"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td style="font-size:0.75rem; color:var(--text-muted);">${createDateStr}</td>
-                        <td style="font-size:0.75rem; color:var(--text-muted);">${updateDateStr}</td>
-                        <td>
-                            <div class="action-buttons-cell">
-                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="خيارات"><i class="fa-solid fa-ellipsis"></i></button>
-                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="عرض التفاصيل"><i class="fa-solid fa-eye"></i></button>
-                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                            </div>
-                        </td>
+                        <td><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
+                        <td>#${order.id}</td>
+                        <td><b>${order.name}</b></td>
+                        <td><span class="badge" style="background:rgba(255,255,255,0.05); color:var(--text-main);">${order.platform}</span></td>
+                        <td><b style="color:#f59e0b;">${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td style="color:#00a2ff; font-weight:bold;">${order.totalPrice}</td>
+                        <td>${statusBadge}</td>
+                        <td><span style="font-size:0.75rem; color:${order.errorCode==='none'?'var(--text-muted)':'#ef4444'}">${order.errorCode}</span></td>
+                        <td style="font-size:0.75rem; color:var(--text-muted);">${dateStr}</td>
+                        <td><button class="btn-custom" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-sliders"></i> تحكم</button></td>
                     </tr>
                 `;
             });
@@ -479,14 +587,16 @@ function renderOrdersTables() {
     renderClientsList();
 }
 
-function getImageStatusPill(status) {
+function getStatusBadge(status) {
     switch(status) {
-        case 'progress': return '<span class="status-pill-btn status-progress-img"><i class="fa-solid fa-rotate"></i> قيد التنفيذ</span>';
-        case 'new': return '<span class="status-pill-btn status-new-img"><i class="fa-solid fa-play"></i> جديد</span>';
-        case 'finished': return '<span class="status-pill-btn status-finished-img"><i class="fa-solid fa-check"></i> تم السحب</span>';
-        case 'transferred': return '<span class="status-pill-btn status-transferred-img"><i class="fa-solid fa-money-bill-transfer"></i> تم التحويل</span>';
-        case 'cancelled': return '<span class="status-pill-btn" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4);"><i class="fa-solid fa-ban"></i> ملغي</span>';
-        default: return '<span class="status-pill-btn status-new-img"><i class="fa-solid fa-play"></i> جديد</span>';
+        case 'new': return '<span class="badge badge-new"><i class="fa-solid fa-bell"></i> جديد</span>';
+        case 'review': return '<span class="badge badge-review"><i class="fa-solid fa-clock"></i> انتظار المراجعة</span>';
+        case 'progress': return '<span class="badge" style="background:rgba(168,85,247,0.15); color:#a855f7;"><i class="fa-solid fa-rotate"></i> قيد التنفيذ</span>';
+        case 'finished': return '<span class="badge" style="background:rgba(0,255,135,0.15); color:#00ff87;"><i class="fa-solid fa-check"></i> تم السحب</span>';
+        case 'transferred': return '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981;"><i class="fa-solid fa-money-bill-transfer"></i> تم التحويل</span>';
+        case 'completed': return '<span class="badge" style="background:rgba(16,185,129,0.2); color:#10b981;"><i class="fa-solid fa-award"></i> مكتمل</span>';
+        case 'cancelled': return '<span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="fa-solid fa-ban"></i> ملغي</span>';
+        default: return '<span class="badge badge-new">جديد</span>';
     }
 }
 
@@ -503,13 +613,13 @@ function renderTransferAlertsTable(list) {
         let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
         tbody.innerHTML += `
             <tr>
-                <td><span class="order-id-highlight">${order.reference}</span></td>
+                <td><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
                 <td>#${order.id}</td>
                 <td><b>${order.name}</b></td>
                 <td style="direction:ltr; text-align:right;">${order.phone}</td>
                 <td style="color:#00ff87; font-weight:bold;">${order.totalPrice}</td>
                 <td><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
-                <td><button class="btn-create-order" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+                <td><button class="btn-custom" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
             </tr>
         `;
     });
@@ -550,7 +660,7 @@ function renderClientsList(searchQuery = "") {
                 <td>${client.ordersCount}</td>
                 <td style="color:#f59e0b; font-weight:bold;">${formatCoinsNumber(client.totalCoins)}</td>
                 <td style="color:#00a2ff; font-weight:bold;">${client.totalPaid.toLocaleString()} SAR</td>
-                <td><button class="btn-create-order" style="padding:6px 12px; font-size:0.75rem;" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
+                <td><button class="btn-custom" style="padding:6px 12px; font-size:0.75rem;" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
             </tr>
         `;
     });
@@ -593,8 +703,8 @@ window.openOrderModal = function(index) {
                 </div>
             </div>
 
-            <div class="table-progress-bar" style="height:8px; margin-bottom:12px;">
-                <div class="table-progress-fill fill-green" id="progressBarFill" style="width: ${percent}%;"></div>
+            <div style="width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 10px; overflow: hidden; margin-bottom: 12px;">
+                <div id="progressBarFill" style="width: ${percent}%; background: var(--primary); height: 100%; transition: width 0.3s ease;"></div>
             </div>
 
             ${isCompleted ? '<div style="background: rgba(16, 185, 129, 0.35); border: 1px solid #10b981; color: #ffffff; padding: 10px; border-radius: 10px; text-align: center; font-weight: 900; margin-bottom: 12px;"><i class="fa-solid fa-circle-check"></i> ✅ تم إنجاز وسحب كامل الكمية بنجاح!</div>' : ''}
@@ -641,13 +751,13 @@ window.openOrderModal = function(index) {
 
     body.innerHTML = `
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-bottom:16px;">
-            <button class="btn-create-order" style="background:#00a2ff; color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
+            <button class="btn-custom" style="background:#00a2ff; color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
                 <i class="fa-solid fa-cloud-arrow-up"></i> الشيت
             </button>
-            <button class="btn-create-order" style="background:#f59e0b; color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
+            <button class="btn-custom" style="background:#f59e0b; color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
                 <i class="fa-solid fa-copy"></i> نسخ
             </button>
-            <button class="btn-create-order" style="background:#ef4444; color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
+            <button class="btn-custom" style="background:#ef4444; color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
                 <i class="fa-solid fa-shield-halved"></i> إتلاف
             </button>
         </div>
@@ -695,7 +805,7 @@ window.openOrderModal = function(index) {
 
         ${paymentDetailsHtml}
 
-        <button class="btn-create-order" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
+        <button class="btn-custom" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
             <i class="fa-solid fa-floppy-disk"></i> حفظ التحديثات
         </button>
     `;
@@ -778,6 +888,41 @@ window.saveOrderModalChanges = async function(index) {
 window.closeOrderModal = function() {
     const modal = document.getElementById("orderDetailModal");
     if(modal) modal.classList.remove("active");
+};
+
+window.closeClientModal = function() {
+    const modal = document.getElementById("clientDetailModal");
+    if(modal) modal.classList.remove("active");
+};
+
+window.openClientDetail = function(phone) {
+    const modal = document.getElementById("clientDetailModal");
+    const body = document.getElementById("clientModalBody");
+    if(!modal || !body) return;
+
+    let clientOrders = ordersData.filter(o => o.phone === phone);
+    if(clientOrders.length === 0) return;
+
+    let rows = clientOrders.map(o => `
+        <div style="background:var(--input-bg); padding:10px; border-radius:10px; margin-bottom:8px; border:1px solid var(--card-border);">
+            <div style="display:flex; justify-content:space-between;">
+                <code style="color:var(--primary);">#${o.reference}</code>
+                <b>${formatCoinsNumber(o.totalQty)} كوينز</b>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+                <span>${o.platform}</span>
+                <span>${o.totalPrice}</span>
+            </div>
+        </div>
+    `).join('');
+
+    body.innerHTML = `
+        <div style="margin-bottom:12px;"><strong>اسم العميل:</strong> ${clientOrders[0].name}</div>
+        <div style="margin-bottom:12px;"><strong>رقم الجوال:</strong> ${phone}</div>
+        <div style="margin-bottom:12px;"><strong>سجل الطلبات:</strong></div>
+        ${rows}
+    `;
+    modal.classList.add("active");
 };
 
 window.migrateToGoogleSheets = function(index) {
@@ -868,11 +1013,7 @@ window.savePricingConfig = async function () {
 window.saveStatusMessages = function() {
     const messages = { 
         new: document.getElementById("msgNew")?.value, 
-        review: document.getElementById("msgReview")?.value, 
-        progress: document.getElementById("msgProgress")?.value, 
-        finished: document.getElementById("msgFinished")?.value, 
-        transferred: document.getElementById("msgTransferred")?.value, 
-        completed: document.getElementById("msgCompleted")?.value 
+        progress: document.getElementById("msgProgress")?.value
     };
     localStorage.setItem("sami_coins_status_messages", JSON.stringify(messages));
     alert("✨ تم حفظ رسائل الحالات بنجاح!");
@@ -924,51 +1065,12 @@ window.deleteWallet = async function(i) {
     await saveAllSettingsToFirestore();
 };
 
-function renderCustomPayments() {
-    const c = document.getElementById("customPayMethodsContainer");
-    if(!c) return;
-    c.innerHTML = "";
-    customPaymentsList.forEach((p, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${p}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteCustomPayment(${i})">حذف</button></div>`);
-}
-
-window.addCustomPaymentMethod = async function() {
-    const i = document.getElementById("newCustomPaymentInput");
-    if(i && i.value.trim()){ 
-        customPaymentsList.push(i.value.trim()); 
-        i.value=""; 
-        renderCustomPayments(); 
-        await saveAllSettingsToFirestore();
-    }
-};
-
-window.deleteCustomPayment = async function(i) {
-    customPaymentsList.splice(i, 1);
-    renderCustomPayments();
-    await saveAllSettingsToFirestore();
-};
-
 function renderTerms() {
     const c = document.getElementById("termsListContainer");
     if(!c) return;
     c.innerHTML = "";
-    storeTerms.forEach((t, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1.5px solid var(--card-border); padding:10px; border-radius:12px;"><span style="font-size:0.85rem;">${i+1}. ${t}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteTerm(${i})">حذف</button></div>`);
+    storeTerms.forEach((t, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1.5px solid var(--card-border); padding:10px; border-radius:12px;"><span style="font-size:0.85rem;">${i+1}. ${t}</span></div>`);
 }
-
-window.addNewTerm = async function() {
-    const i = document.getElementById("newTermInput");
-    if(i && i.value.trim()){ 
-        storeTerms.push(i.value.trim()); 
-        i.value=""; 
-        renderTerms(); 
-        await saveAllSettingsToFirestore();
-    }
-};
-
-window.deleteTerm = async function(i) {
-    storeTerms.splice(i, 1);
-    renderTerms();
-    await saveAllSettingsToFirestore();
-};
 
 function updateLiveDatetime() {
     const now = new Date();
@@ -993,54 +1095,25 @@ window.handleGlobalSearch = function(query) {
     if(!fullBody) return;
     fullBody.innerHTML = "";
     if(matched.length === 0) {
-        fullBody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
+        fullBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
         return;
     }
     matched.forEach(order => {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== null && !isNaN(order.withdrawnQty) ? Number(order.withdrawnQty) : 0;
-        let percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
-        
-        let progressClass = "fill-orange";
-        if(percent === 100) progressClass = "fill-green";
-        else if(percent === 0) progressClass = "fill-blue";
-
-        let platIcon = "fa-brands fa-playstation platform-ps";
-        if(order.platform === 'Xbox') platIcon = "fa-brands fa-xbox platform-xbox";
-        else if(order.platform === 'PC') platIcon = "fa-brands fa-windows platform-pc";
-
-        let createDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') + ' ' + new Date(order.createdAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
-        let updateDateStr = order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('en-GB') + ' ' + new Date(order.updatedAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
-
+        let statusBadge = getStatusBadge(order.status);
+        let dateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') : '---';
         fullBody.innerHTML += `
             <tr>
-                <td><input type="checkbox"></td>
-                <td><span class="order-id-highlight">#${order.reference}</span></td>
-                <td class="client-name-cell">
-                    <strong>${order.name}</strong>
-                    <span>${order.email || 'no-email@domain.com'}</span>
-                </td>
-                <td><span class="platform-pill-img"><i class="${platIcon}"></i> ${order.platform}</span></td>
-                <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                <td style="color:#fff; font-weight:800;">${order.totalPrice}</td>
-                <td>${getImageStatusPill(order.status)}</td>
-                <td>
-                    <div class="table-progress-wrapper">
-                        <span style="font-size:0.75rem; font-weight:bold; color:#fff; width:32px;">${percent}%</span>
-                        <div class="table-progress-bar">
-                            <div class="table-progress-fill ${progressClass}" style="width:${percent}%;"></div>
-                        </div>
-                    </div>
-                </td>
-                <td style="font-size:0.75rem; color:var(--text-muted);">${createDateStr}</td>
-                <td style="font-size:0.75rem; color:var(--text-muted);">${updateDateStr}</td>
-                <td>
-                    <div class="action-buttons-cell">
-                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="خيارات"><i class="fa-solid fa-ellipsis"></i></button>
-                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="عرض التفاصيل"><i class="fa-solid fa-eye"></i></button>
-                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                    </div>
-                </td>
+                <td><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
+                <td>#${order.id}</td>
+                <td><b>${order.name}</b></td>
+                <td><span class="badge" style="background:rgba(255,255,255,0.05); color:var(--text-main);">${order.platform}</span></td>
+                <td><b style="color:#f59e0b;">${formatCoinsNumber(order.totalQty)}</b></td>
+                <td style="color:#00a2ff; font-weight:bold;">${order.totalPrice}</td>
+                <td>${statusBadge}</td>
+                <td><span style="font-size:0.75rem; color:${order.errorCode==='none'?'var(--text-muted)':'#ef4444'}">${order.errorCode}</span></td>
+                <td style="font-size:0.75rem; color:var(--text-muted);">${dateStr}</td>
+                <td><button class="btn-custom" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-sliders"></i> تحكم</button></td>
             </tr>
         `;
     });
