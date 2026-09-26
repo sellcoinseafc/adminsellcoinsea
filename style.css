@@ -1,6 +1,27 @@
 /* ==========================================================================
-   التنسيقات العامة والتحكم بالصفحة (Responsive Reset)
+   1. المتغيرات والأنماط الأساسية (Variables & Base Styles)
    ========================================================================== */
+:root {
+    --bg-color: #04060b;
+    --card-bg: #0b101b;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --input-bg: #131b2e;
+    --primary: #00ff87;
+    --primary-hover: #00cc6a;
+    --text-main: #f8fafc;
+    --text-muted: #8a99ad;
+    --sidebar-width: 280px;
+}
+
+body.light-mode {
+    --bg-color: #f1f5f9;
+    --card-bg: #ffffff;
+    --card-border: rgba(0, 0, 0, 0.08);
+    --input-bg: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -11,13 +32,14 @@ html, body {
     overflow-x: hidden;
     width: 100%;
     max-width: 100%;
-    background-color: var(--bg-color, #04060b);
-    color: var(--text-color, #f8fafc);
+    background-color: var(--bg-color);
+    color: var(--text-main);
     font-family: 'Tajawal', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* ==========================================================================
-   الهيدر الشريطي الثابت (Fixed Top Navbar)
+   2. الهيدر الشريطي الثابت (Fixed Top Navbar)
    ========================================================================== */
 .top-navbar {
     position: fixed;
@@ -25,12 +47,12 @@ html, body {
     right: 0;
     left: 0;
     height: 65px;
-    background: var(--card-bg, #0b101b);
-    border-bottom: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: var(--card-bg);
+    border-bottom: 1.5px solid var(--card-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
+    padding: 0 20px;
     z-index: 1000;
     backdrop-filter: blur(10px);
 }
@@ -39,7 +61,7 @@ html, body {
     display: none;
     font-weight: 900;
     font-size: 1rem;
-    color: var(--text-color, #ffffff);
+    color: var(--text-main);
 }
 
 .nav-right, .nav-left {
@@ -50,8 +72,8 @@ html, body {
 
 .toggle-sidebar-btn {
     background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
-    color: var(--text-color, #ffffff);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
     width: 40px;
     height: 40px;
     border-radius: 10px;
@@ -67,20 +89,93 @@ html, body {
     transform: scale(0.95);
 }
 
+.store-status-btn {
+    border: none;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.store-status-btn.open {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.store-status-btn.closed {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+.search-box {
+    position: relative;
+    width: 220px;
+}
+
+.search-box input {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    padding: 8px 36px 8px 12px;
+    border-radius: 10px;
+    color: var(--text-main);
+    font-size: 0.82rem;
+    outline: none;
+}
+
+.search-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.live-datetime-pill {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.nav-icon-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
 .logout-btn {
     color: #ef4444;
     border-color: rgba(239, 68, 68, 0.3) !important;
     font-size: 0.85rem;
     padding: 6px 12px;
+    width: auto;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-weight: 800;
-    border-radius: 10px;
 }
 
 /* ==========================================================================
-   القائمة الجانبية وتفاعل Overlay للجوال
+   3. القائمة الجانبية (Sidebar)
    ========================================================================== */
 .sidebar-overlay {
     position: fixed;
@@ -106,9 +201,9 @@ html, body {
     top: 0;
     right: 0;
     bottom: 0;
-    width: 280px;
-    background: var(--card-bg, #0b101b);
-    border-left: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    border-left: 1.5px solid var(--card-border);
     z-index: 1050;
     display: flex;
     flex-direction: column;
@@ -120,13 +215,13 @@ html, body {
     align-items: center;
     justify-content: space-between;
     padding: 20px;
-    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-bottom: 1px solid var(--card-border);
 }
 
 .sidebar-brand {
     font-weight: 900;
     font-size: 1.1rem;
-    color: var(--primary, #00ff87);
+    color: var(--primary);
 }
 
 .sidebar-close-btn {
@@ -137,10 +232,41 @@ html, body {
     height: 32px;
     border-radius: 8px;
     cursor: pointer;
-    display: none; /* يظهر فقط في الجوال */
+    display: none;
     align-items: center;
     justify-content: center;
     font-weight: bold;
+}
+
+.sidebar-user {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+    color: #04060b;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.user-info strong {
+    display: block;
+    font-size: 0.9rem;
+}
+
+.user-info span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
 }
 
 .sidebar-menu {
@@ -155,11 +281,11 @@ html, body {
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    color: var(--text-muted, #8a99ad);
+    color: var(--text-muted);
     text-decoration: none;
     border-radius: 12px;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     cursor: pointer;
     margin-bottom: 4px;
     transition: all 0.2s ease;
@@ -167,36 +293,343 @@ html, body {
 
 .sidebar-link.active, .sidebar-link:hover {
     background: rgba(0, 255, 135, 0.1);
-    color: var(--primary, #00ff87);
+    color: var(--primary);
 }
 
 /* ==========================================================================
-   المحتوى الرئيسي (Main Wrapper)
+   4. المحتوى الرئيسي والبطاقات (Main Content & Panels)
    ========================================================================== */
 .main-wrapper {
-    margin-right: 280px;
-    padding-top: 80px;
+    margin-right: var(--sidebar-width);
+    padding-top: 85px;
     padding-left: 20px;
     padding-right: 20px;
     padding-bottom: 40px;
     transition: margin-right 0.3s ease;
 }
 
+.urgent-banner {
+    background: rgba(245, 158, 11, 0.12);
+    border: 1.5px solid #f59e0b;
+    border-radius: 16px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.content-header {
+    margin-bottom: 24px;
+}
+
+.content-header h1 {
+    font-size: 1.4rem;
+    font-weight: 900;
+}
+
+.breadcrumb {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-info span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    display: block;
+}
+
+.stat-info h3 {
+    font-size: 1.35rem;
+    font-weight: 900;
+    margin-top: 4px;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.card-panel {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.panel-header h2 {
+    font-size: 1.05rem;
+    font-weight: 900;
+}
+
 /* ==========================================================================
-   تكييف الشاشات والجداول (Cards Representation)
+   5. عناصر النماذج والجداول والبطاقات الشفافة (Forms, Tables & Badges)
    ========================================================================== */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.form-group {
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.form-control {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    color: var(--text-main);
+    font-size: 0.88rem;
+    outline: none;
+    font-family: 'Tajawal', sans-serif;
+}
+
+.btn-custom {
+    background: linear-gradient(135deg, #00ff87 0%, #60efff 100%);
+    color: #04060b;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 900;
+    font-size: 0.88rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-action {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-new { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+.badge-review { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid #f59e0b; }
+.badge-progress { background: rgba(168, 85, 247, 0.15); color: #a855f7; border: 1px solid #a855f7; }
+.badge-finished { background: rgba(0, 255, 135, 0.15); color: #00ff87; border: 1px solid #00ff87; }
+.badge-transferred { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+.badge-completed { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
+.badge-error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; }
+.badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.badge-archived { background: rgba(148, 163, 184, 0.15); color: #94a3b8; border: 1px solid #94a3b8; }
+
 .table-responsive {
     width: 100%;
     overflow-x: auto;
 }
 
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: right;
+}
+
+th, td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.85rem;
+}
+
+th {
+    color: var(--text-muted);
+    font-weight: 800;
+}
+
+/* ==========================================================================
+   6. النوافذ المنبثقة (Modals)
+   ========================================================================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.modal-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.admin-summary-banner {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.admin-banner-item i {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+}
+
+.admin-banner-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.admin-banner-value {
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.admin-credential-banner {
+    background: var(--input-bg);
+    border: 1px dashed var(--card-border);
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.cred-title {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.cred-val {
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.progress-bar-container {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff87, #60efff);
+    transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   7. تجاوب الجوال الشامل بدون دفع المحتوى (Mobile Responsive Rules)
+   ========================================================================== */
 @media (max-width: 992px) {
     .sidebar {
-        transform: translateX(100%); /* إخفاء خارج الشاشة باليمين */
+        transform: translateX(100%);
     }
 
     .sidebar.mobile-open {
-        transform: translateX(0); /* فتح كـ Overlay فوق الصفحة */
+        transform: translateX(0);
     }
 
     .sidebar-close-btn {
@@ -214,11 +647,11 @@ html, body {
     }
 
     .search-box, .live-datetime-pill {
-        display: none; /* إخفاء البحث والتاريخ غير الضروري في الهيدر الصغير */
+        display: none;
     }
 
     .logout-btn span {
-        display: none; /* إظهار أيقونة الخروج فقط */
+        display: none;
     }
 
     .flex-mobile-column {
@@ -227,7 +660,7 @@ html, body {
         gap: 12px;
     }
 
-    /* تحويل الجداول لبطاقات شاشات الجوال */
+    /* تحويل الجوال لبطاقات أنيقة ببيانات حقيقية */
     .responsive-table, 
     .responsive-table tbody, 
     .responsive-table tr, 
@@ -237,12 +670,12 @@ html, body {
     }
 
     .responsive-table thead {
-        display: none; /* إخفاء رأس الجدول */
+        display: none;
     }
 
     .responsive-table tr {
-        background: var(--card-bg, #0b101b);
-        border: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.1));
+        background: var(--card-bg);
+        border: 1.5px solid var(--card-border);
         border-radius: 16px;
         padding: 14px;
         margin-bottom: 14px;
@@ -254,7 +687,7 @@ html, body {
         justify-content: space-between;
         align-items: center;
         padding: 8px 0;
-        border-bottom: 1px dashed var(--border-color, rgba(255, 255, 255, 0.08));
+        border-bottom: 1px dashed var(--card-border);
         font-size: 0.85rem;
     }
 
@@ -268,12 +701,11 @@ html, body {
     .responsive-table td::before {
         content: attr(data-label);
         font-weight: 800;
-        color: var(--text-muted, #8a99ad);
+        color: var(--text-muted);
         font-size: 0.8rem;
     }
 }
 
-/* الشاشات الصغيرة جداً (320px - 412px) */
 @media (max-width: 480px) {
     .stats-grid {
         grid-template-columns: 1fr !important;
