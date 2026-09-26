@@ -891,6 +891,10 @@ window.deleteWallet = async function(i) {
     await saveAllSettingsToFirestore();
 };
 
+function renderCustomPayments() {
+    // دوال وسائل الدفع الإضافية المخصصة
+}
+
 function renderTerms() {
     const c = document.getElementById("termsListContainer");
     if(!c) return;
