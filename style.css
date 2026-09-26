@@ -76,7 +76,7 @@ body {
 }
 
 /* ==========================================================================
-   1. شاشة تسجيل الدخول الأجهزة والأمان (Login Overlay)
+   1. شاشة تسجيل الدخول المعتمة تماماً (Solid Dedicated Login Screen)
    ========================================================================== */
 .login-overlay {
     position: fixed;
@@ -84,16 +84,15 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(3, 5, 11, 0.92);
-    backdrop-filter: blur(16px);
+    background: #060913 !important; /* خلفية معتمة 100% لإخفاء اللوحة تماماً */
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 3000;
+    z-index: 99999 !important; /* تعليتها فوق جميع عناصر الصفحة */
     padding: 20px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
 }
 
 .login-overlay.active {
