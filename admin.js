@@ -336,6 +336,7 @@ function sortOrdersNewestFirst() {
 
 function updateDashboardStats() {
     sortOrdersNewestFirst();
+    let countAll = ordersData.length;
     let countNew = ordersData.filter(o => o.status === 'new').length;
     let countProgress = ordersData.filter(o => o.status === 'progress').length;
     let countFinished = ordersData.filter(o => o.status === 'finished').length;
@@ -377,12 +378,20 @@ function updateDashboardStats() {
         return sum + p;
     }, 0);
 
+    // ربط إحصائيات لوحة التحكم بالكامل
+    if(document.getElementById("statAllOrders")) document.getElementById("statAllOrders").innerText = countAll;
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
     if(document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
     if(document.getElementById("statCancelledOrders")) document.getElementById("statCancelledOrders").innerText = countCancelled;
-    if(document.getElementById("statTransferNeededOrders")) document.getElementById("statTransferNeededOrders").innerText = countTransferNeeded;
     if(document.getElementById("statTransferredOrders")) document.getElementById("statTransferredOrders").innerText = countTransferred;
+
+    if(document.getElementById("statNewOrdersDash")) document.getElementById("statNewOrdersDash").innerText = countNew;
+    if(document.getElementById("statProgressOrdersDash")) document.getElementById("statProgressOrdersDash").innerText = countProgress;
+    if(document.getElementById("statFinishedOrdersDash")) document.getElementById("statFinishedOrdersDash").innerText = countFinished;
+    if(document.getElementById("statCancelledOrdersDash")) document.getElementById("statCancelledOrdersDash").innerText = countCancelled;
+    if(document.getElementById("statTransferNeededOrdersDash")) document.getElementById("statTransferNeededOrdersDash").innerText = countTransferNeeded;
+    if(document.getElementById("statTransferredOrdersDash")) document.getElementById("statTransferredOrdersDash").innerText = countTransferred;
 
     if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
     if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
@@ -393,8 +402,9 @@ function updateDashboardStats() {
     renderTransferAlertsTable(transferNeededList);
 }
 
+// الفلترة الفورية المباشرة لنقل العرض لتبويب الطلبات
 window.filterOrdersByStatus = function(status) {
-    window.switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'));
+    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[1].querySelector('a'));
     const statusFilter = document.getElementById("orderStatusFilter");
     if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
@@ -425,12 +435,12 @@ function renderOrdersTables() {
 
                 dashBody.innerHTML += `
                     <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
                         <td data-label="رقم الطلب">#${order.id}</td>
                         <td data-label="اسم العميل"><b>${order.name}</b></td>
                         <td data-label="المنصة">${order.platform}</td>
                         <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
                         <td data-label="الحالة"><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
                     </tr>
@@ -441,7 +451,7 @@ function renderOrdersTables() {
 
     if(fullBody) {
         if(filteredOrders.length === 0) {
-            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
+            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر المحدد.</td></tr>`;
         } else {
             fullBody.innerHTML = "";
             filteredOrders.forEach((order) => {
@@ -452,12 +462,12 @@ function renderOrdersTables() {
 
                 fullBody.innerHTML += `
                     <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
                         <td data-label="رقم الطلب">#${order.id}</td>
                         <td data-label="اسم العميل"><b>${order.name}</b></td>
                         <td data-label="المنصة">${order.platform}</td>
                         <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
                         <td data-label="الحالة والأخطاء"><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td data-label="الإجراءات">
                             <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
@@ -486,11 +496,11 @@ function renderTransferAlertsTable(list) {
         let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
         tbody.innerHTML += `
             <tr>
-                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
                 <td data-label="رقم الطلب">#${order.id}</td>
                 <td data-label="اسم العميل"><b>${order.name}</b></td>
                 <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${order.phone}</td>
-                <td data-label="المبلغ المستحق" style="color:var(--primary);">${order.totalPrice}</td>
+                <td data-label="المبلغ المستحق" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
                 <td data-label="المدة المتبقية"><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
                 <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
             </tr>
@@ -531,8 +541,8 @@ function renderClientsList(searchQuery = "") {
                 <td data-label="اسم العميل"><b>${client.name}</b></td>
                 <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${client.phone}</td>
                 <td data-label="عدد الطلبات">${client.ordersCount}</td>
-                <td data-label="إجمالي الكوينز" style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
-                <td data-label="إجمالي المدفوعات" style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
+                <td data-label="إجمالي الكوينز" style="color:#f59e0b; font-weight:bold;">${formatCoinsNumber(client.totalCoins)}</td>
+                <td data-label="إجمالي المدفوعات" style="color:#38bdf8; font-weight:bold;">${client.totalPaid.toLocaleString()} SAR</td>
                 <td data-label="الإجراء"><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
             </tr>
         `;
@@ -1032,12 +1042,12 @@ window.handleGlobalSearch = function(query) {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
         fullBody.innerHTML += `
             <tr>
-                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
                 <td data-label="رقم الطلب">#${order.id}</td>
                 <td data-label="اسم العميل"><b>${order.name}</b></td>
                 <td data-label="المنصة">${order.platform}</td>
                 <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
                 <td data-label="الحالة">${getStatusBadge(order.status)}</td>
                 <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
             </tr>
