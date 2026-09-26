@@ -70,9 +70,21 @@ let auditLogsData = [];
 let stockData = { PlayStation: 0, PC: 0 };
 let revealedSensitiveOrders = new Set();
 
+let unsubscribeOrders = null;
+let unsubscribeSettings = null;
+let unsubscribeAdmins = null;
+let unsubscribeAudit = null;
+
 // ==========================================================================
-// 2. حارس الأمان وتأمين اللوحة الصارم (Security Authorization Guard)
+// 2. البدء الفوري والسريع لمستمعات البيانات فور توثيق الدخول
 // ==========================================================================
+function startAllListeners() {
+  if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
+  if (!unsubscribeSettings) unsubscribeSettings = initSystemSettingsListener();
+  if (!unsubscribeAdmins) unsubscribeAdmins = initAdminsListener();
+  if (!unsubscribeAudit) unsubscribeAudit = initAuditLogsListener();
+}
+
 function initAuthGuard() {
   if (!auth) return;
 
@@ -104,12 +116,16 @@ function initAuthGuard() {
           }
           currentAdmin = { uid: user.uid, ...data };
           await updateDoc(adminRef, { lastLogin: serverTimestamp() });
+          
           if (loginOverlay) loginOverlay.classList.remove("active");
           updateSidebarAdminUI();
           applyRolePermissions();
+          
+          // 🚀 تشغيل المزامنة المباشرة فوراً بعد التحقق لمنع تأخير تحضير البيانات
+          startAllListeners();
+          
           await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
         } else {
-          // 🔒 حظر أي حساب غير موجود مسبقاً في admins
           showLoginError("⚠️ هذا الحساب غير مصرح له بالدخول للوحة التحكم.");
           await signOut(auth);
           if (loginOverlay) loginOverlay.classList.add("active");
@@ -236,7 +252,7 @@ async function logAuditEvent(action, targetOrder = "عام", details = "") {
 
 function initAuditLogsListener() {
   const q = query(collection(db, "audit_logs"), orderBy("timestamp", "desc"), limit(100));
-  onSnapshot(q, (snapshot) => {
+  return onSnapshot(q, (snapshot) => {
     auditLogsData = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
     renderAuditLogsTable();
   }, (err) => console.error("Audit logs listener error:", err));
@@ -280,7 +296,7 @@ window.filterAuditLogs = function (query) {
 // 4. إدارة المشرفين والصلاحيات (`admins/{uid}` + Firebase Auth)
 // ==========================================================================
 function initAdminsListener() {
-  onSnapshot(collection(db, "admins"), (snapshot) => {
+  return onSnapshot(collection(db, "admins"), (snapshot) => {
     adminsData = snapshot.docs.map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }));
     renderAdminsTable();
   });
@@ -311,7 +327,7 @@ function renderAdminsTable() {
         <td><span style="font-size:0.78rem; color:var(--text-muted);">${lastLoginStr}</span></td>
         <td>
           ${!isOwner ? `
-            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}', ${admin.active})">
+            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}',${admin.active})">
               ${admin.active !== false ? 'تعطيل' : 'تفعيل'}
             </button>
             <button class="btn-action" style="color:var(--danger);" onclick="deleteAdminDoc('${admin.uid}', '${admin.name}')">حذف</button>
@@ -406,7 +422,7 @@ window.deleteAdminDoc = async function (uid, name) {
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
-  onSnapshot(ref, (snapshot) => {
+  return onSnapshot(ref, (snapshot) => {
     ordersData = snapshot.docs.map(docSnap => {
       const data = docSnap.data();
       let formattedPrice = data.price || data.totalPrice || "0 ريال";
@@ -683,33 +699,33 @@ function getPlatformTheme(platformName) {
   const plat = String(platformName || "").toLowerCase();
   if (plat.includes("playstation") || plat.includes("ps") || plat.includes("بلايستيشن") || plat.includes("سوني")) {
     return {
-      bg: "linear-gradient(135deg, rgba(0, 67, 156, 0.35) 0%, rgba(0, 112, 209, 0.2) 100%)",
+      bg: "linear-gradient(135deg, rgba(0, 67, 156, 0.4) 0%, rgba(0, 112, 209, 0.25) 100%)",
       border: "#0070D1",
-      textColor: "#60A5FA",
-      badgeBg: "rgba(0, 112, 209, 0.25)",
+      textColor: "#ffffff",
+      badgeBg: "rgba(0, 112, 209, 0.35)",
       icon: "fa-brands fa-playstation"
     };
   } else if (plat.includes("xbox") || plat.includes("إكس بوكس") || plat.includes("اكس بوكس")) {
     return {
-      bg: "linear-gradient(135deg, rgba(16, 124, 16, 0.35) 0%, rgba(18, 146, 18, 0.2) 100%)",
+      bg: "linear-gradient(135deg, rgba(16, 124, 16, 0.4) 0%, rgba(18, 146, 18, 0.25) 100%)",
       border: "#107C10",
-      textColor: "#4ADE80",
-      badgeBg: "rgba(16, 124, 16, 0.25)",
+      textColor: "#ffffff",
+      badgeBg: "rgba(16, 124, 16, 0.35)",
       icon: "fa-brands fa-xbox"
     };
   } else {
     return {
-      bg: "linear-gradient(135deg, rgba(184, 46, 46, 0.35) 0%, rgba(232, 17, 35, 0.2) 100%)",
+      bg: "linear-gradient(135deg, rgba(184, 46, 46, 0.4) 0%, rgba(232, 17, 35, 0.25) 100%)",
       border: "#E81123",
-      textColor: "#F87171",
-      badgeBg: "rgba(232, 17, 35, 0.25)",
+      textColor: "#ffffff",
+      badgeBg: "rgba(232, 17, 35, 0.35)",
       icon: "fa-solid fa-desktop"
     };
   }
 }
 
 // ==========================================================================
-// 9. نافذة عرض تفاصيل الطلب المعدلة للجوال (عرض تفاصيل الطلب V3)
+// 9. نافذة عرض تفاصيل الطلب المتطورة كلياً V3.0
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -729,7 +745,7 @@ window.openOrderModal = function (index) {
 
   // 1. صف الأزرار الرئيسية في الأعلى (نسخ / ترحيل / إتلاف)
   const actionsRowHtml = `
-    <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:16px;">
+    <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:14px;">
       <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
         <i class="fa-solid fa-copy"></i> نسخ
       </button>
@@ -742,54 +758,81 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 2. بطاقة معلومات الطلب والعميل (متوافقة مع الجوال)
+  // 2. حالات الطلب والخطأ مباشرة تحت صف الأزرار في الأعلى
+  const statusControlsRowHtml = `
+    <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; background:var(--input-bg); padding:14px; border-radius:14px; border:1px solid var(--card-border);">
+      <div class="form-group" style="margin-bottom:0;">
+        <label style="color:var(--primary); font-weight:900; font-size:0.85rem;"><i class="fa-solid fa-list-check"></i> حالة الطلب الحالية:</label>
+        <select id="modalStatusSelect" class="form-control" style="color:#ffffff; font-weight:800; margin-top:4px;">
+          <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
+          <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
+          <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
+          <option value="finished" ${order.status==='finished'?'selected':''}>تم الانتهاء (تم السحب)</option>
+          <option value="transferred" ${order.status==='transferred'?'selected':''}>تم التحويل المالي</option>
+          <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل نهائياً</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label style="color:var(--danger); font-weight:900; font-size:0.85rem;"><i class="fa-solid fa-triangle-exclamation"></i> حالة الخطأ (إن وجد):</label>
+        <select id="modalErrorSelect" class="form-control" style="color:#ffffff; font-weight:800; margin-top:4px;">
+          <option value="none" ${order.errorCode==='none'?'selected':''}>سليم - لا توجد أخطاء</option>
+          <option value="err_pass" ${order.errorCode==='err_pass'?'selected':''}>خطأ بالبريد أو كلمة المرور</option>
+          <option value="err_codes" ${order.errorCode==='err_codes'?'selected':''}>خطأ بالأكواد الاحتياطية</option>
+          <option value="err_login" ${order.errorCode==='err_login'?'selected':''}>العميل داخل اللعبة</option>
+          <option value="err_market" ${order.errorCode==='err_market'?'selected':''}>سوق الانتقالات مغلق</option>
+        </select>
+      </div>
+    </div>
+  `;
+
+  // 3. بطاقة معلومات الطلب الرسمية (جميع القيم باللون الأبيض الصريح #ffffff)
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
-      <!-- الصف الأول: رقم الطلب + اسم العميل + رقم الجوال -->
+      <!-- الصف الأول: رقم الطلب + اسم العميل + رقم الجوال باللون الأبيض -->
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب</span>
-          <code style="color:${theme.textColor}; font-size:1rem; font-weight:900;">#${order.reference}</code>
+          <code style="color:#ffffff; font-size:1.05rem; font-weight:900;">#${order.reference}</code>
         </div>
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">اسم العميل</span>
-          <b style="font-size:0.95rem; color:#fff;">${order.name}</b>
+          <b style="font-size:1rem; color:#ffffff; font-weight:900;">${order.name}</b>
         </div>
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الجوال</span>
-          <span style="direction:ltr; font-size:0.9rem; font-weight:900; color:${theme.textColor};">${order.phone}</span>
+          <span style="direction:ltr; font-size:0.95rem; font-weight:900; color:#ffffff;">${order.phone}</span>
         </div>
       </div>
 
-      <!-- الصف الثاني: المنصة + الكمية + السعر -->
+      <!-- الصف الثاني: اسم الجهاز + الكمية + المبلغ باللون الأبيض -->
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; text-align:center; align-items:center;">
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">المنصة المستهدفة</span>
-          <span style="display:inline-flex; align-items:center; gap:6px; background:${theme.badgeBg}; color:${theme.textColor}; padding:4px 12px; border-radius:20px; font-weight:900; font-size:0.85rem; border:1px solid ${theme.border};">
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">اسم الجهاز / المنصة</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; background:${theme.badgeBg}; color:#ffffff; padding:4px 14px; border-radius:20px; font-weight:900; font-size:0.88rem; border:1px solid ${theme.border};">
             <i class="${theme.icon}"></i> ${order.platform}
           </span>
         </div>
         <div>
           <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية الإجمالية</span>
-          <b style="font-size:1rem; color:var(--primary); font-weight:900;">${formatCoinsNumber(order.totalQty)} كوينز</b>
+          <b style="font-size:1.05rem; color:#ffffff; font-weight:900;">${formatCoinsNumber(order.totalQty)} كوينز</b>
         </div>
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">السعر الإجمالي</span>
-          <b style="font-size:1rem; color:#38bdf8; font-weight:900;">${order.totalPrice}</b>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">المبلغ / السعر</span>
+          <b style="font-size:1.05rem; color:#ffffff; font-weight:900;">${order.totalPrice}</b>
         </div>
       </div>
     </div>
   `;
 
-  // 3. مربعات حالة عملية السحب (الكمية كم / المسحوب كم / المتبقي كم في صف واحد متجاوب)
+  // 4. مربعات إحصائيات عملية السحب
   const withdrawalStatsHtml = `
     <div class="responsive-grid-3" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
       <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
-        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المطلوب سحبها</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المطلوبة</span>
         <h4 style="font-size:1.1rem; font-weight:900; color:var(--primary);">${formatCoinsNumber(order.totalQty)}</h4>
       </div>
       <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
-        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المسحوبة حتى الآن</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المسحوبة</span>
         <h4 style="font-size:1.1rem; font-weight:900; color:#38bdf8;">${formatCoinsNumber(rawWithdrawn)}</h4>
       </div>
       <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
@@ -799,7 +842,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 4. مربعات بيانات حساب EA (الضغط على المربع نفسه ينسخ تلقائياً)
+  // 5. بيانات حساب EA الخاصة بالعميل (الضغط على المربع ينسخ)
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
   const codesList = order.backupCodes || [];
@@ -819,19 +862,19 @@ window.openOrderModal = function (index) {
         </button>
       </div>
 
-      <!-- البريد الإلكتروني (مربع قابل للضغط للنسخ) -->
+      <!-- البريد الإلكتروني -->
       <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')" title="اضغط للنسخ">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني (EA Email):</span>
-        <code style="font-size:0.95rem; font-weight:800; color:#fff; display:block; margin-top:2px;">${emailVal}</code>
+        <code style="font-size:0.95rem; font-weight:800; color:#ffffff; display:block; margin-top:2px;">${emailVal}</code>
       </div>
 
-      <!-- كلمة المرور (تحته مباشرة ومربع قابل للضغط للنسخ) -->
+      <!-- كلمة المرور -->
       <div class="copyable-box" style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px;" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')" title="اضغط للنسخ">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور (EA Password):</span>
         <code style="font-size:0.95rem; font-weight:800; color:var(--warning); display:block; margin-top:2px;">${passVal}</code>
       </div>
 
-      <!-- الأكواد الاحتياطية (مربعات قابلة للضغط للنسخ) -->
+      <!-- الأكواد الاحتياطية -->
       <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">الأكواد الاحتياطية (Backup Codes):</span>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px;">
@@ -846,7 +889,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 5. بيانات الحساب البنكي / المحفظة (مربع قابل للضغط للنسخ)
+  // 6. بيانات الحساب البنكي / المحفظة
   let pd = order.paymentDetails || {};
   let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
   let beneficiaryName = pd.name || order.name || "العميل";
@@ -860,11 +903,11 @@ window.openOrderModal = function (index) {
       <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
         <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
           <span style="font-size:0.75rem; color:var(--text-muted); display:block;">وسيلة الدفع / البنك:</span>
-          <b style="font-size:0.88rem; color:#fff;">${bankOrWallet}</b>
+          <b style="font-size:0.88rem; color:#ffffff;">${bankOrWallet}</b>
         </div>
         <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
           <span style="font-size:0.75rem; color:var(--text-muted); display:block;">اسم المستفيد:</span>
-          <b style="font-size:0.88rem; color:#fff;">${beneficiaryName}</b>
+          <b style="font-size:0.88rem; color:#ffffff;">${beneficiaryName}</b>
         </div>
       </div>
       <div class="copyable-box" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid var(--card-border);" onclick="copyPayoutInfo('${payoutAddress}', 'رقم الحساب / الآيبان', '${order.reference}')" title="اضغط للنسخ">
@@ -874,7 +917,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 6. التحكم بنسب الإنجاز والحالات
+  // 7. شريط إنجاز السحب وتعديل الكمية فقط (إلغاء حقل الكمية المتبقية المكرر في الأسفل)
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
 
   const controlsHtml = `
@@ -888,38 +931,10 @@ window.openOrderModal = function (index) {
       </div>
     </div>
 
-    <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+    <div style="margin-bottom:16px;">
       <div class="form-group" style="margin-bottom:0;">
         <label>تعديل الكمية المسحوبة (كوينز):</label>
         <input type="text" id="modalWithdrawnInput" class="form-control" value="${rawWithdrawn ? formatCoinsNumber(rawWithdrawn) : ''}" placeholder="أدخل الكمية المسحوبة..." oninput="calcRemaining(${index}, this)">
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label>الكمية المتبقية للسحب:</label>
-        <input type="text" id="modalRemainingDisplay" class="form-control" value="${formatCoinsNumber(remaining)}" readonly style="color:var(--warning); background:rgba(0,0,0,0.2);">
-      </div>
-    </div>
-
-    <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px;">
-      <div class="form-group" style="margin-bottom:0;">
-        <label>حالة الطلب:</label>
-        <select id="modalStatusSelect" class="form-control">
-          <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
-          <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
-          <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
-          <option value="finished" ${order.status==='finished'?'selected':''}>تم الانتهاء (تم السحب)</option>
-          <option value="transferred" ${order.status==='transferred'?'selected':''}>تم التحويل المالي</option>
-          <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل نهائياً</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin-bottom:0;">
-        <label>حالة الخطأ (إن وجد):</label>
-        <select id="modalErrorSelect" class="form-control">
-          <option value="none" ${order.errorCode==='none'?'selected':''}>سليم - لا توجد أخطاء</option>
-          <option value="err_pass" ${order.errorCode==='err_pass'?'selected':''}>خطأ بالبريد أو كلمة المرور</option>
-          <option value="err_codes" ${order.errorCode==='err_codes'?'selected':''}>خطأ بالأكواد الاحتياطية</option>
-          <option value="err_login" ${order.errorCode==='err_login'?'selected':''}>العميل داخل اللعبة</option>
-          <option value="err_market" ${order.errorCode==='err_market'?'selected':''}>سوق الانتقالات مغلق</option>
-        </select>
       </div>
     </div>
 
@@ -930,12 +945,12 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  body.innerHTML = actionsRowHtml + platformHeaderCardHtml + withdrawalStatsHtml + sensitiveSection + payoutSectionHtml + controlsHtml;
+  body.innerHTML = actionsRowHtml + statusControlsRowHtml + platformHeaderCardHtml + withdrawalStatsHtml + sensitiveSection + payoutSectionHtml + controlsHtml;
   modal.classList.add("active");
 };
 
 // ==========================================================================
-// 10. الدوال المساعدة للنسخ التلقائي
+// 10. الدوال المساعدة للنسخ والتحديث
 // ==========================================================================
 window.copyEaAccountData = async function (index) {
   const order = ordersData[index];
@@ -983,10 +998,6 @@ window.calcRemaining = function (index, input) {
   if (withdrawn > total) withdrawn = total;
 
   input.value = withdrawn > 0 ? formatCoinsNumber(withdrawn) : '';
-  const rem = Math.max(0, total - withdrawn);
-
-  const remDisp = document.getElementById("modalRemainingDisplay");
-  if (remDisp) remDisp.value = formatCoinsNumber(rem);
 };
 
 window.saveOrderModalChanges = async function (index) {
@@ -1187,7 +1198,7 @@ async function saveAllSettingsToFirestore() {
 
 function initSystemSettingsListener() {
   const settingsRef = doc(db, "system", "settings");
-  onSnapshot(settingsRef, (docSnap) => {
+  return onSnapshot(settingsRef, (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
       isStoreOpen = data.storeOpen !== undefined ? data.storeOpen : true;
@@ -1482,10 +1493,6 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 14. بدء التشغيل والاستماع الفوري
+// 14. بدء التشغيل التلقائي وحارس الأمان
 // ==========================================================================
 initAuthGuard();
-initSystemSettingsListener();
-initOrdersListener();
-initAdminsListener();
-initAuditLogsListener();
