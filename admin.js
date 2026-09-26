@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDocs,
+  setDoc,
   updateDoc,
   onSnapshot,
   serverTimestamp
@@ -20,39 +21,23 @@ async function testConnection() {
 }
 testConnection();
 
-// إدارة حالة المتجر
-let isStoreOpen = localStorage.getItem("sami_coins_store_status") !== "closed";
-
-function updateStoreStatusUI() {
-    const btn = document.getElementById("storeStatusToggleBtn");
-    const txt = document.getElementById("storeStatusText");
-    if (!btn || !txt) return;
-    if (isStoreOpen) {
-        btn.className = "store-status-btn open";
-        txt.innerText = "المتجر مفتوح";
-    } else {
-        btn.className = "store-status-btn closed";
-        txt.innerText = "المتجر مغلق";
-    }
-    localStorage.setItem("sami_coins_store_status", isStoreOpen ? "open" : "closed");
-}
-
-window.toggleStoreStatus = function() {
-    isStoreOpen = !isStoreOpen;
-    updateStoreStatusUI();
-    alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات!");
-};
-
-let ordersData = []; 
-
+// متغيرات النظام والإعدادات الافتراضية
+let isStoreOpen = true;
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
 let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
-let customPaymentsList = JSON.parse(localStorage.getItem("sami_coins_custom_payments")) || ["بطاقة مدى / فيزا", "Apple Pay"];
+let customPaymentsList = ["بطاقة مدى / فيزا", "Apple Pay"];
 let storeTerms = [
     "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
     "المدة الزمنية: متوسط مدة عملية سحب الكوينز تستغرق من 3 إلى 5 أيام عمل.",
     "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
 ];
+let pricingConfig = {
+    ps: { rate: "200", min: "100,000", max: "5,000,000", duration: "3 - 5 أيام عمل" },
+    pc: { rate: "150", min: "100,000", max: "1,000,000", duration: "2 - 4 أيام عمل" },
+    promo: { active: "false", rate: "220", expiry: "", text: "🔥 عرض لفترة محدودة!" }
+};
+
+let ordersData = []; 
 let stockData = { PlayStation: 0, PC: 0 };
 
 // دالة تنسيق الأرقام (الفواصل الثلاثية مثل 1,000,000)
@@ -67,7 +52,115 @@ window.copyDirect = function(text) {
     navigator.clipboard.writeText(text);
 };
 
-// المزامنة المباشرة للطلبات من Firestore
+// 1. مزامنة وتحميل إعدادات المتجر بالكامل من Firestore (system/settings)
+function initSystemSettingsListener() {
+    const settingsRef = doc(db, "system", "settings");
+    onSnapshot(settingsRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            isStoreOpen = data.storeOpen !== undefined ? data.storeOpen : true;
+            banksList = data.banksList || banksList;
+            walletsList = data.walletsList || walletsList;
+            customPaymentsList = data.customPaymentsList || customPaymentsList;
+            storeTerms = data.storeTerms || storeTerms;
+            pricingConfig = data.pricing || pricingConfig;
+            
+            updateStoreStatusUI();
+            renderBanks();
+            renderWallets();
+            renderCustomPayments();
+            renderTerms();
+            populatePricingUI();
+        } else {
+            setDoc(settingsRef, {
+                storeOpen: true,
+                banksList,
+                walletsList,
+                customPaymentsList,
+                storeTerms,
+                pricing: pricingConfig,
+                updatedAt: serverTimestamp()
+            });
+        }
+    }, (error) => {
+        console.error("Error loading settings from Firestore:", error);
+    });
+}
+
+// تحديث الإعدادات في Firestore مباشرة
+async function saveSettingsToFirestore(updatedFields) {
+    try {
+        const settingsRef = doc(db, "system", "settings");
+        await updateDoc(settingsRef, {
+            ...updatedFields,
+            updatedAt: serverTimestamp()
+        });
+    } catch (err) {
+        try {
+            const settingsRef = doc(db, "system", "settings");
+            await setDoc(settingsRef, {
+                storeOpen: isStoreOpen,
+                banksList,
+                walletsList,
+                customPaymentsList,
+                storeTerms,
+                pricing: pricingConfig,
+                ...updatedFields,
+                updatedAt: serverTimestamp()
+            });
+        } catch(e) {
+            console.error("Fallback save failed:", e);
+        }
+    }
+}
+
+function updateStoreStatusUI() {
+    const btn = document.getElementById("storeStatusToggleBtn");
+    const txt = document.getElementById("storeStatusText");
+    if (!btn || !txt) return;
+    if (isStoreOpen) {
+        btn.className = "store-status-btn open";
+        txt.innerText = "المتجر مفتوح";
+    } else {
+        btn.className = "store-status-btn closed";
+        txt.innerText = "المتجر مغلق";
+    }
+}
+
+window.toggleStoreStatus = async function() {
+    isStoreOpen = !isStoreOpen;
+    updateStoreStatusUI();
+    await saveSettingsToFirestore({ storeOpen: isStoreOpen });
+    alert(isStoreOpen ? "🟢 تم فتح المتجر وتحديث قاعدة البيانات!" : "🔴 تم إغلاق المتجر وتحديث قاعدة البيانات!");
+};
+
+// 2. حساب الستوك (المخزون) تلقائياً من الطلبات النشطة حصرياً
+function calculateDynamicStock() {
+    let psStock = 0;
+    let pcStock = 0;
+
+    ordersData.forEach(o => {
+        // تحسب فقط من: طلب جديد، بانتظار المراجعة، قيد التنفيذ
+        if (o.status === 'new' || o.status === 'review' || o.status === 'progress') {
+            let total = Number(o.totalQty) || 0;
+            let withdrawn = Number(o.withdrawnQty) || 0;
+            let pending = Math.max(0, total - withdrawn);
+
+            let plat = String(o.platform || "").toLowerCase();
+            if (plat.includes('pc') || plat.includes('حاسب')) {
+                pcStock += pending;
+            } else {
+                // PlayStation & Xbox
+                psStock += pending;
+            }
+        }
+    });
+
+    stockData.PlayStation = psStock;
+    stockData.PC = pcStock;
+}
+
+// 3. المزامنة المباشرة للطلبات من Firestore (`orders`)
 function initOrdersListener() {
     const ref = collection(db, "orders");
     onSnapshot(ref, (snapshot) => {
@@ -78,7 +171,7 @@ function initOrdersListener() {
                 reference: data.orderId || docSnap.id,
                 name: data.customerName || data.name || "مشتري",
                 phone: data.phone || "",
-                platform: data.platform || "",
+                platform: data.platform || "PlayStation",
                 totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
                 totalPrice: data.price || data.totalPrice || "0 ر.س",
                 status: data.status || "new",
@@ -97,6 +190,7 @@ function initOrdersListener() {
                 ...data
             };
         });
+        calculateDynamicStock();
         updateDashboardStats();
         renderOrdersTables();
     }, (error) => {
@@ -298,7 +392,6 @@ function getErrorBadge(code) {
     }
 }
 
-// دالة لتوليد التدرج اللوني للمربع بناءً على النسبة المئوية
 function getDynamicBoxStyle(percent) {
     let r = Math.round(239 - (239 - 16) * (percent / 100));
     let g = Math.round(68 + (185 - 68) * (percent / 100));
@@ -306,7 +399,6 @@ function getDynamicBoxStyle(percent) {
     return `background: rgba(${r}, ${g}, ${b}, 0.22); border: 1.5px solid rgb(${r}, ${g}, ${b}); padding: 18px; border-radius: 18px; margin-bottom: 18px;`;
 }
 
-// نافذة تفاصيل الطلب الاحترافية حسب التعديلات المعتمدة
 window.openOrderModal = function(index) {
     const order = ordersData[index];
     const modal = document.getElementById("orderDetailModal");
@@ -318,7 +410,6 @@ window.openOrderModal = function(index) {
     const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
     const isCompleted = remaining === 0 && rawWithdrawn > 0;
 
-    // ألوان البنر العلوي حسب المنصة
     let platformClass = "ps-theme";
     let platformIcon = "fa-brands fa-playstation";
     let platformColor = "#0070d1";
@@ -352,7 +443,6 @@ window.openOrderModal = function(index) {
                 </div>
             </div>
 
-            <!-- شريط التقدم المتحرك المتدرج -->
             <div class="progress-bar-container">
                 <div class="progress-bar-fill" id="progressBarFill" style="width: ${percent}%;"></div>
             </div>
@@ -387,7 +477,6 @@ window.openOrderModal = function(index) {
             </div>
         </div>`;
 
-    // بيانات التحويل والاستلام (في الأسفل تماماً)
     let pd = order.paymentDetails || {};
     let paymentDetailsHtml = `
         <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:16px; padding:16px; margin-top:16px;">
@@ -401,7 +490,6 @@ window.openOrderModal = function(index) {
     let logsHtml = (order.auditLogs || []).map(l => `<li style="font-size:0.78rem; color:var(--text-muted);">${l.time} - ${l.action} (${l.user})</li>`).join("");
 
     body.innerHTML = `
-        <!-- أزرار الإجراءات الإضافية -->
         <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:16px;">
             <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
                 <i class="fa-solid fa-cloud-arrow-up"></i> ترحيل للشيت
@@ -414,7 +502,6 @@ window.openOrderModal = function(index) {
             </button>
         </div>
 
-        <!-- البنر العلوي الملون حسب المنصة -->
         <div class="admin-summary-banner ${platformClass}">
             <div class="admin-banner-item">
                 <i class="${platformIcon}" style="color: ${platformColor};"></i>
@@ -433,7 +520,6 @@ window.openOrderModal = function(index) {
             </div>
         </div>
 
-        <!-- معلومات العميل والمرجع (على سطر واحد ومنظمة) -->
         <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; background:var(--input-bg); padding:16px; border-radius:16px; border:1.5px solid var(--card-border); text-align:center;">
             <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">المرجع</span><code style="color:var(--primary); font-size:0.88rem;">${order.reference}</code></div>
             <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">العميل</span><b style="font-size:0.88rem;">${order.name}</b></div>
@@ -443,7 +529,6 @@ window.openOrderModal = function(index) {
 
         ${sensitiveContent}
 
-        <!-- حالات الطلب وخطأ الحساب -->
         <div class="form-grid-2" style="margin-bottom:16px;">
             <div class="form-group" style="margin-bottom:0;">
                 <label>حالة الطلب:</label>
@@ -468,7 +553,6 @@ window.openOrderModal = function(index) {
             </div>
         </div>
 
-        <!-- مربع الكمية المتقدم والشريط المتدرج وتحديث اللون لحظياً -->
         ${withdrawnBox}
 
         <div style="margin-top:12px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
@@ -476,7 +560,6 @@ window.openOrderModal = function(index) {
             <ul style="padding-right:15px; max-height:80px; overflow-y:auto;">${logsHtml}</ul>
         </div>
 
-        <!-- بيانات التحويل والاستلام في الأسفل تماماً -->
         ${paymentDetailsHtml}
 
         <button class="btn-custom" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
@@ -541,12 +624,6 @@ window.saveOrderModalChanges = async function(index) {
     if(withdrawnInput) {
         let rawVal = withdrawnInput.value.replace(/,/g, '');
         let newWithdrawn = rawVal !== "" ? parseInt(rawVal) || 0 : 0;
-        let oldWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== undefined ? Number(order.withdrawnQty) : 0;
-        let diff = newWithdrawn - oldWithdrawn;
-        let platform = order.platform;
-        if(stockData[platform] !== undefined) {
-            stockData[platform] = Math.max(0, stockData[platform] - diff);
-        }
         updateData.withdrawnQty = newWithdrawn;
     }
 
@@ -688,14 +765,32 @@ window.toggleArchive = async function(index) {
     }
 };
 
-window.savePricingConfig = function() {
-    const config = {
+// إدارة الأسعار وحفظها في Firestore
+function populatePricingUI() {
+    if(document.getElementById("psRate")) document.getElementById("psRate").value = pricingConfig.ps.rate;
+    if(document.getElementById("psMin")) document.getElementById("psMin").value = pricingConfig.ps.min;
+    if(document.getElementById("psMax")) document.getElementById("psMax").value = pricingConfig.ps.max;
+    if(document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.ps.duration;
+
+    if(document.getElementById("pcRate")) document.getElementById("pcRate").value = pricingConfig.pc.rate;
+    if(document.getElementById("pcMin")) document.getElementById("pcMin").value = pricingConfig.pc.min;
+    if(document.getElementById("pcMax")) document.getElementById("pcMax").value = pricingConfig.pc.max;
+    if(document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pc.duration;
+
+    if(document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = pricingConfig.promo.active;
+    if(document.getElementById("promoRateInput")) document.getElementById("promoRateInput").value = pricingConfig.promo.rate;
+    if(document.getElementById("promoExpiryInput")) document.getElementById("promoExpiryInput").value = pricingConfig.promo.expiry || "";
+    if(document.getElementById("promoText")) document.getElementById("promoText").value = pricingConfig.promo.text;
+}
+
+window.savePricingConfig = async function() {
+    pricingConfig = {
         ps: { rate: document.getElementById("psRate")?.value, min: document.getElementById("psMin")?.value, max: document.getElementById("psMax")?.value, duration: document.getElementById("psDuration")?.value },
         pc: { rate: document.getElementById("pcRate")?.value, min: document.getElementById("pcMin")?.value, max: document.getElementById("pcMax")?.value, duration: document.getElementById("pcDuration")?.value },
         promo: { active: document.getElementById("promoActiveSelect")?.value, rate: document.getElementById("promoRateInput")?.value, expiry: document.getElementById("promoExpiryInput")?.value, text: document.getElementById("promoText")?.value }
     };
-    localStorage.setItem("sami_coins_pricing", JSON.stringify(config));
-    alert("✨ تم الحفظ ومزامنة الأسعار والعروض بنجاح!");
+    await saveSettingsToFirestore({ pricing: pricingConfig });
+    alert("✨ تم الحفظ ومزامنة الأسعار والعروض مباشرة في قاعدة البيانات بنجاح!");
 };
 
 window.saveStatusMessages = function() {
@@ -711,6 +806,7 @@ window.saveStatusMessages = function() {
     alert("✨ تم حفظ رسائل الحالات بنجاح!");
 };
 
+// إدارة البنوك في Firestore
 function renderBanks() {
     const c = document.getElementById("banksListContainer");
     if(!c) return;
@@ -718,16 +814,23 @@ function renderBanks() {
     banksList.forEach((b, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${b}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteBank(${i})">حذف</button></div>`);
 }
 
-window.addBank = function() {
+window.addBank = async function() {
     const i = document.getElementById("newBankInput");
-    if(i && i.value.trim()){ banksList.push(i.value.trim()); i.value=""; renderBanks(); }
+    if(i && i.value.trim()){ 
+        banksList.push(i.value.trim()); 
+        i.value=""; 
+        renderBanks(); 
+        await saveSettingsToFirestore({ banksList });
+    }
 };
 
-window.deleteBank = function(i) {
+window.deleteBank = async function(i) {
     banksList.splice(i, 1);
     renderBanks();
+    await saveSettingsToFirestore({ banksList });
 };
 
+// إدارة المحافظ في Firestore
 function renderWallets() {
     const c = document.getElementById("walletsListContainer");
     if(!c) return;
@@ -735,16 +838,23 @@ function renderWallets() {
     walletsList.forEach((w, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${w}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteWallet(${i})">حذف</button></div>`);
 }
 
-window.addWallet = function() {
+window.addWallet = async function() {
     const i = document.getElementById("newWalletInput");
-    if(i && i.value.trim()){ walletsList.push(i.value.trim()); i.value=""; renderWallets(); }
+    if(i && i.value.trim()){ 
+        walletsList.push(i.value.trim()); 
+        i.value=""; 
+        renderWallets(); 
+        await saveSettingsToFirestore({ walletsList });
+    }
 };
 
-window.deleteWallet = function(i) {
+window.deleteWallet = async function(i) {
     walletsList.splice(i, 1);
     renderWallets();
+    await saveSettingsToFirestore({ walletsList });
 };
 
+// طرق الدفع المخصصة في Firestore
 function renderCustomPayments() {
     const c = document.getElementById("customPayMethodsContainer");
     if(!c) return;
@@ -752,22 +862,23 @@ function renderCustomPayments() {
     customPaymentsList.forEach((p, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${p}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteCustomPayment(${i})">حذف</button></div>`);
 }
 
-window.addCustomPaymentMethod = function() {
+window.addCustomPaymentMethod = async function() {
     const i = document.getElementById("newCustomPaymentInput");
     if(i && i.value.trim()){ 
         customPaymentsList.push(i.value.trim()); 
         i.value=""; 
         renderCustomPayments(); 
-        localStorage.setItem('sami_coins_custom_payments', JSON.stringify(customPaymentsList)); 
+        await saveSettingsToFirestore({ customPaymentsList });
     }
 };
 
-window.deleteCustomPayment = function(i) {
+window.deleteCustomPayment = async function(i) {
     customPaymentsList.splice(i, 1);
     renderCustomPayments();
-    localStorage.setItem('sami_coins_custom_payments', JSON.stringify(customPaymentsList));
+    await saveSettingsToFirestore({ customPaymentsList });
 };
 
+// شروط الخدمة في Firestore
 function renderTerms() {
     const c = document.getElementById("termsListContainer");
     if(!c) return;
@@ -775,14 +886,20 @@ function renderTerms() {
     storeTerms.forEach((t, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1.5px solid var(--card-border); padding:10px; border-radius:12px;"><span style="font-size:0.85rem;">${i+1}. ${t}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteTerm(${i})">حذف</button></div>`);
 }
 
-window.addNewTerm = function() {
+window.addNewTerm = async function() {
     const i = document.getElementById("newTermInput");
-    if(i && i.value.trim()){ storeTerms.push(i.value.trim()); i.value=""; renderTerms(); }
+    if(i && i.value.trim()){ 
+        storeTerms.push(i.value.trim()); 
+        i.value=""; 
+        renderTerms(); 
+        await saveSettingsToFirestore({ storeTerms });
+    }
 };
 
-window.deleteTerm = function(i) {
+window.deleteTerm = async function(i) {
     storeTerms.splice(i, 1);
     renderTerms();
+    await saveSettingsToFirestore({ storeTerms });
 };
 
 function updateLiveDatetime() {
@@ -851,10 +968,6 @@ window.handleGlobalSearch = function(query) {
     });
 };
 
-// التشغيل الأولي وبدء الاستماع الفوري للطلبات
-updateStoreStatusUI();
+// بدء التشغيل والاستماع الفوري
+initSystemSettingsListener();
 initOrdersListener();
-renderBanks();
-renderWallets();
-renderCustomPayments();
-renderTerms();
