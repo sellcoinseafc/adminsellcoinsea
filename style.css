@@ -77,7 +77,109 @@ body {
 }
 
 /* ==========================================================================
-   القائمة الجانبية (Sidebar)
+   1. شاشة تسجيل الدخول بأمان V2 (Login Overlay)
+   ========================================================================== */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(3, 5, 11, 0.92);
+    backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.login-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.login-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    max-width: 440px;
+    width: 100%;
+    box-shadow: var(--box-shadow);
+    text-align: right;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-brand {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.login-header p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+.login-divider::before, .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--card-border);
+}
+.login-divider span {
+    padding: 0 12px;
+}
+
+.btn-google-login {
+    width: 100%;
+    background: var(--input-bg);
+    color: var(--text-main);
+    border: 1.5px solid var(--card-border);
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+.btn-google-login:hover {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.03);
+}
+.btn-google-login img {
+    width: 20px;
+    height: 20px;
+}
+
+/* ==========================================================================
+   2. القائمة الجانبية (Sidebar V2)
    ========================================================================== */
 .sidebar {
     width: 280px;
@@ -224,7 +326,7 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
 }
 
 /* ==========================================================================
-   المحتوى الرئيسي والنواح الملاحة العلوي
+   3. المحتوى الرئيسي وشريط التصفح العلوي
    ========================================================================== */
 .main-wrapper {
     flex: 1;
@@ -379,7 +481,7 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
 }
 
 /* ==========================================================================
-   شبكة الإحصائيات والبطاقات (Stats & Cards)
+   4. الإحصائيات والبطاقات (Stats & Panels)
    ========================================================================== */
 .stats-grid {
     display: grid;
@@ -457,7 +559,7 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
 }
 
 /* ==========================================================================
-   الجداول والوسوم (Tables & Badges)
+   5. الجداول والوسوم (Tables & Badges V2)
    ========================================================================== */
 .table-responsive { 
     width: 100%; 
@@ -550,7 +652,7 @@ tr:hover td {
 }
 
 /* ==========================================================================
-   الأزرار وحقول الإدخال (Buttons & Inputs)
+   6. الأزرار وحقول الإدخال
    ========================================================================== */
 .btn-custom {
     background: var(--primary-gradient);
@@ -625,7 +727,7 @@ body.light-mode .btn-custom {
 }
 
 /* ==========================================================================
-   النوافذ المنبثقة V2 ومكون أمان بيانات EA (Modals & EA Masking)
+   7. النوافذ المنبثقة V2 ومكون حماية بيانات EA الحساسة
    ========================================================================== */
 .modal-overlay {
     position: fixed; 
@@ -735,7 +837,7 @@ body.light-mode .btn-custom {
 }
 
 /* ==========================================================================
-   شريط إنجاز السحب وعداد التحويل المالي (Progress Bar & Countdown)
+   8. شريط إنجاز السحب والعداد التنازلي (Progress Bar & Countdown V2)
    ========================================================================== */
 .progress-bar-wrapper {
     background: var(--input-bg);
@@ -761,6 +863,10 @@ body.light-mode .btn-custom {
     transition: width 0.4s ease, background-color 0.4s ease;
 }
 
+/* ألوان شريط الإنجاز الثلاثية:
+   🔴 0–39%  : progress-danger
+   🟠 40–89% : progress-warning
+   🟢 90–100%: progress-success */
 .progress-danger { background: var(--danger); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
 .progress-warning { background: var(--warning); box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
 .progress-success { background: var(--primary); box-shadow: 0 0 10px rgba(0, 255, 135, 0.5); }
@@ -791,7 +897,7 @@ body.light-mode .btn-custom {
 }
 
 /* ==========================================================================
-   التجاوب والاستجابة للهواتف والتابلت (Responsive Design)
+   9. التجاوب والاستجابة للهواتف والتابلت (Responsive Design)
    ========================================================================== */
 @media (max-width: 992px) {
     .sidebar { 
