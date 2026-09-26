@@ -15,6 +15,9 @@ import {
   limit
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 import {
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
@@ -23,10 +26,10 @@ import {
 // 1. المتغيرات العامة وحالة النظام والمشرف الحالي
 // ==========================================================================
 let currentAdmin = {
-  uid: "admin_master_1",
-  name: "سامي القحطاني",
-  email: "sami@samicoins.com",
-  role: "owner" // owner | admin
+  uid: null,
+  name: "مشرف النظام",
+  email: "",
+  role: "admin" // "owner" | "admin"
 };
 
 let isStoreOpen = true;
@@ -60,51 +63,92 @@ let ordersData = [];
 let adminsData = [];
 let auditLogsData = [];
 let stockData = { PlayStation: 0, PC: 0 };
-let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار البيانات الحساسة لكل طلب
+let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بيانات EA للطلبات
 
 // ==========================================================================
-// 2. التحقق من أمان تسجيل الدخول والصلاحيات (Firebase Auth)
+// 2. نظام تسجيل الدخول وحارس الأمان (Firebase Auth & Protection)
 // ==========================================================================
 function initAuthGuard() {
   if (!auth) return;
   onAuthStateChanged(auth, async (user) => {
+    const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
       try {
         const adminDoc = await getDoc(doc(db, "admins", user.uid));
         if (adminDoc.exists()) {
           const data = adminDoc.data();
-          if (!data.active) {
-            alert("⚠️ هذا الحساب معطل من قبل المالك.");
+          if (data.active === false) {
+            alert("⚠️ هذا الحساب معطل من قبل مالك النظام.");
             await signOut(auth);
+            if (loginOverlay) loginOverlay.classList.add("active");
             return;
           }
           currentAdmin = { uid: user.uid, ...data };
           await updateDoc(doc(db, "admins", user.uid), { lastLogin: serverTimestamp() });
         } else {
-          // حساب افتراضي للأدمن الأول في النظام
+          // الحساب الأول في النظام يتم تعيينه كـ Owner تلقائياً
           currentAdmin = {
             uid: user.uid,
-            name: user.displayName || "مشرف النظام",
-            email: user.email || "admin@samicoins.com",
-            role: "owner"
+            name: user.displayName || user.email.split('@')[0],
+            email: user.email,
+            role: "owner",
+            active: true
           };
           await setDoc(doc(db, "admins", user.uid), {
             name: currentAdmin.name,
             email: currentAdmin.email,
             role: "owner",
             active: true,
+            createdAt: serverTimestamp(),
             lastLogin: serverTimestamp()
           });
         }
+
+        if (loginOverlay) loginOverlay.classList.remove("active");
         updateSidebarAdminUI();
         applyRolePermissions();
-        logAuditEvent("تسجيل دخول المشرف", "النظام", `دخول بواسطة: ${currentAdmin.email}`);
+        await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
       } catch (err) {
-        console.error("Auth guard error:", err);
+        console.error("Auth Guard Error:", err);
       }
+    } else {
+      if (loginOverlay) loginOverlay.classList.add("active");
     }
   });
 }
+
+window.handleEmailLogin = async function (e) {
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const alertEl = document.getElementById("loginErrorAlert");
+
+  try {
+    if (alertEl) alertEl.style.display = "none";
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    console.error("Email Login Error:", err);
+    if (alertEl) {
+      alertEl.innerText = "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+      alertEl.style.display = "block";
+    }
+  }
+};
+
+window.handleGoogleLogin = async function () {
+  const alertEl = document.getElementById("loginErrorAlert");
+  try {
+    if (alertEl) alertEl.style.display = "none";
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error("Google Login Error:", err);
+    if (alertEl) {
+      alertEl.innerText = "❌ فشل تسجيل الدخول بواسطة Google.";
+      alertEl.style.display = "block";
+    }
+  }
+};
 
 function updateSidebarAdminUI() {
   const nameEl = document.getElementById("sidebarUserName");
@@ -114,38 +158,37 @@ function updateSidebarAdminUI() {
   if (nameEl) nameEl.innerText = currentAdmin.name;
   if (avatarEl) avatarEl.innerText = currentAdmin.name ? currentAdmin.name.charAt(0) : "س";
   if (roleEl) {
-    roleEl.innerText = currentAdmin.role === "owner" ? "Owner (المالك)" : "Admin (مشرف)";
-    roleEl.className = currentAdmin.role === "owner" ? "user-role-badge owner" : "user-role-badge";
+    const isOwner = currentAdmin.role === "owner";
+    roleEl.innerText = isOwner ? "Owner (مالك النظام)" : "Admin (مشرف)";
+    roleEl.className = isOwner ? "user-role-badge owner" : "user-role-badge";
   }
 }
 
 function applyRolePermissions() {
-  // تقييد الوصول لصفحة إدارة المشرفين والإعدادات في حال كانت الرتبة Admin
-  const adminTabLink = document.querySelector(".sidebar-menu li:nth-child(7)");
-  if (adminTabLink && currentAdmin.role !== "owner") {
-    adminTabLink.style.display = "none";
-  } else if (adminTabLink) {
-    adminTabLink.style.display = "block";
+  // تقييد إمكانية رؤية وتبويب إدارة المشرفين والإعدادات للأدمن العادي
+  const adminTabLink = document.querySelector(".sidebar-menu li:nth-child(8)");
+  if (adminTabLink) {
+    adminTabLink.style.display = currentAdmin.role === "owner" ? "block" : "none";
   }
 }
 
 window.handleLogout = async function () {
   if (confirm("هل ترغب بتسجيل الخروج من لوحة التحكم؟")) {
-    await logAuditEvent("تسجيل خروج", "النظام", "تم الخروج بنجاح");
+    await logAuditEvent("تسجيل خروج", "النظام", `تم خروج: ${currentAdmin.email}`);
     if (auth) await signOut(auth);
     window.location.reload();
   }
 };
 
 // ==========================================================================
-// 3. نظام سجل الأمان التلقائي (Audit Log System)
+// 3. نظام سجل النظام الأمني التلقائي (Audit Log System)
 // ==========================================================================
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
     await addDoc(collection(db, "audit_logs"), {
       timestamp: serverTimestamp(),
       timeString: new Date().toLocaleString("ar-SA"),
-      user: currentAdmin.name || "سامي القحطاني",
+      user: currentAdmin.name || "مشرف",
       userId: currentAdmin.uid || "system",
       action: action,
       targetOrder: targetOrder,
@@ -162,7 +205,7 @@ function initAuditLogsListener() {
   onSnapshot(q, (snapshot) => {
     auditLogsData = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
     renderAuditLogsTable();
-  }, (err) => console.error("Error loading audit logs:", err));
+  }, (err) => console.error("Audit logs listener error:", err));
 }
 
 function renderAuditLogsTable(filterText = "") {
@@ -172,7 +215,7 @@ function renderAuditLogsTable(filterText = "") {
   let list = auditLogsData;
   if (filterText.trim()) {
     const q = filterText.toLowerCase();
-    list = list.filter(l => 
+    list = list.filter(l =>
       String(l.user).toLowerCase().includes(q) ||
       String(l.action).toLowerCase().includes(q) ||
       String(l.targetOrder).toLowerCase().includes(q)
@@ -220,8 +263,8 @@ function renderAdminsTable() {
 
   tbody.innerHTML = adminsData.map(admin => {
     const isOwner = admin.role === "owner";
-    const statusBadge = admin.active !== false 
-      ? `<span class="badge badge-success">نشط</span>` 
+    const statusBadge = admin.active !== false
+      ? `<span class="badge badge-success">نشط</span>`
       : `<span class="badge badge-error">معطل</span>`;
     const lastLoginStr = admin.lastLogin?.toDate ? admin.lastLogin.toDate().toLocaleString("ar-SA") : "لم يسجل بعد";
 
@@ -238,7 +281,7 @@ function renderAdminsTable() {
               ${admin.active !== false ? 'تعطيل' : 'تفعيل'}
             </button>
             <button class="btn-action" style="color:var(--danger);" onclick="deleteAdminDoc('${admin.uid}', '${admin.name}')">حذف</button>
-          ` : '<span style="font-size:0.75rem; color:var(--text-muted);">حساب رئيسي</span>'}
+          ` : '<span style="font-size:0.75rem; color:var(--text-muted);">المالك الرئيسي</span>'}
         </td>
       </tr>
     `;
@@ -259,7 +302,6 @@ window.handleCreateAdmin = async function (e) {
   e.preventDefault();
   const name = document.getElementById("newAdminName").value.trim();
   const email = document.getElementById("newAdminEmail").value.trim();
-  const password = document.getElementById("newAdminPassword").value;
   const role = document.getElementById("newAdminRole").value;
 
   if (!name || !email) return;
@@ -275,13 +317,13 @@ window.handleCreateAdmin = async function (e) {
       lastLogin: null
     });
 
-    await logAuditEvent("إضافة مشرف جديد", "المشرفين", `تم إضافة المشرف: ${name} (${role})`);
-    alert(`✅ تم إنشاء حساب المشرف (${name}) بنجاح!`);
+    await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role})`);
+    alert(`✅ تم إضافة المشرف (${name}) بنجاح!`);
     window.closeAddAdminModal();
     document.getElementById("addAdminForm")?.reset();
   } catch (err) {
     console.error("Error creating admin:", err);
-    alert("❌ حدث خطأ أثناء إنشاء المشرف.");
+    alert("❌ حدث خطأ أثناء إضافة المشرف.");
   }
 };
 
@@ -295,7 +337,7 @@ window.toggleAdminStatus = async function (uid, currentActive) {
 };
 
 window.deleteAdminDoc = async function (uid, name) {
-  if (confirm(`هل أنت تأكد من حذف المشرف (${name}) نهائياً؟`)) {
+  if (confirm(`هل أنت متاكد من حذف المشرف (${name}) نهائياً؟`)) {
     try {
       await deleteDoc(doc(db, "admins", uid));
       await logAuditEvent("حذف مشرف", "المشرفين", `تم حذف المشرف: ${name}`);
@@ -307,7 +349,7 @@ window.deleteAdminDoc = async function (uid, name) {
 };
 
 // ==========================================================================
-// 5. المزامنة المباشرة للطلبات وتحديث الستوك والتحويلات الماليّة
+// 5. المزامنة المباشرة للطلبات وحساب الستوك والعدادات
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
@@ -317,7 +359,7 @@ function initOrdersListener() {
       return {
         id: docSnap.id,
         reference: data.orderId || docSnap.id,
-        name: data.customerName || data.name || "مشتري",
+        name: data.customerName || data.name || "عميل",
         phone: data.phone || "",
         platform: data.platform || "PlayStation",
         totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
@@ -341,9 +383,7 @@ function initOrdersListener() {
     calculateDynamicStock();
     updateDashboardStats();
     renderOrdersTables();
-  }, (error) => {
-    console.error("Error listening to orders:", error);
-  });
+  }, (error) => console.error("Error listening to orders:", error));
 }
 
 function calculateDynamicStock() {
@@ -412,7 +452,7 @@ function updateDashboardStats() {
   if (banner && bannerTransferText) {
     if (transferNeededList.length > 0) {
       banner.style.display = "flex";
-      bannerTransferText.innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل.`;
+      bannerTransferText.innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل من تاريخ الانتهاء.`;
     } else {
       banner.style.display = "none";
     }
@@ -438,12 +478,12 @@ function updateDashboardStats() {
 }
 
 // ==========================================================================
-// 6. حساب العداد التنازلي للتحويل المالي (3-5 أيام عمل)
+// 6. عداد التحويل المالي التنازلي (3-5 أيام عمل)
 // ==========================================================================
 function getTransferTimeRemaining(finishedAt) {
-  if (!finishedAt) return "بدأ العد (3-5 أيام)";
+  if (!finishedAt) return `<span class="countdown-pill"><i class="fa-solid fa-clock"></i> بدأ العد من لحظة الانتهاء</span>`;
   const startDate = new Date(finishedAt);
-  const deadlineDate = new Date(startDate.getTime() + (4 * 24 * 60 * 60 * 1000)); // متوسط 4 أيام
+  const deadlineDate = new Date(startDate.getTime() + (4 * 24 * 60 * 60 * 1000)); // متوسط 4 أيام عمل
   const now = new Date();
   const diff = deadlineDate - now;
 
@@ -486,7 +526,7 @@ function renderTransferAlertsTable(list) {
 }
 
 // ==========================================================================
-// 7. عرض جدول الطلبات الشامل ونافذة المودال المتطورة (V2 Order Modal)
+// 7. عرض جدول الطلبات الشامل ونافذة التفاصيل V2 (Progress Bar + حماية EA)
 // ==========================================================================
 window.renderOrdersTables = function () {
   sortOrdersNewestFirst();
@@ -575,14 +615,14 @@ function getErrorBadge(code) {
   switch (code) {
     case 'err_pass': return '<span class="badge badge-error">❌ خطأ بالإيميل أو الباسورد</span>';
     case 'err_codes': return '<span class="badge badge-error">❌ الأكواد الاحتياطية خطأ</span>';
-    case 'err_login': return '<span class="badge badge-error">❌ العميل داخل اللعبة</span>';
+    case 'err_login': return '<span class="badge badge-error">❌ العميل مسجل دخول</span>';
     case 'err_market': return '<span class="badge badge-error">❌ سوق الانتقالات مغلق</span>';
     default: return '';
   }
 }
 
 // ==========================================================================
-// 8. فتح مودال تفاصيل الطلب مع أمان حماية بيانات EA وشريط التقدم
+// 8. مودال الطلب المطور مع حماية بيانات EA وشريط التقدم بالألوان
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -594,7 +634,7 @@ window.openOrderModal = function (index) {
   const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
   const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
 
-  // فحص حالة إظهار البيانات الحساسة أمنياً
+  // فحص أمان البيانات الحساسة
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
@@ -643,6 +683,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
+  // الألوان الثلاثة لشريط إنجاز السحب: 🔴 0-39% | 🟠 40-89% | 🟢 90-100%
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
   let pd = order.paymentDetails || {};
 
@@ -727,7 +768,7 @@ window.toggleRevealSensitive = async function (index) {
     revealedSensitiveOrders.delete(order.id);
   } else {
     revealedSensitiveOrders.add(order.id);
-    await logAuditEvent("إظهار بيانات EA الحساسة", order.reference, `تم إظهار بيانات حساب: ${order.email}`);
+    await logAuditEvent("إظهار بيانات EA الحساسة", order.reference, `تم إظهار بيانات الحساب بواسطة المشرف`);
   }
   window.openOrderModal(index);
 };
@@ -735,8 +776,8 @@ window.toggleRevealSensitive = async function (index) {
 window.copySensitiveData = async function (text, label, orderRef) {
   if (!text || text.includes("•••")) return;
   navigator.clipboard.writeText(text);
-  await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label} صامتاً`);
-  alert(`📋 تم نسخ ${label} إلى الحافظة.`);
+  await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label} إلى الحافظة`);
+  alert(`📋 تم نسخ ${label} إلى الحافظة بنجاح.`);
 };
 
 window.calcRemaining = function (index, input) {
@@ -775,7 +816,7 @@ window.saveOrderModalChanges = async function (index) {
     if (newStatus === 'finished' && !order.finishedAt) {
       updateData.finishedAt = new Date().toISOString();
     }
-    await logAuditEvent("تحديث حالة طلب", order.reference, `من (${oldStatus}) إلى (${newStatus})`);
+    await logAuditEvent("تحديث حالة طلب", order.reference, `تغيير الحالة من (${oldStatus}) إلى (${newStatus})`);
   }
 
   try {
@@ -805,7 +846,7 @@ window.destroySensitiveData = async function (index) {
         backupCodes: ["[محذوف]", "[محذوف]", "[محذوف]"],
         sensitiveDeleted: true
       });
-      await logAuditEvent("إتلاف بيانات حساسة", order.reference, "تم تدمير بيانات EA من Firestore");
+      await logAuditEvent("إتلاف بيانات حساسة", order.reference, "تم تدمير بيانات EA من قاعدة البيانات أمنياً");
       alert("🔒 تم إتلاف البيانات أمنياً بنجاح.");
       window.closeOrderModal();
     } catch (err) {
@@ -819,7 +860,7 @@ window.toggleArchive = async function (index) {
   try {
     const orderRef = doc(db, "orders", order.id);
     await updateDoc(orderRef, { archived: !order.archived });
-    await logAuditEvent("تغيير أرشفة طلب", order.reference, `أرشفة: ${!order.archived}`);
+    await logAuditEvent("تغيير أرشفة طلب", order.reference, `حالة الأرشفة: ${!order.archived}`);
   } catch (err) {
     console.error("Error archiving order:", err);
   }
@@ -914,7 +955,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 10. إعدادات الأسعار والبنوك والمحافظ العامة
+// 10. إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -926,8 +967,10 @@ async function saveAllSettingsToFirestore() {
       psMax: Number(String(document.getElementById("psMax")?.value || pricingConfig.psMax).replace(/,/g, "")),
       pcMin: Number(String(document.getElementById("pcMin")?.value || pricingConfig.pcMin).replace(/,/g, "")),
       pcMax: Number(String(document.getElementById("pcMax")?.value || pricingConfig.pcMax).replace(/,/g, "")),
-      psWithdrawDuration: document.getElementById("psDuration")?.value || pricingConfig.psWithdrawDuration,
-      pcWithdrawDuration: document.getElementById("pcDuration")?.value || pricingConfig.pcWithdrawDuration,
+      psWithdrawDuration: document.getElementById("psWithdrawDuration")?.value || pricingConfig.psWithdrawDuration,
+      psTransferDuration: document.getElementById("psTransferDuration")?.value || pricingConfig.psTransferDuration,
+      pcWithdrawDuration: document.getElementById("pcWithdrawDuration")?.value || pricingConfig.pcWithdrawDuration,
+      pcTransferDuration: document.getElementById("pcTransferDuration")?.value || pricingConfig.pcTransferDuration,
       promoActive: document.getElementById("promoActiveSelect")?.value === "true",
       promoRate: Number(document.getElementById("promoRateInput")?.value || pricingConfig.promoRate),
       promoExpiry: document.getElementById("promoExpiryInput")?.value || "",
@@ -940,7 +983,7 @@ async function saveAllSettingsToFirestore() {
     };
 
     await setDoc(doc(db, "system", "settings"), config);
-    await logAuditEvent("حفظ إعدادات النظام", "الإعدادات", "تحديث الأسعار والبنوك والمحافظ");
+    await logAuditEvent("حفظ إعدادات المنتجات والنظام", "الإعدادات", "تحديث منتجات السحب والمدد والبنوك");
   } catch (err) {
     console.error("Error saving settings:", err);
   }
@@ -998,8 +1041,10 @@ function populatePricingUI() {
   if (document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(pricingConfig.pcMin);
   if (document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(pricingConfig.pcMax);
 
-  if (document.getElementById("psDuration")) document.getElementById("psDuration").value = pricingConfig.psWithdrawDuration || "3 - 5 أيام عمل";
-  if (document.getElementById("pcDuration")) document.getElementById("pcDuration").value = pricingConfig.pcWithdrawDuration || "2 - 4 أيام عمل";
+  if (document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = pricingConfig.psWithdrawDuration || "3 - 5 أيام عمل";
+  if (document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = pricingConfig.psTransferDuration || "24 ساعة";
+  if (document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = pricingConfig.pcWithdrawDuration || "2 - 4 أيام عمل";
+  if (document.getElementById("pcTransferDuration")) document.getElementById("pcTransferDuration").value = pricingConfig.pcTransferDuration || "24 ساعة";
 
   if (document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = pricingConfig.promoActive ? "true" : "false";
   if (document.getElementById("promoRateInput")) document.getElementById("promoRateInput").value = pricingConfig.promoRate;
@@ -1007,9 +1052,14 @@ function populatePricingUI() {
   if (document.getElementById("promoText")) document.getElementById("promoText").value = pricingConfig.promoText;
 }
 
+window.saveProductsConfig = async function () {
+  await saveAllSettingsToFirestore();
+  alert("✨ تم حفظ منتجات السحب والمدد ومزامنتها بنجاح!");
+};
+
 window.savePricingConfig = async function () {
   await saveAllSettingsToFirestore();
-  alert("✨ تم حفظ الأسعار والعروض والمزامنة بنجاح!");
+  alert("✨ تم حفظ العروض الترويجية بنجاح!");
 };
 
 // البنوك والمحافظ والشروط
@@ -1135,14 +1185,12 @@ window.saveStatusMessages = function () {
 };
 
 window.saveGeneralSettings = async function () {
-  const storeName = document.getElementById("storeNameInput")?.value;
-  const whatsapp = document.getElementById("storeWhatsappInput")?.value;
   await saveAllSettingsToFirestore();
   alert("✅ تم حفظ إعدادات المتجر العامة بنجاح!");
 };
 
 // ==========================================================================
-// 11. التنقل بين الأقسام المباشرة، المظهر، والبحث الشامل
+// 11. التنقل بين الأقسام والتصفح والبحث الشامل
 // ==========================================================================
 function updateLiveDatetime() {
   const now = new Date();
@@ -1195,10 +1243,10 @@ window.handleGlobalSearch = function (query) {
     return;
   }
   let q = query.trim().toLowerCase();
-  let matched = ordersData.filter(o => 
-    String(o.name).toLowerCase().includes(q) || 
-    String(o.phone).includes(q) || 
-    String(o.reference).toLowerCase().includes(q) || 
+  let matched = ordersData.filter(o =>
+    String(o.name).toLowerCase().includes(q) ||
+    String(o.phone).includes(q) ||
+    String(o.reference).toLowerCase().includes(q) ||
     String(o.id).includes(q)
   );
 
