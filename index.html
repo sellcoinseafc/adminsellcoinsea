@@ -10,6 +10,9 @@
 </head>
 <body>
 
+    <!-- غطاء مظلم خلف القائمة الجانبية للجوال -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
     <!-- 1) شاشة تسجيل الدخول المحمية (Login Screen) -->
     <div id="loginScreen" style="display: flex; justify-content: center; align-items: center; min-height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; background-color: var(--bg-color, #04060b); z-index: 9999; padding: 20px;">
         <div style="background: var(--card-bg, #0b101b); border: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.1)); border-radius: 24px; padding: 32px 28px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); text-align: center;">
@@ -63,7 +66,7 @@
         </div>
     </div>
 
-    <!-- 2) غلاف لوحة التحكم الرئيسي (مخفي الافتراضياً للبيانات والأمان لحين تسجيل الدخول) -->
+    <!-- 2) غلاف لوحة التحكم الرئيسي -->
     <div id="adminAppWrapper" style="display: none;">
 
         <!-- نافذة تفاصيل الطلب المتطورة الاحترافية -->
@@ -80,8 +83,8 @@
         <!-- القائمة الجانبية V2.6 -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span class="sidebar-brand">SAMI COINS ADMIN V2.6</span>
-                <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
+                <span class="sidebar-brand">SAMI COINS V2.6</span>
+                <button class="sidebar-close-btn" onclick="toggleSidebar(false)">✕</button>
             </div>
 
             <div class="sidebar-user">
@@ -110,7 +113,8 @@
             
             <header class="top-navbar">
                 <div class="nav-right">
-                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
+                    <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                    <span class="mobile-header-title">لوحة التحكم</span>
                     <button class="store-status-btn" id="storeStatusToggleBtn" onclick="toggleStoreStatus()">
                         <i class="fa-solid fa-store"></i> <span id="storeStatusText">المتجر مفتوح</span>
                     </button>
@@ -125,14 +129,14 @@
                     <button class="nav-icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تغيير المظهر"><i class="fa-regular fa-moon"></i></button>
                     
                     <!-- زر تسجيل الخروج المحمي -->
-                    <button class="nav-icon-btn" id="btnLogout" title="تسجيل خروج" style="color: #ef4444; border-color: rgba(239,68,68,0.3); font-size: 0.85rem; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; font-weight: 800; border-radius: 10px;">
-                        <i class="fa-solid fa-right-from-bracket"></i> خروج
+                    <button class="nav-icon-btn logout-btn" id="btnLogout" title="تسجيل خروج">
+                        <i class="fa-solid fa-right-from-bracket"></i> <span>خروج</span>
                     </button>
                 </div>
             </header>
 
             <!-- تنبيه عاجل للتحويلات المالية -->
-            <div id="urgentTransferBanner" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%); border:1.5px solid #f59e0b; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
+            <div id="urgentTransferBanner" class="urgent-banner">
                 <div style="display:flex; align-items:center; gap:12px;">
                     <i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b;"></i>
                     <div>
@@ -180,7 +184,7 @@
                 <!-- عرض المخزون الحالي لكل منصة -->
                 <div class="card-panel">
                     <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked" style="color:var(--primary);"></i> المخزون الحالي لكل منصة</h2></div>
-                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
                         <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
                             <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PlayStation & Xbox Stock</span>
                             <h3 id="stockPS" style="font-size:1.4rem; font-weight:900; color:var(--primary); margin-top:6px;">0</h3>
@@ -193,9 +197,9 @@
                 </div>
 
                 <div class="card-panel">
-                    <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة (مرتبة بالأحدث)</h2></div>
+                    <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة</h2></div>
                     <div class="table-responsive">
-                        <table>
+                        <table class="responsive-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراء</th></tr>
                             </thead>
@@ -210,10 +214,10 @@
             <!-- 2. إدارة الطلبات -->
             <div id="ordersTab" class="tab-content">
                 <div class="card-panel">
-                    <div class="panel-header">
+                    <div class="panel-header flex-mobile-column">
                         <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل وأمان الحسابات</h2>
-                        <div style="display:flex; gap:8px;">
-                            <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:160px;" onchange="renderOrdersTables()">
+                        <div style="display:flex; gap:8px; width: 100%; max-width: 200px;">
+                            <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:100%;" onchange="renderOrdersTables()">
                                 <option value="all">جميع الحالات</option>
                                 <option value="new">طلبات جديدة</option>
                                 <option value="review">انتظار المراجعة</option>
@@ -225,7 +229,7 @@
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table>
+                        <table class="responsive-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة والأخطاء</th><th>الإجراءات</th></tr>
                             </thead>
@@ -240,15 +244,15 @@
             <!-- 3. قسم طلبات تحتاج تحويل -->
             <div id="transferAlertsTab" class="tab-content">
                 <div class="card-panel">
-                    <div class="panel-header">
+                    <div class="panel-header flex-mobile-column">
                         <h2><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> الطلبات التي تحتاج تحويل مالي</h2>
                         <span id="transferHeaderBadge" class="badge badge-review">0 طلبات بحاجة للتحويل</span>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">الطلبات أدناه محسوبة بدقة من تاريخ انتهاء السحب (`finishedAt`) بمدة 3 إلى 5 أيام عمل.</p>
                     <div class="table-responsive">
-                        <table>
+                        <table class="responsive-table">
                             <thead>
-                                <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة المتبقي (3-5 أيام من الانتهاء)</th><th>الإجراء</th></tr>
+                                <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة المتبقي (3-5 أيام)</th><th>الإجراء</th></tr>
                             </thead>
                             <tbody id="transferAlertsTableBody">
                                 <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
@@ -261,14 +265,14 @@
             <!-- 4. ملف العميل -->
             <div id="customerProfileTab" class="tab-content">
                 <div class="card-panel">
-                    <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات (بدون تكرار)</h2></div>
+                    <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات</h2></div>
                     <div style="display:flex; gap:10px; margin-bottom:20px;">
                         <input type="text" id="clientSearchInput" class="form-control" placeholder="ابحث برقم الجوال أو اسم العميل..." oninput="filterClients(this.value)">
                     </div>
                     <div class="table-responsive">
-                        <table>
+                        <table class="responsive-table">
                             <thead>
-                                <tr><th>اسم العميل</th><th>رقم الجوال (فريد)</th><th>عدد الطلبات</th><th>إجمالي الكوينز</th><th>إجمالي المدفوعات</th><th>الإجراء</th></tr>
+                                <tr><th>اسم العميل</th><th>رقم الجوال</th><th>عدد الطلبات</th><th>إجمالي الكوينز</th><th>إجمالي المدفوعات</th><th>الإجراء</th></tr>
                             </thead>
                             <tbody id="clientsTableBody">
                                 <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>
@@ -292,7 +296,7 @@
             <!-- 5. الأسعار والمخزون وإدارة العروض -->
             <div id="pricingTab" class="tab-content">
                 <div class="card-panel">
-                    <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحدود ومدة السحب والتحويل والعروض</h2></div>
+                    <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحدود والعروض</h2></div>
                     <div class="form-grid-2" style="margin-bottom: 20px;">
                         <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
                             <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
@@ -318,7 +322,7 @@
                     </div>
 
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                        <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية ووقت الانتهاء</h3>
+                        <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية</h3>
                         <div class="form-grid-2">
                             <div class="form-group"><label>تفعيل العرض الترويجي:</label><select id="promoActiveSelect" class="form-control"><option value="false">معطل</option><option value="true">مفعل</option></select></div>
                             <div class="form-group"><label>السعر الترويجي الجديد:</label><input type="number" id="promoRateInput" class="form-control" value="220"></div>
@@ -334,13 +338,13 @@
             <div id="paymentsTab" class="tab-content">
                 <div class="card-panel">
                     <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">إدارة كاملة لجميع طرق الدفع القديمة والحديثة مع إمكانية إضافة أي وسيلة دفع جديدة بكل سهولة.</p>
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">إدارة كاملة لجميع طرق الدفع القديمة والحديثة.</p>
 
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                        <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي (البنوك السعودية)</h3>
+                        <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي</h3>
                         <div id="banksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newBankInput" class="form-control" placeholder="أضف اسم بنك جديد...">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="newBankInput" class="form-control" style="flex:1; min-width:200px;" placeholder="أضف اسم بنك جديد...">
                             <button class="btn-custom" onclick="addBank()"><i class="fa-solid fa-plus"></i> إضافة بنك</button>
                         </div>
                     </div>
@@ -348,32 +352,32 @@
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
                         <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:10px;"><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية</h3>
                         <div id="walletsListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newWalletInput" class="form-control" placeholder="أضف محفظة جديدة...">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="newWalletInput" class="form-control" style="flex:1; min-width:200px;" placeholder="أضف محفظة جديدة...">
                             <button class="btn-custom" onclick="addWallet()"><i class="fa-solid fa-plus"></i> إضافة محفظة</button>
                         </div>
                     </div>
 
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                        <h3 style="font-size:1rem; font-weight:900; color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-globe"></i> 3. العملات الرقمية والدولية (مفعلة)</h3>
-                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; font-size:0.85rem; font-weight:800;">
+                        <h3 style="font-size:1rem; font-weight:900; color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-globe"></i> 3. العملات الرقمية والدولية</h3>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; font-size:0.85rem; font-weight:800;">
                             <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
-                                <strong>USDT (TRC20)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">العنوان: TRC20 Crypto Wallet</span>
+                                <strong>USDT (TRC20)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">TRC20 Crypto Wallet</span>
                             </div>
                             <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
-                                <strong>PayPal (USD)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الحساب: email@domain.com</span>
+                                <strong>PayPal (USD)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">email@domain.com</span>
                             </div>
                             <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
-                                <strong>Western Union</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">البيانات: الاسم الكامل + الدولة</span>
+                                <strong>Western Union</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الاسم + الدولة</span>
                             </div>
                         </div>
                     </div>
 
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
-                        <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 4. إضافة طريقة دفع جديدة مخصصة</h3>
+                        <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 4. طريقة دفع جديدة مخصصة</h3>
                         <div id="customPayMethodsContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newCustomPaymentInput" class="form-control" placeholder="أدخل اسم طريقة الدفع الجديدة...">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="newCustomPaymentInput" class="form-control" style="flex:1; min-width:200px;" placeholder="اسم طريقة الدفع جديدة...">
                             <button class="btn-custom" onclick="addCustomPaymentMethod()"><i class="fa-solid fa-plus"></i> إضافة طريقة دفع</button>
                         </div>
                     </div>
@@ -401,8 +405,8 @@
                     <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
                     <div class="form-group">
                         <label>أضف شرطاً جديداً:</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newTermInput" class="form-control" placeholder="أدخل نص الشرط الجديد...">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <input type="text" id="newTermInput" class="form-control" style="flex:1; min-width:200px;" placeholder="أدخل نص الشرط الجديد...">
                             <button class="btn-custom" onclick="addNewTerm()"><i class="fa-solid fa-plus"></i> إضافة</button>
                         </div>
                     </div>
