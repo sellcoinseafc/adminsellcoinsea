@@ -17,10 +17,15 @@ import {
 import {
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
-  signOut
+  signOut,
+  createUserWithEmailAndPassword,
+  getAuth
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // ==========================================================================
 // 1. المتغيرات العامة وحالة النظام والمشرف الحالي
@@ -70,6 +75,12 @@ let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بي�
 // ==========================================================================
 function initAuthGuard() {
   if (!auth) return;
+
+  // التعامل مع نتيجة إعادة التوجيه لـ Google Redirect في حالة استخدام الهاتف
+  getRedirectResult(auth).catch((err) => {
+    console.error("Redirect Result Error:", err);
+  });
+
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
@@ -140,11 +151,26 @@ window.handleGoogleLogin = async function () {
   try {
     if (alertEl) alertEl.style.display = "none";
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // التوجيه المباشر للهواتف الذكية لمنع حظر Popup
+      await signInWithRedirect(auth, provider);
+    } else {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (popupErr) {
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
+      }
+    }
   } catch (err) {
     console.error("Google Login Error:", err);
     if (alertEl) {
-      alertEl.innerText = "❌ فشل تسجيل الدخول بواسطة Google.";
+      alertEl.innerText = "❌ فشل تسجيل الدخول بواسطة Google: " + (err.message || "");
       alertEl.style.display = "block";
     }
   }
@@ -243,7 +269,7 @@ window.filterAuditLogs = function (query) {
 };
 
 // ==========================================================================
-// 4. إدارة المشرفين والصلاحيات (`admins/`)
+// 4. إدارة المشرفين والصلاحيات (`admins/` + Firebase Auth)
 // ==========================================================================
 function initAdminsListener() {
   onSnapshot(collection(db, "admins"), (snapshot) => {
@@ -302,12 +328,27 @@ window.handleCreateAdmin = async function (e) {
   e.preventDefault();
   const name = document.getElementById("newAdminName").value.trim();
   const email = document.getElementById("newAdminEmail").value.trim();
+  const password = document.getElementById("newAdminPassword").value;
   const role = document.getElementById("newAdminRole").value;
 
-  if (!name || !email) return;
+  if (!name || !email || !password) {
+    alert("يرجى تعبئة كافة الحقول بما فيها كلمة المرور.");
+    return;
+  }
 
   try {
-    const newUid = "admin_" + Date.now();
+    // 1. إنشاء تطبيق فايربيز ثانوي حتى لا يتم تسجيل خروج الأدمن الحالي عند إنشاء حساب جديد
+    const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(auth.app.options, "SecondaryAuthApp");
+    const secondaryAuth = getAuth(secondaryApp);
+
+    // 2. إنشاء الحساب رسمياً في Firebase Authentication
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    const newUid = userCredential.user.uid;
+
+    // 3. تسجيل الخروج من التطبيق الثانوي
+    await signOut(secondaryAuth);
+
+    // 4. حفظ مستند المشرف بنفس الـ UID الحقيقي الصادر من Firebase Authentication
     await setDoc(doc(db, "admins", newUid), {
       name,
       email,
@@ -317,13 +358,21 @@ window.handleCreateAdmin = async function (e) {
       lastLogin: null
     });
 
-    await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role})`);
-    alert(`✅ تم إضافة المشرف (${name}) بنجاح!`);
+    await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role}) - UID: ${newUid}`);
+    alert(`✅ تم إنشاء حساب المشرف (${name}) في Firebase Auth و Firestore بنجاح!`);
     window.closeAddAdminModal();
     document.getElementById("addAdminForm")?.reset();
   } catch (err) {
     console.error("Error creating admin:", err);
-    alert("❌ حدث خطأ أثناء إضافة المشرف.");
+    let msg = "❌ حدث خطأ أثناء إنشاء المشرف.";
+    if (err.code === "auth/email-already-in-use") {
+      msg = "❌ البريد الإلكتروني مستخدم بالفعل في Firebase Authentication.";
+    } else if (err.code === "auth/weak-password") {
+      msg = "❌ كلمة المرور ضعيفة (يجب أن تكون 6 خانات على الأقل).";
+    } else if (err.code === "auth/invalid-email") {
+      msg = "❌ صيغة البريد الإلكتروني غير صحيحة.";
+    }
+    alert(msg);
   }
 };
 
@@ -337,7 +386,7 @@ window.toggleAdminStatus = async function (uid, currentActive) {
 };
 
 window.deleteAdminDoc = async function (uid, name) {
-  if (confirm(`هل أنت متاكد من حذف المشرف (${name}) نهائياً؟`)) {
+  if (confirm(`هل أنت متأكد من حذف المشرف (${name}) نهائياً؟`)) {
     try {
       await deleteDoc(doc(db, "admins", uid));
       await logAuditEvent("حذف مشرف", "المشرفين", `تم حذف المشرف: ${name}`);
