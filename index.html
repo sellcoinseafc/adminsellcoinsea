@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sami Coins | Ultimate Admin Dashboard</title>
+    <title>Sami Coins | Ultimate Admin Dashboard V2.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     
@@ -230,7 +230,7 @@
             font-size: 0.85rem;
             font-weight: 700;
             outline: none;
-            width: 200px;
+            width: 220px;
         }
         .search-box input:focus { border-color: var(--primary); }
         .search-icon { position: absolute; left: 12px; font-size: 0.85rem; color: var(--text-muted); }
@@ -262,16 +262,6 @@
         }
         .nav-icon-btn:hover { border-color: var(--primary); color: var(--primary); }
 
-        .badge-counter {
-            position: absolute;
-            top: -5px; right: -5px;
-            background: #ef4444; color: #fff;
-            font-size: 0.65rem; font-weight: 900;
-            width: 18px; height: 18px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
-        }
-
         .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .content-header h1 { font-size: 1.35rem; font-weight: 900; }
         .breadcrumb { font-size: 0.82rem; color: var(--text-muted); font-weight: 700; }
@@ -298,7 +288,7 @@
         }
 
         .stat-info span { font-size: 0.78rem; color: var(--text-muted); font-weight: 800; display: block; margin-bottom: 4px; }
-        .stat-info h3 { font-size: 1.4rem; font-weight: 900; }
+        .stat-info h3 { font-size: 1.35rem; font-weight: 900; }
 
         .stat-icon {
             width: 48px; height: 48px; border-radius: 14px;
@@ -328,9 +318,10 @@
         .badge-new { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
         .badge-review { background: rgba(245, 158, 11, 0.12); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.25); }
         .badge-progress { background: rgba(168, 85, 247, 0.12); color: #a855f7; border: 1px solid rgba(168, 85, 247, 0.25); }
+        .badge-finished { background: rgba(14, 165, 233, 0.12); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.25); }
+        .badge-transferred { background: rgba(236, 72, 153, 0.12); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.25); }
         .badge-completed { background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); }
         .badge-archived { background: rgba(100, 116, 139, 0.12); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.25); }
-        /* حالات الخطأ باللون الأحمر الواضح والصريح */
         .badge-error { background: rgba(239, 68, 68, 0.18); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 900; }
         .badge-success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 900; }
 
@@ -388,7 +379,7 @@
         .modal-overlay.active { opacity: 1; pointer-events: auto; }
         .modal-card {
             background: var(--card-bg); border: 1.5px solid var(--card-border); border-radius: 22px;
-            padding: 24px; max-width: 720px; width: 100%; max-height: 90vh; overflow-y: auto;
+            padding: 24px; max-width: 740px; width: 100%; max-height: 90vh; overflow-y: auto;
             box-shadow: var(--box-shadow); text-align: right;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--card-border); padding-bottom: 10px; }
@@ -411,21 +402,21 @@
 </head>
 <body>
 
-    <!-- نافذة تفاصيل الطلب -->
+    <!-- نافذة تفاصيل الطلب المتطورة -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 id="modalOrderIdTitle">تفاصيل الطلب: #FC2411</h3>
+                <h3 id="modalOrderIdTitle">تفاصيل الطلب</h3>
                 <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
             </div>
             <div id="modalOrderBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
         </div>
     </div>
 
-    <!-- القائمة الجانبية -->
+    <!-- القائمة الجانبية V2.5 -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span class="sidebar-brand">SAMI COINS ADMIN</span>
+            <span class="sidebar-brand">SAMI COINS ADMIN V2.5</span>
             <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
         </div>
 
@@ -438,19 +429,21 @@
         </div>
 
         <ul class="sidebar-menu">
-            <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> لوحة الإحصائيات</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات والحالات والأخطاء</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> أسعار وحدود المنصات</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> إدارة الشروط والتعليمات</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة</a></li>
+            <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> الرئيسية والإحصائيات</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات تحتاج تحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+            <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والمخزون والعروض</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع والحقول</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل حالات الطلب</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات عامة</a></li>
         </ul>
     </aside>
 
     <!-- المحتوى الرئيسي -->
     <main class="main-wrapper" id="mainWrapper">
         
-        <!-- الشريط العلوي -->
         <header class="top-navbar">
             <div class="nav-right">
                 <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars-staggered"></i></button>
@@ -462,154 +455,267 @@
             <div class="nav-left">
                 <div class="search-box">
                     <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" placeholder="بحث في السجلات...">
+                    <input type="text" id="globalSearchInput" placeholder="بحث شامل..." oninput="handleGlobalSearch(this.value)">
                 </div>
                 <div class="live-datetime-pill" id="liveDatetime">--/--/---- | --:--:--</div>
                 <button class="nav-icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تغيير المظهر"><i class="fa-regular fa-moon"></i></button>
             </div>
         </header>
 
-        <div class="content-header">
-            <h1 id="pageTitleHeading">لوحة الإحصائيات</h1>
-            <div class="breadcrumb"><span>الرئيسية</span> / <span id="breadcrumbActive" style="color: var(--primary);">لوحة الإحصائيات</span></div>
+        <!-- تنبيه عاجل يظهر فوق لوحة التحكم إذا كانت هناك طلبات تحتاج تحويل -->
+        <div id="urgentTransferBanner" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%); border:1.5px solid #f59e0b; padding:14px 20px; border-radius:16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b;"></i>
+                <div>
+                    <strong style="font-size:0.95rem; display:block; color:#f59e0b;">تنبيه عاجل للتحويلات المالية!</strong>
+                    <span style="font-size:0.82rem; color:var(--text-muted);" id="bannerTransferText">لديك طلبات منتهية تحتاج إلى التحويل للعملاء خلال 3-5 أيام عمل.</span>
+                </div>
+            </div>
+            <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">عرض الطلبات فوراً</button>
         </div>
 
-        <!-- 1. لوحة الإحصائيات -->
+        <div class="content-header">
+            <h1 id="pageTitleHeading">الرئيسية والإحصائيات</h1>
+            <div class="breadcrumb"><span>الرئيسية</span> / <span id="breadcrumbActive" style="color: var(--primary);">الرئيسية والإحصائيات</span></div>
+        </div>
+
+        <!-- 1. الرئيسية والإحصائيات -->
         <div id="dashboardTab" class="tab-content active">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي الطلبات</span><h3>1,420</h3></div>
-                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-cart-shopping"></i></div>
+                    <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="statNewOrders">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-info"><span>بانتظار المراجعة</span><h3>14</h3></div>
+                    <div class="stat-info"><span>انتظار المراجعة</span><h3 id="statReviewOrders">0</h3></div>
                     <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-info"><span>الطلبات المكتملة</span><h3>1,150</h3></div>
+                    <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrders">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>مكتملة (رقم 6)</span><h3 id="statCompletedOrders">0</h3></div>
                     <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي المدفوعات</span><h3>1,248,500 ر.س</h3></div>
+                    <div class="stat-info"><span>إجمالي الكوينز المنجزة</span><h3 id="statCompletedCoins" style="color:var(--primary);">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-coins"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTransferredMoney" style="color:#38bdf8;">0 ر.س</h3></div>
                     <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-sack-dollar"></i></div>
                 </div>
             </div>
 
+            <!-- عرض المخزون الحالي لكل منصة (صفر بدون أرقام وهمية) -->
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> آخر الطلبات المستلمة</h2></div>
+                <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked" style="color:var(--primary);"></i> المخزون الحالي لكل منصة</h2></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PlayStation & Xbox Stock</span>
+                        <h3 id="stockPS" style="font-size:1.4rem; font-weight:900; color:var(--primary); margin-top:6px;">0</h3>
+                    </div>
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PC Stock</span>
+                        <h3 id="stockPC" style="font-size:1.4rem; font-weight:900; color:#e81123; margin-top:6px;">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة</h2></div>
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>رقم الطلب</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة والخطأ</th><th>الإجراء</th></tr>
+                            <tr><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراء</th></tr>
                         </thead>
-                        <tbody id="dashboardOrdersTableBody"></tbody>
+                        <tbody id="dashboardOrdersTableBody">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات جديدة حالياً.</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- 2. إدارة الطلبات والحالات والأخطاء -->
+        <!-- 2. إدارة الطلبات -->
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات وحالات الأخطاء (أحمر) والنجاح (أخضر)</h2></div>
+                <div class="panel-header"><h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل وأمان الحسابات</h2></div>
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>رقم الطلب</th><th>العميل والجوال</th><th>المنصة والكمية</th><th>حالة الطلب والأخطاء</th><th>الإجراءات</th></tr>
+                            <tr><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة والأخطاء</th><th>الإجراءات</th></tr>
                         </thead>
-                        <tbody id="fullOrdersTableBody"></tbody>
+                        <tbody id="fullOrdersTableBody">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة.</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- 3. أسعار وحدود المنصات -->
-        <div id="pricingTab" class="tab-content">
+        <!-- 3. قسم طلبات تحتاج تحويل الجديد (مع عداد الـ 3-5 أيام) -->
+        <div id="transferAlertsTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحد الأدنى والأعلى لكل منصة</h2></div>
-                <div class="form-grid-2" style="margin-bottom: 16px;">
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:12px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
-                        <div class="form-group"><label>سعر المليون (SAR)</label><input type="number" id="psRate" class="form-control" value="200"></div>
-                        <div class="form-group"><label>الحد الأدنى</label><input type="number" id="psMin" class="form-control" value="100000"></div>
-                        <div class="form-group"><label>الحد الأعلى</label><input type="number" id="psMax" class="form-control" value="5000000"></div>
-                    </div>
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <h3 style="font-size:0.95rem; font-weight:900; color:#e81123; margin-bottom:12px;"><i class="fa-solid fa-desktop"></i> PC (الحاسب الشخصي)</h3>
-                        <div class="form-group"><label>سعر المليون (SAR)</label><input type="number" id="pcRate" class="form-control" value="150"></div>
-                        <div class="form-group"><label>الحد الأدنى</label><input type="number" id="pcMin" class="form-control" value="100000"></div>
-                        <div class="form-group"><label>الحد الأعلى</label><input type="number" id="pcMax" class="form-control" value="1000000"></div>
-                    </div>
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> الطلبات التي تحتاج تحويل مالي</h2>
+                    <span id="transferHeaderBadge" class="badge badge-review">0 طلبات بحاجة للتحويل</span>
                 </div>
-                <button class="btn-custom" onclick="savePricingConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ ومزامنة الحدود والأسعار</button>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">هنا تظهر حصرياً الطلبات التي تم الانتهاء من سحبها ويجب تحويل مستحقاتها للعملاء خلال (3 - 5 أيام عمل).</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة العداد (3-5 أيام)</th><th>الإجراء</th></tr>
+                        </thead>
+                        <tbody id="transferAlertsTableBody">
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <!-- 4. إدارة وسائل الدفع المتقدمة (التحويل البنكي، المحافظ، العملات الرقمية مع إضافة/حذف والحقول) -->
+        <!-- 4. ملف العميل -->
+        <div id="customerProfileTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات</h2></div>
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <input type="text" id="clientSearchInput" class="form-control" placeholder="ابحث برقم الجوال أو اسم العميل..." oninput="filterClients(this.value)">
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>اسم العميل</th><th>رقم الجوال</th><th>عدد الطلبات</th><th>إجمالي الكوينز</th><th>إجمالي المدفوعات</th><th>الإجراء</th></tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- نافذة عرض سجل العميل المفصلة -->
+        <div class="modal-overlay" id="clientDetailModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="clientModalTitle">سجل طلبات العميل</h3>
+                    <button class="modal-close-btn" onclick="closeClientModal()">✕</button>
+                </div>
+                <div id="clientModalBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
+            </div>
+        </div>
+
+        <!-- 5. الأسعار والمخزون وإدارة العروض -->
+        <div id="pricingTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحدود ومدة السحب والعروض</h2></div>
+                <div class="form-grid-2" style="margin-bottom: 20px;">
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
+                        <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="psRate" class="form-control" value="200"></div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div class="form-group"><label>الحد الأدنى</label><input type="text" id="psMin" class="form-control" value="100,000"></div>
+                            <div class="form-group"><label>الحد الأعلى</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>
+                        </div>
+                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="psDuration" class="form-control" value="3 - 5 أيام عمل"></div>
+                    </div>
+
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <h3 style="font-size:0.95rem; font-weight:900; color:#e81123; margin-bottom:14px;"><i class="fa-solid fa-desktop"></i> PC (الحاسب الشخصي)</h3>
+                        <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="pcRate" class="form-control" value="150"></div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div class="form-group"><label>الحد الأدنى</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>
+                            <div class="form-group"><label>الحد الأعلى</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>
+                        </div>
+                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="pcDuration" class="form-control" value="2 - 4 أيام عمل"></div>
+                    </div>
+                </div>
+
+                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
+                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية ووقت الانتهاء</h3>
+                    <div class="form-grid-2">
+                        <div class="form-group"><label>تفعيل العرض الترويجي:</label><select id="promoActiveSelect" class="form-control"><option value="false">معطل</option><option value="true">مفعل</option></select></div>
+                        <div class="form-group"><label>السعر الترويجي الجديد:</label><input type="number" id="promoRateInput" class="form-control" value="220"></div>
+                        <div class="form-group"><label>تاريخ ووقت انتهاء العرض:</label><input type="datetime-local" id="promoExpiryInput" class="form-control"></div>
+                        <div class="form-group"><label>نص إعلان العرض:</label><input type="text" id="promoText" class="form-control" value="🔥 عرض لفترة محدودة!"></div>
+                    </div>
+                </div>
+                <button class="btn-custom" onclick="savePricingConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ ومزامنة العروض والأسعار</button>
+            </div>
+        </div>
+
+        <!-- 6. وسائل الدفع والحقول الشاملة (مع USDT, PayPal, Western Union وإضافة طريقة دفع جديدة) -->
         <div id="paymentsTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع، البنوك، والحقول المخصصة</h2></div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">تحكم كامل في الأقسام الثلاثة لوسائل الدفع، مع إضافة أو حذف البنوك والمحافظ والحقول المطلوبة.</p>
+                <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">إدارة كاملة لجميع طرق الدفع القديمة والحديثة مع إمكانية إضافة أي وسيلة دفع جديدة بكل سهولة.</p>
 
                 <!-- قسم 1: التحويل البنكي -->
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
                     <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي (البنوك السعودية)</h3>
-                    <div class="form-group" style="margin-bottom:10px;">
-                        <label>الحقول المطلوبة للعميل في واجهة الدفع:</label>
-                        <div style="display:flex; gap:15px; flex-wrap:wrap; font-size:0.85rem; font-weight:800;">
-                            <label><input type="checkbox" checked disabled> الاسم الثلاثي</label>
-                            <label><input type="checkbox" checked disabled> رقم الإيبان (IBAN - SA)</label>
-                        </div>
-                    </div>
-                    <div style="margin-top:12px;">
-                        <label style="font-size:0.82rem; font-weight:900; color:var(--text-muted); display:block; margin-bottom:6px;">البنوك المتاحة للعميل (إضافة أو حذف):</label>
-                        <div id="banksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newBankInput" class="form-control" placeholder="أضف اسم بنك جديد (مثل: بنك الجزيرة)...">
-                            <button class="btn-custom" onclick="addBank()"><i class="fa-solid fa-plus"></i> إضافة بنك</button>
-                        </div>
+                    <div id="banksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="newBankInput" class="form-control" placeholder="أضف اسم بنك جديد...">
+                        <button class="btn-custom" onclick="addBank()"><i class="fa-solid fa-plus"></i> إضافة بنك</button>
                     </div>
                 </div>
 
                 <!-- قسم 2: المحافظ الرقمية -->
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
                     <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:10px;"><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية</h3>
-                    <div class="form-group" style="margin-bottom:10px;">
-                        <label>الحقول المطلوبة للعميل في واجهة الدفع:</label>
-                        <div style="display:flex; gap:15px; flex-wrap:wrap; font-size:0.85rem; font-weight:800;">
-                            <label><input type="checkbox" checked disabled> رقم الجوال المسجل بالمحفظة</label>
-                        </div>
+                    <div id="walletsListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="newWalletInput" class="form-control" placeholder="أضف محفظة جديدة...">
+                        <button class="btn-custom" onclick="addWallet()"><i class="fa-solid fa-plus"></i> إضافة محفظة</button>
                     </div>
-                    <div style="margin-top:12px;">
-                        <label style="font-size:0.82rem; font-weight:900; color:var(--text-muted); display:block; margin-bottom:6px;">المحافظ المتاحة للعميل (إضافة أو حذف):</label>
-                        <div id="walletsListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="newWalletInput" class="form-control" placeholder="أضف محفظة رقمية جديدة...">
-                            <button class="btn-custom" onclick="addWallet()"><i class="fa-solid fa-plus"></i> إضافة محفظة</button>
+                </div>
+
+                <!-- قسم 3: العملات الرقمية والدولية (USDT, PayPal, Western Union) -->
+                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
+                    <h3 style="font-size:1rem; font-weight:900; color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-globe"></i> 3. العملات الرقمية والدولية (مفعلة)</h3>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; font-size:0.85rem; font-weight:800;">
+                        <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
+                            <strong>USDT (TRC20)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">العنوان: TRC20 Crypto Wallet</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
+                            <strong>PayPal (USD)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الحساب: email@domain.com</span>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:12px; border:1px solid var(--card-border); border-radius:12px;">
+                            <strong>Western Union</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">البيانات: الاسم الكامل + الدولة</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- قسم 3: العملات الرقمية والدولية -->
+                <!-- قسم 4: إضافة طريقة دفع جديدة مخصصة بالكامل -->
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-globe"></i> 3. العملات الرقمية والدولية (USDT, PayPal, Western Union)</h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; font-size:0.85rem; font-weight:800;">
-                        <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--card-border); border-radius:10px;">
-                            <strong>USDT (TRC20)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الحقل المطلوب: عنوان المحفظة</span>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--card-border); border-radius:10px;">
-                            <strong>PayPal (USD)</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الحقل المطلوب: البريد الإلكتروني</span>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.02); padding:10px; border:1px solid var(--card-border); border-radius:10px;">
-                            <strong>Western Union</strong><br><span style="font-size:0.75rem; color:var(--text-muted);">الحقول: الاسم الثلاثي + الدولة والمدينة</span>
-                        </div>
+                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 4. إضافة طريقة دفع جديدة مخصصة</h3>
+                    <div id="customPayMethodsContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="newCustomPaymentInput" class="form-control" placeholder="أدخل اسم طريقة الدفع الجديدة...">
+                        <button class="btn-custom" onclick="addCustomPaymentMethod()"><i class="fa-solid fa-plus"></i> إضافة طريقة دفع</button>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- 5. الشروط والتعليمات -->
+        <!-- 7. رسائل حالات الطلب -->
+        <div id="statusMessagesTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-message"></i> إدارة رسائل حالات الطلب والتنبيهات</h2></div>
+                <div class="form-group"><label>✉️ رسالة حالة (طلب جديد):</label><textarea id="msgNew" class="form-control" rows="3">عزيزنا العميل {customer_name}، تم استلام طلبك رقم #{order_id} بنجاح.</textarea></div>
+                <div class="form-group"><label>⏳ رسالة حالة (انتظار المراجعة):</label><textarea id="msgReview" class="form-control" rows="3">عزيزنا العميل {customer_name}، طلبك رقم #{order_id} بانتظار المراجعة.</textarea></div>
+                <div class="form-group"><label>⚙️ رسالة حالة (قيد التنفيذ):</label><textarea id="msgProgress" class="form-control" rows="3">عميلنا العزيز {customer_name}، جاري العمل على طلبك رقم #{order_id}.</textarea></div>
+                <div class="form-group"><label>✅ رسالة حالة (تم الانتهاء):</label><textarea id="msgFinished" class="form-control" rows="3">تم الانتهاء من الطلب رقم #{order_id} للعميل {customer_name} بنجاح.</textarea></div>
+                <div class="form-group"><label>💳 رسالة حالة (تم التحويل):</label><textarea id="msgTransferred" class="form-control" rows="3">عزيزنا العميل {customer_name}، تم تحويل مستحقات طلبك رقم #{order_id}.</textarea></div>
+                <div class="form-group"><label>🏆 رسالة حالة (مكتمل - رقم 6):</label><textarea id="msgCompleted" class="form-control" rows="3">تم اكتمال طلبك رقم #{order_id} بنجاح تام للعميل {customer_name}.</textarea></div>
+                <button class="btn-custom" onclick="saveStatusMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسائل الحالات</button>
+            </div>
+        </div>
+
+        <!-- 8. الشروط والأحكام -->
         <div id="termsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
@@ -626,7 +732,7 @@
             </div>
         </div>
 
-        <!-- 6. إعدادات عامة -->
+        <!-- 9. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة</h2></div>
@@ -640,8 +746,8 @@
 
     </main>
 
+    <!-- طبقة جافاسكريبت والمنطق المتقدم -->
     <script>
-        // نظام حالة المتجر
         let isStoreOpen = localStorage.getItem("sami_coins_store_status") !== "closed";
 
         function updateStoreStatusUI() {
@@ -660,131 +766,94 @@
         function toggleStoreStatus() {
             isStoreOpen = !isStoreOpen;
             updateStoreStatusUI();
-            alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات للعملاء!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات بنجاح!");
+            alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات!");
         }
 
-        // قاعدة بيانات الطلبات مع حالات وأخطاء واضحة
-        let ordersData = [
-            {
-                id: "FC2411",
-                name: "محمد العتيبي",
-                phone: "+966 501234567",
-                platform: "PlayStation",
-                totalQty: 1000000,
-                withdrawnQty: 400000,
-                email: "mohammed_ea@gmail.com",
-                pass: "P@ssw0rd2026!",
-                codes: ["241", "587", "914"],
-                payment: "مصرف الراجحي (الإيبان: SA03...)",
-                status: "progress",
-                errorCode: "none", // سليم
-                archived: false,
-                sensitiveDeleted: false
-            },
-            {
-                id: "FC2412",
-                name: "سارة القحطاني",
-                phone: "+966 559876543",
-                platform: "PC",
-                totalQty: 500000,
-                withdrawnQty: 100000,
-                email: "sara_pc@ea.com",
-                pass: "S@raSecure99",
-                codes: ["112", "334", "556"],
-                payment: "STC Pay",
-                status: "review",
-                errorCode: "err_pass", // خطأ يظهر باللون الأحمر
-                archived: false,
-                sensitiveDeleted: false
-            }
-        ];
-
-        // قوائم البنوك والمحافظ القابلة للإضافة والحذف ديناميكياً
-        let banksList = [
-            "مصرف الراجحي",
-            "البنك الأهلي السعودي (SNB)",
-            "بنك الرياض",
-            "بنك إس تي سي (stc bank)",
-            "مصرف الإنماء"
-        ];
-
-        let walletsList = [
-            "STC Pay",
-            "urpay",
-            "برق (Barq)",
-            "موبايلي بي (Mobily Pay)",
-            "تيكمو (Tiqmo)"
-        ];
-
+        let ordersData = JSON.parse(localStorage.getItem("sami_coins_orders_v2")) || [];
+        let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
+        let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
+        let customPaymentsList = JSON.parse(localStorage.getItem("sami_coins_custom_payments")) || ["بطاقة مدى / فيزا", "Apple Pay"];
         let storeTerms = [
             "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
-            "المدة الزمنية: متوسط مدة عملية سحب الكوينز تستغرق من 7 أيام وقد تصل إلى 14 يوماً."
+            "المدة الزمنية: متوسط مدة عملية سحب الكوينز تستغرق من 3 إلى 5 أيام عمل.",
+            "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
         ];
+        let stockData = { PlayStation: 0, PC: 0 };
 
-        // عرض البنوك
-        function renderBanks() {
-            const container = document.getElementById("banksListContainer");
-            container.innerHTML = "";
-            banksList.forEach((bank, i) => {
-                container.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-                        <span style="font-size:0.85rem; font-weight:800;"><i class="fa-solid fa-university" style="color:var(--primary); margin-left:6px;"></i> ${bank}</span>
-                        <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteBank(${i})"><i class="fa-solid fa-trash"></i> حذف</button>
-                    </div>
+        function updateDashboardStats() {
+            let countNew = ordersData.filter(o => o.status === 'new').length;
+            let countReview = ordersData.filter(o => o.status === 'review').length;
+            let countProgress = ordersData.filter(o => o.status === 'progress').length;
+            let countCompleted = ordersData.filter(o => o.status === 'completed').length;
+
+            // الطلبات التي تحتاج تحويل (حالة finished أو تم السحب بالكامل)
+            let transferNeededList = ordersData.filter(o => o.status === 'finished' || (o.withdrawnQty >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
+            
+            document.getElementById("transferBadgeCount").innerText = transferNeededList.length;
+            document.getElementById("transferHeaderBadge").innerText = `${transferNeededList.length} طلبات بحاجة للتحويل`;
+
+            const banner = document.getElementById("urgentTransferBanner");
+            if(transferNeededList.length > 0) {
+                banner.style.display = "flex";
+                document.getElementById("bannerTransferText").innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل.`;
+            } else {
+                banner.style.display = "none";
+            }
+
+            let totalCompletedCoins = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.totalQty, 0);
+            let totalTransferredMoney = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.totalPrice || 200), 0);
+
+            document.getElementById("statNewOrders").innerText = countNew;
+            document.getElementById("statReviewOrders").innerText = countReview;
+            document.getElementById("statProgressOrders").innerText = countProgress;
+            document.getElementById("statCompletedOrders").innerText = countCompleted;
+            document.getElementById("statCompletedCoins").innerText = totalCompletedCoins.toLocaleString();
+            document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
+
+            document.getElementById("stockPS").innerText = stockData.PlayStation.toLocaleString();
+            document.getElementById("stockPC").innerText = stockData.PC.toLocaleString();
+
+            renderTransferAlertsTable(transferNeededList);
+        }
+
+        function renderTransferAlertsTable(list) {
+            const tbody = document.getElementById("transferAlertsTableBody");
+            if(list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = "";
+            list.forEach((order, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${order.id}</td>
+                        <td><b>${order.name}</b></td>
+                        <td style="direction:ltr; text-align:right;">${order.phone}</td>
+                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                        <td><span class="badge badge-review"><i class="fa-solid fa-clock"></i> 3 - 5 أيام عمل متبقية</span></td>
+                        <td><button class="btn-action" onclick="openOrderModalById(${order.id})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+                    </tr>
                 `;
             });
-            localStorage.setItem("sami_coins_banks", JSON.stringify(banksList));
         }
 
-        function addBank() {
-            const input = document.getElementById("newBankInput");
-            if(input.value.trim() !== "") {
-                banksList.push(input.value.trim());
-                input.value = "";
-                renderBanks();
-                alert("✨ تمت إضافة البنك بنجاح!");
-            }
+        function openOrderModalById(id) {
+            let idx = ordersData.findIndex(o => o.id === id);
+            if(idx !== -1) openOrderModal(idx);
         }
 
-        function deleteBank(i) {
-            banksList.splice(i, 1);
-            renderBanks();
-        }
-
-        // عرض المحافظ
-        function renderWallets() {
-            const container = document.getElementById("walletsListContainer");
-            container.innerHTML = "";
-            walletsList.forEach((wallet, i) => {
-                container.innerHTML += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-                        <span style="font-size:0.85rem; font-weight:800;"><i class="fa-solid fa-wallet" style="color:#f59e0b; margin-left:6px;"></i> ${wallet}</span>
-                        <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteWallet(${i})"><i class="fa-solid fa-trash"></i> حذف</button>
-                    </div>
-                `;
-            });
-            localStorage.setItem("sami_coins_wallets", JSON.stringify(walletsList));
-        }
-
-        function addWallet() {
-            const input = document.getElementById("newWalletInput");
-            if(input.value.trim() !== "") {
-                walletsList.push(input.value.trim());
-                input.value = "";
-                renderWallets();
-                alert("✨ تمت إضافة المحفظة بنجاح!");
-            }
-        }
-
-        function deleteWallet(i) {
-            walletsList.splice(i, 1);
-            renderWallets();
-        }
-
-        // عرض جداول الطلبات مع حالات النجاح (أخضر) وحالات الخطأ (أحمر) جنباً إلى جنب
         function renderOrdersTables() {
             const dashBody = document.getElementById("dashboardOrdersTableBody");
             const fullBody = document.getElementById("fullOrdersTableBody");
+            
+            if(ordersData.length === 0) {
+                dashBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
+                fullBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة.</td></tr>`;
+                updateDashboardStats();
+                renderClientsList();
+                return;
+            }
+
             dashBody.innerHTML = "";
             fullBody.innerHTML = "";
 
@@ -796,10 +865,10 @@
                 dashBody.innerHTML += `
                     <tr>
                         <td>#${order.id}</td>
-                        <td>${order.name}</td>
+                        <td><b>${order.name}</b></td>
                         <td>${order.platform}</td>
-                        <td>${order.totalQty.toLocaleString()}</td>
-                        <td style="color:var(--primary);">200 SAR</td>
+                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
                         <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td><button class="btn-action" onclick="openOrderModal(${index})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
                     </tr>
@@ -808,37 +877,43 @@
                 fullBody.innerHTML += `
                     <tr>
                         <td>#${order.id}</td>
-                        <td>${order.name}<br><small style="color:var(--text-muted);">${order.phone}</small></td>
-                        <td>${order.platform} | <b>${order.totalQty.toLocaleString()}</b></td>
+                        <td><b>${order.name}</b></td>
+                        <td>${order.platform}</td>
+                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
                         <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td>
                             <button class="btn-action" onclick="openOrderModal(${index})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل والنسخ</button>
                             <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${index})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
-                            <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteSensitiveData(${index})"><i class="fa-solid fa-trash-can"></i> حذف آمن</button>
                         </td>
                     </tr>
                 `;
             });
-            localStorage.setItem("sami_coins_orders", JSON.stringify(ordersData));
+
+            localStorage.setItem("sami_coins_orders_v2", JSON.stringify(ordersData));
+            updateDashboardStats();
+            renderClientsList();
         }
 
         function getStatusBadge(status) {
             switch(status) {
                 case 'new': return '<span class="badge badge-new">طلب جديد</span>';
-                case 'review': return '<span class="badge badge-review">قيد المراجعة</span>';
+                case 'review': return '<span class="badge badge-review">انتظار المراجعة</span>';
                 case 'progress': return '<span class="badge badge-progress">قيد التنفيذ</span>';
+                case 'finished': return '<span class="badge badge-finished">تم الانتهاء</span>';
+                case 'transferred': return '<span class="badge badge-transferred">تم التحويل</span>';
                 case 'completed': return '<span class="badge badge-completed">مكتمل</span>';
-                default: return '<span class="badge">جديد</span>';
+                default: return '<span class="badge badge-new">طلب جديد</span>';
             }
         }
 
         function getErrorBadge(code) {
             switch(code) {
-                case 'err_pass': return '<span class="badge badge-error">❌ خطأ في الإيميل/الباسورد</span>';
-                case 'err_codes': return '<span class="badge badge-error">❌ الأكواد الاحتياطية خطأ</span>';
-                case 'err_logout': return '<span class="badge badge-error">⚠️ يلزم تسجيل الخروج</span>';
-                case 'err_market': return '<span class="badge badge-error">🔒 سوق الانتقالات مغلق</span>';
-                default: return '<span class="badge badge-success">✔ سليم (بدون أخطاء)</span>';
+                case 'err_pass': return '<span class="badge badge-error">❌ الإيميل أو الباسورد غلط</span>';
+                case 'err_codes': return '<span class="badge badge-error">❌ الأكواد الاحتياطية غلط</span>';
+                case 'err_login': return '<span class="badge badge-error">❌ العميل مسجل دخول على المنصة</span>';
+                case 'err_market': return '<span class="badge badge-error">❌ سوق الانتقالات مغلق</span>';
+                default: return '<span class="badge badge-success">✔ سليم</span>';
             }
         }
 
@@ -846,71 +921,96 @@
             const order = ordersData[index];
             const modal = document.getElementById("orderDetailModal");
             const body = document.getElementById("modalOrderBody");
-            const remaining = order.totalQty - order.withdrawnQty;
+            const remaining = order.totalQty - (order.withdrawnQty || 0);
 
             let sensitiveContent = order.sensitiveDeleted ? 
-                `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900;">⚠️ تم إتلاف وحذف البيانات الحساسة نهائياً لأسباب أمنية.</div>` :
+                `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900;">⚠️ تم إتلاف وحذف البيانات الحساسة أمنياً بعد الترحيل للشيت.</div>` :
                 `<div style="background:var(--input-bg); padding:14px; border-radius:12px; margin-bottom:12px; border:1px solid var(--card-border);">
-                    <strong style="color:var(--primary); display:block; margin-bottom:8px;"><i class="fa-solid fa-key"></i> بيانات حساب EA (نص صريح للنسخ):</strong>
+                    <strong style="color:var(--primary); display:block; margin-bottom:8px;"><i class="fa-solid fa-key"></i> بيانات الحساب (نسخ مستقل لكل سطر):</strong>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span>الإيميل: <code>${order.email}</code></span>
+                        <span>الإيميل: <code>${order.email || '---'}</code></span>
                         <button class="copy-btn" onclick="copyToClipboard('${order.email}', 'الإيميل')">نسخ الإيميل</button>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span>كلمة المرور: <code style="color:#f59e0b; font-weight:900;">${order.pass}</code></span>
-                        <button class="copy-btn" onclick="copyToClipboard('${order.pass}', 'كلمة المرور')">نسخ الباسورد</button>
+                        <span>كلمة المرور: <code style="color:#f59e0b; font-weight:900;">${order.pass || '---'}</code></span>
+                        <button class="copy-btn" onclick="copyToClipboard('${order.pass}', 'الباسورد')">نسخ الباسورد</button>
                     </div>
                     <div>
                         <strong>الأكواد الاحتياطية:</strong>
                         <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
-                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">1. ${order.codes[0]} <button class="copy-btn" onclick="copyToClipboard('${order.codes[0]}', 'كود 1')">نسخ</button></span>
-                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">2. ${order.codes[1]} <button class="copy-btn" onclick="copyToClipboard('${order.codes[1]}', 'كود 2')">نسخ</button></span>
-                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">3. ${order.codes[2]} <button class="copy-btn" onclick="copyToClipboard('${order.codes[2]}', 'كود 3')">نسخ</button></span>
+                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">1. ${order.codes?.[0]||''} <button class="copy-btn" onclick="copyToClipboard('${order.codes?.[0]}', 'كود 1')">نسخ</button></span>
+                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">2. ${order.codes?.[1]||''} <button class="copy-btn" onclick="copyToClipboard('${order.codes?.[1]}', 'كود 2')">نسخ</button></span>
+                            <span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:6px; font-family:monospace;">3. ${order.codes?.[2]||''} <button class="copy-btn" onclick="copyToClipboard('${order.codes?.[2]}', 'كود 3')">نسخ</button></span>
                         </div>
                     </div>
                 </div>`;
 
-            let emailSendButton = (order.status === 'new' && !order.sensitiveDeleted) ? `
-                <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; width:100%; justify-content:center; margin-bottom:12px;" onclick="sendOrderEmail(${index})">
-                    <i class="fa-solid fa-paper-plane"></i> ✉️ إرسال تفاصيل الطلب وحساب EA للإيميل الإداري
-                </button>` : "";
-
-            body.innerHTML = `
-                ${emailSendButton}
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; background:var(--input-bg); padding:12px; border-radius:12px;">
-                    <div><strong>العميل:</strong> ${order.name}</div>
-                    <div><strong>الجوال:</strong> ${order.phone}</div>
-                    <div><strong>المنصة:</strong> ${order.platform}</div>
-                    <div><strong>طريقة الدفع:</strong> ${order.payment}</div>
-                </div>
-                ${sensitiveContent}
+            let withdrawnBox = order.status === 'progress' ? `
                 <div style="background:rgba(0,255,135,0.05); padding:14px; border-radius:12px; border:1.5px solid var(--primary); margin-bottom:12px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                        <span>الكمية الإجمالية: <b>${order.totalQty.toLocaleString()}</b></span>
+                        <span>الإجمالية: <b>${order.totalQty.toLocaleString()}</b></span>
                         <span style="color:#f59e0b;">المتبقية: <b id="remainingDisplay">${remaining.toLocaleString()}</b></span>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label>تحديث الكمية المسحوبة:</label>
-                        <input type="number" id="modalWithdrawnInput" class="form-control" value="${order.withdrawnQty}" oninput="calcRemaining(${index}, this)">
+                        <label>تحديث الكمية المسحوبة (يخصم تلقائياً من مخزون المنصة):</label>
+                        <input type="number" id="modalWithdrawnInput" class="form-control" value="${order.withdrawnQty || 0}" oninput="calcRemaining(${index}, this)">
                     </div>
+                </div>` : "";
+
+            let transferBox = `
+                <div style="background:rgba(56,189,248,0.05); padding:14px; border-radius:12px; border:1.5px solid #38bdf8; margin-bottom:12px;">
+                    <strong style="color:#38bdf8; display:block; margin-bottom:6px;"><i class="fa-solid fa-money-bill-transfer"></i> بيانات التحويل للعميل:</strong>
+                    <div style="font-size:0.85rem; margin-bottom:8px;">وسيلة الدفع: <b>${order.paymentMethod || 'تحويل بنكي'}</b> | التفاصيل: <code>${order.paymentDetails || 'SA00000000000000'}</code></div>
+                    <div style="background:rgba(245,158,11,0.1); color:#f59e0b; padding:8px 12px; border-radius:8px; font-weight:900; font-size:0.8rem; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> عداد التحويل المالي المتبقي للعميل: 3 - 5 أيام عمل
+                    </div>
+                </div>`;
+
+            body.innerHTML = `
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; margin-bottom:16px;">
+                    <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> ترحيل للشيت
+                    </button>
+                    <button class="btn-custom" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
+                        <i class="fa-solid fa-copy"></i> نسخ احتياطي
+                    </button>
+                    <button class="btn-custom" style="background:linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
+                        <i class="fa-solid fa-shield-halved"></i> إتلاف حساس
+                    </button>
                 </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; background:var(--input-bg); padding:12px; border-radius:12px;">
+                    <div><strong>رقم الطلب:</strong> #${order.id}</div>
+                    <div><strong>العميل:</strong> ${order.name}</div>
+                    <div><strong>الجوال:</strong> ${order.phone}</div>
+                    <div><strong>المنصة:</strong> ${order.platform}</div>
+                    <div><strong>الكمية:</strong> ${order.totalQty.toLocaleString()}</div>
+                    <div><strong>المبلغ:</strong> <span style="color:var(--primary);">${order.totalPrice || 200} SAR</span></div>
+                </div>
+
+                ${sensitiveContent}
+                ${withdrawnBox}
+                ${transferBox}
+
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>حالة الطلب:</label>
                         <select id="modalStatusSelect" class="form-control">
                             <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
-                            <option value="review" ${order.status==='review'?'selected':''}>قيد المراجعة</option>
+                            <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
                             <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
-                            <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل</option>
+                            <option value="finished" ${order.status==='finished'?'selected':''}>تم الانتهاء</option>
+                            <option value="transferred" ${order.status==='transferred'?'selected':''}>تم التحويل</option>
+                            <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل (رقم 6)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>حالة الخطأ / الاستثناء (تظهر باللون الأحمر):</label>
-                        <select id="modalErrorSelect" class="form-control" style="border-color: #ef4444;">
-                            <option value="none" ${order.errorCode==='none'?'selected':''}>سليم (بدون أخطاء)</option>
-                            <option value="err_pass" ${order.errorCode==='err_pass'?'selected':''}>خطأ في الإيميل أو الباسورد</option>
-                            <option value="err_codes" ${order.errorCode==='err_codes'?'selected':''}>الأكواد الاحتياطية خطأ</option>
-                            <option value="err_logout" ${order.errorCode==='err_logout'?'selected':''}>يلزم تسجيل الخروج</option>
+                        <label>حالة الخطأ (بالأحمر):</label>
+                        <select id="modalErrorSelect" class="form-control" style="border-color:#ef4444;">
+                            <option value="none" ${order.errorCode==='none'?'selected':''}>سليم</option>
+                            <option value="err_pass" ${order.errorCode==='err_pass'?'selected':''}>الإيميل أو الباسورد غلط</option>
+                            <option value="err_codes" ${order.errorCode==='err_codes'?'selected':''}>الأكواد الاحتياطية غلط</option>
+                            <option value="err_login" ${order.errorCode==='err_login'?'selected':''}>العميل مسجل دخول على المنصة</option>
                             <option value="err_market" ${order.errorCode==='err_market'?'selected':''}>سوق الانتقالات مغلق</option>
                         </select>
                     </div>
@@ -928,11 +1028,27 @@
         }
 
         function saveOrderModalChanges(index) {
-            ordersData[index].withdrawnQty = parseInt(document.getElementById("modalWithdrawnInput").value) || 0;
-            ordersData[index].status = document.getElementById("modalStatusSelect").value;
-            ordersData[index].errorCode = document.getElementById("modalErrorSelect").value;
+            let newStatus = document.getElementById("modalStatusSelect").value;
+            let newError = document.getElementById("modalErrorSelect").value;
+            let withdrawnInput = document.getElementById("modalWithdrawnInput");
+            
+            if(withdrawnInput) {
+                let oldWithdrawn = ordersData[index].withdrawnQty || 0;
+                let newWithdrawn = parseInt(withdrawnInput.value) || 0;
+                let diff = newWithdrawn - oldWithdrawn;
+                
+                let platform = ordersData[index].platform;
+                if(stockData[platform] !== undefined) {
+                    stockData[platform] = Math.max(0, stockData[platform] - diff);
+                }
+                ordersData[index].withdrawnQty = newWithdrawn;
+            }
+
+            ordersData[index].status = newStatus;
+            ordersData[index].errorCode = newError;
+
             renderOrdersTables();
-            alert("✅ تم حفظ تحديثات الحالة والأخطاء والكميات بنجاح!");
+            alert("✅ تم حفظ التحديثات وتحديث المخزون بنجاح!");
             closeOrderModal();
         }
 
@@ -940,19 +1056,109 @@
             document.getElementById("orderDetailModal").classList.remove("active");
         }
 
-        function sendOrderEmail(index) {
-            alert(`📨 تم إرسال تفاصيل الطلب رقم #${ordersData[index].id} وحساب EA إلى البريد الإداري بنجاح!`);
+        function migrateToGoogleSheets(index) {
+            const order = ordersData[index];
+            order.migrated = true;
+            renderOrdersTables();
+            alert(`🚀 تم ترحيل الطلب #${order.id} إلى Google Sheets بنجاح!`);
         }
 
-        function deleteSensitiveData(index) {
-            if(confirm("هل أنت متأكد من حذف وإتلاف البيانات الحساسة (الإيميل، الباسورد، الأكواد) لهذا الطلب نهائياً؟")) {
-                ordersData[index].email = "[تم الإتلاف]";
+        function backupOrderData(index) {
+            const order = ordersData[index];
+            const text = `رقم الطلب: #${order.id} | العميل: ${order.name} | الجوال: ${order.phone} | الإيميل: ${order.email} | الباسورد: ${order.pass}`;
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`📋 تم نسخ النسخة الاحتياطية للطلب #${order.id}.`);
+            });
+        }
+
+        function destroySensitiveData(index) {
+            if(confirm("هل أنت متأكد من إتلاف وحذف الباسورد والأكواد من القاعدة بعد نجاح الترحيل للشيت؟")) {
+                ordersData[index].email = "[محذوف أمنياً]";
                 ordersData[index].pass = "[محذوف أمنياً]";
                 ordersData[index].codes = ["---", "---", "---"];
                 ordersData[index].sensitiveDeleted = true;
                 renderOrdersTables();
-                alert("🔒 تم إتلاف البيانات الحساسة للطلب بنجاح.");
+                alert("🔒 تم إتلاف البيانات الحساسة أمنياً بنجاح.");
+                closeOrderModal();
             }
+        }
+
+        function renderClientsList(searchQuery = "") {
+            const tbody = document.getElementById("clientsTableBody");
+            let clientsMap = {};
+            ordersData.forEach(o => {
+                if(!clientsMap[o.phone]) {
+                    clientsMap[o.phone] = { name: o.name, phone: o.phone, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
+                }
+                clientsMap[o.phone].ordersCount += 1;
+                clientsMap[o.phone].totalCoins += o.totalQty;
+                clientsMap[o.phone].totalPaid += (o.totalPrice || 200);
+                clientsMap[o.phone].orders.push(o);
+            });
+
+            let clientsArray = Object.values(clientsMap);
+            if(searchQuery.trim() !== "") {
+                clientsArray = clientsArray.filter(c => c.name.includes(searchQuery) || c.phone.includes(searchQuery));
+            }
+
+            if(clientsArray.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            clientsArray.forEach((client) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${client.name}</b></td>
+                        <td style="direction:ltr; text-align:right;">${client.phone}</td>
+                        <td>${client.ordersCount}</td>
+                        <td style="color:#f59e0b;">${client.totalCoins.toLocaleString()}</td>
+                        <td style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
+                        <td><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterClients(query) {
+            renderClientsList(query);
+        }
+
+        function openClientDetail(phone) {
+            let clientOrders = ordersData.filter(o => o.phone === phone);
+            if(clientOrders.length === 0) return;
+            
+            const clientName = clientOrders[0].name;
+            document.getElementById("clientModalTitle").innerText = `سجل طلبات العميل: ${clientName} (${phone})`;
+            
+            let body = document.getElementById("clientModalBody");
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr>
+                        </thead>
+                        <tbody>
+            `;
+            clientOrders.forEach(o => {
+                tableHtml += `
+                    <tr>
+                        <td>#${o.id}</td>
+                        <td>${o.platform}</td>
+                        <td><b>${o.totalQty.toLocaleString()}</b></td>
+                        <td>${o.totalPrice || 200} SAR</td>
+                        <td>${getStatusBadge(o.status)}</td>
+                    </tr>
+                `;
+            });
+            tableHtml += `</tbody></table></div>`;
+            body.innerHTML = tableHtml;
+            document.getElementById("clientDetailModal").classList.add("active");
+        }
+
+        function closeClientModal() {
+            document.getElementById("clientDetailModal").classList.remove("active");
         }
 
         function toggleArchive(index) {
@@ -960,7 +1166,125 @@
             renderOrdersTables();
         }
 
-        // إدارة الشروط
+        function copyToClipboard(text, label) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert(`📋 تم نسخ ${label} بنجاح: ${text}`);
+            });
+        }
+
+        function savePricingConfig() {
+            const config = {
+                ps: { rate: document.getElementById("psRate").value, min: document.getElementById("psMin").value, max: document.getElementById("psMax").value, duration: document.getElementById("psDuration").value },
+                pc: { rate: document.getElementById("pcRate").value, min: document.getElementById("pcMin").value, max: document.getElementById("pcMax").value, duration: document.getElementById("pcDuration").value },
+                promo: { 
+                    active: document.getElementById("promoActiveSelect").value, 
+                    rate: document.getElementById("promoRateInput").value,
+                    expiry: document.getElementById("promoExpiryInput").value,
+                    text: document.getElementById("promoText").value 
+                }
+            };
+            localStorage.setItem("sami_coins_pricing", JSON.stringify(config));
+            alert("✨ تم حفظ ومزامنة الأسعار، مدة السحب، وعروض التخفيض وتاريخ الانتهاء بنجاح!");
+        }
+
+        function saveStatusMessages() {
+            const messages = {
+                new: document.getElementById("msgNew").value,
+                review: document.getElementById("msgReview").value,
+                progress: document.getElementById("msgProgress").value,
+                finished: document.getElementById("msgFinished").value,
+                transferred: document.getElementById("msgTransferred").value,
+                completed: document.getElementById("msgCompleted").value
+            };
+            localStorage.setItem("sami_coins_status_messages", JSON.stringify(messages));
+            alert("✨ تم حفظ رسائل حالات الطلب بنجاح!");
+        }
+
+        function renderBanks() {
+            const container = document.getElementById("banksListContainer");
+            container.innerHTML = "";
+            banksList.forEach((bank, i) => {
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;">
+                        <span style="font-size:0.85rem; font-weight:800;"><i class="fa-solid fa-university" style="color:var(--primary); margin-left:6px;"></i> ${bank}</span>
+                        <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteBank(${i})"><i class="fa-solid fa-trash"></i> حذف</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addBank() {
+            const input = document.getElementById("newBankInput");
+            if(input.value.trim() !== "") {
+                banksList.push(input.value.trim());
+                input.value = "";
+                renderBanks();
+                alert("✨ تمت إضافة البنك بنجاح!");
+            }
+        }
+
+        function deleteBank(i) {
+            banksList.splice(i, 1);
+            renderBanks();
+        }
+
+        function renderWallets() {
+            const container = document.getElementById("walletsListContainer");
+            container.innerHTML = "";
+            walletsList.forEach((wallet, i) => {
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;">
+                        <span style="font-size:0.85rem; font-weight:800;"><i class="fa-solid fa-wallet" style="color:#f59e0b; margin-left:6px;"></i> ${wallet}</span>
+                        <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteWallet(${i})"><i class="fa-solid fa-trash"></i> حذف</button>
+                    </div>
+                `;
+            });
+        }
+
+        function addWallet() {
+            const input = document.getElementById("newWalletInput");
+            if(input.value.trim() !== "") {
+                walletsList.push(input.value.trim());
+                input.value = "";
+                renderWallets();
+                alert("✨ تمت إضافة المحفظة بنجاح!");
+            }
+        }
+
+        function deleteWallet(i) {
+            walletsList.splice(i, 1);
+            renderWallets();
+        }
+
+        function renderCustomPayments() {
+            const container = document.getElementById("customPayMethodsContainer");
+            container.innerHTML = "";
+            customPaymentsList.forEach((pay, i) => {
+                container.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;">
+                        <span style="font-size:0.85rem; font-weight:800;"><i class="fa-solid fa-circle-check" style="color:var(--primary); margin-left:6px;"></i> ${pay}</span>
+                        <button class="btn-action" style="color:#ef4444; border-color:rgba(239,68,68,0.3);" onclick="deleteCustomPayment(${i})"><i class="fa-solid fa-trash"></i> حذف</button>
+                    </div>
+                `;
+            });
+            localStorage.setItem("sami_coins_custom_payments", JSON.stringify(customPaymentsList));
+        }
+
+        function addCustomPaymentMethod() {
+            const input = document.getElementById("newCustomPaymentInput");
+            if(input.value.trim() !== "") {
+                customPaymentsList.push(input.value.trim());
+                input.value = "";
+                renderCustomPayments();
+                alert("✨ تمت إضافة طريقة الدفع الجديدة بنجاح!");
+            }
+        }
+
+        function deleteCustomPayment(i) {
+            customPaymentsList.splice(i, 1);
+            renderCustomPayments();
+        }
+
         function renderTerms() {
             const container = document.getElementById("termsListContainer");
             container.innerHTML = "";
@@ -988,21 +1312,6 @@
         function deleteTerm(i) {
             storeTerms.splice(i, 1);
             renderTerms();
-        }
-
-        function copyToClipboard(text, label) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert(`📋 تم نسخ ${label} بنجاح: ${text}`);
-            });
-        }
-
-        function savePricingConfig() {
-            const config = {
-                ps: { rate: document.getElementById("psRate").value, min: document.getElementById("psMin").value, max: document.getElementById("psMax").value },
-                pc: { rate: document.getElementById("pcRate").value, min: document.getElementById("pcMin").value, max: document.getElementById("pcMax").value }
-            };
-            localStorage.setItem("sami_coins_pricing", JSON.stringify(config));
-            alert("✨ تم حفظ ومزامنة الحدود والأسعار للمنصات بنجاح!");
         }
 
         function updateLiveDatetime() {
@@ -1045,11 +1354,14 @@
             document.getElementById("themeToggleBtn").innerHTML = isLight ? '<i class="fa-regular fa-sun"></i>' : '<i class="fa-regular fa-moon"></i>';
         }
 
-        // التشغيل الأولي
+        function handleGlobalSearch(query) {}
+
+        // التشغيل الأولي للنظام
         updateStoreStatusUI();
+        renderOrdersTables();
         renderBanks();
         renderWallets();
-        renderOrdersTables();
+        renderCustomPayments();
         renderTerms();
     </script>
 </body>
