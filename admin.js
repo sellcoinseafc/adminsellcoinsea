@@ -93,14 +93,13 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 3) دالة نسخ رقم الطلب الموحدة في جميع اللوحة
+// 3) دالة نسخ رقم الطلب الموحدة بدون تنبيهات منبثقة
 // ==========================================================================
 window.copyOrderRef = async function (ref) {
   if (!ref) return;
   const cleanRef = String(ref).replace('#', '').trim();
   navigator.clipboard.writeText(cleanRef);
   await logAuditEvent("نسخ رقم الطلب", cleanRef, `تم نسخ رقم الطلب #${cleanRef} إلى الحافظة`);
-  alert(`📋 تم نسخ رقم الطلب (#${cleanRef}) للحافظة بنجاح!`);
 };
 
 // ==========================================================================
@@ -130,7 +129,6 @@ function initAuthGuard() {
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
-      // 1. الفحص المبدئي القاطع للبريد الإلكتروني
       if (!ALLOWED_EMAILS.includes(user.email)) {
         await signOut(auth);
         alert("غير مصرح لك بدخول لوحة التحكم");
@@ -139,7 +137,6 @@ function initAuthGuard() {
       }
 
       try {
-        // 2. مطابقة الـ UID الحقيقي للحساب في مجموعة admins
         const adminRef = doc(db, "admins", user.uid);
         const adminSnap = await getDoc(adminRef);
 
@@ -152,7 +149,6 @@ function initAuthGuard() {
 
         const data = adminSnap.data();
 
-        // 3. التحقق من حالة تفعيل المشرف
         if (data.active === false) {
           alert("هذا الحساب معطل من قبل مالك النظام");
           await signOut(auth);
@@ -162,12 +158,10 @@ function initAuthGuard() {
 
         currentAdmin = { uid: user.uid, ...data };
 
-        // 4. تحديث آخر تسجيل دخول
         await updateDoc(adminRef, {
           lastLogin: serverTimestamp()
         });
 
-        // 5. رفع الشاشة المعتمة وتمرير الدخول وإطلاق المستمعات المباشرة
         if (loginOverlay) loginOverlay.classList.remove("active");
         updateSidebarAdminUI();
         applyRolePermissions();
@@ -424,7 +418,6 @@ window.handleCreateAdmin = async function (e) {
     });
 
     await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role}) - UID: ${newUid}`);
-    alert(`✅ تم إنشاء حساب المشرف (${name}) بالـ UID الحقيقي بنجاح!`);
     window.closeAddAdminModal();
     document.getElementById("addAdminForm")?.reset();
   } catch (err) {
@@ -453,7 +446,6 @@ window.deleteAdminDoc = async function (uid, name) {
     try {
       await deleteDoc(doc(db, "admins", uid));
       await logAuditEvent("حذف مشرف", "المشرفين", `تم حذف المشرف: ${name}`);
-      alert("✅ تم حذف المشرف بنجاح.");
     } catch (err) {
       console.error("Error deleting admin:", err);
     }
@@ -640,7 +632,7 @@ function renderTransferAlertsTable(list) {
 }
 
 // ==========================================================================
-// 9) عرض جدول الطلبات الشامل والفلترة (مع إمكانية ضغط النسخ)
+// 9) عرض جدول الطلبات الشامل والفلترة
 // ==========================================================================
 window.renderOrdersTables = function () {
   sortOrdersNewestFirst();
@@ -768,7 +760,7 @@ function getPlatformTheme(platformName) {
 }
 
 // ==========================================================================
-// 11) نافذة عرض تفاصيل الطلب V3.0
+// 11) نافذة عرض تفاصيل الطلب مع الربط المباشر لحالة الطلب بالواتساب
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -792,7 +784,7 @@ window.openOrderModal = function (index) {
   const actionsRowHtml = `
     <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:14px;">
       <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
-        <i class="fa-solid fa-copy"></i> نسخ
+        <i class="fa-solid fa-copy"></i> نسخ البيانات
       </button>
       <button class="btn-custom" style="flex:1; background:rgba(245, 158, 11, 0.15); color:var(--warning); border:1.5px solid rgba(245, 158, 11, 0.4);" onclick="toggleArchive(${index}); openOrderModal(${index});">
         <i class="fa-solid fa-box-archive"></i> ${order.archived ? 'إلغاء الترحيل' : 'ترحيل'}
@@ -803,7 +795,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 2. حالات الطلب والخطأ تحت الأزرار
+  // 2. حالات الطلب والخطأ
   const statusControlsRowHtml = `
     <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; background:var(--input-bg); padding:14px; border-radius:14px; border:1px solid var(--card-border);">
       <div class="form-group" style="margin-bottom:0;">
@@ -830,12 +822,12 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 3. بطاقة بيانات الطلب (رقم الطلب قابل للنسخ بالضغط)
+  // 3. بطاقة بيانات الطلب
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
         <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب (اضغط للنسخ)</span>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:2px;">رقم الطلب</span>
           <code class="copyable-box" style="color:#ffffff; font-size:1.05rem; font-weight:900; cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code>
         </div>
         <div>
@@ -951,7 +943,7 @@ window.openOrderModal = function (index) {
         </div>
       </div>
       <div class="copyable-box" style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid var(--card-border);" onclick="copyPayoutInfo('${payoutAddress}', 'رقم الحساب / الآيبان', '${order.reference}')" title="اضغط للنسخ">
-        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">الآيبان / رقم الحساب / المحفظة (اضغط للنسخ):</span>
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block;">الآيبان / رقم الحساب / المحفظة:</span>
         <code style="color:var(--primary); font-size:0.95rem; font-weight:900; display:block; margin-top:2px;">${payoutAddress}</code>
       </div>
     </div>
@@ -980,7 +972,7 @@ window.openOrderModal = function (index) {
 
     <div style="display:flex; gap:10px; margin-top:16px;">
       <button class="btn-custom" style="flex:1; justify-content:center; padding:12px;" onclick="saveOrderModalChanges(${index})">
-        <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التحديثات
+        <i class="fa-solid fa-floppy-disk"></i> حفظ وإرسال التحديث للعميل
       </button>
     </div>
   `;
@@ -990,7 +982,7 @@ window.openOrderModal = function (index) {
 };
 
 // ==========================================================================
-// 12) حفظ التعديلات وإظهار مربع رسالة العميل التلقائي عبر الواتساب
+// 12) حفظ التعديلات والانتقال المباشر لرسالة الواتساب دون منبثقات
 // ==========================================================================
 window.saveOrderModalChanges = async function (index) {
   let order = ordersData[index];
@@ -1023,18 +1015,16 @@ window.saveOrderModalChanges = async function (index) {
     await updateDoc(orderRef, updateData);
     
     window.closeOrderModal();
-    alert("✅ تم حفظ التحديثات بنجاح!");
 
-    // 📱 إظهار مربع التنبيه والرسالة التلقائية للعميل
+    // 📱 إظهار نافذة إرسال الواتساب فوراً بدون أي alert
     triggerStatusMessageModal(order, newStatus);
   } catch (err) {
     console.error("Error updating order:", err);
-    alert("❌ حدث خطأ أثناء التحديث.");
   }
 };
 
 // ==========================================================================
-// 13) إعداد نافذة إرسال رسائل حالات الطلبات عبر WhatsApp للعميل
+// 13) إعداد نافذة إرسال رسائل حالات الطلبات عبر WhatsApp للعميل مباشرة
 // ==========================================================================
 function formatWhatsAppPhone(phone) {
   let clean = String(phone || '').replace(/[^0-9]/g, '');
@@ -1063,10 +1053,10 @@ function triggerStatusMessageModal(order, status) {
     <div id="customerMessageModal" class="modal-overlay active" style="z-index: 100000;">
       <div class="modal-card" style="max-width: 520px;">
         <div class="modal-header">
-          <h3 style="color:var(--primary); font-size:1.1rem;"><i class="fa-brands fa-whatsapp"></i> رسالة حالة الطلب جاهزة للعميل</h3>
+          <h3 style="color:var(--primary); font-size:1.1rem;"><i class="fa-brands fa-whatsapp"></i> إرسال تحديث الحالة عبر الواتساب</h3>
           <button class="modal-close-btn" onclick="document.getElementById('customerMessageModal').remove()">✕</button>
         </div>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">تم تجهيز النص المخصص للعميل <b>${order.name}</b> (${order.phone}) بناءً على حالة الطلب الجديدة:</p>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">تم التحديث بنجاح! النص التالي جاهز للإرسال إلى العميل <b>${order.name}</b> (${order.phone}):</p>
         
         <textarea id="generatedStatusMessageArea" class="form-control" rows="5" style="font-size:0.9rem; line-height:1.6; margin-bottom:16px; color:#ffffff; background:rgba(0,0,0,0.3); border:1px solid var(--primary);">${messageText}</textarea>
         
@@ -1091,7 +1081,6 @@ window.copyGeneratedMessage = function () {
   const area = document.getElementById("generatedStatusMessageArea");
   if (area) {
     navigator.clipboard.writeText(area.value);
-    alert("📋 تم نسخ النص للحافظة بنجاح!");
   }
 };
 
@@ -1109,14 +1098,12 @@ window.copyEaAccountData = async function (index) {
 
   navigator.clipboard.writeText(formattedText);
   await logAuditEvent("نسخ بيانات EA الكاملة", order.reference, "تم نسخ الإيميل والباسورد والأكواد دفعة واحدة");
-  alert("📋 تم نسخ كافة بيانات الحساب للحافظة بنجاح!");
 };
 
 window.copyPayoutInfo = async function (text, label, orderRef) {
   if (!text || text === "غير مدخل") return;
   navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label}`);
-  alert(`📋 تم نسخ ${label} (${text}) بنجاح!`);
 };
 
 window.toggleRevealSensitive = async function (index) {
@@ -1134,7 +1121,6 @@ window.copySensitiveData = async function (text, label, orderRef) {
   if (!text || text.includes("•••")) return;
   navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label} إلى الحافظة`);
-  alert(`📋 تم نسخ ${label} بنجاح!`);
 };
 
 window.calcRemaining = function (index, input) {
@@ -1163,7 +1149,6 @@ window.destroySensitiveData = async function (index) {
         sensitiveDeleted: true
       });
       await logAuditEvent("إتلاف بيانات حساسة", order.reference, "تم تدمير بيانات EA من قاعدة البيانات أمنياً");
-      alert("🔒 تم إتلاف البيانات أمنياً بنجاح.");
       window.closeOrderModal();
     } catch (err) {
       console.error("Error destroying sensitive data:", err);
@@ -1346,7 +1331,6 @@ window.toggleStoreStatus = async function () {
   isStoreOpen = !isStoreOpen;
   updateStoreStatusUI();
   await saveAllSettingsToFirestore();
-  alert(isStoreOpen ? "🟢 تم فتح المتجر بنجاح!" : "🔴 تم إغلاق المتجر.");
 };
 
 function populatePricingUI() {
@@ -1370,12 +1354,10 @@ function populatePricingUI() {
 
 window.saveProductsConfig = async function () {
   await saveAllSettingsToFirestore();
-  alert("✨ تم حفظ منتجات السحب والمدد ومزامنتها بنجاح!");
 };
 
 window.savePricingConfig = async function () {
   await saveAllSettingsToFirestore();
-  alert("✨ تم حفظ العروض الترويجية بنجاح!");
 };
 
 function renderBanks() {
@@ -1496,12 +1478,10 @@ window.saveStatusMessages = function () {
     completed: document.getElementById("msgCompleted")?.value
   };
   localStorage.setItem("sami_coins_status_messages", JSON.stringify(messages));
-  alert("✨ تم حفظ رسائل حالات الطلب بنجاح!");
 };
 
 window.saveGeneralSettings = async function () {
   await saveAllSettingsToFirestore();
-  alert("✅ تم حفظ إعدادات المتجر العامة بنجاح!");
 };
 
 // ==========================================================================
