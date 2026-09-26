@@ -154,22 +154,32 @@
 
             <!-- 1. الرئيسية والإحصائيات -->
             <div id="dashboardTab" class="tab-content active">
+                
+                <!-- إحصائيات الحالات المطلوبة كاملاً -->
                 <div class="stats-grid">
                     <div class="stat-card" onclick="filterOrdersByStatus('new')">
-                        <div class="stat-info"><span>الطلبات الجديدة (انقر للعرض)</span><h3 id="statNewOrders">0</h3></div>
+                        <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="statNewOrders">0</h3></div>
                         <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
                     </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('review')">
-                        <div class="stat-info"><span>انتظار المراجعة (انقر للعرض)</span><h3 id="statReviewOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
-                    </div>
                     <div class="stat-card" onclick="filterOrdersByStatus('progress')">
-                        <div class="stat-info"><span>قيد التنفيذ (انقر للعرض)</span><h3 id="statProgressOrders">0</h3></div>
+                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrders">0</h3></div>
                         <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
                     </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('completed')">
-                        <div class="stat-info"><span>مكتملة (رقم 6)</span><h3 id="statCompletedOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('finished')">
+                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-circle-check"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('cancelled')">
+                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;"><i class="fa-solid fa-ban"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
+                        <div class="stat-info"><span>تحتاج تحويل</span><h3 id="statTransferNeededOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
+                    </div>
+                    <div class="stat-card" onclick="filterOrdersByStatus('transferred')">
+                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrders">0</h3></div>
+                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-money-bill-transfer"></i></div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-info"><span>إجمالي الكوينز المنجزة</span><h3 id="statCompletedCoins" style="color:var(--primary);">0</h3></div>
@@ -196,10 +206,11 @@
                     </div>
                 </div>
 
+                <!-- جدول أحدث الطلبات بنمط أسطر Excel -->
                 <div class="card-panel">
                     <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة</h2></div>
                     <div class="table-responsive">
-                        <table class="responsive-table">
+                        <table class="excel-grid-table responsive-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراء</th></tr>
                             </thead>
@@ -211,25 +222,26 @@
                 </div>
             </div>
 
-            <!-- 2. إدارة الطلبات -->
+            <!-- 2. إدارة الطلبات (الجدول الشامل بأسلوب Excel Grid) -->
             <div id="ordersTab" class="tab-content">
                 <div class="card-panel">
                     <div class="panel-header flex-mobile-column">
-                        <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل وأمان الحسابات</h2>
-                        <div style="display:flex; gap:8px; width: 100%; max-width: 200px;">
+                        <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل (أسلوب Excel)</h2>
+                        <div style="display:flex; gap:8px; width: 100%; max-width: 220px;">
                             <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:100%;" onchange="renderOrdersTables()">
                                 <option value="all">جميع الحالات</option>
                                 <option value="new">طلبات جديدة</option>
                                 <option value="review">انتظار المراجعة</option>
                                 <option value="progress">قيد التنفيذ</option>
                                 <option value="finished">تم الانتهاء</option>
+                                <option value="cancelled">الطلبات الملغية</option>
                                 <option value="transferred">تم التحويل</option>
                                 <option value="completed">مكتمل</option>
                             </select>
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="responsive-table">
+                        <table class="excel-grid-table responsive-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة والأخطاء</th><th>الإجراءات</th></tr>
                             </thead>
@@ -250,7 +262,7 @@
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">الطلبات أدناه محسوبة بدقة من تاريخ انتهاء السحب (`finishedAt`) بمدة 3 إلى 5 أيام عمل.</p>
                     <div class="table-responsive">
-                        <table class="responsive-table">
+                        <table class="excel-grid-table responsive-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة المتبقي (3-5 أيام)</th><th>الإجراء</th></tr>
                             </thead>
@@ -270,7 +282,7 @@
                         <input type="text" id="clientSearchInput" class="form-control" placeholder="ابحث برقم الجوال أو اسم العميل..." oninput="filterClients(this.value)">
                     </div>
                     <div class="table-responsive">
-                        <table class="responsive-table">
+                        <table class="excel-grid-table responsive-table">
                             <thead>
                                 <tr><th>اسم العميل</th><th>رقم الجوال</th><th>عدد الطلبات</th><th>إجمالي الكوينز</th><th>إجمالي المدفوعات</th><th>الإجراء</th></tr>
                             </thead>
