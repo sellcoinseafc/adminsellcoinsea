@@ -80,32 +80,36 @@
             </div>
         </div>
 
-        <!-- القائمة الجانبية V2.6 -->
+        <!-- القائمة الجانبية المحدثة المطابقة للصورة -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <span class="sidebar-brand">SAMI COINS V2.6</span>
+                <div class="brand-logo-box">
+                    <span class="brand-logo-text">SAMI</span>
+                    <span class="brand-logo-sub">COINS</span>
+                </div>
                 <button class="sidebar-close-btn" onclick="toggleSidebar(false)">✕</button>
             </div>
 
-            <div class="sidebar-user">
-                <div class="user-avatar" id="sidebarUserAvatar">س</div>
-                <div class="user-info">
-                    <strong id="sidebarUserName">سامي القحطاني</strong>
-                    <span id="sidebarUserRole">المدير التنفيذي</span>
-                </div>
-            </div>
-
             <ul class="sidebar-menu">
-                <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> الرئيسية والإحصائيات</a></li>
-                <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>
-                <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات تحتاج تحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
-                <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>
-                <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والمخزون والعروض</a></li>
-                <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع والحقول</a></li>
-                <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل حالات الطلب</a></li>
+                <li><a class="sidebar-link active" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-cart-shopping"></i> الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>
+                <li><a class="sidebar-link" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> الإحصائيات</a></li>
+                <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer"></i> طلبات تحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+                <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-user-group"></i> العملاء</a></li>
+                <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والمخزون</a></li>
+                <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع</a></li>
+                <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل الحالات</a></li>
                 <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>
-                <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات عامة</a></li>
+                <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gear"></i> الإعدادات</a></li>
             </ul>
+
+            <div class="sidebar-footer-user">
+                <div class="user-avatar-sm" id="sidebarUserAvatar">س</div>
+                <div class="user-info-sm">
+                    <strong id="sidebarUserName">سامي القحطاني</strong>
+                    <span id="sidebarUserRole">admin</span>
+                </div>
+                <button class="btn-logout-icon" id="btnLogout" title="تسجيل خروج"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+            </div>
         </aside>
 
         <!-- المحتوى الرئيسي -->
@@ -114,24 +118,18 @@
             <header class="top-navbar">
                 <div class="nav-right">
                     <button class="toggle-sidebar-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                    <span class="mobile-header-title">لوحة التحكم</span>
                     <button class="store-status-btn open" id="storeStatusToggleBtn" onclick="toggleStoreStatus()">
                         <i class="fa-solid fa-store"></i> <span id="storeStatusText">المتجر مفتوح</span>
                     </button>
                 </div>
 
                 <div class="nav-left">
-                    <div class="search-box">
-                        <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="globalSearchInput" placeholder="بحث شامل..." oninput="handleGlobalSearch(this.value)">
-                    </div>
                     <div class="live-datetime-pill" id="liveDatetime">--/--/---- | --:--:--</div>
+                    <div class="top-user-pill">
+                        <div class="user-status-dot"></div>
+                        <span>مرحباً، <strong id="topNavUserName">سامي</strong></span>
+                    </div>
                     <button class="nav-icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تغيير المظهر"><i class="fa-regular fa-moon"></i></button>
-                    
-                    <!-- زر تسجيل الخروج المحمي -->
-                    <button class="nav-icon-btn logout-btn" id="btnLogout" title="تسجيل خروج">
-                        <i class="fa-solid fa-right-from-bracket"></i> <span>خروج</span>
-                    </button>
                 </div>
             </header>
 
@@ -144,54 +142,154 @@
                         <span style="font-size:0.82rem; color:var(--text-muted);" id="bannerTransferText">لديك طلبات منتهية تحتاج إلى التحويل للعملاء خلال 3-5 أيام عمل.</span>
                     </div>
                 </div>
-                <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">عرض الطلبات فوراً</button>
+                <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelectorAll('.sidebar-menu li')[2].querySelector('a'))">عرض الطلبات فوراً</button>
             </div>
 
-            <div class="content-header">
-                <h1 id="pageTitleHeading">الرئيسية والإحصائيات</h1>
-                <div class="breadcrumb"><span>الرئيسية</span> / <span id="breadcrumbActive" style="color: var(--primary);">الرئيسية والإحصائيات</span></div>
-            </div>
-
-            <!-- 1. الرئيسية والإحصائيات -->
-            <div id="dashboardTab" class="tab-content active">
+            <!-- 1. قسم إدارة الطلبات الرئيسي المصمم بطابع الصورة المطابق -->
+            <div id="ordersTab" class="tab-content active">
                 
-                <div class="stats-grid">
-                    <div class="stat-card" onclick="filterOrdersByStatus('new')">
-                        <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="statNewOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
+                <!-- البطاقات الأربع العلوية المطابقة للصورة -->
+                <div class="stats-grid-image">
+                    <div class="stat-card-img" onclick="filterOrdersByStatus('progress')">
+                        <div class="stat-img-icon icon-purple"><i class="fa-solid fa-users"></i></div>
+                        <div class="stat-img-info">
+                            <span>الطلبات قيد التنفيذ</span>
+                            <h3 id="statProgressOrders">0 <small style="font-size:0.75rem; font-weight:normal; color:var(--text-muted);">طلب</small></h3>
+                        </div>
                     </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('progress')">
-                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
+
+                    <div class="stat-card-img">
+                        <div class="stat-img-icon icon-gold"><i class="fa-solid fa-sack-dollar"></i></div>
+                        <div class="stat-img-info">
+                            <span>إجمالي المبالغ المحولة</span>
+                            <h3 id="statTransferredMoney">0 <small style="font-size:0.75rem; font-weight:normal; color:var(--text-muted);">SAR</small></h3>
+                        </div>
                     </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('finished')">
-                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-circle-check"></i></div>
+
+                    <div class="stat-card-img" onclick="filterOrdersByStatus('all')">
+                        <div class="stat-img-icon icon-blue"><i class="fa-solid fa-cart-shopping"></i></div>
+                        <div class="stat-img-info">
+                            <span>إجمالي الطلبات</span>
+                            <h3 id="statAllOrders">0 <small style="font-size:0.75rem; font-weight:normal; color:var(--text-muted);">طلب</small></h3>
+                        </div>
                     </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('cancelled')">
-                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;"><i class="fa-solid fa-ban"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
-                        <div class="stat-info"><span>تحتاج تحويل</span><h3 id="statTransferNeededOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('transferred')">
-                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrdersDash">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-money-bill-transfer"></i></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-info"><span>إجمالي الكوينز المنجزة</span><h3 id="statCompletedCoins" style="color:var(--primary);">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-coins"></i></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTransferredMoney" style="color:#38bdf8;">0 ر.س</h3></div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-sack-dollar"></i></div>
+
+                    <div class="stat-card-img">
+                        <div class="stat-img-icon icon-green"><i class="fa-solid fa-coins"></i></div>
+                        <div class="stat-img-info">
+                            <span>إجمالي الكوينز المسحوبة</span>
+                            <h3 id="statCompletedCoins">0 <small style="font-size:0.75rem; font-weight:normal; color:var(--text-muted);">كوينز</small></h3>
+                        </div>
                     </div>
                 </div>
 
-                <!-- عرض المخزون الحالي لكل منصة -->
+                <!-- حاوية إدارة الطلبات الرئيسية -->
+                <div class="main-orders-panel">
+                    <div class="orders-panel-header">
+                        <div>
+                            <h2 class="orders-title">إدارة الطلبات</h2>
+                            <p class="orders-subtitle">عرض وإدارة جميع الطلبات</p>
+                        </div>
+                        <button class="btn-create-order" onclick="alert('خاصية إضافة طلب يدوي جاهزة!')"><i class="fa-solid fa-plus"></i> إنشاء طلب جديد</button>
+                    </div>
+
+                    <!-- شريط البحث والتصفية المتقدم الشبيه بالصورة -->
+                    <div class="orders-filter-bar">
+                        <div class="filter-search-input">
+                            <i class="fa-solid fa-magnifying-glass search-icon-green"></i>
+                            <input type="text" id="globalSearchInput" placeholder="البحث برقم الطلب أو اسم العميل أو البريد الإلكتروني..." oninput="handleGlobalSearch(this.value)">
+                        </div>
+
+                        <div class="filter-controls-group">
+                            <div class="date-picker-box">
+                                <i class="fa-regular fa-calendar"></i>
+                                <span>من تاريخ</span>
+                                <i class="fa-solid fa-arrow-left" style="font-size:0.7rem; color:var(--text-muted);"></i>
+                                <span>إلى تاريخ</span>
+                            </div>
+
+                            <select id="orderPlatformFilter" class="filter-select" onchange="renderOrdersTables()">
+                                <option value="all">المنصة: الكل</option>
+                                <option value="PlayStation">PlayStation</option>
+                                <option value="Xbox">Xbox</option>
+                                <option value="PC">PC</option>
+                            </select>
+
+                            <select id="orderStatusFilter" class="filter-select" onchange="renderOrdersTables()">
+                                <option value="all">حالة الطلب: الكل</option>
+                                <option value="new">جديد</option>
+                                <option value="progress">قيد التنفيذ</option>
+                                <option value="finished">تم السحب</option>
+                                <option value="transferred">تم التحويل</option>
+                                <option value="cancelled">ملغي</option>
+                            </select>
+
+                            <button class="filter-refresh-btn" onclick="renderOrdersTables()" title="تحديث"><i class="fa-solid fa-rotate-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- الجدول الفاخر للطلبات المطابق للصورة -->
+                    <div class="table-responsive-container">
+                        <table class="image-style-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:30px;"><input type="checkbox" id="selectAllCheckbox"></th>
+                                    <th>رقم الطلب</th>
+                                    <th>العميل</th>
+                                    <th>المنصة</th>
+                                    <th>الكمية</th>
+                                    <th>المبلغ</th>
+                                    <th>الحالة</th>
+                                    <th>التقدم</th>
+                                    <th>تاريخ الطلب</th>
+                                    <th>آخر تحديث</th>
+                                    <th style="text-align:center;">إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fullOrdersTableBody">
+                                <tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:30px;">جاري تحميل الطلبات...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- شريط الترقيم والتنقل في الأسفل المطابق للصورة -->
+                    <div class="orders-pagination-bar">
+                        <div class="pagination-info">عرض <span id="paginationCountDisplay">0</span> من أصل <span id="paginationTotalDisplay">0</span> طلب</div>
+                        <div class="pagination-buttons">
+                            <button class="pag-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                            <button class="pag-btn active">1</button>
+                            <button class="pag-btn">2</button>
+                            <button class="pag-btn">3</button>
+                            <button class="pag-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 2. الشاشة الرئيسية والإحصائيات المفصلة -->
+            <div id="dashboardTab" class="tab-content">
                 <div class="card-panel">
+                    <div class="panel-header"><h2><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> الإحصائيات الشاملة</h2></div>
+                    <div class="stats-grid-image" style="margin-bottom:20px;">
+                        <div class="stat-card-img" onclick="filterOrdersByStatus('new')">
+                            <div class="stat-img-icon icon-blue"><i class="fa-solid fa-bell"></i></div>
+                            <div class="stat-img-info"><span>الطلبات الجديدة</span><h3 id="statNewOrders">0</h3></div>
+                        </div>
+                        <div class="stat-card-img" onclick="filterOrdersByStatus('cancelled')">
+                            <div class="stat-img-icon icon-purple" style="background:rgba(239,68,68,0.15); color:#ef4444;"><i class="fa-solid fa-ban"></i></div>
+                            <div class="stat-img-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrders">0</h3></div>
+                        </div>
+                        <div class="stat-card-img" onclick="switchTab('transferAlertsTab', document.querySelectorAll('.sidebar-menu li')[2].querySelector('a'))">
+                            <div class="stat-img-icon icon-gold"><i class="fa-solid fa-clock"></i></div>
+                            <div class="stat-img-info"><span>تحتاج تحويل</span><h3 id="statTransferNeededOrders">0</h3></div>
+                        </div>
+                        <div class="stat-card-img" onclick="filterOrdersByStatus('transferred')">
+                            <div class="stat-img-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="stat-img-info"><span>تم التحويل</span><h3 id="statTransferredOrders">0</h3></div>
+                        </div>
+                    </div>
+
                     <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked" style="color:var(--primary);"></i> المخزون الحالي لكل منصة</h2></div>
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
                         <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
@@ -204,81 +302,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- جدول أحدث الطلبات المستلمة -->
-                <div class="card-panel">
-                    <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة</h2></div>
-                    <div class="table-responsive">
-                        <table class="excel-grid-table responsive-table">
-                            <thead>
-                                <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراء</th></tr>
-                            </thead>
-                            <tbody id="dashboardOrdersTableBody">
-                                <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات جديدة حالياً.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2. قسم إدارة الطلبات (مدمج بالإحصائيات القابلة للضغط + جدول Excel احترافي) -->
-            <div id="ordersTab" class="tab-content">
-                
-                <!-- شريط الإحصائيات الفوري والتفاعلي داخل إدارة الطلبات -->
-                <div class="stats-grid" style="margin-bottom: 20px;">
-                    <div class="stat-card" onclick="filterOrdersByStatus('all')">
-                        <div class="stat-info"><span>جميع الطلبات (انقر لعرض الكل)</span><h3 id="statAllOrders" style="color:var(--text-main);">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(255, 255, 255, 0.08); color: var(--text-main);"><i class="fa-solid fa-list-check"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('new')">
-                        <div class="stat-info"><span>طلبات جديدة</span><h3 id="statNewOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('progress')">
-                        <div class="stat-info"><span>قيد التنفيذ</span><h3 id="statProgressOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('finished')">
-                        <div class="stat-info"><span>تم الانتهاء منها</span><h3 id="statFinishedOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-circle-check"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('transferred')">
-                        <div class="stat-info"><span>تم التحويل</span><h3 id="statTransferredOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-money-bill-transfer"></i></div>
-                    </div>
-                    <div class="stat-card" onclick="filterOrdersByStatus('cancelled')">
-                        <div class="stat-info"><span>الطلبات الملغية</span><h3 id="statCancelledOrders">0</h3></div>
-                        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;"><i class="fa-solid fa-ban"></i></div>
-                    </div>
-                </div>
-
-                <div class="card-panel">
-                    <div class="panel-header flex-mobile-column">
-                        <h2><i class="fa-solid fa-table-cells" style="color:var(--primary);"></i> جدول الطلبات التفصيلي (تنسيق Excel الشبكي)</h2>
-                        <div style="display:flex; gap:8px; width: 100%; max-width: 220px;">
-                            <select id="orderStatusFilter" class="form-control" style="padding:8px 12px; font-size:0.82rem; width:100%;" onchange="renderOrdersTables()">
-                                <option value="all">📊 عرض كافة الحالات</option>
-                                <option value="new">🔔 طلبات جديدة</option>
-                                <option value="review">⏳ انتظار المراجعة</option>
-                                <option value="progress">⚙️ قيد التنفيذ</option>
-                                <option value="finished">✅ تم الانتهاء</option>
-                                <option value="transferred">💳 تم التحويل</option>
-                                <option value="cancelled">❌ طلبات ملغية</option>
-                                <option value="completed">🏆 مكتمل نهائياً</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="excel-grid-table responsive-table">
-                            <thead>
-                                <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة والأخطاء</th><th>الإجراءات</th></tr>
-                            </thead>
-                            <tbody id="fullOrdersTableBody">
-                                <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
 
             <!-- 3. قسم طلبات تحتاج تحويل -->
@@ -289,8 +312,8 @@
                         <span id="transferHeaderBadge" class="badge badge-review">0 طلبات بحاجة للتحويل</span>
                     </div>
                     <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">الطلبات أدناه محسوبة بدقة من تاريخ انتهاء السحب (`finishedAt`) بمدة 3 إلى 5 أيام عمل.</p>
-                    <div class="table-responsive">
-                        <table class="excel-grid-table responsive-table">
+                    <div class="table-responsive-container">
+                        <table class="image-style-table">
                             <thead>
                                 <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة المتبقي (3-5 أيام)</th><th>الإجراء</th></tr>
                             </thead>
@@ -309,8 +332,8 @@
                     <div style="display:flex; gap:10px; margin-bottom:20px;">
                         <input type="text" id="clientSearchInput" class="form-control" placeholder="ابحث برقم الجوال أو اسم العميل..." oninput="filterClients(this.value)">
                     </div>
-                    <div class="table-responsive">
-                        <table class="excel-grid-table responsive-table">
+                    <div class="table-responsive-container">
+                        <table class="image-style-table">
                             <thead>
                                 <tr><th>اسم العميل</th><th>رقم الجوال</th><th>عدد الطلبات</th><th>إجمالي الكوينز</th><th>إجمالي المدفوعات</th><th>الإجراء</th></tr>
                             </thead>
