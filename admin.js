@@ -1,8 +1,26 @@
+import { db } from "./firebase.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+// اختبار اتصال فايربيز
+async function testConnection() {
+  try {
+    const snapshot = await getDocs(collection(db, "orders"));
+    console.log("Firestore Connected ✅");
+    console.log("Orders:", snapshot.size);
+  } catch (err) {
+    console.error("Connection Error:", err);
+  }
+}
+
+testConnection();
+
+// إدارة حالة المتجر
 let isStoreOpen = localStorage.getItem("sami_coins_store_status") !== "closed";
 
 function updateStoreStatusUI() {
     const btn = document.getElementById("storeStatusToggleBtn");
     const txt = document.getElementById("storeStatusText");
+    if (!btn || !txt) return;
     if (isStoreOpen) {
         btn.className = "store-status-btn open";
         txt.innerText = "المتجر مفتوح";
@@ -13,11 +31,11 @@ function updateStoreStatusUI() {
     localStorage.setItem("sami_coins_store_status", isStoreOpen ? "open" : "closed");
 }
 
-function toggleStoreStatus() {
+window.toggleStoreStatus = function() {
     isStoreOpen = !isStoreOpen;
     updateStoreStatusUI();
     alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات!");
-}
+};
 
 let ordersData = JSON.parse(localStorage.getItem("sami_coins_orders_v2")) || [];
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
@@ -50,51 +68,60 @@ function updateDashboardStats() {
 
     // عداد الطلبات الجديدة في القائمة الجانبية
     const sbBadge = document.getElementById("sidebarNewOrdersBadge");
-    if(countNew > 0) {
-        sbBadge.style.display = "inline-block";
-        sbBadge.innerText = countNew;
-    } else {
-        sbBadge.style.display = "none";
+    if(sbBadge) {
+        if(countNew > 0) {
+            sbBadge.style.display = "inline-block";
+            sbBadge.innerText = countNew;
+        } else {
+            sbBadge.style.display = "none";
+        }
     }
 
     // الطلبات التي تحتاج تحويل
     let transferNeededList = ordersData.filter(o => o.status === 'finished' || (o.withdrawnQty >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
     
-    document.getElementById("transferBadgeCount").innerText = transferNeededList.length;
-    document.getElementById("transferHeaderBadge").innerText = `${transferNeededList.length} طلبات بحاجة للتحويل`;
+    const transferBadgeCount = document.getElementById("transferBadgeCount");
+    const transferHeaderBadge = document.getElementById("transferHeaderBadge");
+    if(transferBadgeCount) transferBadgeCount.innerText = transferNeededList.length;
+    if(transferHeaderBadge) transferHeaderBadge.innerText = `${transferNeededList.length} طلبات بحاجة للتحويل`;
 
     const banner = document.getElementById("urgentTransferBanner");
-    if(transferNeededList.length > 0) {
-        banner.style.display = "flex";
-        document.getElementById("bannerTransferText").innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل من تاريخ الانتهاء.`;
-    } else {
-        banner.style.display = "none";
+    const bannerTransferText = document.getElementById("bannerTransferText");
+    if(banner && bannerTransferText) {
+        if(transferNeededList.length > 0) {
+            banner.style.display = "flex";
+            bannerTransferText.innerText = `لديك ${transferNeededList.length} طلبات منتهية تحتاج إلى التحويل المالي للعملاء خلال 3-5 أيام عمل من تاريخ الانتهاء.`;
+        } else {
+            banner.style.display = "none";
+        }
     }
 
     let totalCompletedCoins = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.totalQty, 0);
     let totalTransferredMoney = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.totalPrice || 200), 0);
 
-    document.getElementById("statNewOrders").innerText = countNew;
-    document.getElementById("statReviewOrders").innerText = countReview;
-    document.getElementById("statProgressOrders").innerText = countProgress;
-    document.getElementById("statCompletedOrders").innerText = countCompleted;
-    document.getElementById("statCompletedCoins").innerText = totalCompletedCoins.toLocaleString();
-    document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
+    if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
+    if(document.getElementById("statReviewOrders")) document.getElementById("statReviewOrders").innerText = countReview;
+    if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
+    if(document.getElementById("statCompletedOrders")) document.getElementById("statCompletedOrders").innerText = countCompleted;
+    if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = totalCompletedCoins.toLocaleString();
+    if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
 
-    document.getElementById("stockPS").innerText = stockData.PlayStation.toLocaleString();
-    document.getElementById("stockPC").innerText = stockData.PC.toLocaleString();
+    if(document.getElementById("stockPS")) document.getElementById("stockPS").innerText = stockData.PlayStation.toLocaleString();
+    if(document.getElementById("stockPC")) document.getElementById("stockPC").innerText = stockData.PC.toLocaleString();
 
     renderTransferAlertsTable(transferNeededList);
 }
 
-function filterOrdersByStatus(status) {
-    switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'));
-    document.getElementById("orderStatusFilter").value = status;
+window.filterOrdersByStatus = function(status) {
+    window.switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'));
+    const statusFilter = document.getElementById("orderStatusFilter");
+    if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
-}
+};
 
 function renderTransferAlertsTable(list) {
     const tbody = document.getElementById("transferAlertsTableBody");
+    if(!tbody) return;
     if(list.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
         return;
@@ -116,12 +143,12 @@ function renderTransferAlertsTable(list) {
     });
 }
 
-function openOrderModalById(id) {
+window.openOrderModalById = function(id) {
     let idx = ordersData.findIndex(o => o.id === id);
-    if(idx !== -1) openOrderModal(idx);
-}
+    if(idx !== -1) window.openOrderModal(idx);
+};
 
-function renderOrdersTables() {
+window.renderOrdersTables = function() {
     sortOrdersNewestFirst();
     const dashBody = document.getElementById("dashboardOrdersTableBody");
     const fullBody = document.getElementById("fullOrdersTableBody");
@@ -132,69 +159,68 @@ function renderOrdersTables() {
         filteredOrders = ordersData.filter(o => o.status === statusFilter);
     }
 
-    if(ordersData.length === 0) {
-        dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
-        fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة.</td></tr>`;
-        updateDashboardStats();
-        renderClientsList();
-        return;
+    if(dashBody) {
+        if(ordersData.length === 0) {
+            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
+        } else {
+            dashBody.innerHTML = "";
+            let topRecent = ordersData.slice(0, 5);
+            topRecent.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+
+                dashBody.innerHTML += `
+                    <tr>
+                        <td><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td>#${order.id}</td>
+                        <td><b>${order.name}</b></td>
+                        <td>${order.platform}</td>
+                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                        <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
+                    </tr>
+                `;
+            });
+        }
     }
 
-    dashBody.innerHTML = "";
-    fullBody.innerHTML = "";
+    if(fullBody) {
+        if(filteredOrders.length === 0) {
+            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
+        } else {
+            fullBody.innerHTML = "";
+            filteredOrders.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
 
-    let topRecent = ordersData.slice(0, 5);
-    topRecent.forEach((order) => {
-        let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let statusBadge = getStatusBadge(order.status);
-        let errorBadge = getErrorBadge(order.errorCode);
-        if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-        dashBody.innerHTML += `
-            <tr>
-                <td><code style="color:var(--primary);">${order.reference}</code></td>
-                <td>#${order.id}</td>
-                <td><b>${order.name}</b></td>
-                <td>${order.platform}</td>
-                <td><b>${order.totalQty.toLocaleString()}</b></td>
-                <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
-                <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
-            </tr>
-        `;
-    });
-
-    if(filteredOrders.length === 0) {
-        fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مطابقة للفلتر المختار.</td></tr>`;
-    } else {
-        filteredOrders.forEach((order) => {
-            let actualIndex = ordersData.findIndex(o => o.id === order.id);
-            let statusBadge = getStatusBadge(order.status);
-            let errorBadge = getErrorBadge(order.errorCode);
-            if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-            fullBody.innerHTML += `
-                <tr>
-                    <td><code style="color:var(--primary);">${order.reference}</code></td>
-                    <td>#${order.id}</td>
-                    <td><b>${order.name}</b></td>
-                    <td>${order.platform}</td>
-                    <td><b>${order.totalQty.toLocaleString()}</b></td>
-                    <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
-                    <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                    <td>
-                        <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل والنسخ</button>
-                        <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
-                    </td>
-                </tr>
-            `;
-        });
+                fullBody.innerHTML += `
+                    <tr>
+                        <td><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td>#${order.id}</td>
+                        <td><b>${order.name}</b></td>
+                        <td>${order.platform}</td>
+                        <td><b>${order.totalQty.toLocaleString()}</b></td>
+                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                        <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td>
+                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل والنسخ</button>
+                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
     }
 
     localStorage.setItem("sami_coins_orders_v2", JSON.stringify(ordersData));
     updateDashboardStats();
     renderClientsList();
-}
+};
 
 function getStatusBadge(status) {
     switch(status) {
@@ -218,17 +244,18 @@ function getErrorBadge(code) {
     }
 }
 
-function openOrderModal(index) {
+window.openOrderModal = function(index) {
     const order = ordersData[index];
     const modal = document.getElementById("orderDetailModal");
     const body = document.getElementById("modalOrderBody");
+    if(!modal || !body) return;
     const remaining = order.totalQty - (order.withdrawnQty || 0);
 
     let logsHtml = (order.auditLogs || []).map(l => `<li style="font-size:0.78rem; color:var(--text-muted);">${l.time} - ${l.action} (${l.user})</li>`).join("");
 
     let sensitiveContent = order.sensitiveDeleted ? 
         `<div style="background:rgba(239,68,68,0.1); color:#ef4444; padding:10px; border-radius:10px; text-align:center; font-weight:900;">⚠️ تم إتلاف وحذف البيانات الحساسة أمنياً.</div>` :
-        `<div style="background:var(--input-bg); padding:14px; border-radius:12px; margin-bottom:12px; border:1px solid var(--card-border);">
+        `<div style="background:var(--input-bg); padding:14px; border-radius:12px; margin-bottom:12px; border:1.5px solid var(--card-border);">
             <strong style="color:var(--primary); display:block; margin-bottom:8px;"><i class="fa-solid fa-key"></i> بيانات الحساب:</strong>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                 <span>الإيميل: <code>${order.email || '---'}</code></span>
@@ -309,16 +336,17 @@ function openOrderModal(index) {
         <button class="btn-custom" style="width:100%; justify-content:center; margin-top:14px;" onclick="saveOrderModalChanges(${index})"><i class="fa-solid fa-floppy-disk"></i> حفظ التحديثات وتسجيل السجل</button>
     `;
     modal.classList.add("active");
-}
+};
 
-function calcRemaining(index, input) {
+window.calcRemaining = function(index, input) {
     let withdrawn = parseInt(input.value) || 0;
     const total = ordersData[index].totalQty;
     if(withdrawn > total) withdrawn = total;
-    document.getElementById("remainingDisplay").innerText = (total - withdrawn).toLocaleString();
-}
+    const remDisp = document.getElementById("remainingDisplay");
+    if(remDisp) remDisp.innerText = (total - withdrawn).toLocaleString();
+};
 
-function saveOrderModalChanges(index) {
+window.saveOrderModalChanges = function(index) {
     let newStatus = document.getElementById("modalStatusSelect").value;
     let newError = document.getElementById("modalErrorSelect").value;
     let oldStatus = ordersData[index].status;
@@ -350,41 +378,43 @@ function saveOrderModalChanges(index) {
     ordersData[index].status = newStatus;
     ordersData[index].errorCode = newError;
 
-    renderOrdersTables();
+    window.renderOrdersTables();
     alert("✅ تم حفظ التحديثات وسجل التغييرات بنجاح!");
-    closeOrderModal();
-}
+    window.closeOrderModal();
+};
 
-function closeOrderModal() {
-    document.getElementById("orderDetailModal").classList.remove("active");
-}
+window.closeOrderModal = function() {
+    const modal = document.getElementById("orderDetailModal");
+    if(modal) modal.classList.remove("active");
+};
 
-function migrateToGoogleSheets(index) {
+window.migrateToGoogleSheets = function(index) {
     ordersData[index].migrated = true;
-    renderOrdersTables();
+    window.renderOrdersTables();
     alert(`🚀 تم ترحيل الطلب المرجع (${ordersData[index].reference}) بنجاح.`);
-}
+};
 
-function backupOrderData(index) {
+window.backupOrderData = function(index) {
     const o = ordersData[index];
     navigator.clipboard.writeText(`المرجع: ${o.reference} | الطلب: #${o.id} | العميل: ${o.name} | الجوال: ${o.phone}`);
     alert("📋 تم نسخ النسخة الاحتياطية.");
-}
+};
 
-function destroySensitiveData(index) {
+window.destroySensitiveData = function(index) {
     if(confirm("إتلاف البيانات الحساسة أمنياً؟")) {
         ordersData[index].email = "[محذوف أمنياً]";
         ordersData[index].pass = "[محذوف أمنياً]";
         ordersData[index].sensitiveDeleted = true;
-        renderOrdersTables();
+        window.renderOrdersTables();
         alert("🔒 تم إتلاف البيانات الحساسة أمنياً.");
-        closeOrderModal();
+        window.closeOrderModal();
     }
-}
+};
 
-// ملف العملاء مع منع تكرار العميل بناء على رقم الجوال الفريد
+// ملف العملاء (منع تكرار العميل برقم الجوال الفريد)
 function renderClientsList(searchQuery = "") {
     const tbody = document.getElementById("clientsTableBody");
+    if(!tbody) return;
     let clientsMap = {};
     ordersData.forEach(o => {
         let phoneKey = o.phone ? o.phone.trim() : "unknown";
@@ -422,70 +452,137 @@ function renderClientsList(searchQuery = "") {
     });
 }
 
-function filterClients(query) { renderClientsList(query); }
+window.filterClients = function(query) { renderClientsList(query); };
 
-function openClientDetail(phone) {
+window.openClientDetail = function(phone) {
     let clientOrders = ordersData.filter(o => o.phone === phone);
     if(clientOrders.length === 0) return;
     const clientName = clientOrders[0].name;
-    document.getElementById("clientModalTitle").innerText = `سجل العميل الفريد: ${clientName} (${phone})`;
-    let body = document.getElementById("clientModalBody");
-    let tableHtml = `<div class="table-responsive"><table><thead><tr><th>المرجع</th><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>`;
-    clientOrders.forEach(o => {
-        tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${o.totalQty.toLocaleString()}</b></td><td>${o.totalPrice || 200} SAR</td><td>${getStatusBadge(o.status)}</td></tr>`;
-    });
-    tableHtml += `</tbody></table></div>`;
-    body.innerHTML = tableHtml;
-    document.getElementById("clientDetailModal").classList.add("active");
-}
+    const titleEl = document.getElementById("clientModalTitle");
+    const body = document.getElementById("clientModalBody");
+    if(titleEl) titleEl.innerText = `سجل العميل الفريد: ${clientName} (${phone})`;
+    if(body) {
+        let tableHtml = `<div class="table-responsive"><table><thead><tr><th>المرجع</th><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>`;
+        clientOrders.forEach(o => {
+            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${o.totalQty.toLocaleString()}</b></td><td>${o.totalPrice || 200} SAR</td><td>${getStatusBadge(o.status)}</td></tr>`;
+        });
+        tableHtml += `</tbody></table></div>`;
+        body.innerHTML = tableHtml;
+    }
+    const clientModal = document.getElementById("clientDetailModal");
+    if(clientModal) clientModal.classList.add("active");
+};
 
-function closeClientModal() { document.getElementById("clientDetailModal").classList.remove("active"); }
-function toggleArchive(index) { ordersData[index].archived = !ordersData[index].archived; renderOrdersTables(); }
-function copyToClipboard(text, label) { navigator.clipboard.writeText(text).then(() => alert(`📋 تم نسخ ${label}.`)); }
+window.closeClientModal = function() {
+    const modal = document.getElementById("clientDetailModal");
+    if(modal) modal.classList.remove("active");
+};
 
-function savePricingConfig() {
+window.toggleArchive = function(index) {
+    ordersData[index].archived = !ordersData[index].archived;
+    window.renderOrdersTables();
+};
+
+window.copyToClipboard = function(text, label) {
+    navigator.clipboard.writeText(text).then(() => alert(`📋 تم نسخ ${label}.`));
+};
+
+window.savePricingConfig = function() {
     const config = {
-        ps: { rate: document.getElementById("psRate").value, min: document.getElementById("psMin").value, max: document.getElementById("psMax").value, duration: document.getElementById("psDuration").value },
-        pc: { rate: document.getElementById("pcRate").value, min: document.getElementById("pcMin").value, max: document.getElementById("pcMax").value, duration: document.getElementById("pcDuration").value },
-        promo: { active: document.getElementById("promoActiveSelect").value, rate: document.getElementById("promoRateInput").value, expiry: document.getElementById("promoExpiryInput").value, text: document.getElementById("promoText").value }
+        ps: { rate: document.getElementById("psRate")?.value, min: document.getElementById("psMin")?.value, max: document.getElementById("psMax")?.value, duration: document.getElementById("psDuration")?.value },
+        pc: { rate: document.getElementById("pcRate")?.value, min: document.getElementById("pcMin")?.value, max: document.getElementById("pcMax")?.value, duration: document.getElementById("pcDuration")?.value },
+        promo: { active: document.getElementById("promoActiveSelect")?.value, rate: document.getElementById("promoRateInput")?.value, expiry: document.getElementById("promoExpiryInput")?.value, text: document.getElementById("promoText")?.value }
     };
     localStorage.setItem("sami_coins_pricing", JSON.stringify(config));
     alert("✨ تم الحفظ ومزامنة الأسعار والعروض بنجاح!");
-}
+};
 
-function saveStatusMessages() {
-    const messages = { new: document.getElementById("msgNew").value, review: document.getElementById("msgReview").value, progress: document.getElementById("msgProgress").value, finished: document.getElementById("msgFinished").value, transferred: document.getElementById("msgTransferred").value, completed: document.getElementById("msgCompleted").value };
+window.saveStatusMessages = function() {
+    const messages = { 
+        new: document.getElementById("msgNew")?.value, 
+        review: document.getElementById("msgReview")?.value, 
+        progress: document.getElementById("msgProgress")?.value, 
+        finished: document.getElementById("msgFinished")?.value, 
+        transferred: document.getElementById("msgTransferred")?.value, 
+        completed: document.getElementById("msgCompleted")?.value 
+    };
     localStorage.setItem("sami_coins_status_messages", JSON.stringify(messages));
     alert("✨ تم حفظ رسائل الحالات بنجاح!");
-}
+};
 
 function renderBanks() {
     const c = document.getElementById("banksListContainer");
+    if(!c) return;
     c.innerHTML = "";
-    banksList.forEach((b, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${b}</span><button class="btn-action" style="color:#ef4444;" onclick="banksList.splice(${i},1);renderBanks()">حذف</button></div>`);
+    banksList.forEach((b, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${b}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteBank(${i})">حذف</button></div>`);
 }
-function addBank() { const i = document.getElementById("newBankInput"); if(i.value.trim()){ banksList.push(i.value.trim()); i.value=""; renderBanks(); } }
+
+window.addBank = function() {
+    const i = document.getElementById("newBankInput");
+    if(i && i.value.trim()){ banksList.push(i.value.trim()); i.value=""; renderBanks(); }
+};
+
+window.deleteBank = function(i) {
+    banksList.splice(i, 1);
+    renderBanks();
+};
 
 function renderWallets() {
     const c = document.getElementById("walletsListContainer");
+    if(!c) return;
     c.innerHTML = "";
-    walletsList.forEach((w, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${w}</span><button class="btn-action" style="color:#ef4444;" onclick="walletsList.splice(${i},1);renderWallets()">حذف</button></div>`);
+    walletsList.forEach((w, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${w}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteWallet(${i})">حذف</button></div>`);
 }
-function addWallet() { const i = document.getElementById("newWalletInput"); if(i.value.trim()){ walletsList.push(i.value.trim()); i.value=""; renderWallets(); } }
+
+window.addWallet = function() {
+    const i = document.getElementById("newWalletInput");
+    if(i && i.value.trim()){ walletsList.push(i.value.trim()); i.value=""; renderWallets(); }
+};
+
+window.deleteWallet = function(i) {
+    walletsList.splice(i, 1);
+    renderWallets();
+};
 
 function renderCustomPayments() {
     const c = document.getElementById("customPayMethodsContainer");
+    if(!c) return;
     c.innerHTML = "";
-    customPaymentsList.forEach((p, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${p}</span><button class="btn-action" style="color:#ef4444;" onclick="customPaymentsList.splice(${i},1);renderCustomPayments();localStorage.setItem('sami_coins_custom_payments',JSON.stringify(customPaymentsList))">حذف</button></div>`);
+    customPaymentsList.forEach((p, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1.5px solid var(--card-border); padding:8px 12px; border-radius:10px;"><span style="font-size:0.85rem;">${p}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteCustomPayment(${i})">حذف</button></div>`);
 }
-function addCustomPaymentMethod() { const i = document.getElementById("newCustomPaymentInput"); if(i.value.trim()){ customPaymentsList.push(i.value.trim()); i.value=""; renderCustomPayments(); localStorage.setItem('sami_coins_custom_payments',JSON.stringify(customPaymentsList)); } }
+
+window.addCustomPaymentMethod = function() {
+    const i = document.getElementById("newCustomPaymentInput");
+    if(i && i.value.trim()){ 
+        customPaymentsList.push(i.value.trim()); 
+        i.value=""; 
+        renderCustomPayments(); 
+        localStorage.setItem('sami_coins_custom_payments', JSON.stringify(customPaymentsList)); 
+    }
+};
+
+window.deleteCustomPayment = function(i) {
+    customPaymentsList.splice(i, 1);
+    renderCustomPayments();
+    localStorage.setItem('sami_coins_custom_payments', JSON.stringify(customPaymentsList));
+};
 
 function renderTerms() {
     const c = document.getElementById("termsListContainer");
+    if(!c) return;
     c.innerHTML = "";
-    storeTerms.forEach((t, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1.5px solid var(--card-border); padding:10px; border-radius:12px;"><span style="font-size:0.85rem;">${i+1}. ${t}</span><button class="btn-action" style="color:#ef4444;" onclick="storeTerms.splice(${i},1);renderTerms()">حذف</button></div>`);
+    storeTerms.forEach((t, i) => c.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1.5px solid var(--card-border); padding:10px; border-radius:12px;"><span style="font-size:0.85rem;">${i+1}. ${t}</span><button class="btn-action" style="color:#ef4444;" onclick="deleteTerm(${i})">حذف</button></div>`);
 }
-function addNewTerm() { const i = document.getElementById("newTermInput"); if(i.value.trim()){ storeTerms.push(i.value.trim()); i.value=""; renderTerms(); } }
+
+window.addNewTerm = function() {
+    const i = document.getElementById("newTermInput");
+    if(i && i.value.trim()){ storeTerms.push(i.value.trim()); i.value=""; renderTerms(); }
+};
+
+window.deleteTerm = function(i) {
+    storeTerms.splice(i, 1);
+    renderTerms();
+};
 
 function updateLiveDatetime() {
     const now = new Date();
@@ -495,33 +592,42 @@ function updateLiveDatetime() {
 setInterval(updateLiveDatetime, 1000);
 updateLiveDatetime();
 
-function switchTab(tabId, element) {
+window.switchTab = function(tabId, element) {
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
-    document.getElementById(tabId).classList.add("active");
-    element.classList.add("active");
-    document.getElementById("pageTitleHeading").innerText = element.innerText.trim();
-    document.getElementById("breadcrumbActive").innerText = element.innerText.trim();
-    if (window.innerWidth <= 992) document.getElementById("sidebar").classList.remove("mobile-open");
-}
+    const targetTab = document.getElementById(tabId);
+    if(targetTab) targetTab.classList.add("active");
+    if(element) element.classList.add("active");
+    const titleHead = document.getElementById("pageTitleHeading");
+    const breadcrumbActive = document.getElementById("breadcrumbActive");
+    if(titleHead && element) titleHead.innerText = element.innerText.trim();
+    if(breadcrumbActive && element) breadcrumbActive.innerText = element.innerText.trim();
+    if (window.innerWidth <= 992) {
+        const sb = document.getElementById("sidebar");
+        if(sb) sb.classList.remove("mobile-open");
+    }
+};
 
-function toggleSidebar() {
+window.toggleSidebar = function() {
     const s = document.getElementById("sidebar"), m = document.getElementById("mainWrapper");
+    if(!s || !m) return;
     if (window.innerWidth <= 992) s.classList.toggle("mobile-open");
     else { s.classList.toggle("collapsed"); m.classList.toggle("full-width"); }
-}
+};
 
-function toggleTheme() {
+window.toggleTheme = function() {
     document.body.classList.toggle("light-mode");
     const isLight = document.body.classList.contains("light-mode");
-    document.getElementById("themeToggleBtn").innerHTML = isLight ? '<i class="fa-regular fa-sun"></i>' : '<i class="fa-regular fa-moon"></i>';
-}
+    const themeBtn = document.getElementById("themeToggleBtn");
+    if(themeBtn) themeBtn.innerHTML = isLight ? '<i class="fa-regular fa-sun"></i>' : '<i class="fa-regular fa-moon"></i>';
+};
 
-function handleGlobalSearch(query) {
-    if(!query.trim()) { renderOrdersTables(); return; }
+window.handleGlobalSearch = function(query) {
+    if(!query.trim()) { window.renderOrdersTables(); return; }
     let q = query.trim().toLowerCase();
     let matched = ordersData.filter(o => o.name.toLowerCase().includes(q) || o.phone.includes(q) || o.reference.toLowerCase().includes(q) || String(o.id).includes(q));
     const fullBody = document.getElementById("fullOrdersTableBody");
+    if(!fullBody) return;
     fullBody.innerHTML = "";
     if(matched.length === 0) {
         fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px;">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
@@ -542,11 +648,11 @@ function handleGlobalSearch(query) {
             </tr>
         `;
     });
-}
+};
 
-// التشغيل الأولي للنظام
+// التشغيل الأولي للنظام عند تحميل الصفحة
 updateStoreStatusUI();
-renderOrdersTables();
+window.renderOrdersTables();
 renderBanks();
 renderWallets();
 renderCustomPayments();
