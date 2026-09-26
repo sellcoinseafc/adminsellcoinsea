@@ -125,148 +125,8 @@ document.getElementById("btnLogout")?.addEventListener("click", async () => {
 });
 
 // ==========================================
-// 2. معالجات الجداول للتوافق مع الجوال (data-label)
+// 2. إدارة البيانات والإعدادات مع Firestore
 // ==========================================
-function renderOrdersTables() {
-    sortOrdersNewestFirst();
-    const dashBody = document.getElementById("dashboardOrdersTableBody");
-    const fullBody = document.getElementById("fullOrdersTableBody");
-    const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
-    
-    let filteredOrders = ordersData;
-    if(statusFilter !== "all") {
-        filteredOrders = ordersData.filter(o => o.status === statusFilter);
-    }
-
-    if(dashBody) {
-        if(ordersData.length === 0) {
-            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
-        } else {
-            dashBody.innerHTML = "";
-            let topRecent = ordersData.slice(0, 5);
-            topRecent.forEach((order) => {
-                let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-                dashBody.innerHTML += `
-                    <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
-                        <td data-label="رقم الطلب">#${order.id}</td>
-                        <td data-label="اسم العميل"><b>${order.name}</b></td>
-                        <td data-label="المنصة">${order.platform}</td>
-                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
-                        <td data-label="الحالة"><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
-                    </tr>
-                `;
-            });
-        }
-    }
-
-    if(fullBody) {
-        if(filteredOrders.length === 0) {
-            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
-        } else {
-            fullBody.innerHTML = "";
-            filteredOrders.forEach((order) => {
-                let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-                fullBody.innerHTML += `
-                    <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
-                        <td data-label="رقم الطلب">#${order.id}</td>
-                        <td data-label="اسم العميل"><b>${order.name}</b></td>
-                        <td data-label="المنصة">${order.platform}</td>
-                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
-                        <td data-label="الحالة والأخطاء"><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td data-label="الإجراءات">
-                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
-                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-    }
-
-    updateDashboardStats();
-    renderClientsList();
-}
-
-function renderTransferAlertsTable(list) {
-    const tbody = document.getElementById("transferAlertsTableBody");
-    if(!tbody) return;
-    if(list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
-        return;
-    }
-    tbody.innerHTML = "";
-    list.forEach((order) => {
-        let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
-        tbody.innerHTML += `
-            <tr>
-                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
-                <td data-label="رقم الطلب">#${order.id}</td>
-                <td data-label="اسم العميل"><b>${order.name}</b></td>
-                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${order.phone}</td>
-                <td data-label="المبلغ المستحق" style="color:var(--primary);">${order.totalPrice}</td>
-                <td data-label="المدة المتبقية"><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
-                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
-            </tr>
-        `;
-    });
-}
-
-function renderClientsList(searchQuery = "") {
-    const tbody = document.getElementById("clientsTableBody");
-    if(!tbody) return;
-    let clientsMap = {};
-    ordersData.forEach(o => {
-        let phoneKey = o.phone ? o.phone.trim() : "unknown";
-        if(!clientsMap[phoneKey]) {
-            clientsMap[phoneKey] = { name: o.name, phone: phoneKey, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
-        }
-        clientsMap[phoneKey].ordersCount += 1;
-        clientsMap[phoneKey].totalCoins += (o.totalQty || 0);
-        let pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
-        clientsMap[phoneKey].totalPaid += pVal;
-        clientsMap[phoneKey].orders.push(o);
-    });
-
-    let clientsArray = Object.values(clientsMap);
-    if(searchQuery.trim() !== "") {
-        clientsArray = clientsArray.filter(c => c.name.includes(searchQuery) || c.phone.includes(searchQuery));
-    }
-
-    if(clientsArray.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
-        return;
-    }
-
-    tbody.innerHTML = "";
-    clientsArray.forEach((client) => {
-        tbody.innerHTML += `
-            <tr>
-                <td data-label="اسم العميل"><b>${client.name}</b></td>
-                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${client.phone}</td>
-                <td data-label="عدد الطلبات">${client.ordersCount}</td>
-                <td data-label="إجمالي الكوينز" style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
-                <td data-label="إجمالي المدفوعات" style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
-                <td data-label="الإجراء"><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
-            </tr>
-        `;
-    });
-}
-
-// باقي منطق الإعدادات وقاعدة البيانات دون تغيير...
 let isStoreOpen = true;
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
 let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
@@ -535,6 +395,145 @@ window.filterOrdersByStatus = function(status) {
     if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
 };
+
+function renderOrdersTables() {
+    sortOrdersNewestFirst();
+    const dashBody = document.getElementById("dashboardOrdersTableBody");
+    const fullBody = document.getElementById("fullOrdersTableBody");
+    const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
+    
+    let filteredOrders = ordersData;
+    if(statusFilter !== "all") {
+        filteredOrders = ordersData.filter(o => o.status === statusFilter);
+    }
+
+    if(dashBody) {
+        if(ordersData.length === 0) {
+            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
+        } else {
+            dashBody.innerHTML = "";
+            let topRecent = ordersData.slice(0, 5);
+            topRecent.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+
+                dashBody.innerHTML += `
+                    <tr>
+                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="رقم الطلب">#${order.id}</td>
+                        <td data-label="اسم العميل"><b>${order.name}</b></td>
+                        <td data-label="المنصة">${order.platform}</td>
+                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="الحالة"><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    if(fullBody) {
+        if(filteredOrders.length === 0) {
+            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر.</td></tr>`;
+        } else {
+            fullBody.innerHTML = "";
+            filteredOrders.forEach((order) => {
+                let actualIndex = ordersData.findIndex(o => o.id === order.id);
+                let statusBadge = getStatusBadge(order.status);
+                let errorBadge = getErrorBadge(order.errorCode);
+                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+
+                fullBody.innerHTML += `
+                    <tr>
+                        <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                        <td data-label="رقم الطلب">#${order.id}</td>
+                        <td data-label="اسم العميل"><b>${order.name}</b></td>
+                        <td data-label="المنصة">${order.platform}</td>
+                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td data-label="السعر" style="color:var(--primary);">${order.totalPrice}</td>
+                        <td data-label="الحالة والأخطاء"><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
+                        <td data-label="الإجراءات">
+                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
+                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    updateDashboardStats();
+    renderClientsList();
+}
+
+function renderTransferAlertsTable(list) {
+    const tbody = document.getElementById("transferAlertsTableBody");
+    if(!tbody) return;
+    if(list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = "";
+    list.forEach((order) => {
+        let actualIndex = ordersData.findIndex(o => o.id === order.id);
+        let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
+        tbody.innerHTML += `
+            <tr>
+                <td data-label="المرجع"><code style="color:var(--primary);">${order.reference}</code></td>
+                <td data-label="رقم الطلب">#${order.id}</td>
+                <td data-label="اسم العميل"><b>${order.name}</b></td>
+                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${order.phone}</td>
+                <td data-label="المبلغ المستحق" style="color:var(--primary);">${order.totalPrice}</td>
+                <td data-label="المدة المتبقية"><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
+                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+            </tr>
+        `;
+    });
+}
+
+function renderClientsList(searchQuery = "") {
+    const tbody = document.getElementById("clientsTableBody");
+    if(!tbody) return;
+    let clientsMap = {};
+    ordersData.forEach(o => {
+        let phoneKey = o.phone ? o.phone.trim() : "unknown";
+        if(!clientsMap[phoneKey]) {
+            clientsMap[phoneKey] = { name: o.name, phone: phoneKey, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
+        }
+        clientsMap[phoneKey].ordersCount += 1;
+        clientsMap[phoneKey].totalCoins += (o.totalQty || 0);
+        let pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
+        clientsMap[phoneKey].totalPaid += pVal;
+        clientsMap[phoneKey].orders.push(o);
+    });
+
+    let clientsArray = Object.values(clientsMap);
+    if(searchQuery.trim() !== "") {
+        clientsArray = clientsArray.filter(c => c.name.includes(searchQuery) || c.phone.includes(searchQuery));
+    }
+
+    if(clientsArray.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = "";
+    clientsArray.forEach((client) => {
+        tbody.innerHTML += `
+            <tr>
+                <td data-label="اسم العميل"><b>${client.name}</b></td>
+                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${client.phone}</td>
+                <td data-label="عدد الطلبات">${client.ordersCount}</td>
+                <td data-label="إجمالي الكوينز" style="color:#f59e0b;">${formatCoinsNumber(client.totalCoins)}</td>
+                <td data-label="إجمالي المدفوعات" style="color:#38bdf8;">${client.totalPaid.toLocaleString()} SAR</td>
+                <td data-label="الإجراء"><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
+            </tr>
+        `;
+    });
+}
 
 function getStatusBadge(status) {
     switch(status) {
