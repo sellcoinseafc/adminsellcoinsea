@@ -76,29 +76,38 @@ let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بي�
 function initAuthGuard() {
   if (!auth) return;
 
-  // معالجة نتيجة إعادة التوجيه لـ Google Redirect في حالة متصفحات الجوال
-  getRedirectResult(auth).catch((err) => {
-    console.error("Redirect Result Error:", err);
-  });
+  // استيعاب معالجة التوجيه التلقائي لـ Google Redirect للجوالات و Vercel
+  getRedirectResult(auth)
+    .then((result) => {
+      if (result && result.user) {
+        console.log("Google Redirect Login Successful:", result.user.email);
+      }
+    })
+    .catch((err) => {
+      console.error("Redirect Result Error:", err);
+      showLoginError("فشل الدخول عبر التوجيه المباشر: " + (err.message || ""));
+    });
 
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
       try {
         // قراءة مستند الأدمن مباشرة بـ user.uid الحقيقي الصادر من Firebase Authentication
-        const adminDoc = await getDoc(doc(db, "admins", user.uid));
+        const adminRef = doc(db, "admins", user.uid);
+        const adminDoc = await getDoc(adminRef);
+
         if (adminDoc.exists()) {
           const data = adminDoc.data();
           if (data.active === false) {
-            alert("⚠️ هذا الحساب معطل من قبل مالك النظام.");
+            showLoginError("⚠️ هذا الحساب معطل من قبل مالك النظام.");
             await signOut(auth);
             if (loginOverlay) loginOverlay.classList.add("active");
             return;
           }
           currentAdmin = { uid: user.uid, ...data };
-          await updateDoc(doc(db, "admins", user.uid), { lastLogin: serverTimestamp() });
+          await updateDoc(adminRef, { lastLogin: serverTimestamp() });
         } else {
-          // في حال كان تسجيل دخول لأول مرة بالحساب (أو المالك) يتم إنشاء المستند بـ user.uid الحقيقي
+          // الحساب الأول أو عند تسجيل الدخول بجوجل لأول مرة يُنشأ بالمعرف الحقيقي user.uid
           currentAdmin = {
             uid: user.uid,
             name: user.displayName || user.email.split('@')[0],
@@ -106,7 +115,7 @@ function initAuthGuard() {
             role: "owner",
             active: true
           };
-          await setDoc(doc(db, "admins", user.uid), {
+          await setDoc(adminRef, {
             name: currentAdmin.name,
             email: currentAdmin.email,
             role: "owner",
@@ -116,17 +125,27 @@ function initAuthGuard() {
           });
         }
 
+        // إخفاء شاشة تسجيل الدخول فوراً وبسلاسة
         if (loginOverlay) loginOverlay.classList.remove("active");
         updateSidebarAdminUI();
         applyRolePermissions();
         await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
       } catch (err) {
-        console.error("Auth Guard Error:", err);
+        console.error("Auth Guard Firestore Error:", err);
+        showLoginError("خطأ أثناء قراءة صلاحيات المستند: " + err.message);
       }
     } else {
       if (loginOverlay) loginOverlay.classList.add("active");
     }
   });
+}
+
+function showLoginError(msg) {
+  const alertEl = document.getElementById("loginErrorAlert");
+  if (alertEl) {
+    alertEl.innerText = msg;
+    alertEl.style.display = "block";
+  }
 }
 
 window.handleEmailLogin = async function (e) {
@@ -140,10 +159,17 @@ window.handleEmailLogin = async function (e) {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (err) {
     console.error("Email Login Error:", err);
-    if (alertEl) {
-      alertEl.innerText = "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.";
-      alertEl.style.display = "block";
+    let errMsg = "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+    if (err.code === "auth/user-not-found" || err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+      errMsg = "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+    } else if (err.code === "auth/invalid-email") {
+      errMsg = "❌ البريد الإلكتروني المدخل غير صالح.";
+    } else if (err.code === "auth/too-many-requests") {
+      errMsg = "❌ تم حظر الحساب مؤقتاً لكثرة المحاولات الخاطئة. حاول لاحقاً.";
+    } else {
+      errMsg = "❌ خطأ في الدخول: " + err.message;
     }
+    showLoginError(errMsg);
   }
 };
 
@@ -155,7 +181,6 @@ window.handleGoogleLogin = async function () {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
     if (isMobile) {
-      // استخدام إعادة التوجيه التلقائي للهواتف الذكية تجنباً لحظر النوافذ المنبثقة
       await signInWithRedirect(auth, provider);
     } else {
       try {
@@ -170,10 +195,7 @@ window.handleGoogleLogin = async function () {
     }
   } catch (err) {
     console.error("Google Login Error:", err);
-    if (alertEl) {
-      alertEl.innerText = "❌ فشل تسجيل الدخول بواسطة Google: " + (err.message || "");
-      alertEl.style.display = "block";
-    }
+    showLoginError("❌ فشل تسجيل الدخول بواسطة Google: " + (err.message || ""));
   }
 };
 
@@ -192,7 +214,6 @@ function updateSidebarAdminUI() {
 }
 
 function applyRolePermissions() {
-  // تقييد إمكانية رؤية وتبويب إدارة المشرفين للأدمن العادي
   const adminTabLink = document.querySelector(".sidebar-menu li:nth-child(8)");
   if (adminTabLink) {
     adminTabLink.style.display = currentAdmin.role === "owner" ? "block" : "none";
@@ -270,7 +291,7 @@ window.filterAuditLogs = function (query) {
 };
 
 // ==========================================================================
-// 4. إدارة المشرفين والصلاحيات (`admins/` + Firebase Auth)
+// 4. إدارة المشرفين والصلاحيات (`admins/{uid}` + Firebase Auth)
 // ==========================================================================
 function initAdminsListener() {
   onSnapshot(collection(db, "admins"), (snapshot) => {
@@ -304,7 +325,7 @@ function renderAdminsTable() {
         <td><span style="font-size:0.78rem; color:var(--text-muted);">${lastLoginStr}</span></td>
         <td>
           ${!isOwner ? `
-            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}',${admin.active})">
+            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}', ${admin.active})">
               ${admin.active !== false ? 'تعطيل' : 'تفعيل'}
             </button>
             <button class="btn-action" style="color:var(--danger);" onclick="deleteAdminDoc('${admin.uid}', '${admin.name}')">حذف</button>
@@ -338,18 +359,18 @@ window.handleCreateAdmin = async function (e) {
   }
 
   try {
-    // 1. إنشاء تطبيق فايربيز فرعي لتجنب تسجيل خروج الأدمن الحالي عند إنشاء الحساب الجديد
+    // 1. إنشاء تطبيق فايربيز ثانوي حتى لا يتم تسجيل خروج الأدمن الحالي أثناء إضافة حساب جديد
     const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(auth.app.options, "SecondaryAuthApp");
     const secondaryAuth = getAuth(secondaryApp);
 
-    // 2. إنشاء المستخدم رسمياً في Firebase Authentication
+    // 2. إنشاء المشرف رسمياً في Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     const newUid = userCredential.user.uid;
 
-    // 3. تسجيل الخروج من التطبيق الفرعي
+    // 3. تسجيل الخروج من التطبيق الثانوي
     await signOut(secondaryAuth);
 
-    // 4. حفظ مستند المشرف بالمعرف الحقيقي (user.uid) الصادر من Firebase Authentication
+    // 4. حفظ بيانات المشرف بالمعرف الحقيقي الصادر من Auth داخل admins/{newUid}
     await setDoc(doc(db, "admins", newUid), {
       name,
       email,
@@ -360,7 +381,7 @@ window.handleCreateAdmin = async function (e) {
     });
 
     await logAuditEvent("إضافة مشرف جديد", "المشرفين", `اسم المشرف: ${name} (${role}) - UID: ${newUid}`);
-    alert(`✅ تم إنشاء حساب المشرف (${name}) في Firebase Auth و Firestore بنجاح!`);
+    alert(`✅ تم إنشاء حساب المشرف (${name}) في Firebase Auth و Firestore بالـ UID الحقيقي بنجاح!`);
     window.closeAddAdminModal();
     document.getElementById("addAdminForm")?.reset();
   } catch (err) {
@@ -533,7 +554,7 @@ function updateDashboardStats() {
 function getTransferTimeRemaining(finishedAt) {
   if (!finishedAt) return `<span class="countdown-pill"><i class="fa-solid fa-clock"></i> بدأ العد من لحظة الانتهاء</span>`;
   const startDate = new Date(finishedAt);
-  const deadlineDate = new Date(startDate.getTime() + (4 * 24 * 60 * 60 * 1000)); // متوسط 4 أيام عمل
+  const deadlineDate = new Date(startDate.getTime() + (4 * 24 * 60 * 60 * 1000));
   const now = new Date();
   const diff = deadlineDate - now;
 
@@ -684,7 +705,6 @@ window.openOrderModal = function (index) {
   const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
   const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
 
-  // فحص أمان البيانات الحساسة
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
@@ -733,7 +753,6 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // الألوان الثلاثة لشريط إنجاز السحب: 🔴 0-39% | 🟠 40-89% | 🟢 90-100%
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
   let pd = order.paymentDetails || {};
 
