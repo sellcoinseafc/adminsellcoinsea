@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SAMI COINS | Mobile First Admin Dashboard</title>
+    <title>SAMI COINS | Ultimate Admin Dashboard V2.6</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <!-- مكتبة الرسم البياني للرسوم البيانية المصورة (Chart.js) -->
+    <!-- مكتبة Chart.js للرسوم البيانية -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -73,6 +73,17 @@
                     <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
                 </div>
                 <div id="modalOrderBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
+            </div>
+        </div>
+
+        <!-- نافذة عرض سجل العميل -->
+        <div class="modal-overlay" id="clientDetailModal">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 id="clientModalTitle">سجل طلبات العميل</h3>
+                    <button class="modal-close-btn" onclick="closeClientModal()">✕</button>
+                </div>
+                <div id="clientModalBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
             </div>
         </div>
 
@@ -294,8 +305,8 @@
 
                         <div class="followup-card card-purple-soft" onclick="filterOrdersByStatus('progress')">
                             <i class="fa-solid fa-cube followup-icon"></i>
-                            <div class="followup-num">5</div>
-                            <div class="followup-txt">طلبات جديدة</div>
+                            <div class="followup-num" id="statProgressOrders2">0</div>
+                            <div class="followup-txt">قيد التنفيذ</div>
                         </div>
 
                         <div class="followup-card card-red-soft" onclick="filterOrdersByStatus('cancelled')">
@@ -316,7 +327,7 @@
                         <div class="coins-box box-withdrawn">
                             <div class="coins-icon"><i class="fa-solid fa-shield-halved"></i></div>
                             <div>
-                                <div class="coins-val" id="summaryWithdrawnQty">650,000</div>
+                                <div class="coins-val" id="summaryWithdrawnQty">0</div>
                                 <div class="coins-lbl">الكمية المسحوبة</div>
                             </div>
                         </div>
@@ -324,7 +335,7 @@
                         <div class="coins-box box-remaining">
                             <div class="coins-icon"><i class="fa-solid fa-arrow-down"></i></div>
                             <div>
-                                <div class="coins-val" id="summaryRemainingQty">350,000</div>
+                                <div class="coins-val" id="summaryRemainingQty">0</div>
                                 <div class="coins-lbl">الكمية المتبقية</div>
                             </div>
                         </div>
@@ -332,11 +343,11 @@
 
                     <div class="coins-progress-container">
                         <div class="progress-bar-bg">
-                            <div class="progress-bar-fill-gradient" id="summaryProgressFill" style="width: 65%;"></div>
+                            <div class="progress-bar-fill-gradient" id="summaryProgressFill" style="width: 0%;"></div>
                         </div>
                         <div class="progress-text-row">
                             <span>تقدم سحب الكوينز</span>
-                            <strong id="summaryProgressPercent">65%</strong>
+                            <strong id="summaryProgressPercent">0%</strong>
                         </div>
                     </div>
                 </section>
@@ -351,25 +362,25 @@
                         <div class="platform-rank-item">
                             <div class="plat-head">
                                 <span class="plat-name"><i class="fa-brands fa-playstation plat-ps-ic"></i> PlayStation</span>
-                                <span class="plat-stats"><strong id="rankPsPercent">45%</strong> <small id="rankPsOrders">64 طلب</small></span>
+                                <span class="plat-stats"><strong id="rankPsPercent">0%</strong> <small id="rankPsOrders">0 طلب</small></span>
                             </div>
-                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-blue" id="rankPsFill" style="width: 45%;"></div></div>
+                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-blue" id="rankPsFill" style="width: 0%;"></div></div>
                         </div>
 
                         <div class="platform-rank-item">
                             <div class="plat-head">
                                 <span class="plat-name"><i class="fa-brands fa-xbox plat-xbox-ic"></i> Xbox</span>
-                                <span class="plat-stats"><strong id="rankXboxPercent">30%</strong> <small id="rankXboxOrders">42 طلب</small></span>
+                                <span class="plat-stats"><strong id="rankXboxPercent">0%</strong> <small id="rankXboxOrders">0 طلب</small></span>
                             </div>
-                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-green" id="rankXboxFill" style="width: 30%;"></div></div>
+                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-green" id="rankXboxFill" style="width: 0%;"></div></div>
                         </div>
 
                         <div class="platform-rank-item">
                             <div class="plat-head">
                                 <span class="plat-name"><i class="fa-brands fa-windows plat-pc-ic"></i> PC</span>
-                                <span class="plat-stats"><strong id="rankPcPercent">25%</strong> <small id="rankPcOrders">34 طلب</small></span>
+                                <span class="plat-stats"><strong id="rankPcPercent">0%</strong> <small id="rankPcOrders">0 طلب</small></span>
                             </div>
-                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-cyan" id="rankPcFill" style="width: 25%;"></div></div>
+                            <div class="plat-bar-bg"><div class="plat-bar-fill fill-cyan" id="rankPcFill" style="width: 0%;"></div></div>
                         </div>
                     </div>
                 </section>
@@ -381,32 +392,13 @@
                         <a onclick="switchTab('ordersTab')" class="view-all-link">عرض الكل &gt;</a>
                     </div>
                     <div class="activity-feed-list" id="activityFeedContainer">
-                        <div class="activity-feed-item">
-                            <span class="feed-dot dot-green"></span>
-                            <span class="feed-txt">تم سحب الكوينز من طلب #12539</span>
-                            <span class="feed-time">منذ 5 دقائق</span>
-                        </div>
-                        <div class="activity-feed-item">
-                            <span class="feed-dot dot-green"></span>
-                            <span class="feed-txt">تم تحويل المبلغ للعميل #12538</span>
-                            <span class="feed-time">منذ 12 دقيقة</span>
-                        </div>
-                        <div class="activity-feed-item">
-                            <span class="feed-dot dot-green"></span>
-                            <span class="feed-txt">طلب جديد برقم #12540</span>
-                            <span class="feed-time">منذ 30 دقيقة</span>
-                        </div>
-                        <div class="activity-feed-item">
-                            <span class="feed-dot dot-green"></span>
-                            <span class="feed-txt">تم ترحيل الطلب إلى الشيت #12537</span>
-                            <span class="feed-time">منذ 12 ساعة</span>
-                        </div>
+                        <!-- يُعبأ آلياً عبر admin.js من auditLogs -->
                     </div>
                 </section>
 
             </div>
 
-            <!-- بقية الشاشات (الطلبات، طلبات التحويل، العملاء...) كما هي بجميع أزرارها وربطها المباشر -->
+            <!-- بقية الشاشات (الطلبات، طلبات التحويل، العملاء، الأسعار، الدفع، الرسائل، الأحكام، الإعدادات) -->
             <div id="ordersTab" class="tab-content">
                 <div class="section-card">
                     <div class="section-title-row">
@@ -557,8 +549,8 @@
             <div id="statusMessagesTab" class="tab-content">
                 <div class="section-card">
                     <div class="section-title-row"><h2 class="section-title">إدارة رسائل حالات الطلب</h2></div>
-                    <div class="form-group"><label>✉️ رسالة حالة (طلب جديد):</label><textarea id="msgNew" class="form-control" rows="3"></textarea></div>
-                    <div class="form-group"><label>⚙️ رسالة حالة (قيد التنفيذ):</label><textarea id="msgProgress" class="form-control" rows="3"></textarea></div>
+                    <div class="form-group"><label>✉️ رسالة حالة (طلب جديد):</label><textarea id="msgNew" class="form-control" rows="3">عزيزنا العميل {customer_name}، تم استلام طلبك رقم #{order_id} بنجاح.</textarea></div>
+                    <div class="form-group"><label>⚙️ رسالة حالة (قيد التنفيذ):</label><textarea id="msgProgress" class="form-control" rows="3">عميلنا العزيز {customer_name}، جاري العمل على طلبك رقم #{order_id}.</textarea></div>
                     <button class="btn-custom" onclick="saveStatusMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسائل الحالات</button>
                 </div>
             </div>
