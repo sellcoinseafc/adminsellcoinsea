@@ -46,11 +46,6 @@ window.switchTab = function(tabId, element) {
     if(targetTab) targetTab.classList.add("active");
     if(element) element.classList.add("active");
     
-    const titleHead = document.getElementById("pageTitleHeading");
-    const breadcrumbActive = document.getElementById("breadcrumbActive");
-    if(titleHead && element) titleHead.innerText = element.innerText.trim();
-    if(breadcrumbActive && element) breadcrumbActive.innerText = element.innerText.trim();
-
     window.toggleSidebar(false);
 };
 
@@ -68,9 +63,13 @@ onAuthStateChanged(auth, (user) => {
     if (adminAppWrapper) adminAppWrapper.style.display = "block";
 
     const sidebarName = document.getElementById("sidebarUserName");
+    const topNavName = document.getElementById("topNavUserName");
     const sidebarAvatar = document.getElementById("sidebarUserAvatar");
-    if (sidebarName) sidebarName.innerText = user.displayName || user.email.split('@')[0];
-    if (sidebarAvatar) sidebarAvatar.innerText = (user.displayName || user.email)[0].toUpperCase();
+    
+    let uName = user.displayName || user.email.split('@')[0];
+    if (sidebarName) sidebarName.innerText = uName;
+    if (topNavName) topNavName.innerText = uName;
+    if (sidebarAvatar) sidebarAvatar.innerText = uName[0].toUpperCase();
 
     initSystemSettingsListener();
     initOrdersListener();
@@ -150,7 +149,7 @@ let ordersData = [];
 let stockData = { PlayStation: 0, PC: 0 };
 
 function formatCoinsNumber(num) {
-    if(num === "" || num === null || isNaN(num)) return "";
+    if(num === "" || num === null || isNaN(num)) return "0";
     return Number(num).toLocaleString('en-US');
 }
 
@@ -301,7 +300,7 @@ function initOrdersListener() {
                 phone: data.phone || "",
                 platform: data.platform || "PlayStation",
                 totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
-                totalPrice: data.price || data.totalPrice || "0 ر.س",
+                totalPrice: data.price || data.totalPrice || "0 SAR",
                 status: data.status || "new",
                 errorCode: data.errorCode || "none",
                 email: data.email || "",
@@ -315,6 +314,7 @@ function initOrdersListener() {
                 archived: data.archived || false,
                 sensitiveDeleted: data.sensitiveDeleted || false,
                 createdAt: data.createdAt || new Date().toISOString(),
+                updatedAt: data.updatedAt || new Date().toISOString(),
                 ...data
             };
         });
@@ -378,23 +378,16 @@ function updateDashboardStats() {
         return sum + p;
     }, 0);
 
-    // ربط إحصائيات لوحة التحكم بالكامل
     if(document.getElementById("statAllOrders")) document.getElementById("statAllOrders").innerText = countAll;
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
     if(document.getElementById("statProgressOrders")) document.getElementById("statProgressOrders").innerText = countProgress;
     if(document.getElementById("statFinishedOrders")) document.getElementById("statFinishedOrders").innerText = countFinished;
     if(document.getElementById("statCancelledOrders")) document.getElementById("statCancelledOrders").innerText = countCancelled;
+    if(document.getElementById("statTransferNeededOrders")) document.getElementById("statTransferNeededOrders").innerText = countTransferNeeded;
     if(document.getElementById("statTransferredOrders")) document.getElementById("statTransferredOrders").innerText = countTransferred;
 
-    if(document.getElementById("statNewOrdersDash")) document.getElementById("statNewOrdersDash").innerText = countNew;
-    if(document.getElementById("statProgressOrdersDash")) document.getElementById("statProgressOrdersDash").innerText = countProgress;
-    if(document.getElementById("statFinishedOrdersDash")) document.getElementById("statFinishedOrdersDash").innerText = countFinished;
-    if(document.getElementById("statCancelledOrdersDash")) document.getElementById("statCancelledOrdersDash").innerText = countCancelled;
-    if(document.getElementById("statTransferNeededOrdersDash")) document.getElementById("statTransferNeededOrdersDash").innerText = countTransferNeeded;
-    if(document.getElementById("statTransferredOrdersDash")) document.getElementById("statTransferredOrdersDash").innerText = countTransferred;
-
     if(document.getElementById("statCompletedCoins")) document.getElementById("statCompletedCoins").innerText = formatCoinsNumber(totalCompletedCoins);
-    if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " ر.س";
+    if(document.getElementById("statTransferredMoney")) document.getElementById("statTransferredMoney").innerText = totalTransferredMoney.toLocaleString() + " SAR";
 
     if(document.getElementById("stockPS")) document.getElementById("stockPS").innerText = formatCoinsNumber(stockData.PlayStation);
     if(document.getElementById("stockPC")) document.getElementById("stockPC").innerText = formatCoinsNumber(stockData.PC);
@@ -402,9 +395,8 @@ function updateDashboardStats() {
     renderTransferAlertsTable(transferNeededList);
 }
 
-// الفلترة الفورية المباشرة لنقل العرض لتبويب الطلبات
 window.filterOrdersByStatus = function(status) {
-    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[1].querySelector('a'));
+    window.switchTab('ordersTab', document.querySelectorAll('.sidebar-menu li')[0].querySelector('a'));
     const statusFilter = document.getElementById("orderStatusFilter");
     if(statusFilter) statusFilter.value = status;
     renderOrdersTables();
@@ -412,66 +404,70 @@ window.filterOrdersByStatus = function(status) {
 
 function renderOrdersTables() {
     sortOrdersNewestFirst();
-    const dashBody = document.getElementById("dashboardOrdersTableBody");
     const fullBody = document.getElementById("fullOrdersTableBody");
     const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
+    const platformFilter = document.getElementById("orderPlatformFilter")?.value || "all";
     
     let filteredOrders = ordersData;
     if(statusFilter !== "all") {
-        filteredOrders = ordersData.filter(o => o.status === statusFilter);
+        filteredOrders = filteredOrders.filter(o => o.status === statusFilter);
+    }
+    if(platformFilter !== "all") {
+        filteredOrders = filteredOrders.filter(o => o.platform === platformFilter);
     }
 
-    if(dashBody) {
-        if(ordersData.length === 0) {
-            dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
-        } else {
-            dashBody.innerHTML = "";
-            let topRecent = ordersData.slice(0, 5);
-            topRecent.forEach((order) => {
-                let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
-
-                dashBody.innerHTML += `
-                    <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
-                        <td data-label="رقم الطلب">#${order.id}</td>
-                        <td data-label="اسم العميل"><b>${order.name}</b></td>
-                        <td data-label="المنصة">${order.platform}</td>
-                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
-                        <td data-label="الحالة"><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
-                    </tr>
-                `;
-            });
-        }
-    }
+    if(document.getElementById("paginationCountDisplay")) document.getElementById("paginationCountDisplay").innerText = filteredOrders.length;
+    if(document.getElementById("paginationTotalDisplay")) document.getElementById("paginationTotalDisplay").innerText = ordersData.length;
 
     if(fullBody) {
         if(filteredOrders.length === 0) {
-            fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة أو مطابقة للفلتر المحدد.</td></tr>`;
+            fullBody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:30px;">لا توجد طلبات مسجلة أو مطابقة للفلتر المحدد.</td></tr>`;
         } else {
             fullBody.innerHTML = "";
             filteredOrders.forEach((order) => {
                 let actualIndex = ordersData.findIndex(o => o.id === order.id);
-                let statusBadge = getStatusBadge(order.status);
-                let errorBadge = getErrorBadge(order.errorCode);
-                if(order.archived) statusBadge = '<span class="badge badge-archived">مؤرشف</span>';
+                let rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== null && !isNaN(order.withdrawnQty) ? Number(order.withdrawnQty) : 0;
+                let percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
+                
+                let progressClass = "fill-orange";
+                if(percent === 100) progressClass = "fill-green";
+                else if(percent === 0) progressClass = "fill-blue";
+
+                let platIcon = "fa-brands fa-playstation platform-ps";
+                if(order.platform === 'Xbox') platIcon = "fa-brands fa-xbox platform-xbox";
+                else if(order.platform === 'PC') platIcon = "fa-brands fa-windows platform-pc";
+
+                let createDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') + ' ' + new Date(order.createdAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
+                let updateDateStr = order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('en-GB') + ' ' + new Date(order.updatedAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
 
                 fullBody.innerHTML += `
                     <tr>
-                        <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
-                        <td data-label="رقم الطلب">#${order.id}</td>
-                        <td data-label="اسم العميل"><b>${order.name}</b></td>
-                        <td data-label="المنصة">${order.platform}</td>
-                        <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                        <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
-                        <td data-label="الحالة والأخطاء"><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
-                        <td data-label="الإجراءات">
-                            <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
-                            <button class="btn-action" style="color:#f59e0b;" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
+                        <td><input type="checkbox"></td>
+                        <td><span class="order-id-highlight">#${order.reference}</span></td>
+                        <td class="client-name-cell">
+                            <strong>${order.name}</strong>
+                            <span>${order.email || 'no-email@domain.com'}</span>
+                        </td>
+                        <td><span class="platform-pill-img"><i class="${platIcon}"></i> ${order.platform}</span></td>
+                        <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                        <td style="color:#fff; font-weight:800;">${order.totalPrice}</td>
+                        <td>${getImageStatusPill(order.status)}</td>
+                        <td>
+                            <div class="table-progress-wrapper">
+                                <span style="font-size:0.75rem; font-weight:bold; color:#fff; width:32px;">${percent}%</span>
+                                <div class="table-progress-bar">
+                                    <div class="table-progress-fill ${progressClass}" style="width:${percent}%;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size:0.75rem; color:var(--text-muted);">${createDateStr}</td>
+                        <td style="font-size:0.75rem; color:var(--text-muted);">${updateDateStr}</td>
+                        <td>
+                            <div class="action-buttons-cell">
+                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="خيارات"><i class="fa-solid fa-ellipsis"></i></button>
+                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="عرض التفاصيل"><i class="fa-solid fa-eye"></i></button>
+                                <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -481,6 +477,17 @@ function renderOrdersTables() {
 
     updateDashboardStats();
     renderClientsList();
+}
+
+function getImageStatusPill(status) {
+    switch(status) {
+        case 'progress': return '<span class="status-pill-btn status-progress-img"><i class="fa-solid fa-rotate"></i> قيد التنفيذ</span>';
+        case 'new': return '<span class="status-pill-btn status-new-img"><i class="fa-solid fa-play"></i> جديد</span>';
+        case 'finished': return '<span class="status-pill-btn status-finished-img"><i class="fa-solid fa-check"></i> تم السحب</span>';
+        case 'transferred': return '<span class="status-pill-btn status-transferred-img"><i class="fa-solid fa-money-bill-transfer"></i> تم التحويل</span>';
+        case 'cancelled': return '<span class="status-pill-btn" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.4);"><i class="fa-solid fa-ban"></i> ملغي</span>';
+        default: return '<span class="status-pill-btn status-new-img"><i class="fa-solid fa-play"></i> جديد</span>';
+    }
 }
 
 function renderTransferAlertsTable(list) {
@@ -496,13 +503,13 @@ function renderTransferAlertsTable(list) {
         let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
         tbody.innerHTML += `
             <tr>
-                <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
-                <td data-label="رقم الطلب">#${order.id}</td>
-                <td data-label="اسم العميل"><b>${order.name}</b></td>
-                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${order.phone}</td>
-                <td data-label="المبلغ المستحق" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
-                <td data-label="المدة المتبقية"><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
-                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+                <td><span class="order-id-highlight">${order.reference}</span></td>
+                <td>#${order.id}</td>
+                <td><b>${order.name}</b></td>
+                <td style="direction:ltr; text-align:right;">${order.phone}</td>
+                <td style="color:#00ff87; font-weight:bold;">${order.totalPrice}</td>
+                <td><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr}</span></td>
+                <td><button class="btn-create-order" style="padding:6px 12px; font-size:0.75rem;" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
             </tr>
         `;
     });
@@ -538,38 +545,15 @@ function renderClientsList(searchQuery = "") {
     clientsArray.forEach((client) => {
         tbody.innerHTML += `
             <tr>
-                <td data-label="اسم العميل"><b>${client.name}</b></td>
-                <td data-label="رقم الجوال" style="direction:ltr; text-align:right;">${client.phone}</td>
-                <td data-label="عدد الطلبات">${client.ordersCount}</td>
-                <td data-label="إجمالي الكوينز" style="color:#f59e0b; font-weight:bold;">${formatCoinsNumber(client.totalCoins)}</td>
-                <td data-label="إجمالي المدفوعات" style="color:#38bdf8; font-weight:bold;">${client.totalPaid.toLocaleString()} SAR</td>
-                <td data-label="الإجراء"><button class="btn-action" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
+                <td><b>${client.name}</b></td>
+                <td style="direction:ltr; text-align:right;">${client.phone}</td>
+                <td>${client.ordersCount}</td>
+                <td style="color:#f59e0b; font-weight:bold;">${formatCoinsNumber(client.totalCoins)}</td>
+                <td style="color:#00a2ff; font-weight:bold;">${client.totalPaid.toLocaleString()} SAR</td>
+                <td><button class="btn-create-order" style="padding:6px 12px; font-size:0.75rem;" onclick="openClientDetail('${client.phone}')"><i class="fa-solid fa-list-check"></i> عرض السجل</button></td>
             </tr>
         `;
     });
-}
-
-function getStatusBadge(status) {
-    switch(status) {
-        case 'new': return '<span class="badge badge-new">طلب جديد</span>';
-        case 'review': return '<span class="badge badge-review">انتظار المراجعة</span>';
-        case 'progress': return '<span class="badge badge-progress">قيد التنفيذ</span>';
-        case 'finished': return '<span class="badge badge-finished">تم الانتهاء</span>';
-        case 'cancelled': return '<span class="badge badge-cancelled">ملغي</span>';
-        case 'transferred': return '<span class="badge badge-transferred">تم التحويل</span>';
-        case 'completed': return '<span class="badge badge-completed">مكتمل</span>';
-        default: return '<span class="badge badge-new">طلب جديد</span>';
-    }
-}
-
-function getErrorBadge(code) {
-    switch(code) {
-        case 'err_pass': return '<span class="badge badge-error">❌ الإيميل أو الباسورد غلط</span>';
-        case 'err_codes': return '<span class="badge badge-error">❌ الأكواد الاحتياطية غلط</span>';
-        case 'err_login': return '<span class="badge badge-error">❌ العميل مسجل دخول على المنصة</span>';
-        case 'err_market': return '<span class="badge badge-error">❌ سوق الانتقالات مغلق</span>';
-        default: return '<span class="badge badge-success">✔ سليم</span>';
-    }
 }
 
 window.openOrderModal = function(index) {
@@ -582,12 +566,6 @@ window.openOrderModal = function(index) {
     const remaining = Math.max(0, (order.totalQty || 0) - rawWithdrawn);
     const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
     const isCompleted = remaining === 0 && rawWithdrawn > 0;
-
-    let platformClass = "ps-theme";
-    let platformIcon = "fa-brands fa-playstation";
-    let platformColor = "#0070d1";
-    if(order.platform === 'Xbox' || order.platform === 'xbox') { platformClass = "xbox-theme"; platformIcon = "fa-brands fa-xbox"; platformColor = "#107c10"; }
-    else if(order.platform === 'PC' || order.platform === 'pc') { platformClass = "pc-theme"; platformIcon = "fa-solid fa-computer"; platformColor = "#e81123"; }
 
     let codesHtml = (order.backupCodes || []).map(code => `
         <div class="admin-credential-banner" style="flex:1; text-align:center; margin-bottom:0;" onclick="copyDirect('${code}')" title="انقر لنسخ الكود صامتاً">
@@ -615,8 +593,8 @@ window.openOrderModal = function(index) {
                 </div>
             </div>
 
-            <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progressBarFill" style="width: ${percent}%;"></div>
+            <div class="table-progress-bar" style="height:8px; margin-bottom:12px;">
+                <div class="table-progress-fill fill-green" id="progressBarFill" style="width: ${percent}%;"></div>
             </div>
 
             ${isCompleted ? '<div style="background: rgba(16, 185, 129, 0.35); border: 1px solid #10b981; color: #ffffff; padding: 10px; border-radius: 10px; text-align: center; font-weight: 900; margin-bottom: 12px;"><i class="fa-solid fa-circle-check"></i> ✅ تم إنجاز وسحب كامل الكمية بنجاح!</div>' : ''}
@@ -652,7 +630,7 @@ window.openOrderModal = function(index) {
     let pd = order.paymentDetails || {};
     let paymentDetailsHtml = `
         <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:16px; padding:16px; margin-top:16px;">
-            <strong style="font-size:0.9rem; color:#38bdf8; display:block; margin-bottom:10px;"><i class="fa-solid fa-wallet"></i> بيانات التحويل والاستلام (${order.paymentMethod}):</strong>
+            <strong style="font-size:0.9rem; color:#00a2ff; display:block; margin-bottom:10px;"><i class="fa-solid fa-wallet"></i> بيانات التحويل والاستلام (${order.paymentMethod}):</strong>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="color:var(--text-muted)">البنك / المحفظة:</span> <b>${pd.bank || pd.wallet || '-'}</b></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><span style="color:var(--text-muted)">اسم المستفيد:</span> <b>${pd.name || '-'}</b></div>
             <div style="display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted)">رقم الآيبان أو الحساب:</span> <code onclick="copyDirect('${pd.iban || pd.phone || '-'}')" style="cursor:pointer; color:var(--primary);" title="انقر للنسخ">${pd.iban || pd.phone || '-'}</code></div>
@@ -663,33 +641,15 @@ window.openOrderModal = function(index) {
 
     body.innerHTML = `
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap:8px; margin-bottom:16px;">
-            <button class="btn-custom" style="background:linear-gradient(135deg, #38bdf8 0%, #2563eb 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
+            <button class="btn-create-order" style="background:#00a2ff; color:#fff; justify-content:center; font-size:0.8rem;" onclick="migrateToGoogleSheets(${index})">
                 <i class="fa-solid fa-cloud-arrow-up"></i> الشيت
             </button>
-            <button class="btn-custom" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
+            <button class="btn-create-order" style="background:#f59e0b; color:#fff; justify-content:center; font-size:0.8rem;" onclick="backupOrderData(${index})">
                 <i class="fa-solid fa-copy"></i> نسخ
             </button>
-            <button class="btn-custom" style="background:linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
+            <button class="btn-create-order" style="background:#ef4444; color:#fff; justify-content:center; font-size:0.8rem;" onclick="destroySensitiveData(${index})">
                 <i class="fa-solid fa-shield-halved"></i> إتلاف
             </button>
-        </div>
-
-        <div class="admin-summary-banner ${platformClass}">
-            <div class="admin-banner-item">
-                <i class="${platformIcon}" style="color: ${platformColor};"></i>
-                <div class="admin-banner-label">المنصة</div>
-                <div class="admin-banner-value">${order.platform}</div>
-            </div>
-            <div class="admin-banner-item">
-                <i class="fa-solid fa-coins" style="color: var(--primary);"></i>
-                <div class="admin-banner-label">الكمية</div>
-                <div class="admin-banner-value" style="color: var(--primary);">${formatCoinsNumber(order.totalQty)}</div>
-            </div>
-            <div class="admin-banner-item">
-                <i class="fa-solid fa-money-bill-wave" style="color: #38bdf8;"></i>
-                <div class="admin-banner-label">المبلغ</div>
-                <div class="admin-banner-value" style="color: #38bdf8;">${order.totalPrice}</div>
-            </div>
         </div>
 
         <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-bottom:18px; background:var(--input-bg); padding:12px; border-radius:16px; border:1.5px solid var(--card-border); text-align:center;">
@@ -705,13 +665,13 @@ window.openOrderModal = function(index) {
             <div class="form-group" style="margin-bottom:0;">
                 <label>حالة الطلب:</label>
                 <select id="modalStatusSelect" class="form-control" onchange="toggleStatusBox(this.value)">
-                    <option value="new" ${order.status==='new'?'selected':''}>طلب جديد</option>
+                    <option value="new" ${order.status==='new'?'selected':''}>جديد</option>
                     <option value="review" ${order.status==='review'?'selected':''}>انتظار المراجعة</option>
                     <option value="progress" ${order.status==='progress'?'selected':''}>قيد التنفيذ</option>
-                    <option value="finished" ${order.status==='finished'?'selected':''}>تم الانتهاء</option>
+                    <option value="finished" ${order.status==='finished'?'selected':''}>تم السحب</option>
                     <option value="cancelled" ${order.status==='cancelled'?'selected':''}>ملغي</option>
                     <option value="transferred" ${order.status==='transferred'?'selected':''}>تم التحويل</option>
-                    <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل (رقم 6)</option>
+                    <option value="completed" ${order.status==='completed'?'selected':''}>مكتمل نهائياً</option>
                 </select>
             </div>
             <div class="form-group" style="margin-bottom:0;">
@@ -735,7 +695,7 @@ window.openOrderModal = function(index) {
 
         ${paymentDetailsHtml}
 
-        <button class="btn-custom" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
+        <button class="btn-create-order" style="width:100%; justify-content:center; margin-top:18px; padding:14px;" onclick="saveOrderModalChanges(${index})">
             <i class="fa-solid fa-floppy-disk"></i> حفظ التحديثات
         </button>
     `;
@@ -821,8 +781,6 @@ window.closeOrderModal = function() {
 };
 
 window.migrateToGoogleSheets = function(index) {
-    ordersData[index].migrated = true;
-    window.renderOrdersTables();
     alert(`🚀 تم ترحيل الطلب المرجع (${ordersData[index].reference}) بنجاح.`);
 };
 
@@ -1030,26 +988,59 @@ window.toggleTheme = function() {
 window.handleGlobalSearch = function(query) {
     if(!query.trim()) { window.renderOrdersTables(); return; }
     let q = query.trim().toLowerCase();
-    let matched = ordersData.filter(o => String(o.name).toLowerCase().includes(q) || String(o.phone).includes(q) || String(o.reference).toLowerCase().includes(q) || String(o.id).includes(q));
+    let matched = ordersData.filter(o => String(o.name).toLowerCase().includes(q) || String(o.phone).includes(q) || String(o.reference).toLowerCase().includes(q) || String(o.id).includes(q) || String(o.email).toLowerCase().includes(q));
     const fullBody = document.getElementById("fullOrdersTableBody");
     if(!fullBody) return;
     fullBody.innerHTML = "";
     if(matched.length === 0) {
-        fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px;">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
+        fullBody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
         return;
     }
     matched.forEach(order => {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
+        let rawWithdrawn = order.withdrawnQty !== "" && order.withdrawnQty !== null && !isNaN(order.withdrawnQty) ? Number(order.withdrawnQty) : 0;
+        let percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
+        
+        let progressClass = "fill-orange";
+        if(percent === 100) progressClass = "fill-green";
+        else if(percent === 0) progressClass = "fill-blue";
+
+        let platIcon = "fa-brands fa-playstation platform-ps";
+        if(order.platform === 'Xbox') platIcon = "fa-brands fa-xbox platform-xbox";
+        else if(order.platform === 'PC') platIcon = "fa-brands fa-windows platform-pc";
+
+        let createDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('en-GB') + ' ' + new Date(order.createdAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
+        let updateDateStr = order.updatedAt ? new Date(order.updatedAt).toLocaleDateString('en-GB') + ' ' + new Date(order.updatedAt).toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'}) : '---';
+
         fullBody.innerHTML += `
             <tr>
-                <td data-label="المرجع"><code style="color:var(--primary); font-weight:bold;">${order.reference}</code></td>
-                <td data-label="رقم الطلب">#${order.id}</td>
-                <td data-label="اسم العميل"><b>${order.name}</b></td>
-                <td data-label="المنصة">${order.platform}</td>
-                <td data-label="الكمية"><b>${formatCoinsNumber(order.totalQty)}</b></td>
-                <td data-label="السعر" style="color:var(--primary); font-weight:bold;">${order.totalPrice}</td>
-                <td data-label="الحالة">${getStatusBadge(order.status)}</td>
-                <td data-label="الإجراء"><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
+                <td><input type="checkbox"></td>
+                <td><span class="order-id-highlight">#${order.reference}</span></td>
+                <td class="client-name-cell">
+                    <strong>${order.name}</strong>
+                    <span>${order.email || 'no-email@domain.com'}</span>
+                </td>
+                <td><span class="platform-pill-img"><i class="${platIcon}"></i> ${order.platform}</span></td>
+                <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
+                <td style="color:#fff; font-weight:800;">${order.totalPrice}</td>
+                <td>${getImageStatusPill(order.status)}</td>
+                <td>
+                    <div class="table-progress-wrapper">
+                        <span style="font-size:0.75rem; font-weight:bold; color:#fff; width:32px;">${percent}%</span>
+                        <div class="table-progress-bar">
+                            <div class="table-progress-fill ${progressClass}" style="width:${percent}%;"></div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size:0.75rem; color:var(--text-muted);">${createDateStr}</td>
+                <td style="font-size:0.75rem; color:var(--text-muted);">${updateDateStr}</td>
+                <td>
+                    <div class="action-buttons-cell">
+                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="خيارات"><i class="fa-solid fa-ellipsis"></i></button>
+                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="عرض التفاصيل"><i class="fa-solid fa-eye"></i></button>
+                        <button class="btn-icon-circle" onclick="openOrderModal(${actualIndex})" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                    </div>
+                </td>
             </tr>
         `;
     });
