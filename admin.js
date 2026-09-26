@@ -76,7 +76,6 @@ let revealedSensitiveOrders = new Set(); // لتتبع حالة إظهار بي�
 function initAuthGuard() {
   if (!auth) return;
 
-  // استيعاب معالجة التوجيه التلقائي لـ Google Redirect للجوالات و Vercel
   getRedirectResult(auth)
     .then((result) => {
       if (result && result.user) {
@@ -92,7 +91,6 @@ function initAuthGuard() {
     const loginOverlay = document.getElementById("loginOverlay");
     if (user) {
       try {
-        // قراءة مستند الأدمن مباشرة بـ user.uid الحقيقي الصادر من Firebase Authentication
         const adminRef = doc(db, "admins", user.uid);
         const adminDoc = await getDoc(adminRef);
 
@@ -107,7 +105,6 @@ function initAuthGuard() {
           currentAdmin = { uid: user.uid, ...data };
           await updateDoc(adminRef, { lastLogin: serverTimestamp() });
         } else {
-          // الحساب الأول أو عند تسجيل الدخول بجوجل لأول مرة يُنشأ بالمعرف الحقيقي user.uid
           currentAdmin = {
             uid: user.uid,
             name: user.displayName || user.email.split('@')[0],
@@ -125,7 +122,6 @@ function initAuthGuard() {
           });
         }
 
-        // إخفاء شاشة تسجيل الدخول فوراً وبسلاسة
         if (loginOverlay) loginOverlay.classList.remove("active");
         updateSidebarAdminUI();
         applyRolePermissions();
@@ -359,18 +355,14 @@ window.handleCreateAdmin = async function (e) {
   }
 
   try {
-    // 1. إنشاء تطبيق فايربيز ثانوي حتى لا يتم تسجيل خروج الأدمن الحالي أثناء إضافة حساب جديد
     const secondaryApp = getApps().find(a => a.name === "SecondaryAuthApp") || initializeApp(auth.app.options, "SecondaryAuthApp");
     const secondaryAuth = getAuth(secondaryApp);
 
-    // 2. إنشاء المشرف رسمياً في Firebase Authentication
     const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     const newUid = userCredential.user.uid;
 
-    // 3. تسجيل الخروج من التطبيق الثانوي
     await signOut(secondaryAuth);
 
-    // 4. حفظ بيانات المشرف بالمعرف الحقيقي الصادر من Auth داخل admins/{newUid}
     await setDoc(doc(db, "admins", newUid), {
       name,
       email,
@@ -489,7 +481,7 @@ function sortOrdersNewestFirst() {
 }
 
 function formatCoinsNumber(num) {
-  if (num === "" || num === null || isNaN(num)) return "";
+  if (num === "" || num === null || isNaN(num)) return "0";
   return Number(num).toLocaleString('en-US');
 }
 
@@ -499,7 +491,6 @@ function updateDashboardStats() {
   let countReview = ordersData.filter(o => o.status === 'review').length;
   let countProgress = ordersData.filter(o => o.status === 'progress').length;
   let countFinished = ordersData.filter(o => o.status === 'finished').length;
-  let countCompleted = ordersData.filter(o => o.status === 'completed').length;
 
   const sbBadge = document.getElementById("sidebarNewOrdersBadge");
   if (sbBadge) {
@@ -549,7 +540,7 @@ function updateDashboardStats() {
 }
 
 // ==========================================================================
-// 6. عداد التحويل المالي التنازلي (3-5 أيام عمل)
+// 6. عداد التحويل المالي التنازلي
 // ==========================================================================
 function getTransferTimeRemaining(finishedAt) {
   if (!finishedAt) return `<span class="countdown-pill"><i class="fa-solid fa-clock"></i> بدأ العد من لحظة الانتهاء</span>`;
@@ -597,7 +588,7 @@ function renderTransferAlertsTable(list) {
 }
 
 // ==========================================================================
-// 7. عرض جدول الطلبات الشامل ونافذة التفاصيل V2 (Progress Bar + حماية EA)
+// 7. عرض جدول الطلبات الشامل والفلترة
 // ==========================================================================
 window.renderOrdersTables = function () {
   sortOrdersNewestFirst();
@@ -693,7 +684,39 @@ function getErrorBadge(code) {
 }
 
 // ==========================================================================
-// 8. مودال الطلب المطور مع حماية بيانات EA وشريط التقدم بالألوان
+// 8. الثيم والألوان الرسمية للمنصات (PlayStation, Xbox, PC)
+// ==========================================================================
+function getPlatformTheme(platformName) {
+  const plat = String(platformName || "").toLowerCase();
+  if (plat.includes("playstation") || plat.includes("ps") || plat.includes("بلايستيشن") || plat.includes("سوني")) {
+    return {
+      bg: "linear-gradient(135deg, rgba(0, 67, 156, 0.3) 0%, rgba(0, 112, 209, 0.18) 100%)",
+      border: "#0070D1",
+      textColor: "#60A5FA",
+      badgeBg: "rgba(0, 112, 209, 0.25)",
+      icon: "fa-brands fa-playstation"
+    };
+  } else if (plat.includes("xbox") || plat.includes("إكس بوكس") || plat.includes("اكس بوكس")) {
+    return {
+      bg: "linear-gradient(135deg, rgba(16, 124, 16, 0.3) 0%, rgba(18, 146, 18, 0.18) 100%)",
+      border: "#107C10",
+      textColor: "#4ADE80",
+      badgeBg: "rgba(16, 124, 16, 0.25)",
+      icon: "fa-brands fa-xbox"
+    };
+  } else {
+    return {
+      bg: "linear-gradient(135deg, rgba(184, 46, 46, 0.3) 0%, rgba(232, 17, 35, 0.18) 100%)",
+      border: "#E81123",
+      textColor: "#F87171",
+      badgeBg: "rgba(232, 17, 35, 0.25)",
+      icon: "fa-solid fa-desktop"
+    };
+  }
+}
+
+// ==========================================================================
+// 9. نافذة عرض الطلب والتفاصيل المعدلة كلياً V2.5
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -706,69 +729,174 @@ window.openOrderModal = function (index) {
   const percent = order.totalQty > 0 ? Math.min(100, Math.round((rawWithdrawn / order.totalQty) * 100)) : 0;
 
   const isRevealed = revealedSensitiveOrders.has(order.id);
-  const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
-  const passVal = isRevealed ? order.pass : "••••••••••••";
-  const codesHtml = (order.backupCodes || []).map((code, cIdx) => `
-    <div style="background:var(--input-bg); border:1px solid var(--card-border); padding:8px; border-radius:8px; text-align:center; flex:1;">
-      <span style="font-size:0.7rem; color:var(--text-muted); display:block;">كود ${cIdx + 1}</span>
-      <strong style="color:var(--primary); font-size:0.9rem;">${isRevealed ? code : '••••••••'}</strong>
-      ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${code}', 'كود احتياطي', '${order.reference}')">نسخ</button>` : ''}
-    </div>
-  `).join('');
+  const theme = getPlatformTheme(order.platform);
 
-  let sensitiveSection = order.sensitiveDeleted ? `
-    <div style="background:rgba(239, 68, 68, 0.15); border:1px solid var(--danger); color:var(--danger); padding:12px; border-radius:12px; text-align:center; font-weight:900; margin-bottom:16px;">
-      🔒 تم إتلاف وحذف بيانات الحساب الحساسة أمنياً.
+  // 1. شريط الأزرار العلوي (نسخ بيانات EA - ترحيل الطلب - إتلاف أمني في صف واحد)
+  const actionsRowHtml = `
+    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:nowrap; align-items:center;">
+      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
+        <i class="fa-solid fa-copy"></i> نسخ كافة بيانات الحساب
+      </button>
+      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(245, 158, 11, 0.15); color:var(--warning); border:1.5px solid rgba(245, 158, 11, 0.4);" onclick="toggleArchive(${index}); openOrderModal(${index});">
+        <i class="fa-solid fa-box-archive"></i> ${order.archived ? 'إلغاء الترحيل' : 'ترحيل الطلب'}
+      </button>
+      <button class="btn-custom" style="flex:1; justify-content:center; background:rgba(239, 68, 68, 0.15); color:var(--danger); border:1.5px solid rgba(239, 68, 68, 0.4);" onclick="destroySensitiveData(${index})">
+        <i class="fa-solid fa-fire"></i> إتلاف البيانات الحساسة
+      </button>
     </div>
-  ` : `
-    <div class="ea-sensitive-box">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <strong style="color:var(--blue); font-size:0.95rem;"><i class="fa-solid fa-shield-halved"></i> بيانات حساب EA الحساسة</strong>
-        <button class="btn-action" style="color:var(--primary);" onclick="toggleRevealSensitive(${index})">
-          <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'}"></i> ${isRevealed ? 'إخفاء البيانات' : '👁 إظهار البيانات الحساسة'}
-        </button>
-      </div>
+  `;
 
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-        <div style="background:var(--input-bg); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني:</span>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-            <code style="font-size:0.9rem;">${emailVal}</code>
-            ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')">نسخ</button>` : ''}
-          </div>
+  // 2. بطاقات هويّة المنصة والمعلومات (صف 1: رقم الطلب/اسم العميل/الجوال - صف 2: المنصة/الكمية/السعر)
+  const platformHeaderCardHtml = `
+    <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
+      <!-- الصف الأول: رقم الطلب + اسم العميل + رقم الجوال -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">رقم الطلب</span>
+          <code style="color:${theme.textColor}; font-size:1.05rem; font-weight:900;">#${order.reference}</code>
         </div>
-        <div style="background:var(--input-bg); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
-          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور:</span>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-            <code style="font-size:0.9rem; color:var(--warning);">${passVal}</code>
-            ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')">نسخ</button>` : ''}
-          </div>
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">اسم العميل</span>
+          <b style="font-size:1rem; color:#fff;">${order.name}</b>
+        </div>
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">رقم الجوال</span>
+          <span style="direction:ltr; font-size:0.95rem; font-weight:900; color:${theme.textColor};">${order.phone}</span>
         </div>
       </div>
 
-      <div>
-        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:6px;">الأكواد الاحتياطية:</span>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">${codesHtml}</div>
+      <!-- الصف الثاني: المنصة + الكمية + السعر -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; text-align:center; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">المنصة المستهدفة</span>
+          <span style="display:inline-flex; align-items:center; gap:6px; background:${theme.badgeBg}; color:${theme.textColor}; padding:4px 14px; border-radius:20px; font-weight:900; font-size:0.88rem; border:1px solid ${theme.border};">
+            <i class="${theme.icon}"></i> ${order.platform}
+          </span>
+        </div>
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية الإجمالية</span>
+          <b style="font-size:1.1rem; color:var(--primary); font-weight:900;">${formatCoinsNumber(order.totalQty)} كوينز</b>
+        </div>
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:4px;">السعر الإجمالي</span>
+          <b style="font-size:1.1rem; color:#38bdf8; font-weight:900;">${order.totalPrice}</b>
+        </div>
       </div>
     </div>
   `;
 
-  let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
-  let pd = order.paymentDetails || {};
-
-  body.innerHTML = `
-    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:16px; background:var(--input-bg); padding:14px; border-radius:14px; border:1px solid var(--card-border); text-align:center;">
-      <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">المرجع</span><code style="color:var(--primary); font-size:0.9rem;">${order.reference}</code></div>
-      <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">اسم العميل</span><b style="font-size:0.9rem;">${order.name}</b></div>
-      <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">رقم الجوال</span><span style="direction:ltr; font-size:0.88rem; font-weight:800;">${order.phone}</span></div>
-      <div><span style="font-size:0.72rem; color:var(--text-muted); display:block;">المنصة / المبلغ</span><b style="color:var(--blue); font-size:0.88rem;">${order.platform} (${order.totalPrice})</b></div>
+  // 3. مربعات حالة عملية السحب الإحصائية (الكمية كم / المسحوب كم / المتبقي كم في صف واحد)
+  const withdrawalStatsHtml = `
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:16px;">
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المطلوبة</span>
+        <h4 style="font-size:1.15rem; font-weight:900; color:var(--primary);">${formatCoinsNumber(order.totalQty)}</h4>
+      </div>
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المسحوبة</span>
+        <h4 style="font-size:1.15rem; font-weight:900; color:#38bdf8;">${formatCoinsNumber(rawWithdrawn)}</h4>
+      </div>
+      <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:14px; border-radius:14px; text-align:center;">
+        <span style="font-size:0.78rem; color:var(--text-muted); display:block; margin-bottom:4px;">الكمية المتبقية</span>
+        <h4 style="font-size:1.15rem; font-weight:900; color:var(--warning);">${formatCoinsNumber(remaining)}</h4>
+      </div>
     </div>
+  `;
 
-    ${sensitiveSection}
+  // 4. بيانات EA مرتبة بشكل واضح جداً (الإيميل -> تحته كلمة المرور -> تحته الأكواد)
+  const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
+  const passVal = isRevealed ? order.pass : "••••••••••••";
+  const codesList = order.backupCodes || [];
 
+  let sensitiveSection = order.sensitiveDeleted ? `
+    <div style="background:rgba(239, 68, 68, 0.15); border:1.5px solid var(--danger); color:var(--danger); padding:14px; border-radius:14px; text-align:center; font-weight:900; margin-bottom:16px;">
+      🔒 تم إتلاف وحذف بيانات الحساب الحساسة أمنياً.
+    </div>
+  ` : `
+    <div class="ea-sensitive-box" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--card-border);">
+        <strong style="color:var(--blue); font-size:1rem; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-shield-halved"></i> بيانات حساب EA الخاصة بالعميل
+        </strong>
+        <button class="btn-action" style="color:var(--primary);" onclick="toggleRevealSensitive(${index})">
+          <i class="fa-solid ${isRevealed ? 'fa-eye-slash' : 'fa-eye'}"></i> ${isRevealed ? 'إخفاء البيانات' : '👁 إظهار البيانات'}
+        </button>
+      </div>
+
+      <!-- السطر الأول: البريد الإلكتروني -->
+      <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">البريد الإلكتروني (EA Email):</span>
+          <code style="font-size:0.95rem; font-weight:800; color:#fff;">${emailVal}</code>
+        </div>
+        ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.email}', 'الإيميل', '${order.reference}')"><i class="fa-regular fa-copy"></i> نسخ البريد</button>` : ''}
+      </div>
+
+      <!-- السطر الثاني (تحته): كلمة المرور -->
+      <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">كلمة المرور (EA Password):</span>
+          <code style="font-size:0.95rem; font-weight:800; color:var(--warning);">${passVal}</code>
+        </div>
+        ${isRevealed ? `<button class="copy-btn" onclick="copySensitiveData('${order.pass}', 'كلمة المرور', '${order.reference}')"><i class="fa-regular fa-copy"></i> نسخ كلمة المرور</button>` : ''}
+      </div>
+
+      <!-- السطر الثالث (تحته): الأكواد الاحتياطية -->
+      <div style="background:var(--input-bg); padding:12px 14px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">الأكواد الاحتياطية (Backup Codes):</span>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:8px;">
+          ${codesList.map((code, cIdx) => `
+            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--card-border); padding:8px; border-radius:8px; text-align:center;">
+              <span style="font-size:0.68rem; color:var(--text-muted); display:block;">كود ${cIdx + 1}</span>
+              <strong style="color:var(--primary); font-size:0.92rem;">${isRevealed ? code : '••••••••'}</strong>
+              ${isRevealed ? `<button class="copy-btn" style="margin-top:4px; font-size:0.68rem;" onclick="copySensitiveData('${code}', 'كود احتياطي', '${order.reference}')">نسخ</button>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 5. تفاصيل الدفع والتحويل مع أزرار نسخ المحفظة/الآيبان المباشرة
+  let pd = order.paymentDetails || {};
+  let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
+  let beneficiaryName = pd.name || order.name || "العميل";
+  let payoutAddress = pd.iban || pd.phone || pd.cryptoAddress || "غير مدخل";
+
+  const payoutSectionHtml = `
+    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); border-radius:14px; padding:16px; margin-bottom:16px;">
+      <strong style="font-size:0.92rem; color:var(--blue); display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <i class="fa-solid fa-wallet"></i> بيانات الحساب البنكي / المحفظة لاستلام المستحقات
+      </strong>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:10px;">
+        <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">وسيلة الدفع / البنك:</span>
+          <b style="font-size:0.9rem; color:#fff;">${bankOrWallet}</b>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:10px; border:1px solid var(--card-border);">
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">اسم صاحب الحساب / المستفيد:</span>
+          <b style="font-size:0.9rem; color:#fff;">${beneficiaryName}</b>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:10px; border:1px solid var(--card-border); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:var(--text-muted); display:block;">الآيبان / رقم الحساب / المحفظة:</span>
+          <code style="color:var(--primary); font-size:1rem; font-weight:900;">${payoutAddress}</code>
+        </div>
+        <button class="copy-btn" style="padding:6px 14px; font-size:0.8rem;" onclick="copyPayoutInfo('${payoutAddress}', 'بيانات الدفع والتحويل', '${order.reference}')">
+          <i class="fa-regular fa-copy"></i> نسخ رقم الحساب / الآيبان
+        </button>
+      </div>
+    </div>
+  `;
+
+  // 6. أدوات تحديث حالة الطلب والكمية
+  let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
+
+  const controlsHtml = `
     <div class="progress-bar-wrapper">
       <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:900;">
-        <span>شريط إنجاز السحب:</span>
+        <span>نسبة إنجاز عملية السحب:</span>
         <span style="color:var(--primary);">${formatCoinsNumber(rawWithdrawn)} / ${formatCoinsNumber(order.totalQty)} كوينز (${percent}%)</span>
       </div>
       <div class="progress-track">
@@ -811,24 +939,39 @@ window.openOrderModal = function (index) {
       </div>
     </div>
 
-    <div style="background:var(--input-bg); border:1px solid var(--card-border); border-radius:14px; padding:14px; margin-bottom:16px;">
-      <strong style="font-size:0.88rem; color:var(--blue); display:block; margin-bottom:8px;"><i class="fa-solid fa-wallet"></i> بيانات الحساب البنكي / المحفظة للتحويل:</strong>
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.82rem;"><span style="color:var(--text-muted)">وسيلة الدفع والبنك:</span> <b>${pd.bank || pd.wallet || order.paymentMethod}</b></div>
-      <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.82rem;"><span style="color:var(--text-muted)">اسم المستفيد:</span> <b>${pd.name || order.name}</b></div>
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem;"><span style="color:var(--text-muted)">الآيبان / الحساب:</span> <code style="color:var(--primary); font-size:0.9rem;">${pd.iban || pd.phone || '---'}</code></div>
-    </div>
-
     <div style="display:flex; gap:10px; margin-top:18px;">
       <button class="btn-custom" style="flex:1; justify-content:center; padding:12px;" onclick="saveOrderModalChanges(${index})">
         <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التحديثات
       </button>
-      <button class="btn-custom" style="background:rgba(239, 68, 68, 0.2); color:var(--danger); border:1px solid var(--danger);" onclick="destroySensitiveData(${index})">
-        <i class="fa-solid fa-trash"></i> إتلاف حساس
-      </button>
     </div>
   `;
 
+  body.innerHTML = actionsRowHtml + platformHeaderCardHtml + withdrawalStatsHtml + sensitiveSection + payoutSectionHtml + controlsHtml;
   modal.classList.add("active");
+};
+
+// ==========================================================================
+// 10. الدوال المساعدة للنسخ وإدارة الحسابات
+// ==========================================================================
+window.copyEaAccountData = async function (index) {
+  const order = ordersData[index];
+  if (!order) return;
+  const codesStr = (order.backupCodes || []).join(' - ');
+  const formattedText = `بيانات حساب EA للطلب #${order.reference}:
+البريد الإلكتروني: ${order.email}
+كلمة المرور: ${order.pass}
+الأكواد الاحتياطية: ${codesStr}`;
+
+  navigator.clipboard.writeText(formattedText);
+  await logAuditEvent("نسخ بيانات EA الكاملة", order.reference, "تم نسخ الإيميل والباسورد والأكواد دفعة واحدة");
+  alert("📋 تم نسخ كافة بيانات حساب EA (الإيميل، كلمة المرور، والأكواد الاحتياطية) إلى الحافظة بنجاح!");
+};
+
+window.copyPayoutInfo = async function (text, label, orderRef) {
+  if (!text || text === "غير مدخل") return;
+  navigator.clipboard.writeText(text);
+  await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label}`);
+  alert(`📋 تم نسخ ${label} (${text}) إلى الحافظة بنجاح!`);
 };
 
 window.toggleRevealSensitive = async function (index) {
@@ -936,7 +1079,7 @@ window.toggleArchive = async function (index) {
 };
 
 // ==========================================================================
-// 9. ملفات العملاء وسجل الحركات
+// 11. ملفات العملاء وسجل الحركات
 // ==========================================================================
 function renderClientsList(searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
@@ -1024,7 +1167,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 10. إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
+// 12. إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -1131,7 +1274,6 @@ window.savePricingConfig = async function () {
   alert("✨ تم حفظ العروض الترويجية بنجاح!");
 };
 
-// البنوك والمحافظ والشروط
 function renderBanks() {
   const c = document.getElementById("banksListContainer");
   if (!c) return;
@@ -1259,7 +1401,7 @@ window.saveGeneralSettings = async function () {
 };
 
 // ==========================================================================
-// 11. التنقل بين الأقسام والتصفح والبحث الشامل
+// 13. التنقل والتصفح والبحث الشامل
 // ==========================================================================
 function updateLiveDatetime() {
   const now = new Date();
@@ -1356,7 +1498,7 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 12. بدء التشغيل والاستماع الفوري
+// 14. بدء التشغيل والاستماع الفوري
 // ==========================================================================
 initAuthGuard();
 initSystemSettingsListener();
