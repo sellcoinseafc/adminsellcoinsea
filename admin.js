@@ -1,20 +1,27 @@
 import { db } from "./firebase.js";
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+import {
+  collection,
+  doc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
 // اختبار اتصال فايربيز
 async function testConnection() {
   try {
     const snapshot = await getDocs(collection(db, "orders"));
     console.log("Firestore Connected ✅");
-    console.log("Orders:", snapshot.size);
+    console.log("Orders count:", snapshot.size);
   } catch (err) {
     console.error("Connection Error:", err);
   }
 }
-
 testConnection();
 
-// إدارة حالة المتجر
+// إدارة حالة المتجر (الإعدادات العامة تبقى طبيعية)
 let isStoreOpen = localStorage.getItem("sami_coins_store_status") !== "closed";
 
 function updateStoreStatusUI() {
@@ -37,7 +44,9 @@ window.toggleStoreStatus = function() {
     alert(isStoreOpen ? "🟢 تم فتح المتجر وبدء استقبال الطلبات!" : "🔴 تم إيقاف وإغلاق استقبال الطلبات!");
 };
 
-let ordersData = JSON.parse(localStorage.getItem("sami_coins_orders_v2")) || [];
+// مصدر البيانات للطلبات (بدون LocalStorage نهائياً)
+let ordersData = []; 
+
 let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
 let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
 let customPaymentsList = JSON.parse(localStorage.getItem("sami_coins_custom_payments")) || ["بطاقة مدى / فيزا", "Apple Pay"];
@@ -48,15 +57,46 @@ let storeTerms = [
 ];
 let stockData = { PlayStation: 0, PC: 0 };
 
-// التأكد من توفر المرجع وتاريخ الإنشاء وسجل التغييرات لكل طلب
-ordersData.forEach(o => {
-    if(!o.reference) o.reference = "SC-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-    if(!o.createdAt) o.createdAt = new Date().toISOString();
-    if(!o.auditLogs) o.auditLogs = [{ action: "إنشاء الطلب", user: "النظام", time: new Date().toLocaleString() }];
-});
+// المزامنة المباشرة واللحظية للطلبات من Firestore عبر onSnapshot
+function initOrdersListener() {
+    const ref = collection(db, "orders");
+    onSnapshot(ref, (snapshot) => {
+        ordersData = snapshot.docs.map(docSnap => {
+            const data = docSnap.data();
+            return {
+                id: docSnap.id,
+                reference: data.orderId || docSnap.id,
+                name: data.customerName || data.name || "مشتري",
+                phone: data.phone || "",
+                platform: data.platform || "",
+                totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
+                totalPrice: data.price || data.totalPrice || "0 ر.س",
+                status: data.status || "new",
+                errorCode: data.errorCode || "none",
+                email: data.email || "",
+                pass: data.password || data.pass || "",
+                withdrawnQty: data.withdrawnQty || 0,
+                auditLogs: data.auditLogs || [{ action: "إنشاء الطلب", user: "النظام", time: new Date().toLocaleString() }],
+                finishedAt: data.finishedAt || null,
+                archived: data.archived || false,
+                sensitiveDeleted: data.sensitiveDeleted || false,
+                createdAt: data.createdAt || new Date().toISOString(),
+                ...data
+            };
+        });
+        updateDashboardStats();
+        renderOrdersTables();
+    }, (error) => {
+        console.error("Error listening to orders changes:", error);
+    });
+}
 
 function sortOrdersNewestFirst() {
-    ordersData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    ordersData.sort((a, b) => {
+        let timeA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        let timeB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return timeB - timeA;
+    });
 }
 
 function updateDashboardStats() {
@@ -66,7 +106,6 @@ function updateDashboardStats() {
     let countProgress = ordersData.filter(o => o.status === 'progress').length;
     let countCompleted = ordersData.filter(o => o.status === 'completed').length;
 
-    // عداد الطلبات الجديدة في القائمة الجانبية
     const sbBadge = document.getElementById("sidebarNewOrdersBadge");
     if(sbBadge) {
         if(countNew > 0) {
@@ -77,7 +116,6 @@ function updateDashboardStats() {
         }
     }
 
-    // الطلبات التي تحتاج تحويل
     let transferNeededList = ordersData.filter(o => o.status === 'finished' || (o.withdrawnQty >= o.totalQty && o.status !== 'transferred' && o.status !== 'completed'));
     
     const transferBadgeCount = document.getElementById("transferBadgeCount");
@@ -96,8 +134,11 @@ function updateDashboardStats() {
         }
     }
 
-    let totalCompletedCoins = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + o.totalQty, 0);
-    let totalTransferredMoney = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.totalPrice || 200), 0);
+    let totalCompletedCoins = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => sum + (o.totalQty || 0), 0);
+    let totalTransferredMoney = ordersData.filter(o => o.status === 'completed').reduce((sum, o) => {
+        let p = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
+        return sum + p;
+    }, 0);
 
     if(document.getElementById("statNewOrders")) document.getElementById("statNewOrders").innerText = countNew;
     if(document.getElementById("statReviewOrders")) document.getElementById("statReviewOrders").innerText = countReview;
@@ -127,7 +168,8 @@ function renderTransferAlertsTable(list) {
         return;
     }
     tbody.innerHTML = "";
-    list.forEach((order) => {
+    list.forEach((order, index) => {
+        let actualIndex = ordersData.findIndex(o => o.id === order.id);
         let finishDateStr = order.finishedAt ? new Date(order.finishedAt).toLocaleDateString('en-GB') : 'عند الانتهاء';
         tbody.innerHTML += `
             <tr>
@@ -135,9 +177,9 @@ function renderTransferAlertsTable(list) {
                 <td>#${order.id}</td>
                 <td><b>${order.name}</b></td>
                 <td style="direction:ltr; text-align:right;">${order.phone}</td>
-                <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                <td style="color:var(--primary);">${order.totalPrice}</td>
                 <td><span class="badge badge-review"><i class="fa-solid fa-clock"></i> بدأ العد من: ${finishDateStr} (3 - 5 أيام عمل)</span></td>
-                <td><button class="btn-action" onclick="openOrderModalById(${order.id})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
+                <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-money-bill-transfer"></i> إتمام التحويل</button></td>
             </tr>
         `;
     });
@@ -178,7 +220,7 @@ window.renderOrdersTables = function() {
                         <td><b>${order.name}</b></td>
                         <td>${order.platform}</td>
                         <td><b>${order.totalQty.toLocaleString()}</b></td>
-                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                        <td style="color:var(--primary);">${order.totalPrice}</td>
                         <td><div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
                     </tr>
@@ -205,7 +247,7 @@ window.renderOrdersTables = function() {
                         <td><b>${order.name}</b></td>
                         <td>${order.platform}</td>
                         <td><b>${order.totalQty.toLocaleString()}</b></td>
-                        <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                        <td style="color:var(--primary);">${order.totalPrice}</td>
                         <td><div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${statusBadge} ${errorBadge}</div></td>
                         <td>
                             <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل والنسخ</button>
@@ -217,7 +259,6 @@ window.renderOrdersTables = function() {
         }
     }
 
-    localStorage.setItem("sami_coins_orders_v2", JSON.stringify(ordersData));
     updateDashboardStats();
     renderClientsList();
 };
@@ -298,7 +339,7 @@ window.openOrderModal = function(index) {
             <div><strong>العميل:</strong> ${order.name}</div>
             <div><strong>الجوال:</strong> ${order.phone}</div>
             <div><strong>المنصة:</strong> ${order.platform}</div>
-            <div><strong>المبلغ:</strong> <span style="color:var(--primary);">${order.totalPrice || 200} SAR</span></div>
+            <div><strong>المبلغ:</strong> <span style="color:var(--primary);">${order.totalPrice}</span></div>
         </div>
 
         ${sensitiveContent}
@@ -346,41 +387,52 @@ window.calcRemaining = function(index, input) {
     if(remDisp) remDisp.innerText = (total - withdrawn).toLocaleString();
 };
 
-window.saveOrderModalChanges = function(index) {
+window.saveOrderModalChanges = async function(index) {
+    let order = ordersData[index];
     let newStatus = document.getElementById("modalStatusSelect").value;
     let newError = document.getElementById("modalErrorSelect").value;
-    let oldStatus = ordersData[index].status;
+    let oldStatus = order.status;
     let withdrawnInput = document.getElementById("modalWithdrawnInput");
     
+    let updateData = {
+        status: newStatus,
+        errorCode: newError,
+        updatedAt: serverTimestamp()
+    };
+
     if(withdrawnInput) {
-        let oldWithdrawn = ordersData[index].withdrawnQty || 0;
+        let oldWithdrawn = order.withdrawnQty || 0;
         let newWithdrawn = parseInt(withdrawnInput.value) || 0;
         let diff = newWithdrawn - oldWithdrawn;
-        let platform = ordersData[index].platform;
+        let platform = order.platform;
         if(stockData[platform] !== undefined) {
             stockData[platform] = Math.max(0, stockData[platform] - diff);
         }
-        ordersData[index].withdrawnQty = newWithdrawn;
+        updateData.withdrawnQty = newWithdrawn;
     }
 
     if(oldStatus !== newStatus) {
-        if(newStatus === 'finished' && !ordersData[index].finishedAt) {
-            ordersData[index].finishedAt = new Date().toISOString();
+        if(newStatus === 'finished' && !order.finishedAt) {
+            updateData.finishedAt = new Date().toISOString();
         }
-        if(!ordersData[index].auditLogs) ordersData[index].auditLogs = [];
-        ordersData[index].auditLogs.unshift({
+        let logs = order.auditLogs || [];
+        logs.unshift({
             action: `تغيير الحالة من (${oldStatus}) إلى (${newStatus})`,
             user: "سامي القحطاني",
             time: new Date().toLocaleString()
         });
+        updateData.auditLogs = logs;
     }
 
-    ordersData[index].status = newStatus;
-    ordersData[index].errorCode = newError;
-
-    window.renderOrdersTables();
-    alert("✅ تم حفظ التحديثات وسجل التغييرات بنجاح!");
-    window.closeOrderModal();
+    try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, updateData);
+        alert("✅ تم حفظ التحديثات في قاعدة البيانات بنجاح!");
+        window.closeOrderModal();
+    } catch(err) {
+        console.error("Error saving order updates:", err);
+        alert("❌ حدث خطأ أثناء الحفظ في قاعدة البيانات.");
+    }
 };
 
 window.closeOrderModal = function() {
@@ -400,18 +452,26 @@ window.backupOrderData = function(index) {
     alert("📋 تم نسخ النسخة الاحتياطية.");
 };
 
-window.destroySensitiveData = function(index) {
+window.destroySensitiveData = async function(index) {
     if(confirm("إتلاف البيانات الحساسة أمنياً؟")) {
-        ordersData[index].email = "[محذوف أمنياً]";
-        ordersData[index].pass = "[محذوف أمنياً]";
-        ordersData[index].sensitiveDeleted = true;
-        window.renderOrdersTables();
-        alert("🔒 تم إتلاف البيانات الحساسة أمنياً.");
-        window.closeOrderModal();
+        let order = ordersData[index];
+        try {
+            const orderRef = doc(db, "orders", order.id);
+            await updateDoc(orderRef, {
+                email: "[محذوف أمنياً]",
+                password: "[محذوف أمنياً]",
+                sensitiveDeleted: true
+            });
+            alert("🔒 تم إتلاف البيانات الحساسة أمنياً.");
+            window.closeOrderModal();
+        } catch(err) {
+            console.error("Error destroying sensitive data:", err);
+            alert("❌ حدث خطأ أثناء إتلاف البيانات.");
+        }
     }
 };
 
-// ملف العملاء (منع تكرار العميل برقم الجوال الفريد)
+// ملف العملاء (بناءً على البيانات المزامنة من Firestore)
 function renderClientsList(searchQuery = "") {
     const tbody = document.getElementById("clientsTableBody");
     if(!tbody) return;
@@ -422,8 +482,9 @@ function renderClientsList(searchQuery = "") {
             clientsMap[phoneKey] = { name: o.name, phone: phoneKey, ordersCount: 0, totalCoins: 0, totalPaid: 0, orders: [] };
         }
         clientsMap[phoneKey].ordersCount += 1;
-        clientsMap[phoneKey].totalCoins += o.totalQty;
-        clientsMap[phoneKey].totalPaid += (o.totalPrice || 200);
+        clientsMap[phoneKey].totalCoins += (o.totalQty || 0);
+        let pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 200;
+        clientsMap[phoneKey].totalPaid += pVal;
         clientsMap[phoneKey].orders.push(o);
     });
 
@@ -464,7 +525,7 @@ window.openClientDetail = function(phone) {
     if(body) {
         let tableHtml = `<div class="table-responsive"><table><thead><tr><th>المرجع</th><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th></tr></thead><tbody>`;
         clientOrders.forEach(o => {
-            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${o.totalQty.toLocaleString()}</b></td><td>${o.totalPrice || 200} SAR</td><td>${getStatusBadge(o.status)}</td></tr>`;
+            tableHtml += `<tr><td><code>${o.reference}</code></td><td>#${o.id}</td><td>${o.platform}</td><td><b>${o.totalQty.toLocaleString()}</b></td><td>${o.totalPrice}</td><td>${getStatusBadge(o.status)}</td></tr>`;
         });
         tableHtml += `</tbody></table></div>`;
         body.innerHTML = tableHtml;
@@ -478,9 +539,14 @@ window.closeClientModal = function() {
     if(modal) modal.classList.remove("active");
 };
 
-window.toggleArchive = function(index) {
-    ordersData[index].archived = !ordersData[index].archived;
-    window.renderOrdersTables();
+window.toggleArchive = async function(index) {
+    let order = ordersData[index];
+    try {
+        const orderRef = doc(db, "orders", order.id);
+        await updateDoc(orderRef, { archived: !order.archived });
+    } catch(err) {
+        console.error("Error toggling archive:", err);
+    }
 };
 
 window.copyToClipboard = function(text, label) {
@@ -625,7 +691,7 @@ window.toggleTheme = function() {
 window.handleGlobalSearch = function(query) {
     if(!query.trim()) { window.renderOrdersTables(); return; }
     let q = query.trim().toLowerCase();
-    let matched = ordersData.filter(o => o.name.toLowerCase().includes(q) || o.phone.includes(q) || o.reference.toLowerCase().includes(q) || String(o.id).includes(q));
+    let matched = ordersData.filter(o => String(o.name).toLowerCase().includes(q) || String(o.phone).includes(q) || String(o.reference).toLowerCase().includes(q) || String(o.id).includes(q));
     const fullBody = document.getElementById("fullOrdersTableBody");
     if(!fullBody) return;
     fullBody.innerHTML = "";
@@ -642,7 +708,7 @@ window.handleGlobalSearch = function(query) {
                 <td><b>${order.name}</b></td>
                 <td>${order.platform}</td>
                 <td><b>${order.totalQty.toLocaleString()}</b></td>
-                <td style="color:var(--primary);">${order.totalPrice || 200} SAR</td>
+                <td style="color:var(--primary);">${order.totalPrice}</td>
                 <td>${getStatusBadge(order.status)}</td>
                 <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
             </tr>
@@ -650,9 +716,9 @@ window.handleGlobalSearch = function(query) {
     });
 };
 
-// التشغيل الأولي للنظام عند تحميل الصفحة
+// التشغيل الأولي وبدء الاستماع الفوري للطلبات
 updateStoreStatusUI();
-window.renderOrdersTables();
+initOrdersListener();
 renderBanks();
 renderWallets();
 renderCustomPayments();
