@@ -11,8 +11,9 @@
     --text-main: #f8fafc;
     --text-muted: #8a99ad;
     --sidebar-width: 280px;
-    --excel-line-border: rgba(255, 255, 255, 0.1);
-    --excel-row-hover: rgba(0, 255, 135, 0.05);
+    --excel-line-border: rgba(255, 255, 255, 0.12);
+    --excel-row-hover: rgba(0, 255, 135, 0.06);
+    --excel-header-bg: #111827;
 }
 
 body.light-mode {
@@ -22,8 +23,9 @@ body.light-mode {
     --input-bg: #f8fafc;
     --text-main: #0f172a;
     --text-muted: #64748b;
-    --excel-line-border: rgba(0, 0, 0, 0.08);
+    --excel-line-border: rgba(0, 0, 0, 0.12);
     --excel-row-hover: rgba(0, 0, 0, 0.03);
+    --excel-header-bg: #e2e8f0;
 }
 
 * {
@@ -301,7 +303,7 @@ html, body {
 }
 
 /* ==========================================================================
-   4. المحتوى الرئيسي والبطاقات
+   4. المحتوى الرئيسي والبطاقات التفاعلية
    ========================================================================== */
 .main-wrapper {
     margin-right: var(--sidebar-width);
@@ -349,7 +351,7 @@ html, body {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 14px;
     margin-bottom: 24px;
 }
@@ -367,8 +369,9 @@ html, body {
 }
 
 .stat-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     border-color: var(--primary);
+    box-shadow: 0 8px 20px rgba(0, 255, 135, 0.12);
 }
 
 .stat-info span {
@@ -415,13 +418,14 @@ html, body {
 }
 
 /* ==========================================================================
-   5. تصميم جداول أسطر Excel (Excel Data Grid Style)
+   5. تصميم جداول أسطر Excel الاحترافية (Professional Grid Layout)
    ========================================================================== */
 .table-responsive {
     width: 100%;
     overflow-x: auto;
-    border-radius: 12px;
-    border: 1px solid var(--excel-line-border);
+    border-radius: 14px;
+    border: 1.5px solid var(--excel-line-border);
+    background: var(--card-bg);
 }
 
 .excel-grid-table {
@@ -432,9 +436,9 @@ html, body {
 }
 
 .excel-grid-table th {
-    background: var(--input-bg);
-    color: var(--text-muted);
-    font-weight: 800;
+    background: var(--excel-header-bg);
+    color: var(--text-main);
+    font-weight: 900;
     padding: 12px 14px;
     border-bottom: 2px solid var(--excel-line-border);
     border-left: 1px solid var(--excel-line-border);
