@@ -10,7 +10,31 @@
 </head>
 <body>
 
-    <!-- نافذة تفاصيل الطلب المتطورة V2 -->
+    <!-- نافذة تسجيل الدخول (Overlay) -->
+    <div class="login-overlay active" id="loginOverlay">
+        <div class="login-card">
+            <div class="login-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> لوحة تحكم Sami Coins</h2>
+                <p>تسجيل الدخول المباشر للمشرفين المصرح لهم</p>
+            </div>
+            <div id="loginErrorAlert" class="alert-danger" style="display: none;"></div>
+            <form id="loginForm" onsubmit="handleEmailLogin(event)">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-envelope"></i> البريد الإلكتروني</label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="name@domain.com" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-lock"></i> كلمة المرور</label>
+                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-custom btn-primary-block"><i class="fa-solid fa-right-to-bracket"></i> دخول البريد</button>
+            </form>
+            <div class="divider"><span>أو</span></div>
+            <button class="btn-custom btn-google-block" onclick="handleGoogleLogin()"><i class="fa-brands fa-google"></i> الدخول عبر Google</button>
+        </div>
+    </div>
+
+    <!-- نافذة تفاصيل الطلب المتطورة -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -21,7 +45,7 @@
         </div>
     </div>
 
-    <!-- نافذة تأكيد إتلاف البيانات الحساسة V2 (جديد) -->
+    <!-- نافذة تأكيد إتلاف البيانات الحساسة -->
     <div class="modal-overlay" id="purgeConfirmModal">
         <div class="modal-card" style="max-width: 450px; text-align: center;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.3);">
@@ -44,35 +68,49 @@
         </div>
     </div>
 
-    <!-- القائمة الجانبية V2.6 -->
+    <!-- نافذة عرض سجل العميل المفصلة -->
+    <div class="modal-overlay" id="clientDetailModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="clientModalTitle">سجل طلبات العميل</h3>
+                <button class="modal-close-btn" onclick="closeClientModal()">✕</button>
+            </div>
+            <div id="clientModalBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
+        </div>
+    </div>
+
+    <!-- القائمة الجانبية (Sidebar) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span class="sidebar-brand">SAMI COINS ADMIN V2.6</span>
+            <span class="sidebar-brand">SAMI COINS V2.6</span>
             <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
         </div>
 
         <div class="sidebar-user">
-            <div class="user-avatar">س</div>
+            <div class="user-avatar" id="userAvatarText">س</div>
             <div class="user-info">
-                <strong>سامي القحطاني</strong>
-                <span>المدير التنفيذي</span>
+                <strong id="sidebarUserName">مشرف النظام</strong>
+                <span id="sidebarUserRole" class="user-role-badge">Admin</span>
             </div>
         </div>
 
         <ul class="sidebar-menu">
-            <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-chart-pie"></i> الرئيسية والإحصائيات</a></li>
+            <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-house"></i> الرئيسية السريعة</a></li>
             <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>
-            <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات تحتاج تحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+            <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات بانتظار التحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+            <li><a class="sidebar-link" onclick="switchTab('statsTab', this)"><i class="fa-solid fa-chart-line"></i> تقارير الإحصائيات</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('inventoryTab', this)"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزون</a></li>
             <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>
-            <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> الأسعار والمخزون والعروض</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> أسعار المنصات والعروض</a></li>
             <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع والحقول</a></li>
             <li><a class="sidebar-link" onclick="switchTab('statusMessagesTab', this)"><i class="fa-solid fa-message"></i> رسائل حالات الطلب</a></li>
             <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>
             <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات عامة</a></li>
+            <li><a class="sidebar-link" onclick="handleLogout()" style="color:var(--danger);"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</a></li>
         </ul>
     </aside>
 
-    <!-- المحتوى الرئيسي -->
+    <!-- المحتوى الرئيسي (Main Wrapper) -->
     <main class="main-wrapper" id="mainWrapper">
         
         <header class="top-navbar">
@@ -86,94 +124,65 @@
             <div class="nav-left">
                 <div class="search-box">
                     <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" id="globalSearchInput" placeholder="بحث شامل..." oninput="handleGlobalSearch(this.value)">
+                    <input type="text" id="globalSearchInput" placeholder="بحث مرجع / جوال / اسم..." oninput="handleGlobalSearch(this.value)">
                 </div>
                 <div class="live-datetime-pill" id="liveDatetime">--/--/---- | --:--:--</div>
                 <button class="nav-icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تغيير المظهر"><i class="fa-regular fa-moon"></i></button>
             </div>
         </header>
 
-        <!-- تنبيه عاجل يظهر فوق لوحة التحكم إذا كانت هناك طلبات تحتاج تحويل -->
+        <!-- تنبيه عاجل للتحويلات المالية -->
         <div id="urgentTransferBanner" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%); border:1.5px solid #f59e0b; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
             <div style="display:flex; align-items:center; gap:12px;">
                 <i class="fa-solid fa-triangle-exclamation" style="font-size:1.5rem; color:#f59e0b;"></i>
                 <div>
                     <strong style="font-size:0.95rem; display:block; color:#f59e0b;">تنبيه عاجل للتحويلات المالية!</strong>
-                    <span style="font-size:0.82rem; color:var(--text-muted);" id="bannerTransferText">لديك طلبات منتهية تحتاج إلى التحويل للعملاء خلال 3-5 أيام عمل.</span>
+                    <span style="font-size:0.82rem; color:var(--text-muted);" id="bannerTransferText">لديك طلبات تحتاج للتحويل البنكي خلال 3-5 أيام عمل.</span>
                 </div>
             </div>
             <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">عرض الطلبات فوراً</button>
         </div>
 
         <div class="content-header">
-            <h1 id="pageTitleHeading">الرئيسية والإحصائيات</h1>
-            <div class="breadcrumb"><span>الرئيسية</span> / <span id="breadcrumbActive" style="color: var(--primary);">الرئيسية والإحصائيات</span></div>
+            <h1 id="pageTitleHeading">الرئيسية السريعة</h1>
+            <div class="breadcrumb"><span>لوحة التحكم</span> / <span id="breadcrumbActive" style="color: var(--primary);">الرئيسية السريعة</span></div>
         </div>
 
-        <!-- 1. الرئيسية والإحصائيات -->
+        <!-- 1. الرئيسية المختصرة (Summary Cards Only) -->
         <div id="dashboardTab" class="tab-content active">
             <div class="stats-grid">
-                <div class="stat-card" onclick="filterOrdersByStatus('new')">
-                    <div class="stat-info"><span>الطلبات الجديدة (انقر للعرض)</span><h3 id="statNewOrders">0</h3></div>
+                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                    <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="dashStatNew">0</h3></div>
                     <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
                 </div>
-                <div class="stat-card" onclick="filterOrdersByStatus('review')">
-                    <div class="stat-info"><span>انتظار المراجعة (انقر للعرض)</span><h3 id="statReviewOrders">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
-                </div>
-                <div class="stat-card" onclick="filterOrdersByStatus('progress')">
-                    <div class="stat-info"><span>قيد التنفيذ (انقر للعرض)</span><h3 id="statProgressOrders">0</h3></div>
+                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                    <div class="stat-info"><span>طلبات قيد التنفيذ</span><h3 id="dashStatProgress">0</h3></div>
                     <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
                 </div>
-                <div class="stat-card" onclick="filterOrdersByStatus('completed')">
-                    <div class="stat-info"><span>مكتملة (رقم 6)</span><h3 id="statCompletedOrders">0</h3></div>
+                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                    <div class="stat-info"><span>الطلبات المكتملة</span><h3 id="dashStatCompleted">0</h3></div>
                     <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي الكوينز المنجزة</span><h3 id="statCompletedCoins" style="color:var(--primary);">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-coins"></i></div>
+                <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
+                    <div class="stat-info"><span>بانتظار التحويل المالي</span><h3 id="dashStatPendingTransfer" style="color:#f59e0b;">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTransferredMoney" style="color:#38bdf8;">0 ر.س</h3></div>
-                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(5) a'))">
+                    <div class="stat-info"><span>مخزون PS / Xbox</span><h3 id="dashStockPS" style="color:var(--primary);">0 كوينز</h3></div>
+                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-brands fa-playstation"></i></div>
                 </div>
-            </div>
-
-            <!-- عرض المخزون الحالي لكل منصة -->
-            <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked" style="color:var(--primary);"></i> المخزون الحالي لكل منصة</h2></div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PlayStation & Xbox Stock</span>
-                        <h3 id="stockPS" style="font-size:1.4rem; font-weight:900; color:var(--primary); margin-top:6px;">0</h3>
-                    </div>
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PC Stock</span>
-                        <h3 id="stockPC" style="font-size:1.4rem; font-weight:900; color:#e81123; margin-top:6px;">0</h3>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-bolt" style="color: var(--primary);"></i> أحدث الطلبات المستلمة (مرتبة بالأحدث)</h2></div>
-                <div class="table-responsive">
-                    <table>
-                        <thead>
-                            <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراء</th></tr>
-                        </thead>
-                        <tbody id="dashboardOrdersTableBody">
-                            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات جديدة حالياً.</td></tr>
-                        </tbody>
-                    </table>
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(5) a'))">
+                    <div class="stat-info"><span>مخزون PC الحالي</span><h3 id="dashStockPC" style="color:#e81123;">0 كوينز</h3></div>
+                    <div class="stat-icon" style="background: rgba(232, 17, 35, 0.12); color: #e81123;"><i class="fa-solid fa-desktop"></i></div>
                 </div>
             </div>
         </div>
 
-        <!-- 2. إدارة الطلبات (مع فلتر وحالة العرض) -->
+        <!-- 2. إدارة الطلبات الشاملة -->
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
-                    <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل وأمان الحسابات</h2>
+                    <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل والفلترة</h2>
                     <div style="display:flex; gap:8px;">
                         <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:160px;" onchange="renderOrdersTables()">
                             <option value="all">جميع الحالات</option>
@@ -199,18 +208,18 @@
             </div>
         </div>
 
-        <!-- 3. قسم طلبات تحتاج تحويل الجديد (مع عداد الـ 3-5 أيام من finishedAt) -->
+        <!-- 3. طلبات تحتاج تحويل مالي -->
         <div id="transferAlertsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
                     <h2><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> الطلبات التي تحتاج تحويل مالي</h2>
                     <span id="transferHeaderBadge" class="badge badge-review">0 طلبات بحاجة للتحويل</span>
                 </div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">الطلبات أدناه محسوبة بدقة من تاريخ انتهاء السحب (`finishedAt`) بمدة 3 إلى 5 أيام عمل.</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">الطلبات المكتمل سحبها والتي تستوجب التحويل لحساب العميل خلال المهلة النظامية (3-5 أيام عمل).</p>
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>مدة المتبقي (3-5 أيام من الانتهاء)</th><th>الإجراء</th></tr>
+                            <tr><th>المرجع</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>وسيلة الدفع / البنك</th><th>العداد التنازلي</th><th>الإجراء</th></tr>
                         </thead>
                         <tbody id="transferAlertsTableBody">
                             <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
@@ -220,10 +229,92 @@
             </div>
         </div>
 
-        <!-- 4. ملف العميل (بدون تكرار) -->
+        <!-- 4. صفحة الإحصائيات المستقلة (جديدة) -->
+        <div id="statsTab" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info"><span>إجمالي الطلبات الكلي</span><h3 id="statTotalOrders">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-boxes-packing"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>إجمالي العملاء المسجلين</span><h3 id="statTotalClients">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-users"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>إجمالي الكوينز المسحوبة</span><h3 id="statTotalCoins" style="color:var(--primary);">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-coins"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTotalMoney" style="color:#38bdf8;">0 ريال</h3></div>
+                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-sack-dollar"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>كوينز اليوم المنجزة</span><h3 id="statTodayCoins" style="color:var(--primary);">0</h3></div>
+                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-calendar-day"></i></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-info"><span>مبالغ اليوم المحولة</span><h3 id="statTodayMoney" style="color:#f59e0b;">0 ريال</h3></div>
+                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-cash-register"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. صفحة المخزون المستقلة (جديدة) -->
+        <div id="inventoryTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked"></i> إدارة كميات المخزون الحالية واليدوية</h2></div>
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px; margin-bottom:20px;">
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PlayStation & Xbox Stock</span>
+                        <h3 id="invStockPS" style="font-size:1.6rem; font-weight:900; color:var(--primary); margin-top:6px;">0</h3>
+                    </div>
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">PC Stock</span>
+                        <h3 id="invStockPC" style="font-size:1.6rem; font-weight:900; color:#e81123; margin-top:6px;">0</h3>
+                    </div>
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
+                        <span style="font-size:0.8rem; color:var(--text-muted); font-weight:800;">آخر تحديث للمخزون</span>
+                        <h4 id="invLastUpdate" style="font-size:1rem; font-weight:800; color:var(--text-color); margin-top:10px;">--/--/----</h4>
+                    </div>
+                </div>
+
+                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
+                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-solid fa-pen-to-square"></i> تعديل كميات المخزون يدويًا</h3>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label>مخزون PlayStation & Xbox جديد (كوينز):</label>
+                            <input type="number" id="inputManualStockPS" class="form-control" placeholder="أدخل الكمية الجديدة...">
+                        </div>
+                        <div class="form-group">
+                            <label>مخزون PC جديد (كوينز):</label>
+                            <input type="number" id="inputManualStockPC" class="form-control" placeholder="أدخل الكمية الجديدة...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>سبب التعديل / ملاحظة:</label>
+                        <input type="text" id="inputStockReason" class="form-control" placeholder="مثال: إضافة كمية شحن جديدة...">
+                    </div>
+                    <button class="btn-custom" onclick="handleSaveManualStock()"><i class="fa-solid fa-floppy-disk"></i> حفظ وتدوين في السجل</button>
+                </div>
+
+                <div class="panel-header"><h2><i class="fa-solid fa-clock-rotate-left"></i> سجل آخر تعديلات المخزون</h2></div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>التاريخ والوقت</th><th>المشرف</th><th>مخزون PS/Xbox</th><th>مخزون PC</th><th>السبب والتفاصيل</th></tr>
+                        </thead>
+                        <tbody id="stockLogsTableBody">
+                            <tr><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted);">لا توجد تعديلات مسجلة.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. ملف العملاء وسجل الطلبات -->
         <div id="customerProfileTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات (بدون تكرار)</h2></div>
+                <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات</h2></div>
                 <div style="display:flex; gap:10px; margin-bottom:20px;">
                     <input type="text" id="clientSearchInput" class="form-control" placeholder="ابحث برقم الجوال أو اسم العميل..." oninput="filterClients(this.value)">
                 </div>
@@ -240,21 +331,10 @@
             </div>
         </div>
 
-        <!-- نافذة عرض سجل العميل المفصلة -->
-        <div class="modal-overlay" id="clientDetailModal">
-            <div class="modal-card">
-                <div class="modal-header">
-                    <h3 id="clientModalTitle">سجل طلبات العميل</h3>
-                    <button class="modal-close-btn" onclick="closeClientModal()">✕</button>
-                </div>
-                <div id="clientModalBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
-            </div>
-        </div>
-
-        <!-- 5. الأسعار والمخزون وإدارة العروض -->
+        <!-- 7. أسعار المنصات والعروض المكونة مفصولة -->
         <div id="pricingTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والحدود ومدة السحب والعروض</h2></div>
+                <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والمدد لكل منصة بالكامل</h2></div>
                 <div class="form-grid-2" style="margin-bottom: 20px;">
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
                         <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
@@ -263,7 +343,8 @@
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="psMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>
                         </div>
-                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="psDuration" class="form-control" value="3 - 5 أيام عمل"></div>
+                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="psWithdrawDuration" class="form-control" value="3 - 5 أيام عمل"></div>
+                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="psTransferDuration" class="form-control" value="24 ساعة"></div>
                     </div>
 
                     <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
@@ -273,31 +354,29 @@
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>
                         </div>
-                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="pcDuration" class="form-control" value="2 - 4 أيام عمل"></div>
+                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="pcWithdrawDuration" class="form-control" value="2 - 4 أيام عمل"></div>
+                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="pcTransferDuration" class="form-control" value="24 ساعة"></div>
                     </div>
                 </div>
 
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية ووقت الانتهاء</h3>
+                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:12px;"><i class="fa-solid fa-bullhorn"></i> نظام العروض الترويجية العامة</h3>
                     <div class="form-grid-2">
                         <div class="form-group"><label>تفعيل العرض الترويجي:</label><select id="promoActiveSelect" class="form-control"><option value="false">معطل</option><option value="true">مفعل</option></select></div>
-                        <div class="form-group"><label>السعر الترويجي الجديد:</label><input type="number" id="promoRateInput" class="form-control" value="220"></div>
-                        <div class="form-group"><label>تاريخ ووقت انتهاء العرض:</label><input type="datetime-local" id="promoExpiryInput" class="form-control"></div>
                         <div class="form-group"><label>نص إعلان العرض:</label><input type="text" id="promoText" class="form-control" value="🔥 عرض لفترة محدودة!"></div>
                     </div>
                 </div>
-                <button class="btn-custom" onclick="savePricingConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ ومزامنة العروض والأسعار</button>
+                <button class="btn-custom" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ ومزامنة أسعار المنصات</button>
             </div>
         </div>
 
-        <!-- 6. وسائل الدفع والحقول الشاملة V2 -->
+        <!-- 8. وسائل الدفع والحقول -->
         <div id="paymentsTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول V2</h2></div>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">إدارة كاملة لوسائل الدفع المعتمدة وفقاً للتقرير الفني V2 (البنوك السعودية، المحافظ الرقمية، USDT، و Western Union).</p>
+                <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
 
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي (البنوك السعودية المرخصة)</h3>
+                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي</h3>
                     <div id="banksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newBankInput" class="form-control" placeholder="أضف اسم بنك جديد...">
@@ -306,7 +385,7 @@
                 </div>
 
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:10px;"><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية المرخصة</h3>
+                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:10px;"><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية</h3>
                     <div id="walletsListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newWalletInput" class="form-control" placeholder="أضف محفظة جديدة...">
@@ -314,22 +393,8 @@
                     </div>
                 </div>
 
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-globe"></i> 3. العملات والتحويلات الدولية (USDT / Western Union)</h3>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; font-size:0.85rem; font-weight:800;">
-                        <div style="background:rgba(255,255,255,0.02); padding:14px; border:1px solid var(--card-border); border-radius:12px;">
-                            <strong style="color:#00ff87;"><i class="fa-solid fa-coins"></i> USDT (TRC20)</strong><br>
-                            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:4px;">الحقول: عنوان المحفظة (Textarea)</span>
-                        </div>
-                        <div style="background:rgba(255,255,255,0.02); padding:14px; border:1px solid var(--card-border); border-radius:12px;">
-                            <strong style="color:#ff6600;"><i class="fa-solid fa-earth-americas"></i> Western Union</strong><br>
-                            <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:4px;">الحقول: Full Name (English) + Country</span>
-                        </div>
-                    </div>
-                </div>
-
                 <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 4. طرق دفع إضافية ومخصصة</h3>
+                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 3. طرق دفع مخصصة (USDT / Western Union)</h3>
                     <div id="customPayMethodsContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newCustomPaymentInput" class="form-control" placeholder="أدخل اسم طريقة الدفع الجديدة...">
@@ -340,21 +405,21 @@
             </div>
         </div>
 
-        <!-- 7. رسائل حالات الطلب -->
+        <!-- 9. رسائل حالات الطلب -->
         <div id="statusMessagesTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-message"></i> إدارة رسائل حالات الطلب والتنبيهات</h2></div>
-                <div class="form-group"><label>✉️ رسالة حالة (طلب جديد):</label><textarea id="msgNew" class="form-control" rows="3">عزيزنا العميل {customer_name}، تم استلام طلبك رقم #{order_id} بنجاح.</textarea></div>
-                <div class="form-group"><label>⏳ رسالة حالة (انتظار المراجعة):</label><textarea id="msgReview" class="form-control" rows="3">عزيزنا العميل {customer_name}، طلبك رقم #{order_id} بانتظار المراجعة.</textarea></div>
-                <div class="form-group"><label>⚙️ رسالة حالة (قيد التنفيذ):</label><textarea id="msgProgress" class="form-control" rows="3">عميلنا العزيز {customer_name}، جاري العمل على طلبك رقم #{order_id}.</textarea></div>
-                <div class="form-group"><label>✅ رسالة حالة (تم الانتهاء):</label><textarea id="msgFinished" class="form-control" rows="3">تم الانتهاء من الطلب رقم #{order_id} للعميل {customer_name} بنجاح.</textarea></div>
-                <div class="form-group"><label>💳 رسالة حالة (تم التحويل):</label><textarea id="msgTransferred" class="form-control" rows="3">عزيزنا العميل {customer_name}، تم تحويل مستحقات طلبك رقم #{order_id}.</textarea></div>
-                <div class="form-group"><label>🏆 رسالة حالة (مكتمل - رقم 6):</label><textarea id="msgCompleted" class="form-control" rows="3">تم اكتمال طلبك رقم #{order_id} بنجاح تام للعميل {customer_name}.</textarea></div>
-                <button class="btn-custom" onclick="saveStatusMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسائل الحالات</button>
+                <div class="form-group"><label>✉️ رسالة حالة (طلب جديد):</label><textarea id="msgNew" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>⏳ رسالة حالة (انتظار المراجعة):</label><textarea id="msgReview" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>⚙️ رسالة حالة (قيد التنفيذ):</label><textarea id="msgProgress" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>✅ رسالة حالة (تم الانتهاء):</label><textarea id="msgFinished" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>💳 رسالة حالة (تم التحويل):</label><textarea id="msgTransferred" class="form-control" rows="3"></textarea></div>
+                <div class="form-group"><label>🏆 رسالة حالة (مكتمل):</label><textarea id="msgCompleted" class="form-control" rows="3"></textarea></div>
+                <button class="btn-custom" onclick="saveStatusMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ الرسائل</button>
             </div>
         </div>
 
-        <!-- 8. الشروط والأحكام -->
+        <!-- 10. الشروط والأحكام -->
         <div id="termsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
@@ -371,15 +436,15 @@
             </div>
         </div>
 
-        <!-- 9. إعدادات عامة -->
+        <!-- 11. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة</h2></div>
+                <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة والدعم</h2></div>
                 <div class="form-grid-2">
-                    <div class="form-group"><label>اسم المتجر</label><input type="text" class="form-control" value="Sell FC 27 Coins"></div>
-                    <div class="form-group"><label>رقم واتساب الدعم</label><input type="text" class="form-control" value="966570770465"></div>
+                    <div class="form-group"><label>اسم المتجر الرسمي</label><input type="text" id="storeNameInput" class="form-control" value="SAMICOINS"></div>
+                    <div class="form-group"><label>رقم واتساب الدعم</label><input type="text" id="supportWhatsappInput" class="form-control" value="966500000000"></div>
                 </div>
-                <button class="btn-custom" style="margin-top: 15px;" onclick="alert('تم الحفظ بنجاح!')"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
+                <button class="btn-custom" style="margin-top: 15px;" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات العامة</button>
             </div>
         </div>
 
@@ -387,6 +452,7 @@
 
     <!-- سكربتات فايربيز والإدارة -->
     <script type="module" src="./firebase.js"></script>
+    <script type="module" src="./system.js"></script>
     <script type="module" src="./admin.js"></script>
 </body>
 </html>
