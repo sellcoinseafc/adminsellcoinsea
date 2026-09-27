@@ -36,19 +36,9 @@ const ALLOWED_EMAILS = [
 ];
 
 // ==========================================================================
-// 2) المتغيرات العامة وحالة النظام والمشرف الحالي
+// 2) القوائم الافتراضية المعتمدة رسمياً (البنوك الـ 13 والمحافظ الـ 6)
 // ==========================================================================
-let currentAdmin = {
-  uid: null,
-  name: "مشرف النظام",
-  email: "",
-  role: "admin"
-};
-
-let isStoreOpen = true;
-
-// البنوك السعودية المرخصة الـ 13 المعتمدة للتقرير V2
-let banksList = [
+const DEFAULT_BANKS = [
   "مصرف الراجحي",
   "البنك الأهلي السعودي (SNB)",
   "بنك الرياض",
@@ -64,8 +54,7 @@ let banksList = [
   "بنك D360"
 ];
 
-// المحافظ الرقمية المرخصة الـ 6 المعتمدة للتقرير V2
-let walletsList = [
+const DEFAULT_WALLETS = [
   "برق (Barq)",
   "STC Pay",
   "URPay",
@@ -74,7 +63,18 @@ let walletsList = [
   "Tiqmo"
 ];
 
+let banksList = [...DEFAULT_BANKS];
+let walletsList = [...DEFAULT_WALLETS];
 let customPaymentsList = ["USDT (TRC20)", "Western Union"];
+
+let currentAdmin = {
+  uid: null,
+  name: "مشرف النظام",
+  email: "",
+  role: "admin"
+};
+
+let isStoreOpen = true;
 
 let storeTerms = [
   "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
@@ -125,12 +125,12 @@ let unsubscribeAudit = null;
 window.copyOrderRef = async function (ref) {
   if (!ref) return;
   const cleanRef = String(ref).replace('#', '').trim();
-  navigator.clipboard.writeText(cleanRef);
+  await navigator.clipboard.writeText(cleanRef);
   await logAuditEvent("نسخ رقم الطلب", cleanRef, `تم نسخ رقم الطلب #${cleanRef} إلى الحافظة`);
 };
 
 // ==========================================================================
-// 4) حارس الأمان والتوثيق المحدث
+// 4) حارس الأمان والتوثيق
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -881,7 +881,7 @@ window.confirmPurgeDataFinal = async function () {
 };
 
 // ==========================================================================
-// 13) نافذة عرض تفاصيل الطلب V2 (محتوية على زرين فقط: نسخ البيانات وإتلافها)
+// 13) نافذة عرض تفاصيل الطلب V2
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -901,7 +901,7 @@ window.openOrderModal = function (index) {
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const theme = getPlatformTheme(order.platform);
 
-  // 1. أزرار التحكم العليا (زران فقط وفقاً للتقرير الفني V2: نسخ TSV وإتلاف البيانات)
+  // أزرار التحكم العليا
   const actionsRowHtml = `
     <div class="modal-actions-row" style="display:flex; gap:12px; margin-bottom:16px;">
       <button class="btn-custom btn-tsv-copy" style="flex:1; padding:12px;" onclick="copyOrderTsvData(${index})">
@@ -913,7 +913,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 2. حالات الطلب والخطأ
+  // حالات الطلب والخطأ
   const statusControlsRowHtml = `
     <div class="responsive-grid-2" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:16px; background:var(--input-bg); padding:14px; border-radius:14px; border:1px solid var(--card-border);">
       <div class="form-group" style="margin-bottom:0;">
@@ -940,7 +940,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 3. بطاقة بيانات الطلب والمنصة
+  // بطاقة بيانات الطلب والمنصة
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
@@ -977,7 +977,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 4. إحصائيات السحب
+  // إحصائيات السحب
   const withdrawalStatsHtml = `
     <div class="responsive-grid-3" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:16px;">
       <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:12px; border-radius:14px; text-align:center;">
@@ -995,7 +995,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 5. عرض بيانات EA الحساسة
+  // عرض بيانات EA الحساسة
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
   const codesList = order.backupCodes || [];
@@ -1039,7 +1039,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 6. بيانات الحساب البنكي / المحفظة
+  // بيانات الحساب البنكي / المحفظة
   let pd = order.paymentDetails || {};
   let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
   let beneficiaryName = pd.name || order.name || "العميل";
@@ -1067,7 +1067,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 7. التحكم والتعديل
+  // التحكم والتعديل
   let progressColorClass = percent < 40 ? 'progress-danger' : (percent < 90 ? 'progress-warning' : 'progress-success');
 
   const controlsHtml = `
@@ -1205,7 +1205,7 @@ window.copyGeneratedMessage = function () {
 // ==========================================================================
 window.copyPayoutInfo = async function (text, label, orderRef) {
   if (!text || text === "غير مدخل") return;
-  navigator.clipboard.writeText(text);
+  await navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label}`);
 };
 
@@ -1222,7 +1222,7 @@ window.toggleRevealSensitive = async function (index) {
 
 window.copySensitiveData = async function (text, label, orderRef) {
   if (!text || text.includes("•••")) return;
-  navigator.clipboard.writeText(text);
+  await navigator.clipboard.writeText(text);
   await logAuditEvent(`نسخ ${label}`, orderRef, `تم نسخ ${label} إلى الحافظة`);
 };
 
@@ -1328,7 +1328,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 18) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
+// 18) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة (ضمان عرض الـ 13 والـ 6)
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -1356,7 +1356,7 @@ async function saveAllSettingsToFirestore() {
     };
 
     await setDoc(doc(db, "system", "settings"), config);
-    await logAuditEvent("حفظ إعدادات المنتجات والنظام", "الإعدادات", "تحديث منتجات السحب والمدد والبنوك");
+    await logAuditEvent("حفظ إعدادات المنتجات والنظام", "الإعدادات", "تحديث منتجات السحب والمدد والبنوك والمحافظ");
   } catch (err) {
     console.error("Error saving settings:", err);
   }
@@ -1368,8 +1368,10 @@ function initSystemSettingsListener() {
     if (docSnap.exists()) {
       const data = docSnap.data();
       isStoreOpen = data.storeOpen !== undefined ? data.storeOpen : true;
-      banksList = data.banks || banksList;
-      walletsList = data.wallets || walletsList;
+      
+      // ضمان عدم نقص القوائم الافتراضية
+      banksList = (data.banks && data.banks.length >= DEFAULT_BANKS.length) ? data.banks : [...DEFAULT_BANKS];
+      walletsList = (data.wallets && data.wallets.length >= DEFAULT_WALLETS.length) ? data.wallets : [...DEFAULT_WALLETS];
       customPaymentsList = data.customPayments || customPaymentsList;
       storeTerms = data.terms || storeTerms;
 
@@ -1381,6 +1383,12 @@ function initSystemSettingsListener() {
       renderCustomPayments();
       renderTerms();
       populatePricingUI();
+    } else {
+      // إرسال الضبط المبدئي فوراً بقاعدة البيانات
+      saveAllSettingsToFirestore();
+      renderBanks();
+      renderWallets();
+      renderCustomPayments();
     }
   });
 }
@@ -1437,7 +1445,7 @@ function renderBanks() {
   if (!c) return;
   c.innerHTML = banksList.map((b, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span>${b}</span>
+      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${b}</span>
       <button class="btn-action" style="color:var(--danger);" onclick="deleteBank(${i})">حذف</button>
     </div>
   `).join('');
@@ -1464,7 +1472,7 @@ function renderWallets() {
   if (!c) return;
   c.innerHTML = walletsList.map((w, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span>${w}</span>
+      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${w}</span>
       <button class="btn-action" style="color:var(--danger);" onclick="deleteWallet(${i})">حذف</button>
     </div>
   `).join('');
@@ -1491,7 +1499,7 @@ function renderCustomPayments() {
   if (!c) return;
   c.innerHTML = customPaymentsList.map((p, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span>${p}</span>
+      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${p}</span>
       <button class="btn-action" style="color:var(--danger);" onclick="deleteCustomPayment(${i})">حذف</button>
     </div>
   `).join('');
@@ -1650,6 +1658,9 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 20) البدء التلقائي للحارس الأمني
+// 20) البدء التلقائي وعرض القوائم فور تحميل الصفحة
 // ==========================================================================
+renderBanks();
+renderWallets();
+renderCustomPayments();
 initAuthGuard();
