@@ -609,7 +609,7 @@ tr:hover td {
 .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 900; }
 
 /* ==========================================================================
-   6. الأزرار وحقول الإدخال
+   6. الأزرار وحقول الإدخال + أزرار التقرير الفني V2 (TSV & Purge Buttons)
    ========================================================================== */
 .btn-custom {
     background: var(--primary-gradient);
@@ -628,6 +628,26 @@ tr:hover td {
 }
 body.light-mode .btn-custom { color: #ffffff; }
 .btn-custom:hover { opacity: 0.92; transform: translateY(-2px); }
+
+/* زر نسخ البيانات بصيغة TSV للتقرير الفني V2 */
+.btn-tsv-copy {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25) !important;
+}
+.btn-tsv-copy:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+/* زر إتلاف البيانات الحساسة للتقرير الفني V2 */
+.btn-purge {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important;
+}
+.btn-purge:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
+}
 
 .btn-action {
     background: var(--input-bg);
