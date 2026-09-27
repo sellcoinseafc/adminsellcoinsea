@@ -1,3 +1,11 @@
+import { db } from "../shared/firebase.js";
+import { createOrderId } from "../shared/system.js";
+import { 
+    collection, 
+    addDoc, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
 // المتغيرات العامة
 let storeSettings = { psRate: 200, xboxRate: 200, pcRate: 100, psMin: 100000, psMax: 5000000, pcMin: 100000, pcMax: 1000000 };
 let selectedPlatform = null; 
@@ -546,10 +554,40 @@ function formatAndCalculateInline(input) {
     if(revTotalEl) revTotalEl.innerText = document.getElementById('totalAmountText')?.innerText || '';
 }
 
-function submitOrderFinal() {
+async function submitOrderFinal() {
     if(isEditingAll) toggleEditMode();
 
-    generatedOrderId = "SA" + Math.floor(Math.random() * 900 + 100) + (selectedPlatform === 'PlayStation' ? 'PS' : selectedPlatform === 'Xbox' ? 'XB' : 'PC') + Math.floor(Math.random() * 90 + 10);
+    const clientName = document.getElementById('customerName')?.value.trim() || '';
+    const clientPhone = document.getElementById('customerPhone')?.value.trim() || '';
+    const emailVal = document.getElementById('eaEmail')?.value.trim() || '';
+    const passVal = document.getElementById('eaPass')?.value.trim() || '';
+    const c1 = document.getElementById('code1')?.value.trim() || '';
+    const c2 = document.getElementById('code2')?.value.trim() || '';
+    const c3 = document.getElementById('code3')?.value.trim() || '';
+    const totalVal = document.getElementById('totalAmountText')?.innerText || '';
+
+    try {
+        // 1. توليد رقم الطلب عبر النظام المركزي system.js
+        generatedOrderId = await createOrderId(selectedPlatform);
+
+        // 2. حفظ كافة بيانات الطلب في Firestore مباشرة بحالة pending
+        await addDoc(collection(db, "orders"), {
+            orderId: generatedOrderId,
+            createdAt: serverTimestamp(),
+            status: "pending",
+            customerName: clientName,
+            customerPhone: clientPhone,
+            platform: selectedPlatform,
+            quantity: currentQty,
+            total: totalVal,
+            paymentMethod: selectedPaymentMethod,
+            eaEmail: emailVal,
+            eaPassword: passVal,
+            backupCodes: [c1, c2, c3]
+        });
+    } catch (error) {
+        console.error("Error submitting order to Firestore:", error);
+    }
     
     const finalOrderIdEl = document.getElementById("finalOrderId");
     if(finalOrderIdEl) finalOrderIdEl.innerText = generatedOrderId;
@@ -561,11 +599,11 @@ function submitOrderFinal() {
     const billTotalEl = document.getElementById('billTotal');
     const billPaymentCardEl = document.getElementById('billPaymentCard');
 
-    if(billClientNameEl) billClientNameEl.innerText = document.getElementById('customerName')?.value.trim() || '';
-    if(billClientPhoneEl) billClientPhoneEl.innerText = document.getElementById('customerPhone')?.value.trim() || '';
+    if(billClientNameEl) billClientNameEl.innerText = clientName;
+    if(billClientPhoneEl) billClientPhoneEl.innerText = clientPhone;
     if(billPlatformEl) billPlatformEl.innerText = selectedPlatform || '';
     if(billQtyEl) billQtyEl.innerText = `${currentQty.toLocaleString('en-US')} كوينز`;
-    if(billTotalEl) billTotalEl.innerText = document.getElementById('totalAmountText')?.innerText || '';
+    if(billTotalEl) billTotalEl.innerText = totalVal;
 
     if(billPaymentCardEl) billPaymentCardEl.innerHTML = `<div class="box-card-title"><i class="fa-solid fa-wallet"></i> تفاصيل التحويل والاستلام</div>${buildPaymentDetailsHTML()}`;
 
