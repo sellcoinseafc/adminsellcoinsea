@@ -2,7 +2,7 @@
  * ============================================================================
  * SAMI COINS - SYSTEM CORE (system.js)
  * ============================================================================
- * نواة النظام - إدارة Firestore والإعدادات والأكواد والتسلسل فقط.
+ * نواة النظام - إدارة Firestore والإعدادات والأكواد والتسلسل والمخزون فقط.
  * خالي تماماً من أي تعامل مع DOM أو عناصر الواجهة.
  * ============================================================================
  */
@@ -25,11 +25,6 @@ const COUNTER_DOC_PATH = "system/counter";
 // 1. نظام المزامنة والاستماع للإعدادات (Realtime Listener)
 // ============================================================================
 
-/**
- * دالة الاستماع التلقائي لإعدادات النظام وتمريرها للواجهة
- * @param {Function} callback - دالة يتم استدعاؤها مع كل تحديث للبيانات
- * @returns {Function} دالة لإلغاء الاستماع (Unsubscribe)
- */
 export function subscribeToSettings(callback) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     return onSnapshot(settingsRef, (snap) => {
@@ -165,7 +160,7 @@ export async function createOrderId(platform) {
 }
 
 // ============================================================================
-// 4. إدارة الإعدادات والأسعار (Settings & Pricing)
+// 4. إدارة الإعدادات والأسعار والمخزون الحسابي (Settings, Pricing & Inventory)
 // ============================================================================
 
 export async function getSettings() {
@@ -173,17 +168,36 @@ export async function getSettings() {
     const settingsSnap = await getDoc(settingsRef);
 
     const defaultSettings = {
+        storeName: "SAMICOINS",
+        supportWhatsapp: "966500000000",
+        
+        // إعدادات PlayStation / Xbox
         psRate: 200,
-        xboxRate: 200,
-        pcRate: 100,
-        minLimit: 100000,
-        maxLimit: 5000000,
-        withdrawalDuration: "3 - 5 أيام",
-        transferDuration: "24 ساعة",
-        transferSafety: "آمنة 99%",
+        psMin: 100000,
+        psMax: 5000000,
+        psWithdrawDuration: "3 - 5 أيام عمل",
+        psTransferDuration: "24 ساعة",
+        psStock: 0,
+
+        // إعدادات PC
+        pcRate: 150,
+        pcMin: 100000,
+        pcMax: 1000000,
+        pcWithdrawDuration: "2 - 4 أيام عمل",
+        pcTransferDuration: "24 ساعة",
+        pcStock: 0,
+
+        // العروض والتحويلات العامة
         offers: false,
         offerText: "",
+        promoRate: 220,
+        promoExpiry: "",
         storeOpen: true,
+
+        // بيانات السجلات والتحديث
+        lastStockUpdate: null,
+        stockLogs: [],
+
         banks: [
             "مصرف الراجحي",
             "البنك الأهلي السعودي (SNB)",
@@ -222,16 +236,29 @@ export async function getSettings() {
 export async function savePricing(pricingData) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     const payload = {
+        storeName: pricingData.storeName || "SAMICOINS",
+        supportWhatsapp: pricingData.supportWhatsapp || "",
+
+        // PS / Xbox
         psRate: Number(pricingData.psRate) || 200,
-        xboxRate: Number(pricingData.xboxRate) || 200,
-        pcRate: Number(pricingData.pcRate) || 100,
-        minLimit: Number(pricingData.minLimit) || 100000,
-        maxLimit: Number(pricingData.maxLimit) || 5000000,
-        withdrawalDuration: pricingData.withdrawalDuration || "3 - 5 أيام",
-        transferDuration: pricingData.transferDuration || "24 ساعة",
-        transferSafety: pricingData.transferSafety || "آمنة 99%",
+        psMin: Number(pricingData.psMin) || 100000,
+        psMax: Number(pricingData.psMax) || 5000000,
+        psWithdrawDuration: pricingData.psWithdrawDuration || "3 - 5 أيام عمل",
+        psTransferDuration: pricingData.psTransferDuration || "24 ساعة",
+
+        // PC
+        pcRate: Number(pricingData.pcRate) || 150,
+        pcMin: Number(pricingData.pcMin) || 100000,
+        pcMax: Number(pricingData.pcMax) || 1000000,
+        pcWithdrawDuration: pricingData.pcWithdrawDuration || "2 - 4 أيام عمل",
+        pcTransferDuration: pricingData.pcTransferDuration || "24 ساعة",
+
+        // العروض
         offers: Boolean(pricingData.offers),
         offerText: pricingData.offerText || "",
+        promoRate: Number(pricingData.promoRate) || 0,
+        promoExpiry: pricingData.promoExpiry || "",
+
         updatedAt: serverTimestamp()
     };
 
@@ -239,8 +266,40 @@ export async function savePricing(pricingData) {
     return true;
 }
 
+/**
+ * تحديث المخزون اليدوي وتسجيل العملية في سجل التغييرات
+ */
+export async function updateStock(psStock, pcStock, adminName = "مشرف", reason = "تحديث يدوي") {
+    const settingsRef = doc(db, SETTINGS_DOC_PATH);
+    const currentSettings = await getSettings();
+
+    const newLogs = currentSettings.stockLogs || [];
+    newLogs.unshift({
+        timestamp: new Date().toLocaleString("ar-SA"),
+        admin: adminName,
+        oldPs: currentSettings.psStock || 0,
+        newPs: psStock,
+        oldPc: currentSettings.pcStock || 0,
+        newPc: pcStock,
+        reason: reason
+    });
+
+    // الاحتفاظ بأخر 50 سجل فقط
+    if (newLogs.length > 50) newLogs.pop();
+
+    await setDoc(settingsRef, {
+        psStock: Number(psStock) || 0,
+        pcStock: Number(pcStock) || 0,
+        lastStockUpdate: new Date().toLocaleString("ar-SA"),
+        stockLogs: newLogs,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    return true;
+}
+
 // ============================================================================
-// 5. إدارة البنوك (Banks Management)
+// 5. إدارة البنوك والمحافظ وطرق الدفع والشروط
 // ============================================================================
 
 export async function getBanks() {
@@ -275,10 +334,6 @@ export async function deleteBank(bankIndex) {
     return banks;
 }
 
-// ============================================================================
-// 6. إدارة المحافظ (Wallets Management)
-// ============================================================================
-
 export async function getWallets() {
     const settings = await getSettings();
     return settings.wallets || [];
@@ -310,10 +365,6 @@ export async function deleteWallet(walletIndex) {
     }
     return wallets;
 }
-
-// ============================================================================
-// 7. طرق الدفع (Payment Methods)
-// ============================================================================
 
 export async function getPaymentMethods() {
     const settings = await getSettings();
@@ -347,10 +398,6 @@ export async function deletePaymentMethod(methodIndex) {
     return methods;
 }
 
-// ============================================================================
-// 8. الشروط والأحكام (Terms & Conditions)
-// ============================================================================
-
 export async function getTerms() {
     const settings = await getSettings();
     return settings.terms || [];
@@ -374,15 +421,6 @@ export async function addTerm(termText) {
     return terms;
 }
 
-export async function updateTerm(index, newText) {
-    const terms = await getTerms();
-    if (index >= 0 && index < terms.length && newText) {
-        terms[index] = newText;
-        await saveTerms(terms);
-    }
-    return terms;
-}
-
 export async function deleteTerm(index) {
     const terms = await getTerms();
     if (index >= 0 && index < terms.length) {
@@ -390,22 +428,6 @@ export async function deleteTerm(index) {
         await saveTerms(terms);
     }
     return terms;
-}
-
-// ============================================================================
-// 9. حالة المتجر (Store Status)
-// ============================================================================
-
-export async function openStore() {
-    const settingsRef = doc(db, SETTINGS_DOC_PATH);
-    await setDoc(settingsRef, { storeOpen: true, updatedAt: serverTimestamp() }, { merge: true });
-    return true;
-}
-
-export async function closeStore() {
-    const settingsRef = doc(db, SETTINGS_DOC_PATH);
-    await setDoc(settingsRef, { storeOpen: false, updatedAt: serverTimestamp() }, { merge: true });
-    return false;
 }
 
 export async function toggleStore(overrideStatus = null) {
