@@ -24,11 +24,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 // ==========================================================================
-// 1) استيراد دوال النظام مع استخدام Aliases لمنع تعارض الأسماء
+// 1) استيراد دوال النظام بالكامل من system.js
 // ==========================================================================
 import {
   subscribeToSettings,
   savePricing,
+  updateStock,
   addBank as systemAddBank,
   deleteBank as systemDeleteBank,
   addWallet as systemAddWallet,
@@ -40,9 +41,6 @@ import {
   toggleStore
 } from "./system.js";
 
-// ==========================================================================
-// 2) قائمة الإيميلات المصرح لها بدخول لوحة التحكم
-// ==========================================================================
 const ALLOWED_EMAILS = [
   "mt.samicoins@gmail.com",
   "psnsa7@gmail.com"
@@ -55,20 +53,10 @@ let currentAdmin = {
   role: "admin"
 };
 
-const DEFAULT_STATUS_MESSAGES = {
-  new: "مرحباً {name} 👋، تم استلام طلبك رقم #{ref} بنجاح، وسنبدأ بمراجعته والتنفيذ قريباً.",
-  review: "مرحباً {name} 👋، طلبك رقم #{ref} حالياً في مرحلة المراجعة والتحقق من بيانات الحساب.",
-  progress: "مرحباً {name} 👋، تم البدء بتنفيذ طلبك رقم #{ref} (سحب الكوينز). يُرجى عدم دخول الحساب حالياً لضمان سلامة العملية.",
-  finished: "مرحباً {name} 👋، أبشرك! تم الانتهاء من سحب الكوينز لطلبك رقم #{ref} بنجاح 🎉. يرجى تزويدنا برقم الحساب/الآيبان للتحويل.",
-  transferred: "مرحباً {name} 👋، تم تحويل المبلغ المستحق لطلبك رقم #{ref} إلى حسابك البنكي/المحفظة بنجاح 💵.",
-  completed: "مرحباً {name} 👋، تم إكمال طلبك رقم #{ref} بالكامل. شكراً لثقتك بنا ونتطلع لخدمتك مجدداً! ❤️"
-};
-
 let ordersData = [];
 let adminsData = [];
 let auditLogsData = [];
-let stockData = { PlayStation: 0, PC: 0 };
-let revealedSensitiveOrders = new Set();
+let currentSettingsData = {};
 
 let unsubscribeOrders = null;
 let unsubscribeSettings = null;
@@ -76,7 +64,7 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 3) حارس الأمان والتوثيق
+// 2) حارس الأمان والتوثيق
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -90,14 +78,9 @@ function initAuthGuard() {
 
   getRedirectResult(auth)
     .then((result) => {
-      if (result && result.user) {
-        console.log("Google Redirect Login Successful:", result.user.email);
-      }
+      if (result && result.user) console.log("Google Redirect Login Successful:", result.user.email);
     })
-    .catch((err) => {
-      console.error("Redirect Result Error:", err);
-      showLoginError("فشل الدخول عبر التوجيه المباشر: " + (err.message || ""));
-    });
+    .catch((err) => showLoginError("فشل الدخول عبر التوجيه المباشر: " + (err.message || "")));
 
   onAuthStateChanged(auth, async (user) => {
     const loginOverlay = document.getElementById("loginOverlay");
@@ -113,36 +96,23 @@ function initAuthGuard() {
         const adminRef = doc(db, "admins", user.uid);
         const adminSnap = await getDoc(adminRef);
 
-        if (!adminSnap.exists()) {
-          alert("هذا الحساب غير مصرح له بدخول لوحة التحكم");
+        if (!adminSnap.exists() || adminSnap.data().active === false) {
+          alert("الحساب غير مصرح له أو معطل");
           await signOut(auth);
           if (loginOverlay) loginOverlay.classList.add("active");
           return;
         }
 
-        const data = adminSnap.data();
-
-        if (data.active === false) {
-          alert("هذا الحساب معطل من قبل مالك النظام");
-          await signOut(auth);
-          if (loginOverlay) loginOverlay.classList.add("active");
-          return;
-        }
-
-        currentAdmin = { uid: user.uid, ...data };
-
+        currentAdmin = { uid: user.uid, ...adminSnap.data() };
         await updateDoc(adminRef, { lastLogin: serverTimestamp() });
 
         if (loginOverlay) loginOverlay.classList.remove("active");
         updateSidebarAdminUI();
-        applyRolePermissions();
         startAllListeners();
-
         await logAuditEvent("تسجيل دخول المشرف", "النظام", `تم الدخول بواسطة: ${currentAdmin.email}`);
 
       } catch (err) {
-        console.error("Auth Guard Error:", err);
-        showLoginError("⚠️ خطأ في التحقق من صلاحيات الحساب: " + err.message);
+        showLoginError("⚠️ خطأ في التوثيق: " + err.message);
         await signOut(auth);
         if (loginOverlay) loginOverlay.classList.add("active");
       }
@@ -179,21 +149,7 @@ window.handleGoogleLogin = async function () {
     const alertEl = document.getElementById("loginErrorAlert");
     if (alertEl) alertEl.style.display = "none";
     const provider = new GoogleAuthProvider();
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (isMobile) {
-      await signInWithRedirect(auth, provider);
-    } else {
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (popupErr) {
-        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
-          await signInWithRedirect(auth, provider);
-        } else {
-          throw popupErr;
-        }
-      }
-    }
+    await signInWithPopup(auth, provider);
   } catch (err) {
     showLoginError("❌ فشل تسجيل الدخول بواسطة Google");
   }
@@ -202,26 +158,12 @@ window.handleGoogleLogin = async function () {
 function updateSidebarAdminUI() {
   const nameEl = document.getElementById("sidebarUserName");
   const roleEl = document.getElementById("sidebarUserRole");
-  const avatarEl = document.getElementById("userAvatarText");
-
   if (nameEl) nameEl.innerText = currentAdmin.name;
-  if (avatarEl) avatarEl.innerText = currentAdmin.name ? currentAdmin.name.charAt(0) : "س";
-  if (roleEl) {
-    const isOwner = currentAdmin.role === "owner";
-    roleEl.innerText = isOwner ? "Owner (مالك النظام)" : "Admin (مشرف)";
-    roleEl.className = isOwner ? "user-role-badge owner" : "user-role-badge";
-  }
-}
-
-function applyRolePermissions() {
-  const adminTabLink = document.querySelector(".sidebar-menu li:nth-child(8)");
-  if (adminTabLink) {
-    adminTabLink.style.display = currentAdmin.role === "owner" ? "block" : "none";
-  }
+  if (roleEl) roleEl.innerText = currentAdmin.role === "owner" ? "Owner (مالك)" : "Admin (مشرف)";
 }
 
 window.handleLogout = async function () {
-  if (confirm("هل ترغب بتسجيل الخروج من لوحة التحكم؟")) {
+  if (confirm("هل ترغب بتسجيل الخروج؟")) {
     await logAuditEvent("تسجيل خروج", "النظام", `تم خروج: ${currentAdmin.email}`);
     if (auth) await signOut(auth);
     window.location.reload();
@@ -229,7 +171,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 4) سجل الأمان والمشرفين والطلبات
+// 3) سجل الأمان والمستندات والطلبات
 // ==========================================================================
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
@@ -238,9 +180,9 @@ async function logAuditEvent(action, targetOrder = "عام", details = "") {
       timeString: new Date().toLocaleString("ar-SA"),
       user: currentAdmin.name || "مشرف",
       userId: currentAdmin.uid || "system",
-      action: action,
-      targetOrder: targetOrder,
-      details: details,
+      action,
+      targetOrder,
+      details,
       userAgent: navigator.userAgent.substring(0, 50)
     });
   } catch (err) {
@@ -256,31 +198,15 @@ function initAuditLogsListener() {
   });
 }
 
-function renderAuditLogsTable(filterText = "") {
+function renderAuditLogsTable() {
   const tbody = document.getElementById("auditLogsTableBody");
   if (!tbody) return;
-
-  let list = auditLogsData;
-  if (filterText.trim()) {
-    const q = filterText.toLowerCase();
-    list = list.filter(l =>
-      String(l.user).toLowerCase().includes(q) ||
-      String(l.action).toLowerCase().includes(q) ||
-      String(l.targetOrder).toLowerCase().includes(q)
-    );
-  }
-
-  if (list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد سجلات أمان مسجلة.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = list.map(log => `
+  tbody.innerHTML = auditLogsData.map(log => `
     <tr>
       <td><span style="font-size:0.78rem; color:var(--text-muted);">${log.timeString || '---'}</span></td>
       <td><b>${log.user || 'مشرف'}</b></td>
       <td><span class="badge badge-review">${log.action}</span></td>
-      <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${log.targetOrder}')">#${log.targetOrder || 'عام'}</code></td>
+      <td><code class="copyable-box" onclick="copyOrderRef('${log.targetOrder}')">#${log.targetOrder || 'عام'}</code></td>
       <td><span style="font-size:0.75rem; color:var(--text-muted);">${log.details || '---'}</span></td>
     </tr>
   `).join('');
@@ -289,44 +215,7 @@ function renderAuditLogsTable(filterText = "") {
 function initAdminsListener() {
   return onSnapshot(collection(db, "admins"), (snapshot) => {
     adminsData = snapshot.docs.map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }));
-    renderAdminsTable();
   });
-}
-
-function renderAdminsTable() {
-  const tbody = document.getElementById("adminsTableBody");
-  if (!tbody) return;
-
-  if (adminsData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا يوجد مشرفين مسجلين.</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = adminsData.map(admin => {
-    const isOwner = admin.role === "owner";
-    const statusBadge = admin.active !== false
-      ? `<span class="badge badge-success">نشط</span>`
-      : `<span class="badge badge-error">معطل</span>`;
-    const lastLoginStr = admin.lastLogin?.toDate ? admin.lastLogin.toDate().toLocaleString("ar-SA") : "لم يسجل بعد";
-
-    return `
-      <tr>
-        <td><b>${admin.name}</b></td>
-        <td>${admin.email}</td>
-        <td><span class="${isOwner ? 'user-role-badge owner' : 'user-role-badge'}">${isOwner ? 'Owner' : 'Admin'}</span></td>
-        <td>${statusBadge}</td>
-        <td><span style="font-size:0.78rem; color:var(--text-muted);">${lastLoginStr}</span></td>
-        <td>
-          ${!isOwner ? `
-            <button class="btn-action" style="color:var(--warning);" onclick="toggleAdminStatus('${admin.uid}',${admin.active})">
-              ${admin.active !== false ? 'تعطيل' : 'تفعيل'}
-            </button>
-            <button class="btn-action" style="color:var(--danger);" onclick="deleteAdminDoc('${admin.uid}', '${admin.name}')">حذف</button>
-          ` : '<span style="font-size:0.75rem; color:var(--text-muted);">المالك الرئيسي</span>'}
-        </td>
-      </tr>
-    `;
-  }).join('');
 }
 
 function initOrdersListener() {
@@ -334,31 +223,22 @@ function initOrdersListener() {
   return onSnapshot(ref, (snapshot) => {
     ordersData = snapshot.docs.map(docSnap => {
       const data = docSnap.data();
-      let formattedPrice = data.price || data.totalPrice || "0 ريال";
-      formattedPrice = String(formattedPrice).replace(/ر\.س|ريال سعودي|SAR/g, "ريال").trim();
-
       return {
         id: docSnap.id,
         reference: data.orderId || docSnap.id,
         name: data.customerName || data.name || "عميل",
         phone: data.phone || "",
         platform: data.platform || "PlayStation",
-        totalQty: data.quantity !== undefined ? data.quantity : (data.totalQty || 0),
-        totalPrice: formattedPrice,
+        totalQty: Number(data.quantity || data.totalQty || 0),
+        totalPrice: data.price || data.totalPrice || "0 ريال",
         status: data.status || "new",
-        errorCode: data.errorCode || "none",
-        email: data.email || "",
-        pass: data.password || data.pass || "",
-        backupCodes: data.backupCodes || ["12345678", "87654321", "11223344"],
-        paymentMethod: data.paymentMethod || "تحويل بنكي",
-        paymentDetails: data.paymentDetails || { bank: "مصرف الراجحي", name: data.customerName || "عميل", iban: "SA0380000000608010123456" },
-        withdrawnQty: data.withdrawnQty !== undefined ? data.withdrawnQty : "",
-        finishedAt: data.finishedAt || null,
         createdAt: data.createdAt || new Date().toISOString(),
         ...data
       };
     });
-    renderOrdersTables();
+
+    renderDashboardQuickStats();
+    renderStatisticsPage();
   });
 }
 
@@ -367,82 +247,112 @@ function formatCoinsNumber(num) {
   return Number(num).toLocaleString('en-US');
 }
 
-window.renderOrdersTables = function () {
-  const dashBody = document.getElementById("dashboardOrdersTableBody");
-  const fullBody = document.getElementById("fullOrdersTableBody");
-  const statusFilter = document.getElementById("orderStatusFilter")?.value || "all";
+// ==========================================================================
+// 4) الرئيسية المختصرة + صفحة الإحصائيات الشاملة
+// ==========================================================================
+function renderDashboardQuickStats() {
+  const countNew = ordersData.filter(o => o.status === 'new').length;
+  const countProgress = ordersData.filter(o => o.status === 'progress').length;
+  const countFinished = ordersData.filter(o => o.status === 'completed' || o.status === 'finished').length;
+  const countTransferPending = ordersData.filter(o => o.status === 'finished').length;
 
-  let filteredOrders = ordersData;
-  if (statusFilter !== "all") {
-    filteredOrders = ordersData.filter(o => o.status === statusFilter);
-  }
+  if (document.getElementById("dashStatNew")) document.getElementById("dashStatNew").innerText = countNew;
+  if (document.getElementById("dashStatProgress")) document.getElementById("dashStatProgress").innerText = countProgress;
+  if (document.getElementById("dashStatCompleted")) document.getElementById("dashStatCompleted").innerText = countFinished;
+  if (document.getElementById("dashStatPendingTransfer")) document.getElementById("dashStatPendingTransfer").innerText = countTransferPending;
 
-  if (dashBody) {
-    if (ordersData.length === 0) {
-      dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
-    } else {
-      let topRecent = ordersData.slice(0, 5);
-      dashBody.innerHTML = topRecent.map(order => {
-        let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        return `
-          <tr>
-            <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')">#${order.reference}</code></td>
-            <td><b>${order.reference}</b></td>
-            <td><b>${order.name}</b></td>
-            <td>${order.platform}</td>
-            <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-            <td style="color:#38bdf8;">${order.totalPrice}</td>
-            <td>${getStatusBadge(order.status)}</td>
-            <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
-          </tr>
-        `;
-      }).join('');
+  if (document.getElementById("dashStockPS")) document.getElementById("dashStockPS").innerText = formatCoinsNumber(currentSettingsData.psStock || 0) + " كوينز";
+  if (document.getElementById("dashStockPC")) document.getElementById("dashStockPC").innerText = formatCoinsNumber(currentSettingsData.pcStock || 0) + " كوينز";
+}
+
+function renderStatisticsPage() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  let totalCoins = 0;
+  let totalMoney = 0;
+  let todayCoins = 0;
+  let todayMoney = 0;
+
+  const clientsSet = new Set();
+
+  ordersData.forEach(o => {
+    if (o.phone) clientsSet.add(o.phone);
+    const pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 0;
+
+    if (o.status === 'completed' || o.status === 'finished' || o.status === 'transferred') {
+      totalCoins += o.totalQty;
+      totalMoney += pVal;
+
+      const orderDateStr = new Date(o.createdAt).toISOString().split('T')[0];
+      if (orderDateStr === todayStr) {
+        todayCoins += o.totalQty;
+        todayMoney += pVal;
+      }
     }
-  }
+  });
 
-  if (fullBody) {
-    if (filteredOrders.length === 0) {
-      fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مطابقة.</td></tr>`;
-    } else {
-      fullBody.innerHTML = filteredOrders.map(order => {
-        let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        return `
-          <tr>
-            <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')">#${order.reference}</code></td>
-            <td><b>${order.reference}</b></td>
-            <td><b>${order.name}</b></td>
-            <td>${order.platform}</td>
-            <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-            <td style="color:#38bdf8;">${order.totalPrice}</td>
-            <td>${getStatusBadge(order.status)}</td>
-            <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
-          </tr>
-        `;
-      }).join('');
-    }
-  }
-};
+  if (document.getElementById("statTotalOrders")) document.getElementById("statTotalOrders").innerText = ordersData.length;
+  if (document.getElementById("statTotalClients")) document.getElementById("statTotalClients").innerText = clientsSet.size;
+  if (document.getElementById("statTotalCoins")) document.getElementById("statTotalCoins").innerText = formatCoinsNumber(totalCoins);
+  if (document.getElementById("statTotalMoney")) document.getElementById("statTotalMoney").innerText = totalMoney.toLocaleString() + " ريال";
 
-function getStatusBadge(status) {
-  switch (status) {
-    case 'new': return '<span class="badge badge-new">طلب جديد</span>';
-    case 'review': return '<span class="badge badge-review">انتظار المراجعة</span>';
-    case 'progress': return '<span class="badge badge-progress">قيد التنفيذ</span>';
-    case 'finished': return '<span class="badge badge-finished">تم الانتهاء</span>';
-    case 'transferred': return '<span class="badge badge-transferred">تم التحويل</span>';
-    case 'completed': return '<span class="badge badge-completed">مكتمل</span>';
-    default: return '<span class="badge badge-new">طلب جديد</span>';
-  }
+  if (document.getElementById("statTodayCoins")) document.getElementById("statTodayCoins").innerText = formatCoinsNumber(todayCoins);
+  if (document.getElementById("statTodayMoney")) document.getElementById("statTodayMoney").innerText = todayMoney.toLocaleString() + " ريال";
 }
 
 // ==========================================================================
-// 5) المزامنة المباشرة مع system.js لقراءة وتحديث الإعدادات
+// 5) صفحة المخزون المخصصة والتعديل اليدوي
 // ==========================================================================
+function renderInventoryUI(settings) {
+  if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
+  if (document.getElementById("invStockPC")) document.getElementById("invStockPC").innerText = formatCoinsNumber(settings.pcStock || 0);
+  if (document.getElementById("invLastUpdate")) document.getElementById("invLastUpdate").innerText = settings.lastStockUpdate || "لم يحدد بعد";
 
+  const logsTbody = document.getElementById("stockLogsTableBody");
+  if (logsTbody && settings.stockLogs) {
+    if (settings.stockLogs.length === 0) {
+      logsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted);">لا توجد تعديلات مسجلة على المخزون.</td></tr>`;
+    } else {
+      logsTbody.innerHTML = settings.stockLogs.map(log => `
+        <tr>
+          <td><span style="font-size:0.8rem; color:var(--text-muted);">${log.timestamp}</span></td>
+          <td><b>${log.admin}</b></td>
+          <td style="color:var(--primary);">${formatCoinsNumber(log.newPs)} (السابق: ${formatCoinsNumber(log.oldPs)})</td>
+          <td style="color:#38bdf8;">${formatCoinsNumber(log.newPc)} (السابق: ${formatCoinsNumber(log.oldPc)})</td>
+          <td><span style="font-size:0.8rem;">${log.reason}</span></td>
+        </tr>
+      `).join('');
+    }
+  }
+}
+
+window.handleSaveManualStock = async function () {
+  const newPs = document.getElementById("inputManualStockPS")?.value;
+  const newPc = document.getElementById("inputManualStockPC")?.value;
+  const reason = document.getElementById("inputStockReason")?.value || "تعديل يدوي";
+
+  if (newPs === "" || newPc === "") {
+    alert("يرجى إدخال قيم المخزون للـ PS والـ PC.");
+    return;
+  }
+
+  await updateStock(newPs, newPc, currentAdmin.name, reason);
+  await logAuditEvent("تعديل المخزون يدويًا", "المخزون", `PS: ${newPs} | PC: ${newPc} | السبب: ${reason}`);
+  alert("✅ تم تحديث المخزون وسجل التعديلات بنجاح!");
+};
+
+// ==========================================================================
+// 6) المزامنة المباشرة مع system.js للأسعار والبنوك والواجهات
+// ==========================================================================
 function initSystemSettingsListener() {
   return subscribeToSettings((settings) => {
+    currentSettingsData = settings;
     updateStoreStatusUI(settings.storeOpen !== false);
     populatePricingUI(settings);
+    renderInventoryUI(settings);
+    renderDashboardQuickStats();
+
     renderBanks(settings.banks || []);
     renderWallets(settings.wallets || []);
     renderCustomPayments(settings.paymentMethods || []);
@@ -454,14 +364,8 @@ function updateStoreStatusUI(isOpen) {
   const btn = document.getElementById("storeStatusToggleBtn");
   const txt = document.getElementById("storeStatusText");
   if (!btn || !txt) return;
-
-  if (isOpen) {
-    btn.className = "store-status-btn";
-    txt.innerText = "المتجر مفتوح";
-  } else {
-    btn.className = "store-status-btn closed";
-    txt.innerText = "المتجر مغلق";
-  }
+  btn.className = isOpen ? "store-status-btn" : "store-status-btn closed";
+  txt.innerText = isOpen ? "المتجر مفتوح" : "المتجر مغلق";
 }
 
 window.toggleStoreStatus = async function () {
@@ -470,37 +374,51 @@ window.toggleStoreStatus = async function () {
 };
 
 function populatePricingUI(config = {}) {
+  // بيانات PlayStation / Xbox
   if (document.getElementById("psRate")) document.getElementById("psRate").value = config.psRate || 200;
-  if (document.getElementById("pcRate")) document.getElementById("pcRate").value = config.pcRate || 100;
-  if (document.getElementById("psMin")) document.getElementById("psMin").value = formatCoinsNumber(config.minLimit || 100000);
-  if (document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(config.maxLimit || 5000000);
+  if (document.getElementById("psMin")) document.getElementById("psMin").value = formatCoinsNumber(config.psMin || 100000);
+  if (document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(config.psMax || 5000000);
+  if (document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = config.psWithdrawDuration || "3 - 5 أيام عمل";
+  if (document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = config.psTransferDuration || "24 ساعة";
 
-  if (document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = config.withdrawalDuration || "3 - 5 أيام عمل";
-  if (document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = config.transferDuration || "24 ساعة";
+  // بيانات PC
+  if (document.getElementById("pcRate")) document.getElementById("pcRate").value = config.pcRate || 150;
+  if (document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(config.pcMin || 100000);
+  if (document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(config.pcMax || 1000000);
+  if (document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = config.pcWithdrawDuration || "2 - 4 أيام عمل";
+  if (document.getElementById("pcTransferDuration")) document.getElementById("pcTransferDuration").value = config.pcTransferDuration || "24 ساعة";
 
+  // إعدادات المتجر العامة
+  if (document.getElementById("storeNameInput")) document.getElementById("storeNameInput").value = config.storeName || "SAMICOINS";
+  if (document.getElementById("supportWhatsappInput")) document.getElementById("supportWhatsappInput").value = config.supportWhatsapp || "";
   if (document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = config.offers ? "true" : "false";
   if (document.getElementById("promoText")) document.getElementById("promoText").value = config.offerText || "";
 }
 
 window.saveProductsConfig = async function () {
   const pricingData = {
-    psRate: Number(document.getElementById("psRate")?.value || 200),
-    pcRate: Number(document.getElementById("pcRate")?.value || 100),
-    minLimit: Number(String(document.getElementById("psMin")?.value || "100000").replace(/,/g, "")),
-    maxLimit: Number(String(document.getElementById("psMax")?.value || "5000000").replace(/,/g, "")),
-    withdrawalDuration: document.getElementById("psWithdrawDuration")?.value || "3 - 5 أيام عمل",
-    transferDuration: document.getElementById("psTransferDuration")?.value || "24 ساعة",
+    storeName: document.getElementById("storeNameInput")?.value,
+    supportWhatsapp: document.getElementById("supportWhatsappInput")?.value,
+
+    psRate: Number(document.getElementById("psRate")?.value),
+    psMin: Number(String(document.getElementById("psMin")?.value || "").replace(/,/g, "")),
+    psMax: Number(String(document.getElementById("psMax")?.value || "").replace(/,/g, "")),
+    psWithdrawDuration: document.getElementById("psWithdrawDuration")?.value,
+    psTransferDuration: document.getElementById("psTransferDuration")?.value,
+
+    pcRate: Number(document.getElementById("pcRate")?.value),
+    pcMin: Number(String(document.getElementById("pcMin")?.value || "").replace(/,/g, "")),
+    pcMax: Number(String(document.getElementById("pcMax")?.value || "").replace(/,/g, "")),
+    pcWithdrawDuration: document.getElementById("pcWithdrawDuration")?.value,
+    pcTransferDuration: document.getElementById("pcTransferDuration")?.value,
+
     offers: document.getElementById("promoActiveSelect")?.value === "true",
     offerText: document.getElementById("promoText")?.value || ""
   };
 
   await savePricing(pricingData);
-  await logAuditEvent("حفظ إعدادات المنتجات والأسعار", "الإعدادات", "تحديث الأسعار والمدد والعروض عبر system.js");
-  alert("✅ تم حفظ إعدادات الأسعار والمنتجات بنجاح!");
-};
-
-window.savePricingConfig = async function () {
-  await window.saveProductsConfig();
+  await logAuditEvent("حفظ إعدادات الأسعار المنفصلة", "الإعدادات", "تحديث أسعار ومدد PS و PC بنجاح");
+  alert("✅ تم حفظ إعدادات الأسعار والمنصات بنجاح!");
 };
 
 function renderBanks(banksArray = []) {
@@ -519,13 +437,11 @@ window.addBank = async function () {
   if (input && input.value.trim()) {
     await systemAddBank(input.value.trim());
     input.value = "";
-    await logAuditEvent("إضافة بنك", "البنوك", "تمت إضافة بنك جديد عبر system.js");
   }
 };
 
 window.deleteBank = async function (i) {
   await systemDeleteBank(i);
-  await logAuditEvent("حذف بنك", "البنوك", "تم حذف بنك عبر system.js");
 };
 
 function renderWallets(walletsArray = []) {
@@ -544,13 +460,11 @@ window.addWallet = async function () {
   if (input && input.value.trim()) {
     await systemAddWallet(input.value.trim());
     input.value = "";
-    await logAuditEvent("إضافة محفظة", "المحافظ", "تمت إضافة محفظة عبر system.js");
   }
 };
 
 window.deleteWallet = async function (i) {
   await systemDeleteWallet(i);
-  await logAuditEvent("حذف محفظة", "المحافظ", "تم حذف محفظة عبر system.js");
 };
 
 function renderCustomPayments(methodsArray = []) {
@@ -569,13 +483,11 @@ window.addCustomPaymentMethod = async function () {
   if (input && input.value.trim()) {
     await systemAddPaymentMethod(input.value.trim());
     input.value = "";
-    await logAuditEvent("إضافة طريقة دفع", "طرق الدفع", "تمت إضافة طريقة دفع عبر system.js");
   }
 };
 
 window.deleteCustomPayment = async function (i) {
   await systemDeletePaymentMethod(i);
-  await logAuditEvent("حذف طريقة دفع", "طرق الدفع", "تم حذف طريقة دفع عبر system.js");
 };
 
 function renderTerms(termsArray = []) {
@@ -594,17 +506,15 @@ window.addNewTerm = async function () {
   if (input && input.value.trim()) {
     await systemAddTerm(input.value.trim());
     input.value = "";
-    await logAuditEvent("إضافة شرط", "الشروط والأحكام", "تمت إضافة شرط جديد عبر system.js");
   }
 };
 
 window.deleteTerm = async function (i) {
   await systemDeleteTerm(i);
-  await logAuditEvent("حذف شرط", "الشروط والأحكام", "تم حذف شرط عبر system.js");
 };
 
 // ==========================================================================
-// 6) التنقل والتصفح والبدء
+// 7) التنقل والبدء
 // ==========================================================================
 window.switchTab = function (tabId, element) {
   document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
