@@ -1,0 +1,288 @@
+:root {
+    --bg-body: #05080f;
+    --bg-card: #0d1322;
+    --bg-card-glow: #131c31;
+    --bg-input: #172138;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-glow: rgba(0, 210, 255, 0.3);
+    --text-color: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent-color: #00d2ff;
+    --accent-gradient: linear-gradient(135deg, #00d2ff, #0066ff);
+    --green-gradient: linear-gradient(135deg, #10b981, #059669);
+    --ps-color: #0070d1;
+    --xbox-color: #107c41;
+    --pc-color: #ef4444;
+    --gold-color: #f59e0b;
+    --green-color: #10b981;
+    --radius-card: 20px;
+    --radius-btn: 12px;
+    --shadow-glow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    font-variant-numeric: tabular-nums;
+}
+
+body {
+    background-color: var(--bg-body);
+    color: var(--text-color);
+    padding-bottom: 50px;
+}
+
+header {
+    background: rgba(13, 19, 34, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 12px 16px;
+}
+
+.header-content {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-logo { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    text-decoration: none; 
+    color: var(--text-color); 
+    font-weight: 800; 
+    cursor: pointer;
+}
+
+.brand-title { 
+    font-size: 1.05rem; 
+    font-weight: 900; 
+    letter-spacing: 0.5px; 
+    background: var(--accent-gradient); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+}
+
+.brand-icon {
+    width: 36px; height: 36px; background: var(--accent-gradient);
+    border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(0, 210, 255, 0.3);
+}
+
+.header-actions { display: flex; align-items: center; gap: 8px; }
+
+.btn-track-header {
+    background: var(--accent-gradient);
+    border: none; color: #ffffff !important; padding: 8px 14px; border-radius: 20px;
+    cursor: pointer; font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 3px 12px rgba(0, 210, 255, 0.3); white-space: nowrap;
+    user-select: none;
+}
+
+.main-container { max-width: 480px; margin: 16px auto; padding: 0 14px; }
+.hidden { display: none !important; }
+
+.box-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-glow);
+    position: relative;
+    overflow: hidden;
+}
+
+.box-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 3px;
+    background: var(--accent-gradient);
+    pointer-events: none;
+}
+
+.box-card-title {
+    font-size: 0.92rem; font-weight: 800; margin-bottom: 12px;
+    color: var(--text-color); display: flex; justify-content: space-between; align-items: center;
+}
+
+.box-card-title i { color: var(--accent-color); font-size: 1.05rem; margin-left: 6px; pointer-events: none; }
+
+.rates-container-pro { margin-bottom: 14px; }
+
+/* بطاقة سعر المليون باللون الأبيض الصريح */
+.rate-vertical-card {
+    background: linear-gradient(135deg, var(--bg-card-glow), var(--bg-input));
+    border: 1.5px solid var(--accent-color); border-radius: 14px; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 18px rgba(0, 210, 255, 0.15);
+}
+
+.rate-v-header { display: flex; align-items: center; font-size: 1.35rem; color: var(--accent-color); }
+.rate-v-body { display: flex; align-items: center; gap: 8px; }
+.rate-v-label { font-size: 0.9rem; color: #ffffff !important; font-weight: 900; } /* تحويل الخط للأبيض */
+.rate-v-val { font-size: 1.3rem; font-weight: 900; color: #ffffff; }
+.currency-symbol { font-size: 0.82rem; font-weight: 800; color: #ffffff; }
+
+.platforms-flex { display: flex; gap: 8px; }
+.platform-btn {
+    flex: 1; padding: 12px 4px; border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-btn); color: #ffffff; font-weight: 800; font-size: 0.75rem;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.25s;
+    user-select: none;
+    -webkit-user-select: none;
+    position: relative;
+    z-index: 10;
+    pointer-events: auto !important;
+}
+
+.platform-btn * { pointer-events: none !important; }
+
+.platform-btn.ps-btn { background: rgba(0, 112, 209, 0.22); border-color: var(--ps-color); }
+.platform-btn.xbox-btn { background: rgba(16, 124, 65, 0.22); border-color: var(--xbox-color); }
+.platform-btn.pc-btn { background: rgba(239, 68, 68, 0.22); border-color: var(--pc-color); }
+
+.platform-btn i { font-size: 1.15rem; }
+.platform-sub-price { font-size: 0.72rem; font-weight: 900; color: #ffffff !important; background: rgba(0, 0, 0, 0.35); padding: 2px 8px; border-radius: 6px; }
+
+.platform-btn.active.ps-btn { background: var(--ps-color); box-shadow: 0 0 14px rgba(0, 112, 209, 0.6); }
+.platform-btn.active.xbox-btn { background: var(--xbox-color); box-shadow: 0 0 14px rgba(16, 124, 65, 0.6); }
+.platform-btn.active.pc-btn { background: var(--pc-color); box-shadow: 0 0 14px rgba(239, 68, 68, 0.6); }
+
+/* أزرار طرق الدفع باللون الأبيض */
+.payment-main-types-flex { display: flex; gap: 10px; margin-bottom: 10px; }
+.pay-main-type-btn {
+    flex: 1; padding: 14px 10px; border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-btn); background: var(--bg-input); 
+    color: #ffffff !important;
+    font-weight: 800; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; gap: 8px; transition: all 0.25s;
+    user-select: none;
+    position: relative;
+    z-index: 10;
+}
+.pay-main-type-btn * { pointer-events: none !important; color: #ffffff !important; }
+
+.pay-main-type-btn.active {
+    background: rgba(0, 210, 255, 0.18); border-color: var(--accent-color);
+    color: #ffffff !important; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+}
+
+.pay-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pay-btn-compact {
+    background: var(--bg-input); border: 1.5px solid var(--border-color); border-radius: 12px; padding: 12px;
+    font-size: 0.82rem; font-weight: 800; text-align: center; color: #ffffff !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
+    user-select: none;
+    position: relative;
+    z-index: 10;
+}
+.pay-btn-compact * { pointer-events: none !important; color: #ffffff !important; }
+.pay-btn-compact.active { border-color: var(--accent-color); background: rgba(0, 210, 255, 0.2); color: #ffffff !important; box-shadow: 0 0 12px rgba(0, 210, 255, 0.3); }
+
+.info-cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.info-mini-card { background: var(--bg-input); border: 1px solid var(--border-color); border-radius: 12px; padding: 8px 4px; text-align: center; font-size: 0.7rem; }
+
+.hero-qty-input-box {
+    display: flex; align-items: center; background: var(--bg-input);
+    border: 1.5px solid var(--border-color); border-radius: 14px; overflow: hidden; margin-top: 8px;
+}
+.qty-adjust-btn { 
+    background: rgba(255, 255, 255, 0.04); border: none; color: #ffffff; 
+    width: 44px; height: 44px; font-size: 1.3rem; font-weight: 800; cursor: pointer; 
+    user-select: none; position: relative; z-index: 10;
+}
+.hero-qty-input-box input { flex: 1; background: transparent; border: none; text-align: center; color: #ffffff; font-size: 1.2rem; font-weight: 800; outline: none; padding: 4px; }
+input[type="range"] { width: 100%; margin-top: 10px; accent-color: var(--accent-color); padding: 10px 0; cursor: pointer; }
+
+/* تصميم مربع المبلغ المصغر والأنيق */
+.payout-box-compact {
+    background: linear-gradient(135deg, #111827, #0b111e);
+    border: 1.5px solid var(--border-color); border-radius: 12px; padding: 10px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+.payout-val-compact { font-size: 1.35rem; font-weight: 900; color: #ffffff !important; text-shadow: 0 2px 10px rgba(0,210,255,0.3); }
+
+.backup-codes-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.code-input-row, .code-display-row {
+    display: flex; align-items: center; gap: 10px; background: var(--bg-input);
+    border: 1.5px solid var(--border-color); border-radius: var(--radius-btn); padding: 6px 12px; height: 48px;
+}
+.code-number-tag { background: rgba(0, 210, 255, 0.15); color: var(--accent-color); font-weight: 800; font-size: 0.75rem; padding: 3px 10px; border-radius: 8px; border: 1px solid rgba(0, 210, 255, 0.3); pointer-events: none; }
+.code-input-row .input-box-wrap { flex: 1; }
+.code-input-row input { background: transparent !important; border: none !important; padding: 2px !important; font-size: 0.9rem !important; color: #ffffff !important; }
+
+.field-label { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin: 12px 0 5px 0; display: block; }
+.input-box-wrap input, .input-box-wrap select {
+    width: 100%; padding: 14px; background: var(--bg-input); border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-btn); color: var(--text-color); font-size: 0.95rem; font-weight: 700; outline: none; transition: border-color 0.2s;
+}
+.input-box-wrap input:focus, .input-box-wrap select:focus { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(0,210,255,0.2); }
+
+/* زر العمليات للتدرج الأخضر الملكي */
+.btn-action-primary {
+    width: 100%; padding: 16px; background: var(--green-gradient);
+    border: none; border-radius: var(--radius-btn); color: #ffffff !important; font-size: 1.05rem; font-weight: 900; cursor: pointer; margin-top: 16px;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35); transition: transform 0.1s, box-shadow 0.2s;
+    user-select: none;
+    position: relative; z-index: 10;
+}
+.btn-action-primary * { pointer-events: none !important; }
+.btn-action-primary:active { transform: scale(0.98); }
+
+.btn-action-secondary {
+    width: 100%; padding: 14px; background: var(--bg-input); border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-btn); color: var(--text-color); font-size: 0.95rem; font-weight: 700; cursor: pointer; margin-top: 10px;
+    user-select: none;
+    position: relative; z-index: 10;
+}
+.btn-action-secondary * { pointer-events: none !important; }
+
+.review-row-grid-styled {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.review-styled-box {
+    background: var(--bg-input);
+    border: 1.5px solid var(--border-color);
+    border-radius: 14px;
+    padding: 14px 8px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.review-styled-box.ps-theme { background: rgba(0, 112, 209, 0.25); border-color: var(--ps-color); }
+.review-styled-box.xbox-theme { background: rgba(16, 124, 65, 0.25); border-color: var(--xbox-color); }
+.review-styled-box.pc-theme { background: rgba(239, 68, 68, 0.25); border-color: var(--pc-color); }
+.review-styled-box.price-styled { background: linear-gradient(135deg, #111827, #0b111e); border-color: var(--gold-color); }
+
+.review-value-box { background: var(--bg-input); border: 1.5px solid var(--border-color); padding: 12px 14px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; word-break: break-all; }
+
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    display: none; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-overlay.active { display: flex; }
+.modal-card { background: var(--bg-card); border: 1.5px solid var(--border-color); border-radius: var(--radius-card); padding: 22px; width: 92%; max-width: 380px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1001; }
+.close-modal-btn { position: absolute; top: 14px; left: 14px; background: var(--bg-input); border: none; color: var(--text-muted); width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1002; }
+
+footer { text-align: center; padding: 20px; font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-color); margin-top: 30px; }
+.footer-links { display: flex; justify-content: center; gap: 12px; margin-bottom: 8px; }
+.footer-links a { color: #ffffff !important; text-decoration: none; font-weight: 800; cursor: pointer; }
+.footer-links span { color: var(--text-muted); }
