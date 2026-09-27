@@ -28,7 +28,7 @@ import {
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 
 // ==========================================================================
-// 1) قائمة الإيميلات المصرح لها بدخول لوحة التحكم حكراً
+// 1) قائمة الإيميلات المصرح لها بدخول لوحة التحكم حكراً V2
 // ==========================================================================
 const ALLOWED_EMAILS = [
   "mt.samicoins@gmail.com",
@@ -46,9 +46,36 @@ let currentAdmin = {
 };
 
 let isStoreOpen = true;
-let banksList = ["مصرف الراجحي", "البنك الأهلي السعودي (SNB)", "بنك الرياض", "stc bank", "مصرف الإنماء"];
-let walletsList = ["STC Pay", "urpay", "برق (Barq)", "موبايلي بي", "تيكمو"];
-let customPaymentsList = ["بطاقة مدى / فيزا", "Apple Pay"];
+
+// البنوك السعودية المرخصة الـ 13 المعتمدة للتقرير V2
+let banksList = [
+  "مصرف الراجحي",
+  "البنك الأهلي السعودي (SNB)",
+  "بنك الرياض",
+  "البنك السعودي الأول (SAB)",
+  "البنك العربي الوطني (ANB)",
+  "مصرف الإنماء",
+  "البنك السعودي الفرنسي (BSF)",
+  "البنك السعودي للاستثمار (SAIB)",
+  "بنك البلاد",
+  "بنك الجزيرة",
+  "بنك الخليج الدولي (GIB)",
+  "بنك STC",
+  "بنك D360"
+];
+
+// المحافظ الرقمية المرخصة الـ 6 المعتمدة للتقرير V2
+let walletsList = [
+  "برق (Barq)",
+  "STC Pay",
+  "URPay",
+  "Alinma Pay",
+  "Mobily Pay",
+  "Tiqmo"
+];
+
+let customPaymentsList = ["USDT (TRC20)", "Western Union"];
+
 let storeTerms = [
   "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
   "المدة الزمنية: متوسط مدة عملية سحب الكوينز تستغرق من 3 إلى 5 أيام عمل.",
@@ -93,7 +120,7 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 3) دالة نسخ رقم الطلب الموحدة بدون تنبيهات منبثقة
+// 3) دالة نسخ رقم الطلب الموحدة
 // ==========================================================================
 window.copyOrderRef = async function (ref) {
   if (!ref) return;
@@ -103,7 +130,7 @@ window.copyOrderRef = async function (ref) {
 };
 
 // ==========================================================================
-// 4) حارس الأمان والتوثيق المحدث بالمنطق المضمون (initAuthGuard)
+// 4) حارس الأمان والتوثيق المحدث
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -453,7 +480,7 @@ window.deleteAdminDoc = async function (uid, name) {
 };
 
 // ==========================================================================
-// 7) المزامنة المباشرة للطلبات وتعديل مسمى العملة إلى (ريال)
+// 7) المزامنة المباشرة للطلبات
 // ==========================================================================
 function initOrdersListener() {
   const ref = collection(db, "orders");
@@ -647,21 +674,18 @@ window.renderOrdersTables = function () {
 
   if (dashBody) {
     if (ordersData.length === 0) {
-      dashBody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
+      dashBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حالياً.</td></tr>`;
     } else {
       let topRecent = ordersData.slice(0, 5);
       dashBody.innerHTML = topRecent.map(order => {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let withdrawn = Number(order.withdrawnQty) || 0;
-        let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
         return `
           <tr>
             <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
+            <td><b>${order.reference}</b></td>
             <td><b>${order.name}</b></td>
             <td>${order.platform}</td>
             <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-            <td style="color:var(--primary);">${formatCoinsNumber(withdrawn)}</td>
-            <td style="color:var(--warning);">${formatCoinsNumber(remaining)}</td>
             <td style="color:#38bdf8;">${order.totalPrice}</td>
             <td>${getStatusBadge(order.status)} ${getErrorBadge(order.errorCode)}</td>
             <td><button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-eye"></i> التفاصيل</button></td>
@@ -673,26 +697,21 @@ window.renderOrdersTables = function () {
 
   if (fullBody) {
     if (filteredOrders.length === 0) {
-      fullBody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مطابقة للفلتر المحدد.</td></tr>`;
+      fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مطابقة للفلتر المحدد.</td></tr>`;
     } else {
       fullBody.innerHTML = filteredOrders.map(order => {
         let actualIndex = ordersData.findIndex(o => o.id === order.id);
-        let withdrawn = Number(order.withdrawnQty) || 0;
-        let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
         return `
           <tr>
             <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
+            <td><b>${order.reference}</b></td>
             <td><b>${order.name}</b></td>
-            <td style="direction:ltr; text-align:right;">${order.phone}</td>
             <td>${order.platform}</td>
             <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-            <td style="color:var(--primary);">${formatCoinsNumber(withdrawn)}</td>
-            <td style="color:var(--warning);">${formatCoinsNumber(remaining)}</td>
             <td style="color:#38bdf8;">${order.totalPrice}</td>
             <td>${getStatusBadge(order.status)} ${getErrorBadge(order.errorCode)}</td>
             <td>
               <button class="btn-action" onclick="openOrderModal(${actualIndex})"><i class="fa-solid fa-pen-to-square"></i> التفاصيل</button>
-              <button class="btn-action" style="color:var(--warning);" onclick="toggleArchive(${actualIndex})">${order.archived ? 'استرجاع' : 'أرشفة'}</button>
             </td>
           </tr>
         `;
@@ -760,7 +779,109 @@ function getPlatformTheme(platformName) {
 }
 
 // ==========================================================================
-// 11) نافذة عرض تفاصيل الطلب مع الربط المباشر لحالة الطلب بالواتساب
+// 11) نسخ البيانات بصيغة TSV لـ Google Sheets (التقرير الفني V2)
+// ==========================================================================
+window.copyOrderTsvData = async function (index) {
+  const order = ordersData[index];
+  if (!order) return;
+
+  const codes = order.backupCodes || [];
+  const code1 = codes[0] || "";
+  const code2 = codes[1] || "";
+  const code3 = codes[2] || "";
+
+  // ترتيب الأعمدة الـ 12 المعتمد رسمياً في التقرير V2:
+  // A: Order ID | B: Platform | C: EA Email | D: Password
+  // E: Backup Code 1 | F: Backup Code 2 | G: Backup Code 3
+  // H: Quantity | I: Price | J: Customer Name | K: Phone | L: Payment Method
+  const rowData = [
+    order.reference || order.id || "",
+    order.platform || "",
+    order.email || "",
+    order.pass || order.password || "",
+    code1,
+    code2,
+    code3,
+    order.totalQty || order.quantity || 0,
+    order.totalPrice || order.price || "",
+    order.name || order.customerName || "",
+    order.phone || "",
+    order.paymentMethod || "تحويل بنكي"
+  ];
+
+  const tsvLine = rowData.join("\t");
+  await navigator.clipboard.writeText(tsvLine);
+  await logAuditEvent("نسخ بيانات TSV", order.reference, "تم نسخ صف الطلب بصيغة TSV لشيست قوقل");
+  alert("✅ تم نسخ البيانات بصيغة TSV بنجاح! يمكنك لصقها مباشرة في Google Sheets.");
+};
+
+// ==========================================================================
+// 12) إتلاف البيانات الحساسة وتشويهها داخل Firestore (التقرير الفني V2)
+// ==========================================================================
+function generateRandomSymbols(length = 6) {
+  const symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?★□%";
+  let res = "";
+  for (let i = 0; i < length; i++) {
+    res += symbols.charAt(Math.floor(Math.random() * symbols.length));
+  }
+  return res;
+}
+
+function generateRandom4Digits() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+window.openPurgeModal = function (index) {
+  const order = ordersData[index];
+  if (!order) return;
+  
+  const targetInput = document.getElementById("purgeTargetOrderId");
+  if (targetInput) targetInput.value = index;
+
+  const modal = document.getElementById("purgeConfirmModal");
+  if (modal) modal.classList.add("active");
+};
+
+window.closePurgeModal = function () {
+  const modal = document.getElementById("purgeConfirmModal");
+  if (modal) modal.classList.remove("active");
+};
+
+window.confirmPurgeDataFinal = async function () {
+  const indexVal = document.getElementById("purgeTargetOrderId")?.value;
+  if (indexVal === undefined || indexVal === "") return;
+  
+  const index = parseInt(indexVal);
+  const order = ordersData[index];
+  if (!order) return;
+
+  const newPass = generateRandomSymbols(6);
+  const newCode1 = generateRandom4Digits();
+  const newCode2 = generateRandom4Digits();
+  const newCode3 = generateRandom4Digits();
+
+  try {
+    const orderRef = doc(db, "orders", order.id);
+    await updateDoc(orderRef, {
+      pass: newPass,
+      password: newPass,
+      backupCodes: [newCode1, newCode2, newCode3],
+      sensitiveDeleted: true,
+      purgedAt: serverTimestamp()
+    });
+
+    await logAuditEvent("إتلاف بيانات نهائي", order.reference, "تم تشويه كلمة المرور والأكواد بنجاح في Firestore");
+    window.closePurgeModal();
+    window.closeOrderModal();
+    alert("🔒 تم إتلاف البيانات الحساسة للطلب نهائياً.");
+  } catch (err) {
+    console.error("Error purging sensitive data:", err);
+    alert("❌ حدث خطأ أثناء إتلاف البيانات.");
+  }
+};
+
+// ==========================================================================
+// 13) نافذة عرض تفاصيل الطلب V2 (محتوية على زرين فقط: نسخ البيانات وإتلافها)
 // ==========================================================================
 window.openOrderModal = function (index) {
   const order = ordersData[index];
@@ -780,17 +901,14 @@ window.openOrderModal = function (index) {
   const isRevealed = revealedSensitiveOrders.has(order.id);
   const theme = getPlatformTheme(order.platform);
 
-  // 1. أزرار التحكم في الأعلى
+  // 1. أزرار التحكم العليا (زران فقط وفقاً للتقرير الفني V2: نسخ TSV وإتلاف البيانات)
   const actionsRowHtml = `
-    <div class="modal-actions-row" style="display:flex; gap:10px; margin-bottom:14px;">
-      <button class="btn-custom" style="flex:1; background:rgba(56, 189, 248, 0.15); color:var(--blue); border:1.5px solid rgba(56, 189, 248, 0.4);" onclick="copyEaAccountData(${index})">
-        <i class="fa-solid fa-copy"></i> نسخ البيانات
+    <div class="modal-actions-row" style="display:flex; gap:12px; margin-bottom:16px;">
+      <button class="btn-custom btn-tsv-copy" style="flex:1; padding:12px;" onclick="copyOrderTsvData(${index})">
+        <i class="fa-solid fa-file-csv"></i> نسخ البيانات (TSV لـ Google Sheets)
       </button>
-      <button class="btn-custom" style="flex:1; background:rgba(245, 158, 11, 0.15); color:var(--warning); border:1.5px solid rgba(245, 158, 11, 0.4);" onclick="toggleArchive(${index}); openOrderModal(${index});">
-        <i class="fa-solid fa-box-archive"></i> ${order.archived ? 'إلغاء الترحيل' : 'ترحيل'}
-      </button>
-      <button class="btn-custom" style="flex:1; background:rgba(239, 68, 68, 0.15); color:var(--danger); border:1.5px solid rgba(239, 68, 68, 0.4);" onclick="destroySensitiveData(${index})">
-        <i class="fa-solid fa-fire"></i> إتلاف
+      <button class="btn-custom btn-purge" style="flex:1; padding:12px;" onclick="openPurgeModal(${index})">
+        <i class="fa-solid fa-skull-crossbones"></i> إتلاف البيانات
       </button>
     </div>
   `;
@@ -822,7 +940,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 3. بطاقة بيانات الطلب
+  // 3. بطاقة بيانات الطلب والمنصة
   const platformHeaderCardHtml = `
     <div style="background:${theme.bg}; border:2px solid ${theme.border}; border-radius:18px; padding:16px; margin-bottom:16px; box-shadow:0 8px 25px rgba(0,0,0,0.25);">
       <div class="responsive-grid-3" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.12); text-align:center;">
@@ -877,14 +995,14 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 5. بيانات EA الحساسة
+  // 5. عرض بيانات EA الحساسة
   const emailVal = isRevealed ? order.email : "••••••••••••@gmail.com";
   const passVal = isRevealed ? order.pass : "••••••••••••";
   const codesList = order.backupCodes || [];
 
   let sensitiveSection = order.sensitiveDeleted ? `
-    <div style="background:rgba(239, 68, 68, 0.15); border:1.5px solid var(--danger); color:var(--danger); padding:14px; border-radius:14px; text-align:center; font-weight:900; margin-bottom:16px;">
-      🔒 تم إتلاف وحذف بيانات الحساب الحساسة أمنياً.
+    <div style="background:rgba(239, 68, 68, 0.12); border:1.5px dashed var(--danger); color:var(--danger); padding:14px; border-radius:14px; text-align:center; font-weight:900; margin-bottom:16px;">
+      🔒 تم إتلاف وحذف بيانات الحساب الحساسة أمنياً وتحويلها لرموز عشوائية.
     </div>
   ` : `
     <div class="ea-sensitive-box" style="margin-bottom:16px;">
@@ -921,7 +1039,7 @@ window.openOrderModal = function (index) {
     </div>
   `;
 
-  // 6. بيانات الحساب البنكي
+  // 6. بيانات الحساب البنكي / المحفظة
   let pd = order.paymentDetails || {};
   let bankOrWallet = pd.bank || pd.wallet || order.paymentMethod || "تحويل بنكي";
   let beneficiaryName = pd.name || order.name || "العميل";
@@ -982,7 +1100,7 @@ window.openOrderModal = function (index) {
 };
 
 // ==========================================================================
-// 12) حفظ التعديلات والانتقال المباشر لرسالة الواتساب دون منبثقات
+// 14) حفظ التعديلات والانتقال لرسالة الواتساب
 // ==========================================================================
 window.saveOrderModalChanges = async function (index) {
   let order = ordersData[index];
@@ -1015,8 +1133,6 @@ window.saveOrderModalChanges = async function (index) {
     await updateDoc(orderRef, updateData);
     
     window.closeOrderModal();
-
-    // 📱 إظهار نافذة إرسال الواتساب فوراً بدون أي alert
     triggerStatusMessageModal(order, newStatus);
   } catch (err) {
     console.error("Error updating order:", err);
@@ -1024,7 +1140,7 @@ window.saveOrderModalChanges = async function (index) {
 };
 
 // ==========================================================================
-// 13) إعداد نافذة إرسال رسائل حالات الطلبات عبر WhatsApp للعميل مباشرة
+// 15) إرسال رسائل حالات الطلبات عبر WhatsApp
 // ==========================================================================
 function formatWhatsAppPhone(phone) {
   let clean = String(phone || '').replace(/[^0-9]/g, '');
@@ -1085,21 +1201,8 @@ window.copyGeneratedMessage = function () {
 };
 
 // ==========================================================================
-// 14) باقي الدوال المساعدة للنسخ والتحكم
+// 16) باقي الدوال المساعدة للنسخ والتحكم
 // ==========================================================================
-window.copyEaAccountData = async function (index) {
-  const order = ordersData[index];
-  if (!order) return;
-  const codesStr = (order.backupCodes || []).join(' - ');
-  const formattedText = `بيانات حساب EA للطلب #${order.reference}:
-البريد الإلكتروني: ${order.email}
-كلمة المرور: ${order.pass}
-الأكواد الاحتياطية: ${codesStr}`;
-
-  navigator.clipboard.writeText(formattedText);
-  await logAuditEvent("نسخ بيانات EA الكاملة", order.reference, "تم نسخ الإيميل والباسورد والأكواد دفعة واحدة");
-};
-
 window.copyPayoutInfo = async function (text, label, orderRef) {
   if (!text || text === "غير مدخل") return;
   navigator.clipboard.writeText(text);
@@ -1137,38 +1240,8 @@ window.closeOrderModal = function () {
   if (modal) modal.classList.remove("active");
 };
 
-window.destroySensitiveData = async function (index) {
-  let order = ordersData[index];
-  if (confirm(`هل ترغب بإتلاف ومسح البيانات الحساسة للطلب (${order.reference}) أمنياً؟`)) {
-    try {
-      const orderRef = doc(db, "orders", order.id);
-      await updateDoc(orderRef, {
-        email: "[محذوف أمنياً]",
-        pass: "[محذوف أمنياً]",
-        backupCodes: ["[محذوف]", "[محذوف]", "[محذوف]"],
-        sensitiveDeleted: true
-      });
-      await logAuditEvent("إتلاف بيانات حساسة", order.reference, "تم تدمير بيانات EA من قاعدة البيانات أمنياً");
-      window.closeOrderModal();
-    } catch (err) {
-      console.error("Error destroying sensitive data:", err);
-    }
-  }
-};
-
-window.toggleArchive = async function (index) {
-  let order = ordersData[index];
-  try {
-    const orderRef = doc(db, "orders", order.id);
-    await updateDoc(orderRef, { archived: !order.archived });
-    await logAuditEvent("تغيير أرشفة طلب", order.reference, `حالة الأرشفة: ${!order.archived}`);
-  } catch (err) {
-    console.error("Error archiving order:", err);
-  }
-};
-
 // ==========================================================================
-// 15) ملفات العملاء وسجل الحركات
+// 17) ملفات العملاء وسجل الحركات
 // ==========================================================================
 function renderClientsList(searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
@@ -1193,7 +1266,7 @@ function renderClientsList(searchQuery = "") {
   }
 
   if (clientsArray.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد بيانات عملاء حالياً.</td></tr>`;
     return;
   }
 
@@ -1204,7 +1277,6 @@ function renderClientsList(searchQuery = "") {
       <td><b>${c.ordersCount}</b></td>
       <td style="color:var(--primary);">${formatCoinsNumber(c.totalCoins)}</td>
       <td style="color:var(--blue);">${c.totalPaid.toLocaleString()} ريال</td>
-      <td><span style="font-size:0.78rem; color:var(--text-muted);">${c.lastOrder?.toDate ? c.lastOrder.toDate().toLocaleDateString('en-GB') : 'مؤخراً'}</span></td>
       <td><button class="btn-action" onclick="openClientDetail('${c.phone}')"><i class="fa-solid fa-list"></i> عرض السجل</button></td>
     </tr>
   `).join('');
@@ -1256,7 +1328,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 16) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
+// 18) إعدادات المنتجات والأسعار والبنوك والمحافظ العامة
 // ==========================================================================
 async function saveAllSettingsToFirestore() {
   try {
@@ -1485,7 +1557,7 @@ window.saveGeneralSettings = async function () {
 };
 
 // ==========================================================================
-// 17) التنقل والتصفح والبحث الشامل
+// 19) التنقل والتصفح والبحث الشامل
 // ==========================================================================
 function updateLiveDatetime() {
   const now = new Date();
@@ -1549,23 +1621,19 @@ window.handleGlobalSearch = function (query) {
   if (!fullBody) return;
 
   if (matched.length === 0) {
-    fullBody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:20px;">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
+    fullBody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px;">لا توجد نتائج مطابقة لـ "${query}".</td></tr>`;
     return;
   }
 
   fullBody.innerHTML = matched.map(order => {
     let actualIndex = ordersData.findIndex(o => o.id === order.id);
-    let withdrawn = Number(order.withdrawnQty) || 0;
-    let remaining = Math.max(0, (order.totalQty || 0) - withdrawn);
     return `
       <tr>
         <td><code class="copyable-box" style="color:var(--primary); cursor:pointer;" onclick="copyOrderRef('${order.reference}')" title="اضغط لنسخ رقم الطلب">#${order.reference}</code></td>
+        <td><b>${order.reference}</b></td>
         <td><b>${order.name}</b></td>
-        <td style="direction:ltr; text-align:right;">${order.phone}</td>
         <td>${order.platform}</td>
         <td><b>${formatCoinsNumber(order.totalQty)}</b></td>
-        <td style="color:var(--primary);">${formatCoinsNumber(withdrawn)}</td>
-        <td style="color:var(--warning);">${formatCoinsNumber(remaining)}</td>
         <td style="color:#38bdf8;">${order.totalPrice}</td>
         <td>${getStatusBadge(order.status)}</td>
         <td><button class="btn-action" onclick="openOrderModal(${actualIndex})">التفاصيل</button></td>
@@ -1582,6 +1650,6 @@ window.filterOrdersByStatus = function (status) {
 };
 
 // ==========================================================================
-// 18) البدء التلقائي للحارس الأمني
+// 20) البدء التلقائي للحارس الأمني
 // ==========================================================================
 initAuthGuard();
