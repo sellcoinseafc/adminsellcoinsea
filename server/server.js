@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 
@@ -6,7 +9,7 @@ import orderRoutes from "./routes/orders.js";
 import trackingRoutes from "./routes/tracking.js";
 
 const app = express();
-const PORT = 3211;
+const PORT = process.env.PORT || 3211;
 
 // Middleware
 app.use(cors());
