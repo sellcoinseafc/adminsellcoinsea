@@ -3,7 +3,10 @@ import { readFileSync } from "fs";
 import { join } from "path";
 
 const serviceAccount = JSON.parse(
-  readFileSync(join(process.cwd(), "services", "serviceAccountKey.json"), "utf8")
+  readFileSync(
+    join(process.cwd(), "server", "services", "serviceAccountKey.json"),
+    "utf8"
+  )
 );
 
 if (!admin.apps.length) {

@@ -3,10 +3,15 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import adminRoutes from "./routes/admin.js";
 import orderRoutes from "./routes/orders.js";
 import trackingRoutes from "./routes/tracking.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3211;
@@ -15,7 +20,12 @@ const PORT = process.env.PORT || 3211;
 app.use(cors());
 app.use(express.json());
 
-// فحص حالة السيرفر
+// صفحات المشروع
+app.use("/admin", express.static(path.join(__dirname, "../admin")));
+app.use("/orders", express.static(path.join(__dirname, "../orders")));
+app.use("/tracking", express.static(path.join(__dirname, "../tracking")));
+
+// API
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -24,10 +34,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Routes
 app.use("/api/admin", adminRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/tracking", trackingRoutes);
+
+// الصفحة الرئيسية
+app.get("/", (req, res) => {
+  res.redirect("/orders");
+});
 
 // تشغيل السيرفر
 app.listen(PORT, () => {

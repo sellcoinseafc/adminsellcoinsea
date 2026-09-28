@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SAMI COINS | سامي كوينز</title>
+    <title>SAMI COINS | سامي كوينز - بيع الكوينز</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -18,6 +18,7 @@
                 <span class="brand-title">SAMI COINS</span>
             </a>
             <div class="header-actions">
+                <!-- الملاحظة 4: التوجيه المباشر لرابط /tracking -->
                 <button type="button" class="btn-track-header" onclick="openInquiryPage()" id="lblHeaderTrack">
                     <i class="fa-solid fa-magnifying-glass-location"></i> استعلام عن الطلب
                 </button>
@@ -29,26 +30,26 @@
 
         <!-- STEP 1 SCREEN -->
         <div id="step1Screen">
-            <!-- 1. اختيار المنصة -->
+            <!-- 1. اختيار المنصة (الأسعار تُجلب ديناميكياً) -->
             <div class="box-card">
                 <div class="box-card-title"><i class="fa-solid fa-gamepad"></i> اختر المنصة أولاً <span style="color:#ef4444">*</span></div>
                 <div class="platforms-flex">
                     <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')">
                         <i class="fa-brands fa-playstation"></i> PlayStation
-                        <span class="platform-sub-price">200 ر.س</span>
+                        <span class="platform-sub-price" id="psSubPrice">--</span>
                     </button>
                     <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')">
                         <i class="fa-brands fa-xbox"></i> Xbox
-                        <span class="platform-sub-price">200 ر.س</span>
+                        <span class="platform-sub-price" id="xboxSubPrice">--</span>
                     </button>
                     <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')">
                         <i class="fa-solid fa-desktop"></i> PC
-                        <span class="platform-sub-price">100 ر.س</span>
+                        <span class="platform-sub-price" id="pcSubPrice">--</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 2. سعر المليون (باللون الأبيض) -->
+            <!-- 2. سعر المليون (ديناميكي) -->
             <div class="rates-container-pro hidden" id="singlePlatformRateCard">
                 <div class="rate-vertical-card">
                     <div class="rate-v-header">
@@ -57,25 +58,25 @@
                     <div class="rate-v-body">
                         <span class="rate-v-label">سعر المليون:</span>
                         <div class="rate-v-val">
-                            <span id="displaySelectedRate" style="color: #ffffff;">200</span> <span class="currency-symbol" style="color: #ffffff;">ر.س</span>
+                            <span id="displaySelectedRate" style="color: #ffffff;">--</span> <span class="currency-symbol" style="color: #ffffff;">ر.س</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 3. بطاقات المميزات (تحت سعر المليون مباشرة) -->
+            <!-- 3. بطاقات المميزات (ديناميكية عبر API) -->
             <div class="info-cards-grid hidden" id="durationInfoCardsStep1">
                 <div class="info-mini-card">
                     <div style="color: var(--text-muted);">مدة السحب</div>
-                    <div style="font-weight: 800; color: var(--accent-color);">3 - 5 أيام</div>
+                    <div style="font-weight: 800; color: var(--accent-color);" id="withdrawText">--</div>
                 </div>
                 <div class="info-mini-card">
                     <div style="color: var(--text-muted);">مدة التحويل</div>
-                    <div style="font-weight: 800; color: var(--accent-color);">24 ساعة</div>
+                    <div style="font-weight: 800; color: var(--accent-color);" id="transferText">--</div>
                 </div>
                 <div class="info-mini-card">
                     <div style="color: var(--text-muted);">طريقة النقل</div>
-                    <div style="font-weight: 800; color: var(--gold-color);">آمنة 99%</div>
+                    <div style="font-weight: 800; color: var(--gold-color);" id="safeMethodText">--</div>
                 </div>
             </div>
 
@@ -85,19 +86,19 @@
                 
                 <div class="hero-qty-input-box" id="qtyInputBoxWrap">
                     <button type="button" class="qty-adjust-btn" onclick="adjustQty(-100000)">-</button>
-                    <input type="text" id="quantityInput" placeholder="مثال: 100,000" oninput="formatAndCalculate(this)" style="color: #ffffff;">
+                    <input type="text" id="quantityInput" placeholder="أدخل الكمية" oninput="formatAndCalculate(this)" style="color: #ffffff;">
                     <button type="button" class="qty-adjust-btn" onclick="adjustQty(100000)">+</button>
                 </div>
 
                 <input type="range" id="qtyRange" value="0" min="0" max="5000000" step="100000" oninput="sliderChanged(this)">
 
                 <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; font-weight: 700;">
-                    <span>الحد الأدنى: <span id="minLimitText" style="color: #ffffff;">100,000</span></span>
-                    <span>الحد الأقصى: <span id="maxLimitText" style="color: #ffffff;">5,000,000</span></span>
+                    <span>الحد الأدنى: <span id="minLimitText" style="color: #ffffff;">--</span></span>
+                    <span>الحد الأقصى: <span id="maxLimitText" style="color: #ffffff;">--</span></span>
                 </div>
             </div>
 
-            <!-- 5. مربع المبلغ المصغر (تحت الكمية وفوق طريقة الدفع) -->
+            <!-- 5. مربع المبلغ المصغر -->
             <div class="box-card hidden" id="totalAmountBoxCard" style="padding: 12px 16px;">
                 <div class="payout-box-compact">
                     <span style="font-size: 0.88rem; font-weight: 800; color: #ffffff !important;">المبلغ:</span>
@@ -105,7 +106,7 @@
                 </div>
             </div>
 
-            <!-- 6. طريقة الدفع -->
+            <!-- 6. طريقة الدفع واستلام المبلغ (مُولّدة ديناميكياً) -->
             <div class="box-card hidden" id="paymentCategoryCard">
                 <div class="box-card-title"><i class="fa-solid fa-wallet"></i> طريقة الدفع واستلام المبلغ <span style="color:#ef4444">*</span></div>
                 
@@ -133,25 +134,26 @@
 
         <!-- STEP 2 SCREEN -->
         <div id="step2Screen" class="hidden">
+            <!-- الملاحظة 2: إضافة onsubmit لتفادي إعادة تحميل الصفحة -->
             <form id="orderForm" onsubmit="goToReview(); return false;">
                 <div class="box-card" style="border: 1.5px solid rgba(0,210,255,0.3);">
                     <div class="box-card-title"><i class="fa-solid fa-user"></i> بيانات العميل والتواصل</div>
                     
                     <label class="field-label">اسم العميل <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="text" id="customerName" placeholder="أدخل اسمك الكامل"></div>
+                    <div class="input-box-wrap"><input type="text" id="customerName" placeholder="أدخل اسمك الكامل" required></div>
 
                     <label class="field-label">رقم التواصل واتساب <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="tel" id="customerPhone" placeholder="مثال: 966570770465" oninput="convertArabicNumbersToEnglish(this)"></div>
+                    <div class="input-box-wrap"><input type="tel" id="customerPhone" placeholder="مثال: 966570770465" oninput="convertArabicNumbersToEnglish(this)" required></div>
                 </div>
 
                 <div class="box-card" style="border: 1.5px solid rgba(16,185,129,0.3);">
                     <div class="box-card-title"><i class="fa-solid fa-shield-halved"></i> البريد الإلكتروني وكلمة المرور لحساب EA</div>
                     
                     <label class="field-label">البريد الإلكتروني لحساب EA <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="email" id="eaEmail" placeholder="example@gmail.com"></div>
+                    <div class="input-box-wrap"><input type="email" id="eaEmail" placeholder="example@gmail.com" required></div>
 
                     <label class="field-label">كلمة مرور حساب EA <span style="color:#ef4444">*</span> (حرف كابيتال واحد على الأقل):</label>
-                    <div class="input-box-wrap"><input type="text" id="eaPass" placeholder="كلمة المرور (مثال: samicoins)"></div>
+                    <div class="input-box-wrap"><input type="text" id="eaPass" placeholder="كلمة المرور (مثال: samicoins)" required></div>
                 </div>
 
                 <div class="box-card" style="border: 1.5px solid rgba(245,158,11,0.3);">
@@ -160,21 +162,28 @@
                         <a href="#" onclick="openBackupGuideModal(); return false;" style="font-size: 0.75rem; color: var(--accent-color); font-weight: 800;"><i class="fa-solid fa-circle-question"></i> طريقة الاستخراج؟</a>
                     </div>
                     <div class="backup-codes-stack">
-                        <div class="code-input-row" id="rowCode1"><span class="code-number-tag">#1</span><div class="input-box-wrap"><input type="text" id="code1" placeholder="الكود الأول (مثال: 84920183)" minlength="6" maxlength="11"></div></div>
-                        <div class="code-input-row" id="rowCode2"><span class="code-number-tag">#2</span><div class="input-box-wrap"><input type="text" id="code2" placeholder="الكود الثاني (مثال: 39201948)" minlength="6" maxlength="11"></div></div>
-                        <div class="code-input-row" id="rowCode3"><span class="code-number-tag">#3</span><div class="input-box-wrap"><input type="text" id="code3" placeholder="الكود الثالث (مثال: 58291043)" minlength="6" maxlength="11"></div></div>
+                        <div class="code-input-row" id="rowCode1"><span class="code-number-tag">#1</span><div class="input-box-wrap"><input type="text" id="code1" placeholder="الكود الأول (مثال: 84920183)" minlength="6" maxlength="11" required></div></div>
+                        <div class="code-input-row" id="rowCode2"><span class="code-number-tag">#2</span><div class="input-box-wrap"><input type="text" id="code2" placeholder="الكود الثاني (مثال: 39201948)" minlength="6" maxlength="11" required></div></div>
+                        <div class="code-input-row" id="rowCode3"><span class="code-number-tag">#3</span><div class="input-box-wrap"><input type="text" id="code3" placeholder="الكود الثالث (مثال: 58291043)" minlength="6" maxlength="11" required></div></div>
                     </div>
                 </div>
 
+                <!-- حقول بيانات الاستلام الديناميكية (البنوك والمحافظ يُحقن آلياً) -->
                 <div class="box-card">
                     <div class="box-card-title"><i class="fa-solid fa-money-check-dollar"></i> تفاصيل بيانات الاستلام المختارة <span style="color:#ef4444">*</span></div>
                     <div id="step2PaymentFieldsContainer"></div>
                 </div>
 
-                <div class="box-card">
+                <!-- الإقرارات والشروط -->
+                <div class="box-card" style="display: flex; flex-direction: column; gap: 10px;">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">
-                        <input type="checkbox" id="marketOpenCheck" style="width: 18px; height: 18px; accent-color: var(--accent-color);" checked>
+                        <input type="checkbox" id="marketOpenCheck" style="width: 18px; height: 18px; accent-color: var(--accent-color);" checked required>
                         <span>أؤكد بأن سوق الانتقالات لدي مفتوح ويعمل في تطبيق الويب (Web App) <span style="color:#ef4444">*</span></span>
+                    </label>
+                    <!-- الملاحظة 6: يحتوي id="termsContainer" للإخفاء التلقائي عندما termsEnabled = false -->
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 700;" id="termsContainer">
+                        <input type="checkbox" id="termsCheck" style="width: 18px; height: 18px; accent-color: var(--accent-color);">
+                        <span>أوافق على <a href="#" onclick="showTermsModal(); return false;" style="color: var(--accent-color); text-decoration: underline;">الشروط والأحكام الخاصة بالمتجر</a> <span style="color:#ef4444">*</span></span>
                     </label>
                 </div>
 
@@ -213,15 +222,15 @@
                 <div class="info-cards-grid" style="margin-top: 12px;">
                     <div class="info-mini-card">
                         <div style="color: var(--text-muted);">مدة السحب</div>
-                        <div style="font-weight: 800; color: var(--accent-color);">3 - 5 أيام</div>
+                        <div style="font-weight: 800; color: var(--accent-color);" id="revWithdrawText">--</div>
                     </div>
                     <div class="info-mini-card">
                         <div style="color: var(--text-muted);">مدة التحويل</div>
-                        <div style="font-weight: 800; color: var(--accent-color);">24 ساعة</div>
+                        <div style="font-weight: 800; color: var(--accent-color);" id="revTransferText">--</div>
                     </div>
                     <div class="info-mini-card">
                         <div style="color: var(--text-muted);">طريقة النقل</div>
-                        <div style="font-weight: 800; color: var(--gold-color);">آمنة 99%</div>
+                        <div style="font-weight: 800; color: var(--gold-color);" id="revSafeMethodText">--</div>
                     </div>
                 </div>
 
@@ -301,7 +310,8 @@
 
             <div style="display: flex; gap: 10px;">
                 <button type="button" class="btn-action-secondary" onclick="showScreen('step2Screen')" style="flex: 1;">الرجوع</button>
-                <button type="button" class="btn-action-primary" onclick="submitOrderFinal()" style="flex: 2; margin-top: 0;">ابدأ ببيع كوينز الآن</button>
+                <!-- الملاحظة 3: الزر يستدعي submitOrderFinal() التي تراسل POST /api/orders/create -->
+                <button type="button" class="btn-action-primary" onclick="submitOrderFinal()" style="flex: 2; margin-top: 0;">اعتماد وإرسال الطلب</button>
             </div>
         </div>
 
@@ -366,6 +376,7 @@
         <p>جميع الحقوق محفوظة سامي كوينز © 2026</p>
     </footer>
 
+    <!-- الملاحظة 1: استدعاء السكربت العادي مع defer وتجنب type="module" -->
     <script src="order.js" defer></script>
 </body>
 </html>

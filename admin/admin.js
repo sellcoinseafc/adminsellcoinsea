@@ -145,13 +145,29 @@ window.handleEmailLogin = async function (e) {
 };
 
 window.handleGoogleLogin = async function () {
+  const alertEl = document.getElementById("loginErrorAlert");
+
   try {
-    const alertEl = document.getElementById("loginErrorAlert");
     if (alertEl) alertEl.style.display = "none";
+
     const provider = new GoogleAuthProvider();
+
+    // أندرويد والمتصفحات المحمولة
+    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+
+    // الكمبيوتر
     await signInWithPopup(auth, provider);
+
   } catch (err) {
-    showLoginError("❌ فشل تسجيل الدخول بواسطة Google");
+    console.error(err);
+
+    if (alertEl) {
+      alertEl.innerText = err.message;
+      alertEl.style.display = "block";
+    }
   }
 };
 
@@ -219,27 +235,40 @@ function initAdminsListener() {
 }
 
 function initOrdersListener() {
-  const ref = collection(db, "orders");
-  return onSnapshot(ref, (snapshot) => {
-    ordersData = snapshot.docs.map(docSnap => {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        reference: data.orderId || docSnap.id,
-        name: data.customerName || data.name || "عميل",
-        phone: data.phone || "",
-        platform: data.platform || "PlayStation",
-        totalQty: Number(data.quantity || data.totalQty || 0),
-        totalPrice: data.price || data.totalPrice || "0 ريال",
-        status: data.status || "new",
-        createdAt: data.createdAt || new Date().toISOString(),
-        ...data
-      };
-    });
+  loadOrders();
+
+  const interval = setInterval(loadOrders, 3000);
+
+  return () => clearInterval(interval);
+}
+
+async function loadOrders() {
+  try {
+    const res = await fetch("/api/orders/list");
+    const data = await res.json();
+
+    if (!data.success) return;
+
+    ordersData = data.orders.map(order => ({
+      id: order.id,
+      reference: order.orderId,
+      name: order.customerName || "عميل",
+      phone: order.customerPhone || "",
+      platform: order.platform || "PlayStation",
+      totalQty: Number(order.quantity || 0),
+      totalPrice: order.total || "0 ر.س",
+      status: order.status || "pending",
+      createdAt: order.createdAt || null,
+      ...order
+    }));
 
     renderDashboardQuickStats();
     renderStatisticsPage();
-  });
+    renderOrdersTables();
+
+  } catch (err) {
+    console.error("Load Orders Error:", err);
+  }
 }
 
 function formatCoinsNumber(num) {
@@ -251,7 +280,7 @@ function formatCoinsNumber(num) {
 // 4) الرئيسية المختصرة + صفحة الإحصائيات الشاملة
 // ==========================================================================
 function renderDashboardQuickStats() {
-  const countNew = ordersData.filter(o => o.status === 'new').length;
+  const countNew = ordersData.filter(o => o.status === 'new' || o.status === 'pending').length;
   const countProgress = ordersData.filter(o => o.status === 'progress').length;
   const countFinished = ordersData.filter(o => o.status === 'completed' || o.status === 'finished').length;
   const countTransferPending = ordersData.filter(o => o.status === 'finished').length;
@@ -284,7 +313,7 @@ function renderStatisticsPage() {
       totalCoins += o.totalQty;
       totalMoney += pVal;
 
-      const orderDateStr = new Date(o.createdAt).toISOString().split('T')[0];
+      const orderDateStr = o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : "";
       if (orderDateStr === todayStr) {
         todayCoins += o.totalQty;
         todayMoney += pVal;
@@ -524,5 +553,33 @@ window.switchTab = function (tabId, element) {
   if (targetTab) targetTab.classList.add("active");
   if (element) element.classList.add("active");
 };
+
+function renderOrdersTables() {
+  const tbody = document.getElementById("fullOrdersTableBody");
+  if (!tbody) return;
+
+  if (ordersData.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align:center;padding:20px;">
+          لا توجد طلبات
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ordersData.map(o => `
+    <tr>
+      <td>${o.referenceNumber || "-"}</td>
+      <td><b>${o.reference}</b></td>
+      <td>${o.name}</td>
+      <td>${o.platform}</td>
+      <td>${Number(o.totalQty).toLocaleString()}</td>
+      <td>${o.totalPrice}</td>
+      <td>${o.status}</td>
+      <td>...</td>
+    </tr>
+  `).join("");
+}
 
 initAuthGuard();

@@ -1,24 +1,102 @@
-import { db } from "../shared/firebase.js";
-import { createOrderId } from "../shared/system.js";
-import { 
-    collection, 
-    addDoc, 
-    serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+// ==========================================================================
+// الإعدادات تُجلب من Firestore فقط
+// ==========================================================================
+let storeSettings = {
+  rates: {},
+  limits: {},
+  paymentMethods: {},
+  banks: [],
+  wallets: [],
+  withdrawDays: "",
+  transferHours: "",
+  safeMethod: "",
+  termsEnabled: true
+};
 
-// المتغيرات العامة
-let storeSettings = { psRate: 200, xboxRate: 200, pcRate: 100, psMin: 100000, psMax: 5000000, pcMin: 100000, pcMax: 1000000 };
+// حالة التطبيق المتغيرة ديناميكياً
 let selectedPlatform = null; 
 let currentPaymentCategory = null; 
 let selectedPaymentMethod = '';
-let currentRate = 200;
-let minLimit = 100000;
-let maxLimit = 5000000;
+let currentRate = 0;
+let minLimit = 0;
+let maxLimit = 0;
 let currentQty = 0; 
 let generatedOrderId = "";
 let isEditingAll = false;
 const supportWhatsappNumber = "966570770465";
 
+// ==========================================================================
+// 1. جلب الإعدادات الحقيقية من قاعدة البيانات عبر GET /api/orders/settings
+// ==========================================================================
+async function loadSettings() {
+  try {
+    const response = await fetch("/api/orders/settings");
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error("Failed to load settings");
+    }
+
+    storeSettings = data;
+    applySettingsToUI();
+
+  } catch (err) {
+    console.error("Settings Error:", err);
+
+    alert("تعذر تحميل أسعار المتجر من قاعدة البيانات.");
+  }
+}
+
+// تطبيق الإعدادات المجلوبة على عناصر الواجهة
+function applySettingsToUI() {
+    // 1. تحديث الأسعار الفرعية للمنصات في الأزرار الرئيسية
+    if (storeSettings.rates) {
+        const psSub = document.getElementById("psSubPrice");
+        const xboxSub = document.getElementById("xboxSubPrice");
+        const pcSub = document.getElementById("pcSubPrice");
+
+        if (psSub && storeSettings.rates.PlayStation !== undefined) {
+            psSub.innerText = `${storeSettings.rates.PlayStation} ر.س`;
+        }
+        if (xboxSub && storeSettings.rates.Xbox !== undefined) {
+            xboxSub.innerText = `${storeSettings.rates.Xbox} ر.س`;
+        }
+        if (pcSub && storeSettings.rates.PC !== undefined) {
+            pcSub.innerText = `${storeSettings.rates.PC} ر.س`;
+        }
+    }
+
+    // 2. تحديث مدة السحب والتحويل وطريقة النقل
+    const withdrawEl = document.getElementById("withdrawText");
+    const transferEl = document.getElementById("transferText");
+    const safeEl = document.getElementById("safeMethodText");
+    const revWithdrawEl = document.getElementById("revWithdrawText");
+    const revTransferEl = document.getElementById("revTransferText");
+    const revSafeEl = document.getElementById("revSafeMethodText");
+
+    if (withdrawEl) withdrawEl.innerText = storeSettings.withdrawDays || "--";
+    if (transferEl) transferEl.innerText = storeSettings.transferHours || "--";
+    if (safeEl) safeEl.innerText = storeSettings.safeMethod || "--";
+
+    if (revWithdrawEl) revWithdrawEl.innerText = storeSettings.withdrawDays || "--";
+    if (revTransferEl) revTransferEl.innerText = storeSettings.transferHours || "--";
+    if (revSafeEl) revSafeEl.innerText = storeSettings.safeMethod || "--";
+
+    // 3. التحكم الإجباري في إخفاء/إظهار مربع الموافقة على الشروط
+    const termsContainer = document.getElementById("termsContainer");
+    if (termsContainer) {
+        termsContainer.style.display = storeSettings.termsEnabled ? "flex" : "none";
+    }
+
+    // إعادة حساب السعر للمنصة المحددة في حال تم اختيار منصة مسبقاً
+    if (selectedPlatform) {
+        selectPlatform(selectedPlatform);
+    }
+}
+
+// ==========================================================================
+// 2. تحويل الأرقام العربية إلى إنجليزية
+// ==========================================================================
 function convertArabicNumbersToEnglish(inputElement) {
     if (!inputElement) return;
     const arabicNumbers = [/٠/g, /١/g, /٢/g, /٣/g, /٤/g, /٥/g, /٦/g, /٧/g, /٨/g, /٩/g];
@@ -29,6 +107,9 @@ function convertArabicNumbersToEnglish(inputElement) {
     inputElement.value = val.replace(/[^0-9]/g, '');
 }
 
+// ==========================================================================
+// 3. اختيار المنصة وقراءة الحدود والأسعار ديناميكياً
+// ==========================================================================
 function selectPlatform(platform) {
     selectedPlatform = platform;
     document.querySelectorAll('.platform-btn').forEach(btn => btn.classList.remove('active'));
@@ -37,18 +118,21 @@ function selectPlatform(platform) {
     else if (platform === 'Xbox') document.querySelectorAll('.xbox-btn').forEach(b => b.classList.add('active'));
     else if (platform === 'PC') document.querySelectorAll('.pc-btn').forEach(b => b.classList.add('active'));
 
+    const rates = storeSettings.rates || {};
+    const limits = storeSettings.limits || {};
+
     if (platform === 'PC') {
-        currentRate = storeSettings.pcRate;
-        minLimit = storeSettings.pcMin;
-        maxLimit = storeSettings.pcMax;
+        currentRate = rates.PC !== undefined ? rates.PC : 0;
+        minLimit = limits.pcMin !== undefined ? limits.pcMin : 0;
+        maxLimit = limits.pcMax !== undefined ? limits.pcMax : 0;
     } else if (platform === 'Xbox') {
-        currentRate = storeSettings.xboxRate;
-        minLimit = storeSettings.psMin;
-        maxLimit = storeSettings.psMax;
+        currentRate = rates.Xbox !== undefined ? rates.Xbox : 0;
+        minLimit = limits.psMin !== undefined ? limits.psMin : 0;
+        maxLimit = limits.psMax !== undefined ? limits.psMax : 0;
     } else {
-        currentRate = storeSettings.psRate;
-        minLimit = storeSettings.psMin;
-        maxLimit = storeSettings.psMax;
+        currentRate = rates.PlayStation !== undefined ? rates.PlayStation : 0;
+        minLimit = limits.psMin !== undefined ? limits.psMin : 0;
+        maxLimit = limits.psMax !== undefined ? limits.psMax : 0;
     }
 
     document.getElementById('platformPromptBox')?.classList.add('hidden');
@@ -93,6 +177,9 @@ function updateRateCardsUI() {
     }
 }
 
+// ==========================================================================
+// 4. بناء طرق الدفع والتصنيفات تلقائياً من storeSettings.paymentMethods
+// ==========================================================================
 function switchPaymentCategory(category) {
     currentPaymentCategory = category;
     const tabLocal = document.getElementById('tabLocal');
@@ -107,7 +194,10 @@ function switchPaymentCategory(category) {
         tabIntl.style.borderColor = 'var(--border-color)';
     }
 
-    selectedPaymentMethod = (category === 'local') ? 'تحويل بنكي' : 'USDT';
+    const pMethods = storeSettings.paymentMethods || {};
+    const availableMethods = pMethods[category] || [];
+
+    selectedPaymentMethod = availableMethods.length > 0 ? availableMethods[0] : '';
     
     const payGridContainer = document.getElementById('dynamicPaymentMethodsGrid');
     payGridContainer?.classList.remove('hidden');
@@ -120,16 +210,18 @@ function updateDynamicUI() {
     const payGridContainer = document.getElementById('dynamicPaymentMethodsGrid');
     if (!payGridContainer) return;
     payGridContainer.innerHTML = '';
-    let filteredMethods = (currentPaymentCategory === 'local') ? ["تحويل بنكي", "المحافظ الرقمية"] : ["USDT", "PayPal", "Western Union"];
 
-    filteredMethods.forEach((method) => {
+    const pMethods = storeSettings.paymentMethods || {};
+    const availableMethods = pMethods[currentPaymentCategory] || [];
+
+    availableMethods.forEach((method) => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `pay-btn-compact ${selectedPaymentMethod === method ? 'active' : ''}`;
         btn.onclick = () => selectPaymentMethod(method);
         let iconClass = 'fa-solid fa-wallet';
-        if (method === 'تحويل بنكي') iconClass = 'fa-solid fa-building-columns';
-        else if (method === 'المحافظ الرقمية') iconClass = 'fa-solid fa-mobile-screen-button';
+        if (method === 'تحويل بنكي' || method.includes('بنك')) iconClass = 'fa-solid fa-building-columns';
+        else if (method === 'المحافظ الرقمية' || method.includes('محفظ')) iconClass = 'fa-solid fa-mobile-screen-button';
         else if (method === 'USDT') iconClass = 'fa-solid fa-coins';
         else if (method === 'PayPal') iconClass = 'fa-brands fa-paypal';
         else if (method === 'Western Union') iconClass = 'fa-solid fa-globe';
@@ -145,6 +237,9 @@ function selectPaymentMethod(method) {
     calculateTotal();
 }
 
+// ==========================================================================
+// 5. حساب المبالغ والكميات
+// ==========================================================================
 function adjustQty(amount) {
     if (!selectedPlatform) selectPlatform('PlayStation');
     currentQty += amount;
@@ -197,56 +292,64 @@ function calculateTotal() {
     }
 }
 
+// ==========================================================================
+// 6. حقن قوائم البنوك والمحافظ ديناميكياً من storeSettings.banks & storeSettings.wallets
+// ==========================================================================
 function renderStep2PaymentFields() {
     const container = document.getElementById('step2PaymentFieldsContainer');
     if (!container) return;
     
-    if (selectedPaymentMethod === 'تحويل بنكي') {
+    if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
+        const banksList = storeSettings.banks || [];
+        const optionsHtml = banksList.map(b => `<option value="${b}">${b}</option>`).join('');
+
         container.innerHTML = `
             <label class="field-label">اسم البنك المحول إليه <span style="color:#ef4444">*</span>:</label>
             <div class="input-box-wrap">
                 <select id="bankNameSelect" required>
-                    <option value="الراجحي">الراجحي</option>
-                    <option value="الأهلي السعودي">الأهلي السعودي</option>
-                    <option value="الإنماء">الإنماء</option>
-                    <option value="البلاد">البلاد</option>
-                    <option value="الرياض">الرياض</option>
+                    ${optionsHtml}
                 </select>
             </div>
             <label class="field-label">الاسم الكامل للحساب البنكي <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="bankFullName" placeholder="الاسم كما في الحساب البنكي"></div>
+            <div class="input-box-wrap"><input type="text" id="bankFullName" placeholder="الاسم كما في الحساب البنكي" required></div>
             <label class="field-label">رقم الإيبان (IBAN) <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="bankIban" placeholder="SA0000000000000000000000"></div>
+            <div class="input-box-wrap"><input type="text" id="bankIban" placeholder="SA0000000000000000000000" required></div>
         `;
-    } else if (selectedPaymentMethod === 'المحافظ الرقمية') {
+    } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
+        const walletsList = storeSettings.wallets || [];
+        const optionsHtml = walletsList.map(w => `<option value="${w}">${w}</option>`).join('');
+
         container.innerHTML = `
             <label class="field-label">اسم المحفظة الرقمية <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><select id="walletNameSelect" required><option value="STC Pay">STC Pay</option><option value="Urpay">Urpay</option></select></div>
+            <div class="input-box-wrap"><select id="walletNameSelect" required>${optionsHtml}</select></div>
             <label class="field-label">رقم الجوال المرتبط بالمحفظة <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="tel" id="walletPhone" placeholder="9665xxxxxxxx" oninput="convertArabicNumbersToEnglish(this)"></div>
+            <div class="input-box-wrap"><input type="tel" id="walletPhone" placeholder="9665xxxxxxxx" oninput="convertArabicNumbersToEnglish(this)" required></div>
         `;
     } else if (selectedPaymentMethod === 'USDT') {
         container.innerHTML = `
             <label class="field-label">عنوان المحفظة (USDT TRC20) <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="usdtAddress" placeholder="أدخل عنوان محفظة USDT الخاص بك"></div>
+            <div class="input-box-wrap"><input type="text" id="usdtAddress" placeholder="أدخل عنوان محفظة USDT الخاص بك" required></div>
         `;
     } else if (selectedPaymentMethod === 'PayPal') {
         container.innerHTML = `
             <label class="field-label">بريد PayPal الإلكتروني <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="email" id="paypalEmail" placeholder="example@domain.com"></div>
+            <div class="input-box-wrap"><input type="email" id="paypalEmail" placeholder="example@domain.com" required></div>
         `;
     } else {
         container.innerHTML = `
             <label class="field-label">الاسم الكامل بالإنجليزية حسب الهوية <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="wuName" placeholder="Full Name in English"></div>
+            <div class="input-box-wrap"><input type="text" id="wuName" placeholder="Full Name in English" required></div>
             <label class="field-label">الدولة <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="wuCountry" placeholder="مثال: Saudi Arabia"></div>
+            <div class="input-box-wrap"><input type="text" id="wuCountry" placeholder="مثال: Saudi Arabia" required></div>
             <label class="field-label">العملة <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="wuCurrency" placeholder="مثال: USD"></div>
+            <div class="input-box-wrap"><input type="text" id="wuCurrency" placeholder="مثال: USD" required></div>
         `;
     }
 }
 
+// ==========================================================================
+// 7. التنقل والتحقق من الحقول الإلزامية
+// ==========================================================================
 function showScreen(screenId) {
     ['step1Screen', 'step2Screen', 'step3ReviewScreen', 'step4SuccessScreen'].forEach(id => {
         document.getElementById(id)?.classList.add('hidden');
@@ -282,22 +385,57 @@ function goToStep2() {
 
 function buildPaymentDetailsHTML() {
     let html = '';
-    if (selectedPaymentMethod === 'تحويل بنكي') {
-        const bank = document.getElementById('bankNameSelect')?.value || 'الراجحي';
+    if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
+        const bank = document.getElementById('bankNameSelect')?.value || '';
         const name = document.getElementById('bankFullName')?.value.trim() || '';
         const iban = document.getElementById('bankIban')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>تحويل بنكي (${bank})</span></div><div class="field-label">اسم الحساب والإيبان:</div><div class="review-value-box"><span>${name} - ${iban}</span></div>`;
-    } else if (selectedPaymentMethod === 'المحافظ الرقمية') {
-        const wallet = document.getElementById('walletNameSelect')?.value || 'STC Pay';
+    } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
+        const wallet = document.getElementById('walletNameSelect')?.value || '';
         const phone = document.getElementById('walletPhone')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>${wallet} (${phone})</span></div>`;
     } else if (selectedPaymentMethod === 'USDT') {
         const addr = document.getElementById('usdtAddress')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>USDT: ${addr}</span></div>`;
+    } else if (selectedPaymentMethod === 'PayPal') {
+        const email = document.getElementById('paypalEmail')?.value.trim() || '';
+        html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>PayPal: ${email}</span></div>`;
     } else {
-        html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>${selectedPaymentMethod}</span></div>`;
+        const name = document.getElementById('wuName')?.value.trim() || '';
+        const country = document.getElementById('wuCountry')?.value.trim() || '';
+        const curr = document.getElementById('wuCurrency')?.value.trim() || '';
+        html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>Western Union (${name} - ${country} - ${curr})</span></div>`;
     }
     return html;
+}
+
+function getPayoutDetailsObject() {
+    if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
+        return {
+            bankName: document.getElementById('bankNameSelect')?.value || '',
+            accountName: document.getElementById('bankFullName')?.value.trim() || '',
+            iban: document.getElementById('bankIban')?.value.trim() || ''
+        };
+    } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
+        return {
+            walletName: document.getElementById('walletNameSelect')?.value || '',
+            walletPhone: document.getElementById('walletPhone')?.value.trim() || ''
+        };
+    } else if (selectedPaymentMethod === 'USDT') {
+        return {
+            usdtAddress: document.getElementById('usdtAddress')?.value.trim() || ''
+        };
+    } else if (selectedPaymentMethod === 'PayPal') {
+        return {
+            paypalEmail: document.getElementById('paypalEmail')?.value.trim() || ''
+        };
+    } else {
+        return {
+            fullName: document.getElementById('wuName')?.value.trim() || '',
+            country: document.getElementById('wuCountry')?.value.trim() || '',
+            currency: document.getElementById('wuCurrency')?.value.trim() || ''
+        };
+    }
 }
 
 function goToReview() {
@@ -308,66 +446,55 @@ function goToReview() {
     const c1Input = document.getElementById('code1');
     const c2Input = document.getElementById('code2');
     const c3Input = document.getElementById('code3');
+    const termsCheck = document.getElementById('termsCheck');
 
     [nameInput, phoneInput, emailInput, passInput, c1Input, c2Input, c3Input].forEach(el => {
         if(el) el.style.borderColor = 'var(--border-color)';
     });
 
     if (!nameInput || !nameInput.value.trim()) {
-        if(nameInput) {
-            nameInput.style.borderColor = '#ef4444';
-            nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(nameInput) { nameInput.style.borderColor = '#ef4444'; nameInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
     if (!phoneInput || !phoneInput.value.trim()) {
-        if(phoneInput) {
-            phoneInput.style.borderColor = '#ef4444';
-            phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(phoneInput) { phoneInput.style.borderColor = '#ef4444'; phoneInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
     if (!emailInput || !emailInput.value.trim()) {
-        if(emailInput) {
-            emailInput.style.borderColor = '#ef4444';
-            emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(emailInput) { emailInput.style.borderColor = '#ef4444'; emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
 
     const pass = passInput ? passInput.value.trim() : '';
     const hasUpperCase = /[A-Z]/.test(pass);
     if (!hasUpperCase) {
-        if(passInput) {
-            passInput.style.borderColor = '#ef4444';
-            passInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(passInput) { passInput.style.borderColor = '#ef4444'; passInput.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
 
     if (!c1Input || !c1Input.value.trim()) {
-        if(c1Input) {
-            c1Input.style.borderColor = '#ef4444';
-            c1Input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(c1Input) { c1Input.style.borderColor = '#ef4444'; c1Input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
     if (!c2Input || !c2Input.value.trim()) {
-        if(c2Input) {
-            c2Input.style.borderColor = '#ef4444';
-            c2Input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(c2Input) { c2Input.style.borderColor = '#ef4444'; c2Input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
     if (!c3Input || !c3Input.value.trim()) {
-        if(c3Input) {
-            c3Input.style.borderColor = '#ef4444';
-            c3Input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if(c3Input) { c3Input.style.borderColor = '#ef4444'; c3Input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
         return;
     }
 
-    const dynamicFields = document.querySelectorAll('#step2PaymentFieldsContainer input');
+    // التحقق من الموافقة على الشروط
+    if (storeSettings.termsEnabled && termsCheck && !termsCheck.checked) {
+        termsCheck.parentElement.style.color = '#ef4444';
+        termsCheck.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    } else if (termsCheck) {
+        termsCheck.parentElement.style.color = 'inherit';
+    }
+
+    const dynamicFields = document.querySelectorAll('#step2PaymentFieldsContainer input, #step2PaymentFieldsContainer select');
     for (let field of dynamicFields) {
         if (!field.value.trim()) {
             field.style.borderColor = '#ef4444';
@@ -431,13 +558,13 @@ function goToReview() {
 
     const payoutWrap = document.getElementById('inlinePayoutEditWrap');
     if (payoutWrap) {
-        if (selectedPaymentMethod === 'تحويل بنكي') {
+        if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
             payoutWrap.innerHTML = `
                 <label class="field-label">اسم البنك:</label><div class="input-box-wrap"><input type="text" id="editBankName" value="${document.getElementById('bankNameSelect')?.value || ''}"></div>
                 <label class="field-label">الاسم:</label><div class="input-box-wrap"><input type="text" id="editBankFullName" value="${document.getElementById('bankFullName')?.value || ''}"></div>
                 <label class="field-label">الإيبان:</label><div class="input-box-wrap"><input type="text" id="editBankIban" value="${document.getElementById('bankIban')?.value || ''}"></div>
             `;
-        } else if (selectedPaymentMethod === 'المحافظ الرقمية') {
+        } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
             payoutWrap.innerHTML = `
                 <label class="field-label">رقم الجوال للمحفظة:</label><div class="input-box-wrap"><input type="tel" id="editWalletPhone" value="${document.getElementById('walletPhone')?.value || ''}" oninput="convertArabicNumbersToEnglish(this)"></div>
             `;
@@ -497,11 +624,11 @@ function toggleEditMode() {
         if(revClientNameEl) revClientNameEl.innerText = newName;
         if(revClientPhoneEl) revClientPhoneEl.innerText = newPhone;
 
-        if (selectedPaymentMethod === 'تحويل بنكي') {
-            if(document.getElementById('bankNameSelect')) document.getElementById('bankNameSelect').value = document.getElementById('editBankName')?.value || 'الراجحي';
+        if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
+            if(document.getElementById('bankNameSelect')) document.getElementById('bankNameSelect').value = document.getElementById('editBankName')?.value || '';
             if(document.getElementById('bankFullName')) document.getElementById('bankFullName').value = document.getElementById('editBankFullName')?.value || '';
             if(document.getElementById('bankIban')) document.getElementById('bankIban').value = document.getElementById('editBankIban')?.value || '';
-        } else if (selectedPaymentMethod === 'المحافظ الرقمية') {
+        } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
             if(document.getElementById('walletPhone')) document.getElementById('walletPhone').value = document.getElementById('editWalletPhone')?.value || '';
         } else if (selectedPaymentMethod === 'USDT') {
             if(document.getElementById('usdtAddress')) document.getElementById('usdtAddress').value = document.getElementById('editUsdtAddr')?.value || '';
@@ -554,62 +681,70 @@ function formatAndCalculateInline(input) {
     if(revTotalEl) revTotalEl.innerText = document.getElementById('totalAmountText')?.innerText || '';
 }
 
+// ==========================================================================
+// 8. إنشاء الطلب المباشر عبر POST /api/orders/create
+// ==========================================================================
 async function submitOrderFinal() {
-    if(isEditingAll) toggleEditMode();
+  if (isEditingAll) toggleEditMode();
 
-    const clientName = document.getElementById('customerName')?.value.trim() || '';
-    const clientPhone = document.getElementById('customerPhone')?.value.trim() || '';
-    const emailVal = document.getElementById('eaEmail')?.value.trim() || '';
-    const passVal = document.getElementById('eaPass')?.value.trim() || '';
-    const c1 = document.getElementById('code1')?.value.trim() || '';
-    const c2 = document.getElementById('code2')?.value.trim() || '';
-    const c3 = document.getElementById('code3')?.value.trim() || '';
-    const totalVal = document.getElementById('totalAmountText')?.innerText || '';
+  const orderData = {
+    platform: selectedPlatform,
+    quantity: currentQty,
+    total: document.getElementById("totalAmountText").innerText,
+    customerName: document.getElementById("customerName").value.trim(),
+    customerPhone: document.getElementById("customerPhone").value.trim(),
+    eaEmail: document.getElementById("eaEmail").value.trim(),
+    eaPassword: document.getElementById("eaPass").value.trim(),
+    backupCodes: [
+      document.getElementById("code1").value.trim(),
+      document.getElementById("code2").value.trim(),
+      document.getElementById("code3").value.trim()
+    ],
+    paymentMethod: selectedPaymentMethod,
+    payoutDetails: getPayoutDetailsObject()
+  };
 
-    try {
-        // 1. توليد رقم الطلب عبر النظام المركزي system.js
-        generatedOrderId = await createOrderId(selectedPlatform);
+  try {
+    const res = await fetch("/api/orders/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(orderData)
+    });
 
-        // 2. حفظ كافة بيانات الطلب في Firestore مباشرة بحالة pending
-        await addDoc(collection(db, "orders"), {
-            orderId: generatedOrderId,
-            createdAt: serverTimestamp(),
-            status: "pending",
-            customerName: clientName,
-            customerPhone: clientPhone,
-            platform: selectedPlatform,
-            quantity: currentQty,
-            total: totalVal,
-            paymentMethod: selectedPaymentMethod,
-            eaEmail: emailVal,
-            eaPassword: passVal,
-            backupCodes: [c1, c2, c3]
-        });
-    } catch (error) {
-        console.error("Error submitting order to Firestore:", error);
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
     }
-    
-    const finalOrderIdEl = document.getElementById("finalOrderId");
-    if(finalOrderIdEl) finalOrderIdEl.innerText = generatedOrderId;
-    
-    const billClientNameEl = document.getElementById('billClientName');
-    const billClientPhoneEl = document.getElementById('billClientPhone');
-    const billPlatformEl = document.getElementById('billPlatform');
-    const billQtyEl = document.getElementById('billQty');
-    const billTotalEl = document.getElementById('billTotal');
-    const billPaymentCardEl = document.getElementById('billPaymentCard');
 
-    if(billClientNameEl) billClientNameEl.innerText = clientName;
-    if(billClientPhoneEl) billClientPhoneEl.innerText = clientPhone;
-    if(billPlatformEl) billPlatformEl.innerText = selectedPlatform || '';
-    if(billQtyEl) billQtyEl.innerText = `${currentQty.toLocaleString('en-US')} كوينز`;
-    if(billTotalEl) billTotalEl.innerText = totalVal;
+    generatedOrderId = data.orderId;
 
-    if(billPaymentCardEl) billPaymentCardEl.innerHTML = `<div class="box-card-title"><i class="fa-solid fa-wallet"></i> تفاصيل التحويل والاستلام</div>${buildPaymentDetailsHTML()}`;
+    document.getElementById("finalOrderId").innerText = data.orderId;
+    document.getElementById("billClientName").innerText = orderData.customerName;
+    document.getElementById("billClientPhone").innerText = orderData.customerPhone;
+    document.getElementById("billPlatform").innerText = selectedPlatform;
+    document.getElementById("billQty").innerText =
+      currentQty.toLocaleString("en-US") + " كوينز";
+    document.getElementById("billTotal").innerText = orderData.total;
 
-    showScreen('step4SuccessScreen');
+    const billPaymentCardEl = document.getElementById("billPaymentCard");
+    if (billPaymentCardEl) {
+      billPaymentCardEl.innerHTML = `<div class="box-card-title"><i class="fa-solid fa-wallet"></i> تفاصيل التحويل والاستلام</div>${buildPaymentDetailsHTML()}`;
+    }
+
+    showScreen("step4SuccessScreen");
+
+  } catch (err) {
+    alert("فشل إنشاء الطلب: " + err.message);
+    console.error(err);
+  }
 }
 
+// ==========================================================================
+// 9. النوافذ المنبثقة، الواتساب، والتوجيه المباشر
+// ==========================================================================
 function openModal(title, content) {
     const modalTitleEl = document.getElementById('modalTitle');
     const modalBodyContentEl = document.getElementById('modalBodyContent');
@@ -646,8 +781,9 @@ function copyOrderId() {
     }
 }
 
+// التوجيه المباشر لصفحة التتبع بحسب التقرير
 function openInquiryPage() { 
-    alert('شاشة تتبع الطلبات والاستعلامات'); 
+    window.location.href = "/tracking"; 
 }
 
 function sendOrderViaWhatsapp() {
@@ -661,18 +797,21 @@ function sendOrderViaWhatsapp() {
     const totalVal = document.getElementById('totalAmountText')?.innerText || '--';
 
     let paymentDetailsText = "";
-    if (selectedPaymentMethod === 'تحويل بنكي') {
-        const bank = document.getElementById('bankNameSelect')?.value || 'الراجحي';
+    if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
+        const bank = document.getElementById('bankNameSelect')?.value || '';
         const name = document.getElementById('bankFullName')?.value.trim() || '';
         const iban = document.getElementById('bankIban')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: تحويل بنكي (${bank})\n• اسم الحساب والإيبان: ${name} - ${iban}`;
-    } else if (selectedPaymentMethod === 'المحافظ الرقمية') {
-        const wallet = document.getElementById('walletNameSelect')?.value || 'STC Pay';
+    } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
+        const wallet = document.getElementById('walletNameSelect')?.value || '';
         const phone = document.getElementById('walletPhone')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: ${wallet} (${phone})`;
     } else if (selectedPaymentMethod === 'USDT') {
         const addr = document.getElementById('usdtAddress')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: USDT (${addr})`;
+    } else if (selectedPaymentMethod === 'PayPal') {
+        const email = document.getElementById('paypalEmail')?.value.trim() || '';
+        paymentDetailsText = `• طريقة الدفع: PayPal (${email})`;
     } else {
         paymentDetailsText = `• طريقة الدفع: ${selectedPaymentMethod}`;
     }
@@ -701,7 +840,32 @@ ${paymentDetailsText}
     window.open(url, '_blank');
 }
 
-// تثبيت كافة الدوال عالمياً على window
+// ==========================================================================
+// 10. تهيئة النظام واستدعاء loadSettings عند تحميل DOM
+// ==========================================================================
+window.addEventListener("DOMContentLoaded", () => {
+    showScreen("step1Screen");
+    loadSettings();
+
+    const range = document.getElementById("qtyRange");
+    if (range) {
+        range.addEventListener("input", () => sliderChanged(range));
+    }
+
+    const form = document.getElementById("orderForm");
+    if (form) {
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            goToReview();
+        });
+    }
+});
+
+// ==========================================================================
+// 11. تثبيت كافة الدوال عالمياً على نافذة window (Plain Script Binding)
+// ==========================================================================
+window.loadSettings = loadSettings;
+window.applySettingsToUI = applySettingsToUI;
 window.convertArabicNumbersToEnglish = convertArabicNumbersToEnglish;
 window.selectPlatform = selectPlatform;
 window.updateRateCardsUI = updateRateCardsUI;
@@ -716,6 +880,7 @@ window.renderStep2PaymentFields = renderStep2PaymentFields;
 window.showScreen = showScreen;
 window.goToStep2 = goToStep2;
 window.buildPaymentDetailsHTML = buildPaymentDetailsHTML;
+window.getPayoutDetailsObject = getPayoutDetailsObject;
 window.goToReview = goToReview;
 window.toggleEditMode = toggleEditMode;
 window.selectPlatformInline = selectPlatformInline;
