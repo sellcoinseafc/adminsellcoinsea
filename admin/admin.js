@@ -1,4 +1,4 @@
-Import { db, auth } from "../shared/firebase.js";
+import { db, auth } from "../shared/firebase.js";
 import {
   collection,
   doc,
@@ -356,6 +356,7 @@ async function loadOrders() {
       bankName: order.paymentInfoData?.bankName || order.bankName || "",
       accountIban: order.paymentInfoData?.iban || order.accountIban || "",
       drawnCoins: Number(order.drawnCoins || 0),
+      transferData: order.transferData || null,
       createdAt: order.createdAt?.seconds
         ? new Date(order.createdAt.seconds * 1000)
         : order.createdAt
@@ -1016,6 +1017,21 @@ window.openOrderModal = function (orderId) {
   };
 
   const showTransferBtn = (order.status === 'finished');
+  const isTransferred = (order.status === 'transferred' || order.status === 'completed');
+  const transferInfo = order.transferData || {};
+
+  const transferCardHTML = isTransferred ? `
+    <div style="background: rgba(16, 185, 129, 0.08); padding: 16px; border-radius: 14px; border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 20px;">
+      <h4 style="color: var(--success); margin-bottom: 10px;">
+        <i class="fa-solid fa-circle-check"></i> تفاصيل التحويل المالي المكتمل
+      </h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.88rem;">
+        <div><b>حالة التحويل:</b> <span class="badge badge-transferred">تم التحويل بنجاح</span></div>
+        <div><b>تاريخ التحويل:</b> ${transferInfo.transferredAt ? new Date(transferInfo.transferredAt).toLocaleString("ar-SA") : '---'}</div>
+        <div><b>تم التحويل بواسطة:</b> ${transferInfo.transferredBy || '---'}</div>
+      </div>
+    </div>
+  ` : '';
 
   modalBody.innerHTML = `
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:20px;">
@@ -1046,6 +1062,8 @@ window.openOrderModal = function (orderId) {
         <div style="margin-top:4px;">${statusMap[order.status] || order.status}</div>
       </div>
     </div>
+
+    ${transferCardHTML}
 
     <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--card-border); margin-bottom:20px;">
       <h4 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-credit-card"></i> بيانات الدفع والتحويل</h4>
@@ -1212,13 +1230,21 @@ window.handleMarkTransferred = async function (orderId, refNum) {
     const res = await fetch("/api/orders/update-status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, status: "transferred" })
+      body: JSON.stringify({
+        orderId,
+        status: "transferred",
+        transferData: {
+          transferredAt: new Date().toISOString(),
+          transferredBy: currentAdmin.name || "مشرف النظام",
+          transferredByEmail: currentAdmin.email || ""
+        }
+      })
     });
 
     const data = await res.json();
     if (data.success) {
-      await logAuditEvent("تحويل مالي", refNum, "تم تغيير حالة الطلب إلى تم التحويل المالي بنجاح");
-      alert("✅ تم تحديث حالة الطلب إلى (تم التحويل المالي) بنجاح!");
+      await logAuditEvent("تحويل مالي", refNum, `تم التحويل المالي بواسطة: ${currentAdmin.name}`);
+      alert("✅ تم إتمام التحويل المالي وتوثيق البيانات بنجاح!");
       closeOrderModal();
       loadOrders();
     } else {
