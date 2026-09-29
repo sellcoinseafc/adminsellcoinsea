@@ -4,6 +4,15 @@ import { decrypt } from "../utils/crypto.js";
 
 const router = express.Router();
 
+const safeDecrypt = (value) => {
+  try {
+    if (!value) return "";
+    return decrypt(value);
+  } catch {
+    return "";
+  }
+};
+
 // اختبار لوحة التحكم
 router.get("/", (req, res) => {
   res.json({
@@ -24,41 +33,38 @@ router.post("/decrypt-order", async (req, res) => {
       });
     }
 
-    const doc = await db.collection("orders").doc(orderId).get();
+    const snap = await db.collection("orders").doc(orderId).get();
 
-    if (!doc.exists) {
+    if (!snap.exists) {
       return res.status(404).json({
         success: false,
         message: "الطلب غير موجود"
       });
     }
 
-    const order = doc.data();
+    const order = snap.data();
     const payment = order.paymentInfoData || {};
-
-    const decrypted = {
-      customerEmail: decrypt(order.customerEmail),
-      phone: decrypt(order.phone),
-      eaEmail: decrypt(order.eaEmail),
-      eaPassword: decrypt(order.eaPassword),
-      backupCodes: decrypt(order.backupCodes),
-
-      paymentInfoData: {
-        bankName: payment.bankName || "",
-        iban: decrypt(payment.iban),
-        accountName: decrypt(payment.accountName),
-        walletNumber: decrypt(payment.walletNumber),
-        usdtWallet: decrypt(payment.usdtWallet),
-        paypalEmail: decrypt(payment.paypalEmail),
-        westernName: decrypt(payment.westernName)
-      },
-
-      expiresAt: Date.now() + (90 * 1000)
-    };
 
     res.json({
       success: true,
-      data: decrypted
+      data: {
+        phone: safeDecrypt(order.phone),
+        customerEmail: safeDecrypt(order.customerEmail),
+
+        eaEmail: safeDecrypt(order.eaEmail),
+        eaPassword: safeDecrypt(order.eaPassword),
+        backupCodes: safeDecrypt(order.backupCodes),
+
+        bankName: payment.bankName || "",
+        iban: safeDecrypt(payment.iban),
+        accountName: safeDecrypt(payment.accountName),
+        walletNumber: safeDecrypt(payment.walletNumber),
+        usdtWallet: safeDecrypt(payment.usdtWallet),
+        paypalEmail: safeDecrypt(payment.paypalEmail),
+        westernName: safeDecrypt(payment.westernName),
+
+        expiresAt: Date.now() + 90000
+      }
     });
 
   } catch (err) {

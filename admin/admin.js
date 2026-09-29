@@ -56,6 +56,12 @@ let auditLogsData = [];
 let currentSettingsData = {};
 let activeSearchQuery = "";
 
+// ==========================================================================
+// متغيرات مؤقت فك التشفير
+// ==========================================================================
+let decryptTimer = null;
+let decryptSeconds = 90;
+
 let unsubscribeOrders = null;
 let unsubscribeSettings = null;
 let unsubscribeAdmins = null;
@@ -255,7 +261,6 @@ function initOrdersListener() {
   return () => clearInterval(interval);
 }
 
-// الدالة المعتمدة لنسخ رابط التتبع بالكامل
 window.copyTrackingLink = async function(refCode) {
   if (!refCode || refCode === "---" || refCode === "عام") return;
   const url = `https://status.sa4coins.com/?ref=${refCode}`;
@@ -277,7 +282,7 @@ function calculateTransferCountdown(createdAt) {
   const createdDate = new Date(createdAt);
   if (isNaN(createdDate.getTime())) return '<span style="color:var(--text-muted);">---</span>';
 
-  const maxHours = 120; // 5 أيام عمل
+  const maxHours = 120;
   const now = new Date();
   const diffMs = now.getTime() - createdDate.getTime();
   const passedHours = diffMs / (1000 * 60 * 60);
@@ -307,26 +312,11 @@ async function loadOrders() {
   try {
     const res = await fetch("/api/orders/list");
     const data = await res.json();
+
     if (!data.success) return;
 
     ordersData = data.orders.map(order => ({
       id: order.id,
-      reference: order.orderId,
-      referenceNumber: order.referenceNumber || order.orderId || "",
-      name: order.customerName || "عميل",
-      phone: order.customerPhone || "",
-      platform: order.platform || "PlayStation",
-      totalQty: Number(order.quantity || 0),
-      drawnCoins: Number(order.drawnCoins || 0),
-      totalPrice: order.total || "0 ر.س",
-      status: order.status || "pending",
-      createdAt: order.createdAt || null,
-      paymentMethod: order.paymentMethod || "تحويل بنكي",
-      bankName: order.bankName || "---",
-      accountIban: order.accountIban || "---",
-      accountEmail: order.accountEmail || "",
-      accountPassword: order.accountPassword || "",
-      backupCodes: order.backupCodes || "",
       ...order
     }));
 
@@ -340,7 +330,7 @@ async function loadOrders() {
     renderClientsTable(activeSearchQuery);
 
   } catch (err) {
-    console.error("Load Orders API Error:", err);
+    console.error("Load Orders Error:", err);
   }
 }
 
@@ -423,7 +413,7 @@ window.handleGlobalSearch = function (queryVal) {
 };
 
 // ==========================================================================
-// 4) رسم الجداول والعمليات الكاملة (تعديل، حذف، أرشفة، معاينة)
+// 4) رسم الجداول والعمليات الكاملة
 // ==========================================================================
 function buildActionButtonsHTML(order) {
   const refNum = order.referenceNumber || order.reference || order.id;
@@ -701,7 +691,77 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 5) نافذة التفاصيل والوظائف الكاملة (تحديث كوينز، أرشفة، إتلاف، حذف، تعديل)
+// 5) دالتي فك التشفير والعداد التنازلي (90 ثانية)
+// ==========================================================================
+async function decryptOrder(orderId) {
+  try {
+    const res = await fetch("/api/admin/decrypt-order", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ orderId })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("فشل فك التشفير");
+      return;
+    }
+
+    const phoneEl = document.getElementById("securePhone");
+    const emailEl = document.getElementById("secureEmail");
+    const eaEmailEl = document.getElementById("secureEaEmail");
+    const eaPassEl = document.getElementById("secureEaPass");
+    const codesEl = document.getElementById("secureCodes");
+
+    if (phoneEl) phoneEl.textContent = data.data.phone || "-";
+    if (emailEl) emailEl.textContent = data.data.customerEmail || "-";
+    if (eaEmailEl) eaEmailEl.textContent = data.data.eaEmail || "-";
+    if (eaPassEl) eaPassEl.textContent = data.data.eaPassword || "-";
+    if (codesEl) codesEl.textContent = data.data.backupCodes || "-";
+
+    startDecryptTimer();
+    await logAuditEvent("فك تشفير بيانات حساسة", orderId, "تم كشف بيانات الحساب لمدة 90 ثانية");
+  } catch (e) {
+    console.error(e);
+    alert("خطأ في الاتصال بالسيرفر");
+  }
+}
+window.decryptOrder = decryptOrder;
+
+function startDecryptTimer() {
+  clearInterval(decryptTimer);
+
+  decryptSeconds = 90;
+
+  const timerEl = document.getElementById("decryptTimer");
+  if (timerEl) timerEl.textContent = decryptSeconds + " ثانية";
+
+  decryptTimer = setInterval(() => {
+    decryptSeconds--;
+
+    const timerLabel = document.getElementById("decryptTimer");
+    if (timerLabel) {
+      timerLabel.textContent = decryptSeconds + " ثانية";
+    }
+
+    if (decryptSeconds <= 0) {
+      clearInterval(decryptTimer);
+
+      ["securePhone", "secureEmail", "secureEaEmail", "secureEaPass", "secureCodes"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "••••••••";
+      });
+
+      if (timerLabel) timerLabel.textContent = "منتهي";
+    }
+  }, 1000);
+}
+
+// ==========================================================================
+// 6) تفاصيل الطلب مع واجهة البيانات الحساسة المحمية
 // ==========================================================================
 window.openOrderModal = function (orderId) {
   const modal = document.getElementById("orderDetailModal");
@@ -768,11 +828,23 @@ window.openOrderModal = function (orderId) {
       <p style="margin-top:6px;"><b>المهلة المتبقية للتحويل:</b> ${calculateTransferCountdown(order.createdAt)}</p>
     </div>
 
-    <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--card-border); margin-bottom:20px;">
-      <h4 style="color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-key"></i> بيانات الحساب الحساسة</h4>
-      <p style="margin-bottom:6px;"><b>الإيميل:</b> <code style="color:var(--primary);">${order.accountEmail || 'محذوف / مشفر'}</code></p>
-      <p style="margin-bottom:6px;"><b>كلمة المرور:</b> <code>${order.accountPassword || 'محذوفة / مشفرة'}</code></p>
-      <p style="margin-bottom:6px;"><b>الأكواد الاحتياطية:</b> <code>${order.backupCodes || 'محذوفة'}</code></p>
+    <div class="secure-box" style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--card-border); margin-bottom:20px;">
+      <div class="secure-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <span style="color:#38bdf8; font-weight:700; font-size:1.05rem;"><i class="fa-solid fa-key"></i> البيانات الحساسة</span>
+        <button class="decrypt-btn btn-custom" style="background:#38bdf8; color:#060913; font-size:0.78rem; padding:6px 12px; border:none; border-radius:8px; cursor:pointer;" onclick="decryptOrder('${order.id}')">
+          <i class="fa-solid fa-lock-open"></i> فك التشفير
+        </button>
+      </div>
+
+      <div id="decryptTimer" style="color:#f59e0b; font-weight:800; font-size:0.85rem; margin-bottom:12px;">مشفرة</div>
+
+      <div class="secure-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+        <div>الجوال: <span id="securePhone">••••••••</span></div>
+        <div>البريد: <span id="secureEmail">••••••••</span></div>
+        <div>إيميل EA: <span id="secureEaEmail">••••••••</span></div>
+        <div>كلمة المرور: <span id="secureEaPass">••••••••</span></div>
+        <div>الأكواد: <span id="secureCodes">••••••••</span></div>
+      </div>
     </div>
 
     <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
@@ -793,7 +865,12 @@ window.openOrderModal = function (orderId) {
   modal.classList.add("active");
 };
 
+// إغلاق النافذة وتصفير العداد والبيانات
 window.closeOrderModal = function () {
+  clearInterval(decryptTimer);
+  decryptTimer = null;
+  decryptSeconds = 90;
+
   const modal = document.getElementById("orderDetailModal");
   if (modal) modal.classList.remove("active");
 };
@@ -925,7 +1002,6 @@ window.handleMarkTransferred = async function (orderId, refNum) {
   }
 };
 
-// تحديث الكوينز عن طريق Backend والخصم المباشر
 window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, totalQty) {
   const newDrawnStr = prompt(`تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(totalQty)}`, currentDrawn);
   
@@ -970,7 +1046,7 @@ window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, t
 };
 
 // ==========================================================================
-// 6) لوحة المخزون العرضية وإعدادات النظام
+// 7) لوحة المخزون العرضية وإعدادات النظام
 // ==========================================================================
 function renderInventoryUI(settings) {
   if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
@@ -1096,7 +1172,7 @@ window.addCustomPaymentMethod = async function () {
   const input = document.getElementById("newCustomPaymentInput");
   if (input && input.value.trim()) { await systemAddPaymentMethod(input.value.trim()); input.value = ""; }
 };
-window.deleteCustomPayment = async function (i) { await systemDeletePaymentMethod(i); };
+window.deleteCustomPayment = async function (i) { await systemDeleteCustomPayment(i); };
 
 function renderTerms(termsArray = []) {
   const c = document.getElementById("termsListContainer");
@@ -1115,7 +1191,6 @@ window.addNewTerm = async function () {
 };
 window.deleteTerm = async function (i) { await systemDeleteTerm(i); };
 
-// التنقل بين الأقسام
 window.switchTab = function (tabId, element) {
   document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
   document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
