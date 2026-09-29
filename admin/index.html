@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sami Coins | Ultimate Admin Dashboard V2.6</title>
+    <title>Sami Coins | Ultimate Admin Dashboard V2.7</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="style.css">
@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <!-- 2. نافذة تفاصيل الطلب المحدثة -->
+    <!-- 2. نافذة تفاصيل الطلب الاحترافية الفاخرة -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card modal-card-lg">
             <div class="modal-header">
@@ -116,7 +116,7 @@
     <!-- القائمة الجانبية (Sidebar) -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <span class="sidebar-brand">SAMI COINS V2.6</span>
+            <span class="sidebar-brand">SAMI COINS V2.7</span>
             <button class="sidebar-close-btn" onclick="toggleSidebar()">✕</button>
         </div>
 
@@ -241,13 +241,12 @@
             </div>
         </div>
 
-        <!-- 2. إدارة الطلبات الشاملة (مع المربعات المجدولة الحديثة) -->
+        <!-- 2. إدارة الطلبات الشاملة (مع دعم بطاقات الموبايل السريعة وقوائم الإغلاق التلقائي) -->
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
                     <h2><i class="fa-solid fa-box-archive"></i> جميع الطلبات</h2>
                     
-                    <!-- فلاتر حالات الطلب بتصميم مربع احترافي للشاشات الكبيرة وقائمة منسدلة للجوال -->
                     <div class="order-status-tabs-wrapper" id="orderStatusTabsWrapper">
                         <div class="desktop-status-pills" id="desktopStatusPills">
                             <button class="status-pill active" onclick="filterOrdersByTab('all', this)">الكل</button>
@@ -274,7 +273,8 @@
                     </div>
                 </div>
 
-                <div class="table-responsive">
+                <!-- جدول الديسك톱 -->
+                <div class="table-responsive desktop-table-view">
                     <table>
                         <thead>
                             <tr><th>رقم الطلب</th><th>المرجع</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
@@ -284,6 +284,9 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- بطاقات الهواتف السريعة (Mobile Cards View) -->
+                <div class="mobile-orders-cards-container" id="mobileOrdersCardsContainer" style="display:none;"></div>
             </div>
         </div>
 
@@ -499,7 +502,7 @@
             </div>
         </div>
 
-        <!-- 9. أسعار المنصات والعروض (بالتعديلات المعتمدة) -->
+        <!-- 9. أسعار المنصات والعروض -->
         <div id="pricingTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والمدد لكل منصة بالكامل</h2></div>
@@ -511,7 +514,6 @@
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="psMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>
                         </div>
-                        <!-- مربعي مدة السحب ومدة التحويل على نفس الصف -->
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
                             <div class="form-group"><label>مدة السحب</label><input type="text" id="psWithdrawDuration" class="form-control" value="3 - 5 أيام عمل"></div>
                             <div class="form-group"><label>مدة التحويل</label><input type="text" id="psTransferDuration" class="form-control" value="24 ساعة"></div>
@@ -525,7 +527,6 @@
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>
                         </div>
-                        <!-- مربعي مدة السحب ومدة التحويل على نفس الصف -->
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
                             <div class="form-group"><label>مدة السحب</label><input type="text" id="pcWithdrawDuration" class="form-control" value="2 - 4 أيام عمل"></div>
                             <div class="form-group"><label>مدة التحويل</label><input type="text" id="pcTransferDuration" class="form-control" value="24 ساعة"></div>
@@ -544,7 +545,7 @@
             </div>
         </div>
 
-        <!-- 10. قسم رسائل حالات الطلب الجديدة (WhatsApp Templates) -->
+        <!-- 10. قسم رسائل حالات الطلب (يشمل حالة طلب جديد المحدثة) -->
         <div id="whatsappTemplatesTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-comments" style="color:#00ff87;"></i> إدارة رسائل حالات الطلب (أتمتة الواتساب)</h2></div>
@@ -552,8 +553,12 @@
                 
                 <div style="display:flex; flex-direction:column; gap:16px;">
                     <div class="form-group">
-                        <label>رسالة حالة (طلب جديد / قيد المراجعة):</label>
-                        <textarea id="msgTemplateNew" class="form-control" rows="3">تم استلام طلبك رقم #{orderNumber} بنجاح، جاري مراجعته وتجهيزه.</textarea>
+                        <label>رسالة حالة (طلب جديد):</label>
+                        <textarea id="msgTemplateNew" class="form-control" rows="3">مرحباً بك، تم استلام طلبك رقم #{orderNumber} بنجاح، جاري مراجعته وتجهيزه.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رسالة حالة (انتظار المراجعة):</label>
+                        <textarea id="msgTemplateReview" class="form-control" rows="3">طلبك رقم #{orderNumber} قيد المراجعة حالياً من قبل فريق العمل.</textarea>
                     </div>
                     <div class="form-group">
                         <label>رسالة حالة (قيد التنفيذ - سحب الكوينز):</label>
@@ -641,7 +646,6 @@
 
     </main>
 
-    <!-- سكربتات النظام والإدارة -->
     <script type="module" src="../shared/firebase.js"></script>
     <script type="module" src="../shared/system.js"></script>
     <script type="module" src="admin.js"></script>
