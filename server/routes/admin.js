@@ -13,15 +13,15 @@ const safeDecrypt = (value) => {
   }
 };
 
-// اختبار لوحة التحكم
-router.get("/", (req, res) => {
+// اختبار
+router.get("/", (_, res) => {
   res.json({
     success: true,
     message: "Admin API Ready"
   });
 });
 
-// فك تشفير بيانات الطلب
+// فك تشفير البيانات الحساسة
 router.post("/decrypt-order", async (req, res) => {
   try {
     const { orderId } = req.body;
@@ -43,28 +43,57 @@ router.post("/decrypt-order", async (req, res) => {
     }
 
     const order = snap.data();
+    const account = order.accountData || {};
     const payment = order.paymentInfoData || {};
+
+    const response = {
+      phone: order.phone || "",
+      customerName: order.customerName || "",
+      paymentMethodType: order.paymentMethodType || "",
+
+      eaEmail: safeDecrypt(account.eaEmail),
+      eaPassword: safeDecrypt(account.eaPassword),
+      backupCodes: safeDecrypt(account.backupCodes),
+
+      fullName: "",
+      iban: "",
+      walletPhone: "",
+      walletAddress: "",
+      paypalEmail: "",
+      country: "",
+
+      expiresAt: Date.now() + 90000
+    };
+
+    switch (order.paymentMethodType) {
+      case "bank":
+        response.fullName = safeDecrypt(payment.fullName);
+        response.iban = safeDecrypt(payment.iban);
+        response.bankName = payment.bankName || "";
+        break;
+
+      case "wallet":
+        response.walletPhone = safeDecrypt(payment.walletPhone);
+        break;
+
+      case "usdt":
+        response.walletAddress = safeDecrypt(payment.walletAddress);
+        response.network = payment.network || "";
+        break;
+
+      case "paypal":
+        response.paypalEmail = safeDecrypt(payment.paypalEmail);
+        break;
+
+      case "western":
+        response.fullName = safeDecrypt(payment.fullName);
+        response.country = safeDecrypt(payment.country);
+        break;
+    }
 
     res.json({
       success: true,
-      data: {
-        phone: safeDecrypt(order.phone),
-        customerEmail: safeDecrypt(order.customerEmail),
-
-        eaEmail: safeDecrypt(order.eaEmail),
-        eaPassword: safeDecrypt(order.eaPassword),
-        backupCodes: safeDecrypt(order.backupCodes),
-
-        bankName: payment.bankName || "",
-        iban: safeDecrypt(payment.iban),
-        accountName: safeDecrypt(payment.accountName),
-        walletNumber: safeDecrypt(payment.walletNumber),
-        usdtWallet: safeDecrypt(payment.usdtWallet),
-        paypalEmail: safeDecrypt(payment.paypalEmail),
-        westernName: safeDecrypt(payment.westernName),
-
-        expiresAt: Date.now() + 90000
-      }
+      data: response
     });
 
   } catch (err) {
