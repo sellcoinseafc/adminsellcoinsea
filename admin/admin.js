@@ -38,6 +38,9 @@ import {
   toggleStore
 } from "../shared/system.js";
 
+// ==========================================================================
+// 0) القوائم والمتغيرات العامة للنظام
+// ==========================================================================
 const ALLOWED_EMAILS = [
   "mt.samicoins@gmail.com",
   "psnsa7@gmail.com"
@@ -51,27 +54,33 @@ let currentAdmin = {
 };
 
 let ordersData = [];
+let reviewsData = [];
 let adminsData = [];
 let auditLogsData = [];
 let currentSettingsData = {};
 let activeSearchQuery = "";
+let activeReviewSearchQuery = "";
 
-// ==========================================================================
-// متغيرات مؤقت فك التشفير
-// ==========================================================================
+// متغيرات مؤقت فك التشفير الحساس
 let decryptTimer = null;
 let decryptSeconds = 90;
 
+// مستمعات الأحداث اللحظية (Unsubscribe Handlers)
 let unsubscribeOrders = null;
+let unsubscribeReviews = null;
 let unsubscribeSettings = null;
 let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
+let lastOrdersCount = null;
+let lastReviewsCount = null;
+
 // ==========================================================================
-// 1) حارس الأمان والتسجيل
+// 1) حارس الأمان وتسجيل الدخول/الخروج
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
+  if (!unsubscribeReviews) unsubscribeReviews = initReviewsListener();
   if (!unsubscribeSettings) unsubscribeSettings = initSystemSettingsListener();
   if (!unsubscribeAdmins) unsubscribeAdmins = initAdminsListener();
   if (!unsubscribeAudit) unsubscribeAudit = initAuditLogsListener();
@@ -185,7 +194,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 2) السجل والساعة التفاعلية والأدوات المساعدة
+// 2) السجل والساعة التفاعلية والإشعارات
 // ==========================================================================
 function startLiveClock() {
   const clockEl = document.getElementById("liveDatetime");
@@ -201,6 +210,26 @@ function startLiveClock() {
       second: "2-digit"
     });
   }, 1000);
+}
+
+function showSystemNotification(title, text, actionCallback = null) {
+  const banner = document.getElementById("systemNotificationBanner");
+  const titleEl = document.getElementById("notificationBannerTitle");
+  const textEl = document.getElementById("notificationBannerText");
+  const actionBtn = document.getElementById("notificationBannerAction");
+
+  if (!banner) return;
+
+  if (titleEl) titleEl.innerText = title;
+  if (textEl) textEl.innerText = text;
+  if (actionBtn && actionCallback) {
+    actionBtn.onclick = () => {
+      actionCallback();
+      banner.style.display = "none";
+    };
+  }
+
+  banner.style.display = "flex";
 }
 
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
@@ -255,12 +284,6 @@ function initAdminsListener() {
   });
 }
 
-function initOrdersListener() {
-  loadOrders();
-  const interval = setInterval(loadOrders, 4000);
-  return () => clearInterval(interval);
-}
-
 window.copyTrackingLink = async function(refCode) {
   if (!refCode || refCode === "---" || refCode === "عام") return;
   const url = `https://status.sa4coins.com/?ref=${refCode}`;
@@ -306,8 +329,13 @@ function calculateTransferCountdown(createdAt) {
 }
 
 // ==========================================================================
-// 3) قراءة الطلبات الموحدة عبر السيرفر وتحديث الواجهات
+// 3) قراءة الطلبات الموحدة عبر السيرفر والتحويل المباشر للحقول
 // ==========================================================================
+function initOrdersListener() {
+  loadOrders();
+  return () => {};
+}
+
 async function loadOrders() {
   try {
     const res = await fetch("/api/orders/list");
@@ -315,9 +343,24 @@ async function loadOrders() {
 
     if (!data.success) return;
 
-    ordersData = data.orders.map(order => ({
+    ordersData = (data.orders || []).map(order => ({
       id: order.id,
-      ...order
+      referenceNumber: order.referenceNumber || order.reference || "",
+      name: order.customerName || order.name || "",
+      phone: order.phone || "",
+      platform: order.platform || "",
+      totalQty: Number(order.quantity ?? order.totalQty ?? 0),
+      totalPrice: order.totalPrice || "0 ر.س",
+      status: order.status || order.orderStatus || "new",
+      paymentMethod: order.paymentMethod || "",
+      bankName: order.paymentInfoData?.bankName || order.bankName || "",
+      accountIban: order.paymentInfoData?.iban || order.accountIban || "",
+      drawnCoins: Number(order.drawnCoins || 0),
+      createdAt: order.createdAt?.seconds
+        ? new Date(order.createdAt.seconds * 1000)
+        : order.createdAt
+          ? new Date(order.createdAt)
+          : null
     }));
 
     sortOrdersByPriority();
@@ -416,7 +459,7 @@ window.handleGlobalSearch = function (queryVal) {
 // 4) رسم الجداول والعمليات الكاملة
 // ==========================================================================
 function buildActionButtonsHTML(order) {
-  const refNum = order.referenceNumber || order.reference || order.id;
+  const refNum = order.referenceNumber || order.id;
   return `
     <div style="display:flex; gap:4px; flex-wrap:wrap;">
       <button class="btn-action" title="معاينة والتفاصيل" onclick="openOrderModal('${order.id}')"><i class="fa-solid fa-eye"></i></button>
@@ -463,15 +506,15 @@ window.renderOrdersTables = function () {
   };
 
   tbody.innerHTML = filteredData.map(o => {
-    const ref = o.referenceNumber || o.reference || "";
+    const ref = o.referenceNumber || "";
     return `
       <tr>
         <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')" title="اضغط لنسخ رابط التتبع">${ref || "---"} <i class="fa-solid fa-copy" style="font-size:0.75rem;"></i></b></td>
-        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${o.reference || '---'}</span></td>
-        <td>${o.name}</td>
-        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${ref || '---'}</span></td>
+        <td>${o.name || '---'}</td>
+        <td><span class="badge badge-new">${o.platform || '---'}</span></td>
         <td>${formatCoinsNumber(o.totalQty)}</td>
-        <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
+        <td><b style="color:var(--primary);">${o.totalPrice || '0 ر.س'}</b></td>
         <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
         <td>${buildActionButtonsHTML(o)}</td>
       </tr>
@@ -503,15 +546,15 @@ window.renderRecentOrdersTable = function () {
   };
 
   tbody.innerHTML = recentOrders.map(o => {
-    const ref = o.referenceNumber || o.reference || "";
+    const ref = o.referenceNumber || "";
     return `
       <tr>
         <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || "---"}</b></td>
-        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${o.reference || '---'}</span></td>
-        <td>${o.name}</td>
-        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${ref || '---'}</span></td>
+        <td>${o.name || '---'}</td>
+        <td><span class="badge badge-new">${o.platform || '---'}</span></td>
         <td>${formatCoinsNumber(o.totalQty)}</td>
-        <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
+        <td><b style="color:var(--primary);">${o.totalPrice || '0 ر.س'}</b></td>
         <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
         <td>${buildActionButtonsHTML(o)}</td>
       </tr>
@@ -548,13 +591,13 @@ window.renderWithdrawOrdersTable = function () {
     const categoryBadge = isUnder 
       ? '<span class="badge" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">أقل من 500K</span>'
       : '<span class="badge" style="background:rgba(0,255,135,0.12); color:var(--primary); border:1px solid rgba(0,255,135,0.3);">500K فأكثر</span>';
-    const ref = o.referenceNumber || o.reference || "";
+    const ref = o.referenceNumber || "";
 
     return `
       <tr>
         <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || '---'}</b></td>
-        <td>${o.name}</td>
-        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td>${o.name || '---'}</td>
+        <td><span class="badge badge-new">${o.platform || '---'}</span></td>
         <td><b>${formatCoinsNumber(total)}</b></td>
         <td>${badgeStatus}</td>
         <td>${categoryBadge}</td>
@@ -589,13 +632,13 @@ window.renderTransferAlertsTable = function () {
   }
 
   tbody.innerHTML = transferOrders.map(o => {
-    const ref = o.referenceNumber || o.reference || "";
+    const ref = o.referenceNumber || "";
     return `
       <tr>
         <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || '---'}</b></td>
-        <td>${o.name}</td>
+        <td>${o.name || '---'}</td>
         <td><span style="font-family:monospace;">${o.phone || '---'}</span></td>
-        <td><b style="color:#f59e0b;">${o.totalPrice}</b></td>
+        <td><b style="color:#f59e0b;">${o.totalPrice || '0 ر.س'}</b></td>
         <td><span class="badge badge-review">${o.paymentMethod || 'تحويل بنكي'} - ${o.bankName || ''}</span></td>
         <td>${calculateTransferCountdown(o.createdAt)}</td>
         <td>
@@ -606,6 +649,191 @@ window.renderTransferAlertsTable = function () {
   }).join('');
 };
 
+// ==========================================================================
+// 5) نظام التقييمات اللحظي والشامل (Reviews System)
+// ==========================================================================
+function initReviewsListener() {
+  const q = query(collection(db, "reviews"));
+  return onSnapshot(q, (snapshot) => {
+    reviewsData = snapshot.docs.map(docSnap => {
+      const d = docSnap.data();
+      return {
+        id: docSnap.id,
+        customerName: d.customerName || d.name || "عميل",
+        referenceNumber: d.referenceNumber || d.orderId || "---",
+        rating: Number(d.rating || 5),
+        comment: d.comment || d.text || "بدون تعليق",
+        createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString("ar-SA") : d.createdAt) : "---",
+        status: d.status || "published",
+        ...d
+      };
+    });
+
+    if (lastReviewsCount !== null && reviewsData.length > lastReviewsCount) {
+      showSystemNotification(
+        "⭐ تقييم جديد من عميل!",
+        "تم استقبال تقييم جديد للخدمة، اضغط لاستعراضه.",
+        () => switchTab("reviewsTab", document.querySelector('.sidebar-menu li:nth-child(5) a'))
+      );
+    }
+    lastReviewsCount = reviewsData.length;
+
+    renderReviewsTable();
+  }, (err) => {
+    console.error("Reviews Snapshot Error:", err);
+  });
+}
+
+function renderReviewsTable() {
+  const tbody = document.getElementById("reviewsTableBody");
+  const emptyState = document.getElementById("reviewsEmptyState");
+  if (!tbody) return;
+
+  const totalReviews = reviewsData.length;
+  const fiveStarsCount = reviewsData.filter(r => r.rating === 5).length;
+  const pendingCount = reviewsData.filter(r => r.status === "pending").length;
+  const avgRating = totalReviews > 0 
+    ? (reviewsData.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+    : "0.0";
+
+  if (document.getElementById("statTotalReviews")) document.getElementById("statTotalReviews").innerText = totalReviews;
+  if (document.getElementById("statAverageRating")) document.getElementById("statAverageRating").innerText = `${avgRating} ⭐`;
+  if (document.getElementById("statFiveStarReviews")) document.getElementById("statFiveStarReviews").innerText = fiveStarsCount;
+  if (document.getElementById("statPendingReviews")) document.getElementById("statPendingReviews").innerText = pendingCount;
+  if (document.getElementById("reviewsBadgeCount")) document.getElementById("reviewsBadgeCount").innerText = `${totalReviews} تقييمات`;
+
+  const sidebarBadge = document.getElementById("sidebarReviewsBadge");
+  if (sidebarBadge) {
+    sidebarBadge.innerText = pendingCount;
+    sidebarBadge.style.display = pendingCount > 0 ? "inline-block" : "none";
+  }
+
+  const filterVal = document.getElementById("reviewStatusFilter")?.value || "all";
+  let filtered = reviewsData;
+
+  if (filterVal !== "all") {
+    filtered = filtered.filter(r => r.status === filterVal);
+  }
+
+  if (activeReviewSearchQuery !== "") {
+    filtered = filtered.filter(r =>
+      r.customerName.toLowerCase().includes(activeReviewSearchQuery) ||
+      r.referenceNumber.toLowerCase().includes(activeReviewSearchQuery)
+    );
+  }
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    if (emptyState) emptyState.style.display = "block";
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = "none";
+
+  const statusBadgeMap = {
+    'published': '<span class="badge badge-completed">منشور</span>',
+    'pending': '<span class="badge badge-review">بانتظار المراجعة</span>',
+    'hidden': '<span class="badge badge-archived">مخفي</span>'
+  };
+
+  tbody.innerHTML = filtered.map(r => {
+    const starsHTML = "⭐".repeat(r.rating);
+    return `
+      <tr>
+        <td><b>${r.customerName}</b></td>
+        <td><code class="copyable-box" onclick="copyTrackingLink('${r.referenceNumber}')">${r.referenceNumber}</code></td>
+        <td><span style="color:#f59e0b;">${starsHTML} (${r.rating})</span></td>
+        <td><span style="font-size:0.85rem; max-width:250px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.comment}</span></td>
+        <td><span style="font-size:0.8rem; color:var(--text-muted);">${r.createdAt}</span></td>
+        <td>${statusBadgeMap[r.status] || r.status}</td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <button class="btn-action" title="معاينة التقييم" onclick="openReviewModal('${r.id}')"><i class="fa-solid fa-eye"></i></button>
+            ${r.status !== 'published' ? `<button class="btn-action" style="color:var(--primary);" title="نشر التقييم" onclick="updateReviewStatus('${r.id}', 'published')"><i class="fa-solid fa-check"></i></button>` : ''}
+            ${r.status !== 'hidden' ? `<button class="btn-action" style="color:var(--warning);" title="إخفاء التقييم" onclick="updateReviewStatus('${r.id}', 'hidden')"><i class="fa-solid fa-eye-slash"></i></button>` : ''}
+            <button class="btn-action" style="color:var(--danger);" title="حذف التقييم" onclick="deleteReview('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const reviewSearch = document.getElementById("reviewSearchInput");
+  const reviewFilter = document.getElementById("reviewStatusFilter");
+  if (reviewSearch) {
+    reviewSearch.addEventListener("input", (e) => {
+      activeReviewSearchQuery = e.target.value.trim().toLowerCase();
+      renderReviewsTable();
+    });
+  }
+  if (reviewFilter) {
+    reviewFilter.addEventListener("change", () => renderReviewsTable());
+  }
+});
+
+window.openReviewModal = function(reviewId) {
+  const modal = document.getElementById("reviewModal");
+  const modalTitle = document.getElementById("reviewModalTitle");
+  const modalBody = document.getElementById("reviewModalBody");
+  if (!modal || !modalBody) return;
+
+  const review = reviewsData.find(r => r.id === reviewId);
+  if (!review) return;
+
+  if (modalTitle) modalTitle.innerText = `تفاصيل تقييم العميل: ${review.customerName}`;
+
+  modalBody.innerHTML = `
+    <div style="background:var(--input-bg); padding:16px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:15px;">
+      <p style="margin-bottom:8px;"><b>العميل:</b> ${review.customerName}</p>
+      <p style="margin-bottom:8px;"><b>رقم المرجع:</b> <code style="color:var(--primary);">${review.referenceNumber}</code></p>
+      <p style="margin-bottom:8px;"><b>التقييم:</b> <span style="color:#f59e0b;">${"⭐".repeat(review.rating)} (${review.rating} من 5)</span></p>
+      <p style="margin-bottom:8px;"><b>التاريخ:</b> ${review.createdAt}</p>
+      <p style="margin-bottom:8px;"><b>الحالة:</b> ${review.status}</p>
+    </div>
+    <div style="background:var(--input-bg); padding:16px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:20px;">
+      <h4 style="color:var(--primary); margin-bottom:8px;"><i class="fa-solid fa-comment-dots"></i> نص التقييم:</h4>
+      <p style="font-size:0.95rem; line-height:1.8; color:var(--text-main);">${review.comment}</p>
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn-custom" style="background:var(--primary); color:#000;" onclick="updateReviewStatus('${review.id}', 'published'); closeReviewModal();">نشر التقييم</button>
+      <button class="btn-custom" style="background:#f59e0b; color:#fff;" onclick="updateReviewStatus('${review.id}', 'hidden'); closeReviewModal();">إخفاء</button>
+      <button class="btn-custom" style="background:#ef4444; color:#fff;" onclick="deleteReview('${review.id}'); closeReviewModal();">حذف</button>
+      <button class="btn-custom" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--card-border);" onclick="closeReviewModal()">إغلاق</button>
+    </div>
+  `;
+
+  modal.classList.add("active");
+};
+
+window.closeReviewModal = function() {
+  const modal = document.getElementById("reviewModal");
+  if (modal) modal.classList.remove("active");
+};
+
+window.updateReviewStatus = async function(reviewId, newStatus) {
+  try {
+    await updateDoc(doc(db, "reviews", reviewId), { status: newStatus });
+    await logAuditEvent("تحديث حالة التقييم", reviewId, `تغيير الحالة إلى: ${newStatus}`);
+  } catch (err) {
+    alert("❌ فشل تحديث حالة التقييم: " + err.message);
+  }
+};
+
+window.deleteReview = async function(reviewId) {
+  if (!confirm("هل أنت متأكد من حذف هذا التقييم نهائياً؟")) return;
+  try {
+    await deleteDoc(doc(db, "reviews", reviewId));
+    await logAuditEvent("حذف تقييم", reviewId, "تم حذف التقييم من النظام");
+  } catch (err) {
+    alert("❌ فشل حذف التقييم: " + err.message);
+  }
+};
+
+// ==========================================================================
+// 6) ملف العملاء وسجل الطلبات
+// ==========================================================================
 window.renderClientsTable = function (searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
   if (!tbody) return;
@@ -666,7 +894,7 @@ window.openClientModal = function (encodedPhone) {
         <thead><tr><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>التاريخ</th></tr></thead>
         <tbody>
           ${clientOrders.map(o => {
-            const ref = o.referenceNumber || o.reference || "";
+            const ref = o.referenceNumber || "";
             return `
               <tr>
                 <td><b style="color:var(--primary); cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref}</b></td>
@@ -691,7 +919,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 5) دالتي فك التشفير والعداد التنازلي (90 ثانية)
+// 7) دالتي فك التشفير والعداد التنازلي (90 ثانية)
 // ==========================================================================
 async function decryptOrder(orderId) {
   try {
@@ -761,7 +989,7 @@ function startDecryptTimer() {
 }
 
 // ==========================================================================
-// 6) تفاصيل الطلب مع واجهة البيانات الحساسة المحمية
+// 8) تفاصيل الطلب وإدارتها بالكامل
 // ==========================================================================
 window.openOrderModal = function (orderId) {
   const modal = document.getElementById("orderDetailModal");
@@ -769,10 +997,10 @@ window.openOrderModal = function (orderId) {
   const modalBody = document.getElementById("modalOrderBody");
   if (!modal || !modalBody) return;
 
-  const order = ordersData.find(o => o.id === orderId || o.reference === orderId || o.referenceNumber === orderId);
+  const order = ordersData.find(o => o.id === orderId || o.referenceNumber === orderId);
   if (!order) { alert("لم يتم العثور على بيانات الطلب المطلوب."); return; }
 
-  const refNum = order.referenceNumber || order.reference || order.id;
+  const refNum = order.referenceNumber || order.id;
 
   if (modalTitle) modalTitle.innerText = `تفاصيل الطلب رقم: #${refNum}`;
 
@@ -799,7 +1027,7 @@ window.openOrderModal = function (orderId) {
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">اسم العميل:</span>
-        <h4 style="color:var(--text-main); margin-top:4px;">${order.name}</h4>
+        <h4 style="color:var(--text-main); margin-top:4px;">${order.name || '---'}</h4>
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">رقم الجوال:</span>
@@ -807,11 +1035,11 @@ window.openOrderModal = function (orderId) {
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">المنصة والكمية:</span>
-        <h4 style="color:var(--primary); margin-top:4px;">${order.platform} - ${formatCoinsNumber(order.totalQty)} كوينز</h4>
+        <h4 style="color:var(--primary); margin-top:4px;">${order.platform || '---'} - ${formatCoinsNumber(order.totalQty)} كوينز</h4>
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">المبلغ الإجمالي:</span>
-        <h4 style="color:#f59e0b; margin-top:4px;">${order.totalPrice}</h4>
+        <h4 style="color:#f59e0b; margin-top:4px;">${order.totalPrice || '0 ر.س'}</h4>
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">الحالة الحالية:</span>
@@ -865,7 +1093,6 @@ window.openOrderModal = function (orderId) {
   modal.classList.add("active");
 };
 
-// إغلاق النافذة وتصفير العداد والبيانات
 window.closeOrderModal = function () {
   clearInterval(decryptTimer);
   decryptTimer = null;
@@ -1046,7 +1273,7 @@ window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, t
 };
 
 // ==========================================================================
-// 7) لوحة المخزون العرضية وإعدادات النظام
+// 9) لوحة المخزون العرضية وإعدادات النظام
 // ==========================================================================
 function renderInventoryUI(settings) {
   if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
@@ -1191,6 +1418,9 @@ window.addNewTerm = async function () {
 };
 window.deleteTerm = async function (i) { await systemDeleteTerm(i); };
 
+// ==========================================================================
+// 10) التنقل وإدارة الواجهة العامة
+// ==========================================================================
 window.switchTab = function (tabId, element) {
   document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
   document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
@@ -1225,4 +1455,5 @@ window.toggleTheme = function () {
   }
 };
 
+// تشغيل حارس التوثيق
 initAuthGuard();

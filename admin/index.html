@@ -10,7 +10,7 @@
 </head>
 <body>
 
-    <!-- نافذة تسجيل الدخول الزجاجية -->
+    <!-- 1. نافذة تسجيل الدخول الزجاجية -->
     <div class="login-overlay active" id="loginOverlay">
         <div class="login-card-nextgen">
             <div class="login-brand-badge">
@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <!-- نافذة تفاصيل الطلب -->
+    <!-- 2. نافذة تفاصيل الطلب -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -65,7 +65,18 @@
         </div>
     </div>
 
-    <!-- نافذة تأكيد إتلاف البيانات الحساسة -->
+    <!-- 3. نافذة تفاصيل التقييم (Review Modal) -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="reviewModalTitle">تفاصيل التقييم</h3>
+                <button class="modal-close-btn" onclick="closeReviewModal()">✕</button>
+            </div>
+            <div id="reviewModalBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
+        </div>
+    </div>
+
+    <!-- 4. نافذة تأكيد إتلاف البيانات الحساسة -->
     <div class="modal-overlay" id="purgeConfirmModal">
         <div class="modal-card" style="max-width: 450px; text-align: center;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(239, 68, 68, 0.3);">
@@ -88,7 +99,7 @@
         </div>
     </div>
 
-    <!-- نافذة عرض سجل العميل -->
+    <!-- 5. نافذة عرض سجل العميل -->
     <div class="modal-overlay" id="clientDetailModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -119,6 +130,7 @@
             <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>
             <li><a class="sidebar-link" onclick="switchTab('withdrawTab', this)"><i class="fa-solid fa-coins" style="color:#00ff87;"></i> طلبات السحب <span id="withdrawBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
             <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات بانتظار التحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+            <li><a class="sidebar-link" onclick="switchTab('reviewsTab', this)"><i class="fa-solid fa-star" style="color:#f59e0b;"></i> إدارة التقييمات <span id="sidebarReviewsBadge" class="badge badge-review" style="margin-right:auto; display:none;">0</span></a></li>
             <li><a class="sidebar-link" onclick="switchTab('statsTab', this)"><i class="fa-solid fa-chart-line"></i> تقارير الإحصائيات</a></li>
             <li><a class="sidebar-link" onclick="switchTab('inventoryTab', this)"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزون</a></li>
             <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>
@@ -149,6 +161,18 @@
                 <button class="nav-icon-btn" onclick="toggleTheme()" id="themeToggleBtn" title="تغيير المظهر"><i class="fa-regular fa-moon"></i></button>
             </div>
         </header>
+
+        <!-- منطقة الإشعارات والتنبيهات العامة للنظام -->
+        <div id="systemNotificationBanner" style="display:none; background:linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(168,85,247,0.15) 100%); border:1.5px solid #38bdf8; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <i class="fa-solid fa-bell" style="font-size:1.5rem; color:#38bdf8;"></i>
+                <div>
+                    <strong style="font-size:0.95rem; display:block; color:#38bdf8;" id="notificationBannerTitle">إشعار جديد من النظام</strong>
+                    <span style="font-size:0.82rem; color:var(--text-muted);" id="notificationBannerText">هناك طلبات أو تقييمات جديدة بانتظار المراجعة.</span>
+                </div>
+            </div>
+            <button class="btn-custom" style="background:#38bdf8; color:#000; font-size:0.8rem; padding:8px 14px;" id="notificationBannerAction">استعراض التحديثات</button>
+        </div>
 
         <!-- تنبيه عاجل للتحويلات المالية -->
         <div id="urgentTransferBanner" style="display:none; background:linear-gradient(135deg, rgba(245,158,11,0.2) 0%, rgba(239,68,68,0.2) 100%); border:1.5px solid #f59e0b; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
@@ -186,11 +210,11 @@
                     <div class="stat-info"><span>بانتظار التحويل المالي</span><h3 id="dashStatPendingTransfer" style="color:#f59e0b;">0</h3></div>
                     <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(6) a'))">
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
                     <div class="stat-info"><span>مخزون PS / Xbox</span><h3 id="dashStockPS" style="color:var(--primary);">0 كوينز</h3></div>
                     <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-brands fa-playstation"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(6) a'))">
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
                     <div class="stat-info"><span>مخزون PC الحالي</span><h3 id="dashStockPC" style="color:#e81123;">0 كوينز</h3></div>
                     <div class="stat-icon" style="background: rgba(232, 17, 35, 0.12); color: #e81123;"><i class="fa-solid fa-desktop"></i></div>
                 </div>
@@ -311,7 +335,88 @@
             </div>
         </div>
 
-        <!-- 5. صفحة الإحصائيات -->
+        <!-- 5. قسم التقييمات (Reviews) الجديد -->
+        <div id="reviewsTab" class="tab-content">
+            <div id="reviewsSection" class="card-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-star" style="color:#f59e0b;"></i> إدارة تقييمات العملاء</h2>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="reviewsBadgeCount" class="badge badge-review">0 تقييمات</span>
+                    </div>
+                </div>
+
+                <!-- بطاقات إحصائيات التقييمات -->
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span>إجمالي التقييمات</span>
+                            <h3 id="statTotalReviews">0</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-comments"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span>متوسط التقييم</span>
+                            <h3 id="statAverageRating">0.0 ⭐</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(255, 215, 0, 0.12); color: #ffd700;"><i class="fa-solid fa-star"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span>تقييمات 5 نجوم</span>
+                            <h3 id="statFiveStarReviews" style="color: var(--primary);">0</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-award"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-info">
+                            <span>التقييمات المعلقة</span>
+                            <h3 id="statPendingReviews" style="color: #38bdf8;">0</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-hourglass-half"></i></div>
+                    </div>
+                </div>
+
+                <!-- أدوات الفلترة والبحث للربط البرمجي -->
+                <div id="reviewFilters" style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                    <input type="text" id="reviewSearchInput" class="form-control" placeholder="بحث باسم العميل أو رقم المرجع..." style="max-width:300px;">
+                    <select id="reviewStatusFilter" class="form-control" style="max-width:180px;">
+                        <option value="all">جميع الحالات</option>
+                        <option value="published">منشورة</option>
+                        <option value="pending">بانتظار المراجعة</option>
+                        <option value="hidden">مخفية</option>
+                    </select>
+                </div>
+
+                <!-- جدول التقييمات -->
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>اسم العميل</th>
+                                <th>رقم المرجع</th>
+                                <th>التقييم</th>
+                                <th>التعليق / النص</th>
+                                <th>التاريخ</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewsTableBody">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد تقييمات مسجلة.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- حاوية الحالة الفارغة للربط -->
+                <div id="reviewsEmptyState" style="display:none; text-align:center; padding:40px; color:var(--text-muted);">
+                    <i class="fa-regular fa-folder-open" style="font-size:2.5rem; margin-bottom:10px;"></i>
+                    <p>لا توجد تقييمات مطابقة لشروط البحث.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. صفحة الإحصائيات -->
         <div id="statsTab" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -341,7 +446,7 @@
             </div>
         </div>
 
-        <!-- 6. لوحة المخزون الجديدة (عرض أوتوماتيكي ومتابعة الحركة) -->
+        <!-- 7. لوحة المخزون -->
         <div id="inventoryTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked"></i> لوحة المخزون العرضية وسجل التحديث الآلي</h2></div>
@@ -379,7 +484,7 @@
             </div>
         </div>
 
-        <!-- 7. ملف العملاء وسجل الطلبات -->
+        <!-- 8. ملف العملاء وسجل الطلبات -->
         <div id="customerProfileTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات</h2></div>
@@ -399,7 +504,7 @@
             </div>
         </div>
 
-        <!-- 8. أسعار المنصات والعروض -->
+        <!-- 9. أسعار المنصات والعروض -->
         <div id="pricingTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والمدد لكل منصة بالكامل</h2></div>
@@ -438,7 +543,7 @@
             </div>
         </div>
 
-        <!-- 9. وسائل الدفع والحقول -->
+        <!-- 10. وسائل الدفع والحقول -->
         <div id="paymentsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
@@ -472,7 +577,7 @@
             </div>
         </div>
 
-        <!-- 10. الشروط والأحكام -->
+        <!-- 11. الشروط والأحكام -->
         <div id="termsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
@@ -489,7 +594,7 @@
             </div>
         </div>
 
-        <!-- 11. إعدادات عامة -->
+        <!-- 12. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة والدعم</h2></div>

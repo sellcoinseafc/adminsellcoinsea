@@ -14,10 +14,14 @@ function dailyCode() {
   return String(Math.floor(100 + Math.random() * 900));
 }
 
+// اختبار
 router.get("/", (req, res) => {
   res.json({ success: true, message: "Orders API Ready" });
 });
 
+// ==========================
+// قراءة الطلبات (معدل)
+// ==========================
 router.get("/list", async (req, res) => {
   try {
     const snapshot = await db
@@ -25,146 +29,52 @@ router.get("/list", async (req, res) => {
       .orderBy("createdAt", "desc")
       .get();
 
-    const orders = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const orders = snapshot.docs.map(doc => {
+      const d = doc.data();
 
-    res.json({ success: true, orders });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+      return {
+        id: doc.id,
+        reference: d.orderId || doc.id,
+        referenceNumber: d.referenceNumber || "",
 
-router.get("/settings", async (req, res) => {
-  try {
-    const doc = await db.collection("system").doc("settings").get();
-    const s = doc.data() || {};
+        // لوحة التحكم
+        name: d.customerName || "",
+        customerName: d.customerName || "",
 
-    res.json({
-      success: true,
-      rates: {
-        PlayStation: s.psRate || 0,
-        Xbox: s.psRate || 0,
-        PC: s.pcRate || 0
-      },
-      limits: {
-        psMin: s.psMin || 0,
-        psMax: s.psMax || 0,
-        pcMin: s.pcMin || 0,
-        pcMax: s.pcMax || 0
-      },
-      withdrawDays: s.psWithdrawDuration || "",
-      transferHours: s.psTransferDuration || "",
-      safeMethod: "Comfort Trade",
-      paymentMethods: {
-        local: ["تحويل بنكي", "المحافظ الرقمية"],
-        international: ["USDT", "PayPal", "Western Union"]
-      },
-      banks: s.banks || [],
-      wallets: s.wallets || [],
-      termsEnabled: true
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+        phone: d.phone || "",
+        platform: d.platform || "",
 
-router.post("/create", async (req, res) => {
-  try {
-    const counterRef = db.collection("system").doc("orderCounter");
+        totalQty: Number(d.quantity || 0),
+        quantity: Number(d.quantity || 0),
 
-    const result = await db.runTransaction(async (tx) => {
-      const snap = await tx.get(counterRef);
+        totalPrice: d.totalPrice || "",
 
-      let orderSeq = 100;
-      let refSeq = 1;
+        status: d.status || d.orderStatus || "new",
+        orderStatus: d.orderStatus || d.status || "new",
 
-      if (snap.exists) {
-        const data = snap.data();
-        orderSeq = data.orderSequence || 100;
-        refSeq = data.referenceSequence || 1;
-      }
+        drawnCoins: Number(d.drawnCoins || 0),
+        withdrawnQuantity: Number(d.withdrawnQuantity || 0),
+        progressPercentage: Number(d.progressPercentage || 0),
 
-      const orderId = `${randomLetters()}${dailyCode()}${orderSeq}`;
-      const referenceNumber = `FC${Math.floor(100 + Math.random() * 900)}-${refSeq}`;
+        paymentMethod: d.paymentMethod || "",
+        paymentMethodType: d.paymentMethodType || "",
+        paymentInfoData: d.paymentInfoData || {},
 
-      tx.set(counterRef, {
-        orderSequence: orderSeq + 1,
-        referenceSequence: refSeq + 1
-      }, { merge: true });
+        statusMessage: d.statusMessage || "",
+        lastUpdate: d.lastUpdate || "",
 
-      const payment = req.body.paymentInfoData || {};
-
-      const encryptedPayment = {
-        bankName: payment.bankName || "",
-        iban: payment.iban ? encrypt(payment.iban) : "",
-        accountName: payment.accountName ? encrypt(payment.accountName) : "",
-        walletNumber: payment.walletNumber ? encrypt(payment.walletNumber) : "",
-        usdtWallet: payment.usdtWallet ? encrypt(payment.usdtWallet) : "",
-        paypalEmail: payment.paypalEmail ? encrypt(payment.paypalEmail) : "",
-        westernName: payment.westernName ? encrypt(payment.westernName) : ""
+        createdAt: d.createdAt?.toDate
+          ? d.createdAt.toDate().toISOString()
+          : null
       };
-
-      const orderRef = db.collection("orders").doc(orderId);
-
-      tx.set(orderRef, {
-        orderId,
-        referenceNumber,
-
-        customerName: req.body.customerName || "",
-        customerEmail: req.body.customerEmail
-          ? encrypt(req.body.customerEmail)
-          : "",
-
-        phone: req.body.phone
-          ? encrypt(req.body.phone)
-          : "",
-
-        platform: req.body.platform || "",
-        quantity: req.body.quantity || "",
-        totalPrice: req.body.totalPrice || "",
-
-        eaEmail: req.body.eaEmail
-          ? encrypt(req.body.eaEmail)
-          : "",
-
-        eaPassword: req.body.eaPassword
-          ? encrypt(req.body.eaPassword)
-          : "",
-
-        backupCodes: req.body.backupCodes
-          ? encrypt(req.body.backupCodes)
-          : "",
-
-        paymentMethod: req.body.paymentMethod || "",
-        paymentMethodType: req.body.paymentMethodType || "",
-        paymentInfoData: encryptedPayment,
-
-        orderStatus: "new",
-        progressPercentage: 15,
-        withdrawnQuantity: 0,
-        statusMessage: "تم استلام طلبك بنجاح",
-
-        withdrawDuration: "3-7 أيام",
-        transferDuration: "3-5 أيام",
-
-        lastUpdate: new Date().toLocaleString("ar-SA"),
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      return { orderId, referenceNumber };
     });
 
     res.json({
       success: true,
-      orderId: result.orderId,
-      referenceNumber: result.referenceNumber
+      orders
     });
 
   } catch (err) {
-    console.error("Order Creation Error:", err);
-
     res.status(500).json({
       success: false,
       message: err.message
