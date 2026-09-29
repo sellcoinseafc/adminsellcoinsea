@@ -294,6 +294,7 @@ function calculateTotal() {
 
 // ==========================================================================
 // 6. حقن قوائم البنوك والمحافظ ديناميكياً من storeSettings.banks & storeSettings.wallets
+// (تعديل 4: تحديث الـ IDs للحقول المدخلة)
 // ==========================================================================
 function renderStep2PaymentFields() {
     const container = document.getElementById('step2PaymentFieldsContainer');
@@ -311,9 +312,9 @@ function renderStep2PaymentFields() {
                 </select>
             </div>
             <label class="field-label">الاسم الكامل للحساب البنكي <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="bankFullName" placeholder="الاسم كما في الحساب البنكي" required></div>
+            <div class="input-box-wrap"><input type="text" id="accountName" placeholder="الاسم كما في الحساب البنكي" required></div>
             <label class="field-label">رقم الإيبان (IBAN) <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="bankIban" placeholder="SA0000000000000000000000" required></div>
+            <div class="input-box-wrap"><input type="text" id="iban" placeholder="SA0000000000000000000000" required></div>
         `;
     } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
         const walletsList = storeSettings.wallets || [];
@@ -321,14 +322,14 @@ function renderStep2PaymentFields() {
 
         container.innerHTML = `
             <label class="field-label">اسم المحفظة الرقمية <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><select id="walletNameSelect" required>${optionsHtml}</select></div>
+            <div class="input-box-wrap"><select id="walletTypeSelect" required>${optionsHtml}</select></div>
             <label class="field-label">رقم الجوال المرتبط بالمحفظة <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="tel" id="walletPhone" placeholder="9665xxxxxxxx" oninput="convertArabicNumbersToEnglish(this)" required></div>
+            <div class="input-box-wrap"><input type="tel" id="walletNumber" placeholder="9665xxxxxxxx" oninput="convertArabicNumbersToEnglish(this)" required></div>
         `;
     } else if (selectedPaymentMethod === 'USDT') {
         container.innerHTML = `
             <label class="field-label">عنوان المحفظة (USDT TRC20) <span style="color:#ef4444">*</span>:</label>
-            <div class="input-box-wrap"><input type="text" id="usdtAddress" placeholder="أدخل عنوان محفظة USDT الخاص بك" required></div>
+            <div class="input-box-wrap"><input type="text" id="usdtWalletType" placeholder="أدخل عنوان محفظة USDT الخاص بك" required></div>
         `;
     } else if (selectedPaymentMethod === 'PayPal') {
         container.innerHTML = `
@@ -387,15 +388,15 @@ function buildPaymentDetailsHTML() {
     let html = '';
     if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
         const bank = document.getElementById('bankNameSelect')?.value || '';
-        const name = document.getElementById('bankFullName')?.value.trim() || '';
-        const iban = document.getElementById('bankIban')?.value.trim() || '';
+        const name = document.getElementById('accountName')?.value.trim() || '';
+        const iban = document.getElementById('iban')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>تحويل بنكي (${bank})</span></div><div class="field-label">اسم الحساب والإيبان:</div><div class="review-value-box"><span>${name} - ${iban}</span></div>`;
     } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
-        const wallet = document.getElementById('walletNameSelect')?.value || '';
-        const phone = document.getElementById('walletPhone')?.value.trim() || '';
+        const wallet = document.getElementById('walletTypeSelect')?.value || '';
+        const phone = document.getElementById('walletNumber')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>${wallet} (${phone})</span></div>`;
     } else if (selectedPaymentMethod === 'USDT') {
-        const addr = document.getElementById('usdtAddress')?.value.trim() || '';
+        const addr = document.getElementById('usdtWalletType')?.value.trim() || '';
         html = `<div class="field-label">طريقة التحويل:</div><div class="review-value-box"><span>USDT: ${addr}</span></div>`;
     } else if (selectedPaymentMethod === 'PayPal') {
         const email = document.getElementById('paypalEmail')?.value.trim() || '';
@@ -409,21 +410,22 @@ function buildPaymentDetailsHTML() {
     return html;
 }
 
+// (تعديل 3: تحديث أسماء الحقول لتطابق الباكند)
 function getPayoutDetailsObject() {
     if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
         return {
             bankName: document.getElementById('bankNameSelect')?.value || '',
-            accountName: document.getElementById('bankFullName')?.value.trim() || '',
-            iban: document.getElementById('bankIban')?.value.trim() || ''
+            accountName: document.getElementById('accountName')?.value.trim() || '',
+            iban: document.getElementById('iban')?.value.trim() || ''
         };
     } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
         return {
-            walletName: document.getElementById('walletNameSelect')?.value || '',
-            walletPhone: document.getElementById('walletPhone')?.value.trim() || ''
+            walletType: document.getElementById('walletTypeSelect')?.value || '',
+            walletNumber: document.getElementById('walletNumber')?.value.trim() || ''
         };
     } else if (selectedPaymentMethod === 'USDT') {
         return {
-            usdtAddress: document.getElementById('usdtAddress')?.value.trim() || ''
+            walletType: document.getElementById('usdtWalletType')?.value.trim() || ''
         };
     } else if (selectedPaymentMethod === 'PayPal') {
         return {
@@ -561,16 +563,16 @@ function goToReview() {
         if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
             payoutWrap.innerHTML = `
                 <label class="field-label">اسم البنك:</label><div class="input-box-wrap"><input type="text" id="editBankName" value="${document.getElementById('bankNameSelect')?.value || ''}"></div>
-                <label class="field-label">الاسم:</label><div class="input-box-wrap"><input type="text" id="editBankFullName" value="${document.getElementById('bankFullName')?.value || ''}"></div>
-                <label class="field-label">الإيبان:</label><div class="input-box-wrap"><input type="text" id="editBankIban" value="${document.getElementById('bankIban')?.value || ''}"></div>
+                <label class="field-label">الاسم:</label><div class="input-box-wrap"><input type="text" id="editAccountName" value="${document.getElementById('accountName')?.value || ''}"></div>
+                <label class="field-label">الإيبان:</label><div class="input-box-wrap"><input type="text" id="editIban" value="${document.getElementById('iban')?.value || ''}"></div>
             `;
         } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
             payoutWrap.innerHTML = `
-                <label class="field-label">رقم الجوال للمحفظة:</label><div class="input-box-wrap"><input type="tel" id="editWalletPhone" value="${document.getElementById('walletPhone')?.value || ''}" oninput="convertArabicNumbersToEnglish(this)"></div>
+                <label class="field-label">رقم الجوال للمحفظة:</label><div class="input-box-wrap"><input type="tel" id="editWalletNumber" value="${document.getElementById('walletNumber')?.value || ''}" oninput="convertArabicNumbersToEnglish(this)"></div>
             `;
         } else if (selectedPaymentMethod === 'USDT') {
             payoutWrap.innerHTML = `
-                <label class="field-label">عنوان USDT:</label><div class="input-box-wrap"><input type="text" id="editUsdtAddr" value="${document.getElementById('usdtAddress')?.value || ''}"></div>
+                <label class="field-label">عنوان USDT:</label><div class="input-box-wrap"><input type="text" id="editUsdtWalletType" value="${document.getElementById('usdtWalletType')?.value || ''}"></div>
             `;
         } else {
             payoutWrap.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted);">طريقة الدفع الحالية: ${selectedPaymentMethod}</div>`;
@@ -626,12 +628,12 @@ function toggleEditMode() {
 
         if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
             if(document.getElementById('bankNameSelect')) document.getElementById('bankNameSelect').value = document.getElementById('editBankName')?.value || '';
-            if(document.getElementById('bankFullName')) document.getElementById('bankFullName').value = document.getElementById('editBankFullName')?.value || '';
-            if(document.getElementById('bankIban')) document.getElementById('bankIban').value = document.getElementById('editBankIban')?.value || '';
+            if(document.getElementById('accountName')) document.getElementById('accountName').value = document.getElementById('editAccountName')?.value || '';
+            if(document.getElementById('iban')) document.getElementById('iban').value = document.getElementById('editIban')?.value || '';
         } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
-            if(document.getElementById('walletPhone')) document.getElementById('walletPhone').value = document.getElementById('editWalletPhone')?.value || '';
+            if(document.getElementById('walletNumber')) document.getElementById('walletNumber').value = document.getElementById('editWalletNumber')?.value || '';
         } else if (selectedPaymentMethod === 'USDT') {
-            if(document.getElementById('usdtAddress')) document.getElementById('usdtAddress').value = document.getElementById('editUsdtAddr')?.value || '';
+            if(document.getElementById('usdtWalletType')) document.getElementById('usdtWalletType').value = document.getElementById('editUsdtWalletType')?.value || '';
         }
 
         const revSpecDetails = document.getElementById('revSpecificDetailsContainer');
@@ -683,25 +685,36 @@ function formatAndCalculateInline(input) {
 
 // ==========================================================================
 // 8. إنشاء الطلب المباشر عبر POST /api/orders/create
+// (تعديل 1 وتعديل 2)
 // ==========================================================================
 async function submitOrderFinal() {
   if (isEditingAll) toggleEditMode();
 
   const orderData = {
+    customerName: document.getElementById("customerName").value.trim(),
+    phone: document.getElementById("customerPhone").value.trim(),
     platform: selectedPlatform,
     quantity: currentQty,
-    total: document.getElementById("totalAmountText").innerText,
-    customerName: document.getElementById("customerName").value.trim(),
-    customerPhone: document.getElementById("customerPhone").value.trim(),
-    eaEmail: document.getElementById("eaEmail").value.trim(),
-    eaPassword: document.getElementById("eaPass").value.trim(),
-    backupCodes: [
-      document.getElementById("code1").value.trim(),
-      document.getElementById("code2").value.trim(),
-      document.getElementById("code3").value.trim()
-    ],
+    totalPrice: document.getElementById("totalAmountText").innerText,
+
     paymentMethod: selectedPaymentMethod,
-    payoutDetails: getPayoutDetailsObject()
+    paymentMethodType:
+      selectedPaymentMethod.includes("بنك") ? "bank" :
+      selectedPaymentMethod.includes("محفظ") ? "wallet" :
+      selectedPaymentMethod === "USDT" ? "usdt" :
+      selectedPaymentMethod === "PayPal" ? "paypal" : "western",
+
+    accountData: {
+      eaEmail: document.getElementById("eaEmail").value.trim(),
+      eaPassword: document.getElementById("eaPass").value.trim(),
+      backupCodes: [
+        document.getElementById("code1").value.trim(),
+        document.getElementById("code2").value.trim(),
+        document.getElementById("code3").value.trim()
+      ]
+    },
+
+    paymentInfoData: getPayoutDetailsObject()
   };
 
   try {
@@ -719,15 +732,15 @@ async function submitOrderFinal() {
       throw new Error(data.message);
     }
 
-    generatedOrderId = data.orderId;
+    generatedOrderId = data.referenceNumber;
 
-    document.getElementById("finalOrderId").innerText = data.orderId;
+    document.getElementById("finalOrderId").innerText = data.referenceNumber;
     document.getElementById("billClientName").innerText = orderData.customerName;
-    document.getElementById("billClientPhone").innerText = orderData.customerPhone;
+    document.getElementById("billClientPhone").innerText = orderData.phone;
     document.getElementById("billPlatform").innerText = selectedPlatform;
     document.getElementById("billQty").innerText =
       currentQty.toLocaleString("en-US") + " كوينز";
-    document.getElementById("billTotal").innerText = orderData.total;
+    document.getElementById("billTotal").innerText = orderData.totalPrice;
 
     const billPaymentCardEl = document.getElementById("billPaymentCard");
     if (billPaymentCardEl) {
@@ -799,15 +812,15 @@ function sendOrderViaWhatsapp() {
     let paymentDetailsText = "";
     if (selectedPaymentMethod === 'تحويل بنكي' || selectedPaymentMethod.includes('بنك')) {
         const bank = document.getElementById('bankNameSelect')?.value || '';
-        const name = document.getElementById('bankFullName')?.value.trim() || '';
-        const iban = document.getElementById('bankIban')?.value.trim() || '';
+        const name = document.getElementById('accountName')?.value.trim() || '';
+        const iban = document.getElementById('iban')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: تحويل بنكي (${bank})\n• اسم الحساب والإيبان: ${name} - ${iban}`;
     } else if (selectedPaymentMethod === 'المحافظ الرقمية' || selectedPaymentMethod.includes('محفظ')) {
-        const wallet = document.getElementById('walletNameSelect')?.value || '';
-        const phone = document.getElementById('walletPhone')?.value.trim() || '';
+        const wallet = document.getElementById('walletTypeSelect')?.value || '';
+        const phone = document.getElementById('walletNumber')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: ${wallet} (${phone})`;
     } else if (selectedPaymentMethod === 'USDT') {
-        const addr = document.getElementById('usdtAddress')?.value.trim() || '';
+        const addr = document.getElementById('usdtWalletType')?.value.trim() || '';
         paymentDetailsText = `• طريقة الدفع: USDT (${addr})`;
     } else if (selectedPaymentMethod === 'PayPal') {
         const email = document.getElementById('paypalEmail')?.value.trim() || '';
