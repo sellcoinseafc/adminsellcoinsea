@@ -54,14 +54,17 @@
         </div>
     </div>
 
-    <!-- 2. نافذة تفاصيل الطلب -->
+    <!-- 2. نافذة تفاصيل الطلب المحدثة بالكامل -->
     <div class="modal-overlay" id="orderDetailModal">
-        <div class="modal-card">
+        <div class="modal-card modal-card-lg">
             <div class="modal-header">
-                <h3 id="modalOrderIdTitle">تفاصيل الطلب</h3>
+                <div>
+                    <h3 id="modalOrderIdTitle" style="display: flex; align-items: center; gap: 8px;">تفاصيل الطلب</h3>
+                    <span id="modalRefNumberSubtitle" class="ref-badge-subtitle">---</span>
+                </div>
                 <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
             </div>
-            <div id="modalOrderBody" style="font-size: 0.88rem; line-height: 1.9;"></div>
+            <div id="modalOrderBody" style="font-size: 0.88rem; line-height: 1.8;"></div>
         </div>
     </div>
 
@@ -194,29 +197,29 @@
         <!-- 1. الرئيسية المختصرة -->
         <div id="dashboardTab" class="tab-content active">
             <div class="stats-grid">
-                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                <div class="stat-card stat-card-new" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
                     <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="dashStatNew">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-bell"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('withdrawTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
+                <div class="stat-card stat-card-progress" onclick="switchTab('withdrawTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
                     <div class="stat-info"><span>طلبات قيد التنفيذ</span><h3 id="dashStatProgress">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-spinner fa-spin-pulse"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                <div class="stat-card stat-card-completed" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
                     <div class="stat-info"><span>الطلبات المكتملة</span><h3 id="dashStatCompleted">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(4) a'))">
-                    <div class="stat-info"><span>بانتظار التحويل المالي</span><h3 id="dashStatPendingTransfer" style="color:#f59e0b;">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-card stat-card-transfer" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(4) a'))">
+                    <div class="stat-info"><span>بانتظار التحويل المالي</span><h3 id="dashStatPendingTransfer">0</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
-                    <div class="stat-info"><span>مخزون PS / Xbox</span><h3 id="dashStockPS" style="color:var(--primary);">0 كوينز</h3></div>
-                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-brands fa-playstation"></i></div>
+                <div class="stat-card stat-card-ps" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
+                    <div class="stat-info"><span>مخزون PS / Xbox</span><h3 id="dashStockPS">0 كوينز</h3></div>
+                    <div class="stat-icon"><i class="fa-brands fa-playstation"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
-                    <div class="stat-info"><span>مخزون PC الحالي</span><h3 id="dashStockPC" style="color:#e81123;">0 كوينز</h3></div>
-                    <div class="stat-icon" style="background: rgba(232, 17, 35, 0.12); color: #e81123;"><i class="fa-solid fa-desktop"></i></div>
+                <div class="stat-card stat-card-pc" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(7) a'))">
+                    <div class="stat-info"><span>مخزون PC الحالي</span><h3 id="dashStockPC">0 كوينز</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-desktop"></i></div>
                 </div>
             </div>
 
@@ -227,7 +230,7 @@
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>المرجع (تتبع)</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
+                            <tr><th>رقم الطلب</th><th>المرجع</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
                         </thead>
                         <tbody id="recentOrdersTableBody">
                             <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حديثة.</td></tr>
@@ -258,7 +261,7 @@
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>المرجع (تتبع)</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
+                            <tr><th>رقم الطلب</th><th>المرجع</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
                         </thead>
                         <tbody id="fullOrdersTableBody">
                             <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات مسجلة.</td></tr>
@@ -284,27 +287,27 @@
                 </div>
 
                 <div class="stats-grid" style="margin-bottom: 20px;">
-                    <div class="stat-card" style="border-color: rgba(56, 189, 248, 0.3);">
+                    <div class="stat-card stat-card-new">
                         <div class="stat-info">
                             <span>طلبات أقل من 500K</span>
-                            <h3 id="countUnder500k" style="color: #38bdf8;">0</h3>
+                            <h3 id="countUnder500k">0</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-arrow-down-short-wide"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-arrow-down-short-wide"></i></div>
                     </div>
 
-                    <div class="stat-card" style="border-color: rgba(0, 255, 135, 0.3);">
+                    <div class="stat-card stat-card-ps">
                         <div class="stat-info">
                             <span>طلبات 500K فأكثر</span>
-                            <h3 id="countOver500k" style="color: var(--primary);">0</h3>
+                            <h3 id="countOver500k">0</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-arrow-up-wide-short"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-arrow-up-wide-short"></i></div>
                     </div>
                 </div>
 
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>المرجع (تتبع)</th><th>العميل</th><th>المنصة</th><th>الكمية المطلوبة</th><th>الحالة</th><th>التصنيف</th><th>الإجراء والتحديث</th></tr>
+                            <tr><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية المطلوبة</th><th>الحالة</th><th>التصنيف</th><th>الإجراء والتحديث</th></tr>
                         </thead>
                         <tbody id="withdrawOrdersTableBody">
                             <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات سحب جديدة.</td></tr>
@@ -325,7 +328,7 @@
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>المرجع (تتبع)</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>وسيلة الدفع / البنك</th><th>العداد التنازلي</th><th>الإجراء</th></tr>
+                            <tr><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المبلغ المستحق</th><th>وسيلة الدفع / البنك</th><th>العداد التنازلي</th><th>الإجراء</th></tr>
                         </thead>
                         <tbody id="transferAlertsTableBody">
                             <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
@@ -335,7 +338,7 @@
             </div>
         </div>
 
-        <!-- 5. قسم التقييمات (Reviews) الجديد -->
+        <!-- 5. قسم التقييمات (Reviews) -->
         <div id="reviewsTab" class="tab-content">
             <div id="reviewsSection" class="card-panel">
                 <div class="panel-header">
@@ -347,33 +350,33 @@
 
                 <!-- بطاقات إحصائيات التقييمات -->
                 <div class="stats-grid" style="margin-bottom: 20px;">
-                    <div class="stat-card">
+                    <div class="stat-card stat-card-transfer">
                         <div class="stat-info">
                             <span>إجمالي التقييمات</span>
                             <h3 id="statTotalReviews">0</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-comments"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-comments"></i></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card-star">
                         <div class="stat-info">
                             <span>متوسط التقييم</span>
                             <h3 id="statAverageRating">0.0 ⭐</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(255, 215, 0, 0.12); color: #ffd700;"><i class="fa-solid fa-star"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card-ps">
                         <div class="stat-info">
                             <span>تقييمات 5 نجوم</span>
-                            <h3 id="statFiveStarReviews" style="color: var(--primary);">0</h3>
+                            <h3 id="statFiveStarReviews">0</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-award"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-award"></i></div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card stat-card-new">
                         <div class="stat-info">
                             <span>التقييمات المعلقة</span>
-                            <h3 id="statPendingReviews" style="color: #38bdf8;">0</h3>
+                            <h3 id="statPendingReviews">0</h3>
                         </div>
-                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                     </div>
                 </div>
 
@@ -419,29 +422,29 @@
         <!-- 6. صفحة الإحصائيات -->
         <div id="statsTab" class="tab-content">
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card stat-card-new">
                     <div class="stat-info"><span>إجمالي الطلبات الكلي</span><h3 id="statTotalOrders">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-boxes-packing"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-boxes-packing"></i></div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card stat-card-progress">
                     <div class="stat-info"><span>إجمالي العملاء المسجلين</span><h3 id="statTotalClients">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-users"></i></div>
+                    <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي الكوينز المسحوبة</span><h3 id="statTotalCoins" style="color:var(--primary);">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-coins"></i></div>
+                <div class="stat-card stat-card-ps">
+                    <div class="stat-info"><span>إجمالي الكوينز المسحوبة</span><h3 id="statTotalCoins">0</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-coins"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTotalMoney" style="color:#38bdf8;">0 ريال</h3></div>
-                    <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-sack-dollar"></i></div>
+                <div class="stat-card stat-card-new">
+                    <div class="stat-info"><span>إجمالي المبالغ المحولة</span><h3 id="statTotalMoney">0 ريال</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>كوينز اليوم المنجزة</span><h3 id="statTodayCoins" style="color:var(--primary);">0</h3></div>
-                    <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-calendar-day"></i></div>
+                <div class="stat-card stat-card-ps">
+                    <div class="stat-info"><span>كوينز اليوم المنجزة</span><h3 id="statTodayCoins">0</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-calendar-day"></i></div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-info"><span>مبالغ اليوم المحولة</span><h3 id="statTodayMoney" style="color:#f59e0b;">0 ريال</h3></div>
-                    <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-cash-register"></i></div>
+                <div class="stat-card stat-card-transfer">
+                    <div class="stat-info"><span>مبالغ اليوم المحولة</span><h3 id="statTodayMoney">0 ريال</h3></div>
+                    <div class="stat-icon"><i class="fa-solid fa-cash-register"></i></div>
                 </div>
             </div>
         </div>
