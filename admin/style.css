@@ -23,6 +23,11 @@
     --radius-lg: 22px;
     --radius-md: 18px;
     --radius-sm: 12px;
+
+    /* منصات الألعاب - الألوان الرسمية */
+    --platform-ps: #00439c;
+    --platform-xbox: #107c41;
+    --platform-pc: #e81123;
 }
 
 body.light-mode {
@@ -448,6 +453,7 @@ body {
     font-size: 0.82rem;
     font-weight: 900;
     color: var(--primary);
+    font-family: monospace;
 }
 
 .nav-icon-btn {
@@ -481,7 +487,7 @@ body {
 .tab-content.active { display: block; }
 
 /* ==========================================================================
-   6. البطاقات والإحصائيات والأدوات (Stats Grid & Panels)
+   6. البطاقات والإحصائيات وتأثيرات اللمعة التفاعلية (Shine / Glow Effects)
    ========================================================================== */
 .stats-grid {
     display: grid;
@@ -490,22 +496,132 @@ body {
     margin-bottom: 20px;
 }
 
+/* التنسيق الجديد لبطاقة الإحصائية مع تأثير اللمعة */
 .stat-card {
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(14px);
     border: 1.5px solid var(--glass-border);
     border-radius: var(--radius-md);
-    padding: 18px 20px;
+    padding: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     box-shadow: var(--box-shadow);
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transform: translateY(0);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.stat-info span { display: block; font-size: 0.8rem; font-weight: 800; color: var(--text-muted); margin-bottom: 4px; }
-.stat-info h3 { font-size: 1.4rem; font-weight: 900; color: var(--text-main); }
-.stat-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+/* تأثير اللمعة الضوئية المارة على البطاقات */
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -150%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+    transform: skewX(-25deg);
+    transition: left 0.75s ease-in-out;
+}
+
+.stat-card:hover::before {
+    left: 150%;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* تخصيص إضاءات الألوان للبطاقات الإحصائية */
+.stat-card-new {
+    border-color: rgba(56, 189, 248, 0.3);
+}
+.stat-card-new:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 10px 25px rgba(56, 189, 248, 0.25);
+}
+.stat-card-new .stat-icon {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+}
+
+.stat-card-progress {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+.stat-card-progress:hover {
+    border-color: #a855f7;
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.25);
+}
+.stat-card-progress .stat-icon {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.stat-card-completed {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+.stat-card-completed:hover {
+    border-color: #10b981;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);
+}
+.stat-card-completed .stat-icon {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+}
+
+.stat-card-transfer {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+.stat-card-transfer:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.25);
+}
+.stat-card-transfer .stat-icon {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.stat-card-ps {
+    border-color: rgba(0, 255, 135, 0.3);
+}
+.stat-card-ps:hover {
+    border-color: var(--primary);
+    box-shadow: 0 10px 25px rgba(0, 255, 135, 0.25);
+}
+.stat-card-ps .stat-icon {
+    background: rgba(0, 255, 135, 0.15);
+    color: var(--primary);
+}
+
+.stat-card-pc {
+    border-color: rgba(232, 17, 35, 0.3);
+}
+.stat-card-pc:hover {
+    border-color: #e81123;
+    box-shadow: 0 10px 25px rgba(232, 17, 35, 0.25);
+}
+.stat-card-pc .stat-icon {
+    background: rgba(232, 17, 35, 0.15);
+    color: #e81123;
+}
+
+.stat-card-star {
+    border-color: rgba(255, 215, 0, 0.3);
+}
+.stat-card-star:hover {
+    border-color: #ffd700;
+    box-shadow: 0 10px 25px rgba(255, 215, 0, 0.25);
+}
+.stat-card-star .stat-icon {
+    background: rgba(255, 215, 0, 0.15);
+    color: #ffd700;
+}
+
+.stat-info span { display: block; font-size: 0.82rem; font-weight: 800; color: var(--text-muted); margin-bottom: 6px; }
+.stat-info h3 { font-size: 1.45rem; font-weight: 900; color: var(--text-main); font-family: monospace; }
+.stat-icon { width: 46px; height: 46px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
 
 .card-panel {
     background: var(--glass-bg);
@@ -550,7 +666,7 @@ body {
 .form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
 
 /* ==========================================================================
-   7. الأزرار والشارات (Buttons & Badges)
+   7. الأزرار والشارات ومنصات الألعاب (Buttons & Badges & Platforms)
    ========================================================================== */
 .btn-custom {
     background: var(--primary-gradient);
@@ -588,11 +704,39 @@ body {
 
 .copyable-box {
     background: var(--input-bg);
-    padding: 2px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
     border: 1px solid var(--card-border);
     color: var(--primary);
     font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* تنسيق منصات الألعاب بشعار ولون كل منصة */
+.platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.platform-badge.ps {
+    background: linear-gradient(135deg, #00439c 0%, #0070d1 100%);
+    box-shadow: 0 3px 10px rgba(0, 67, 156, 0.3);
+}
+
+.platform-badge.xbox {
+    background: linear-gradient(135deg, #107c41 0%, #10a44a 100%);
+    box-shadow: 0 3px 10px rgba(16, 124, 65, 0.3);
+}
+
+.platform-badge.pc {
+    background: linear-gradient(135deg, #e81123 0%, #ff4d4d 100%);
+    box-shadow: 0 3px 10px rgba(232, 17, 35, 0.3);
 }
 
 .table-responsive { width: 100%; overflow-x: auto; }
@@ -609,13 +753,13 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
 .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.35); }
 
 /* ==========================================================================
-   8. النوافذ المنبثقة والتجاوب مع الشاشات (Modals & Responsive Layout)
+   8. النوافذ المنبثقة وشريط سحب الكوينز المحدث بالكامل (Detail Modal & Progress UI)
    ========================================================================== */
 .modal-overlay {
     position: fixed; 
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(3, 5, 11, 0.85); 
-    backdrop-filter: blur(10px);
+    background: rgba(3, 5, 11, 0.88); 
+    backdrop-filter: blur(14px);
     display: flex; align-items: center; justify-content: center;
     z-index: 2000; padding: 15px; 
     opacity: 0; pointer-events: none; 
@@ -630,6 +774,11 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
     border-radius: var(--radius-lg);
     padding: 24px; max-width: 820px; width: 100%; 
     max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+}
+
+.modal-card-lg {
+    max-width: 900px;
 }
 
 .modal-header {
@@ -637,10 +786,165 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
     margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1.5px solid var(--card-border);
 }
 
+.ref-badge-subtitle {
+    font-size: 0.78rem;
+    font-family: monospace;
+    background: rgba(0, 255, 135, 0.1);
+    color: var(--primary);
+    border: 1px solid rgba(0, 255, 135, 0.25);
+    padding: 3px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 4px;
+}
+
 .modal-close-btn {
     background: rgba(239, 68, 68, 0.1); color: var(--danger);
-    border: none; width: 30px; height: 30px; border-radius: 8px;
-    cursor: pointer; font-weight: 900;
+    border: none; width: 32px; height: 32px; border-radius: 8px;
+    cursor: pointer; font-weight: 900; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* بطاقات أرقام السحب والكميات المحدثة بخط كبير */
+.modal-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.modal-stat-box {
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    padding: 16px;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.modal-stat-box .lbl {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 6px;
+}
+
+.modal-stat-box .val {
+    font-size: 1.6rem;
+    font-weight: 900;
+    font-family: monospace;
+    color: var(--text-main);
+}
+
+/* شريط تقدم سحب الكوينز الاحترافي */
+.progress-container-nextgen {
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.progress-bar-bg {
+    width: 100%;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 30px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid var(--card-border);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--primary-gradient);
+    border-radius: 30px;
+    transition: width 0.4s ease-in-out;
+    box-shadow: 0 0 15px rgba(0, 255, 135, 0.4);
+}
+
+/* صندوق التحكم بالكمية المسحوبة المدمج */
+.withdraw-input-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.withdraw-input-control input {
+    text-align: center;
+    font-family: monospace;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--primary);
+    letter-spacing: 1px;
+}
+
+/* البيانات الحساسة القابلة للنسخ المباشر */
+.secure-item-row {
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    padding: 12px 16px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.secure-item-row:hover {
+    border-color: var(--primary);
+    background: rgba(0, 255, 135, 0.04);
+}
+
+.secure-item-row .label {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.secure-item-row .value {
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: var(--primary);
+}
+
+.backup-codes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.code-box-single {
+    background: var(--input-bg);
+    border: 1.5px solid var(--card-border);
+    padding: 12px;
+    border-radius: 12px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 0.95rem;
+    font-weight: 900;
+    color: var(--blue);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.code-box-single:hover {
+    border-color: var(--blue);
+    background: rgba(56, 189, 248, 0.08);
 }
 
 @media (max-width: 992px) {
@@ -655,4 +959,8 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
     .top-navbar { gap: 8px; padding: 10px; }
     .login-card-nextgen { padding: 26px 20px; }
     .stats-grid { grid-template-columns: 1fr; }
+    .modal-stats-grid { grid-template-columns: 1fr; }
+    .backup-codes-grid { grid-template-columns: 1fr; }
+    .withdraw-input-control { flex-direction: column; width: 100%; }
+    .withdraw-input-control input { width: 100%; }
 }
