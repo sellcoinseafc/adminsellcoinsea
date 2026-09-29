@@ -1,14 +1,13 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
 import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import adminRoutes from "./routes/admin.js";
-import orderRoutes from "./routes/orders.js";
-import trackingRoutes from "./routes/tracking.js";
+import adminRoutes from "./server/routes/admin.js";
+import ordersRouter from "./server/routes/orders.js";
+import trackingRouter from "./server/routes/tracking.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,12 +19,13 @@ const PORT = process.env.PORT || 3211;
 app.use(cors());
 app.use(express.json());
 
-// صفحات المشروع
-app.use("/admin", express.static(path.join(__dirname, "../admin")));
-app.use("/orders", express.static(path.join(__dirname, "../orders")));
-app.use("/tracking", express.static(path.join(__dirname, "../tracking")));
+// Static Files
+app.use("/shared", express.static(path.join(__dirname, "shared")));
+app.use("/admin", express.static(path.join(__dirname, "admin")));
+app.use("/orders", express.static(path.join(__dirname, "orders")));
+app.use("/tracking", express.static(path.join(__dirname, "tracking")));
 
-// API
+// Health
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
@@ -34,16 +34,20 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+// APIs
 app.use("/api/admin", adminRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/tracking", trackingRoutes);
+app.use("/api/orders", ordersRouter);
+app.use("/api/tracking", trackingRouter);
 
-// الصفحة الرئيسية
+// Home
 app.get("/", (req, res) => {
-  res.redirect("/orders");
+  res.redirect("/admin/");
 });
 
-// تشغيل السيرفر
-app.listen(PORT, () => {
-  console.log(`SAMI COINS Server running on port ${PORT}`);
+// Start
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Admin:    http://191.218.164.20:${PORT}/admin/`);
+  console.log(`Orders:   http://191.218.164.20:${PORT}/orders/`);
+  console.log(`Tracking: http://191.218.164.20:${PORT}/tracking/`);
 });

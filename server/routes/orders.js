@@ -1,5 +1,6 @@
 import express from "express";
 import admin, { db } from "../services/firebase.js";
+import { encrypt } from "../utils/crypto.js";
 
 const router = express.Router();
 
@@ -23,10 +24,12 @@ router.get("/list", async (req, res) => {
       .collection("orders")
       .orderBy("createdAt", "desc")
       .get();
+
     const orders = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
     res.json({ success: true, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -37,6 +40,7 @@ router.get("/settings", async (req, res) => {
   try {
     const doc = await db.collection("system").doc("settings").get();
     const s = doc.data() || {};
+
     res.json({
       success: true,
       rates: {
@@ -69,54 +73,82 @@ router.get("/settings", async (req, res) => {
 router.post("/create", async (req, res) => {
   try {
     const counterRef = db.collection("system").doc("orderCounter");
+
     const result = await db.runTransaction(async (tx) => {
       const snap = await tx.get(counterRef);
+
       let orderSeq = 100;
       let refSeq = 1;
+
       if (snap.exists) {
         const data = snap.data();
         orderSeq = data.orderSequence || 100;
         refSeq = data.referenceSequence || 1;
       }
+
       const orderId = `${randomLetters()}${dailyCode()}${orderSeq}`;
       const referenceNumber = `FC${Math.floor(100 + Math.random() * 900)}-${refSeq}`;
-      
-      tx.set(
-        counterRef,
-        {
-          orderSequence: orderSeq + 1,
-          referenceSequence: refSeq + 1
-        },
-        { merge: true }
-      );
+
+      tx.set(counterRef, {
+        orderSequence: orderSeq + 1,
+        referenceSequence: refSeq + 1
+      }, { merge: true });
+
+      const payment = req.body.paymentInfoData || {};
+
+      const encryptedPayment = {
+        bankName: payment.bankName || "",
+        iban: payment.iban ? encrypt(payment.iban) : "",
+        accountName: payment.accountName ? encrypt(payment.accountName) : "",
+        walletNumber: payment.walletNumber ? encrypt(payment.walletNumber) : "",
+        usdtWallet: payment.usdtWallet ? encrypt(payment.usdtWallet) : "",
+        paypalEmail: payment.paypalEmail ? encrypt(payment.paypalEmail) : "",
+        westernName: payment.westernName ? encrypt(payment.westernName) : ""
+      };
 
       const orderRef = db.collection("orders").doc(orderId);
+
       tx.set(orderRef, {
         orderId,
         referenceNumber,
 
-        // بيانات العميل
         customerName: req.body.customerName || "",
-        customerEmail: req.body.customerEmail || "",
-        phone: req.body.phone || "",
+        customerEmail: req.body.customerEmail
+          ? encrypt(req.body.customerEmail)
+          : "",
+
+        phone: req.body.phone
+          ? encrypt(req.body.phone)
+          : "",
+
         platform: req.body.platform || "",
         quantity: req.body.quantity || "",
         totalPrice: req.body.totalPrice || "",
+
+        eaEmail: req.body.eaEmail
+          ? encrypt(req.body.eaEmail)
+          : "",
+
+        eaPassword: req.body.eaPassword
+          ? encrypt(req.body.eaPassword)
+          : "",
+
+        backupCodes: req.body.backupCodes
+          ? encrypt(req.body.backupCodes)
+          : "",
+
         paymentMethod: req.body.paymentMethod || "",
         paymentMethodType: req.body.paymentMethodType || "",
-        paymentInfoData: req.body.paymentInfoData || {},
+        paymentInfoData: encryptedPayment,
 
-        // حالات التتبع
         orderStatus: "new",
         progressPercentage: 15,
         withdrawnQuantity: 0,
         statusMessage: "تم استلام طلبك بنجاح",
 
-        // المدد
         withdrawDuration: "3-7 أيام",
         transferDuration: "3-5 أيام",
 
-        // الوقت
         lastUpdate: new Date().toLocaleString("ar-SA"),
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
@@ -129,8 +161,10 @@ router.post("/create", async (req, res) => {
       orderId: result.orderId,
       referenceNumber: result.referenceNumber
     });
+
   } catch (err) {
     console.error("Order Creation Error:", err);
+
     res.status(500).json({
       success: false,
       message: err.message
