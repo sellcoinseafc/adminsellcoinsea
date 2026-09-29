@@ -23,12 +23,10 @@ router.get("/list", async (req, res) => {
       .collection("orders")
       .orderBy("createdAt", "desc")
       .get();
-
     const orders = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
-
     res.json({ success: true, orders });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -38,23 +36,22 @@ router.get("/list", async (req, res) => {
 router.get("/settings", async (req, res) => {
   try {
     const doc = await db.collection("system").doc("settings").get();
-    const s = doc.data();
-
+    const s = doc.data() || {};
     res.json({
       success: true,
       rates: {
-        PlayStation: s.psRate,
-        Xbox: s.psRate,
-        PC: s.pcRate
+        PlayStation: s.psRate || 0,
+        Xbox: s.psRate || 0,
+        PC: s.pcRate || 0
       },
       limits: {
-        psMin: s.psMin,
-        psMax: s.psMax,
-        pcMin: s.pcMin,
-        pcMax: s.pcMax
+        psMin: s.psMin || 0,
+        psMax: s.psMax || 0,
+        pcMin: s.pcMin || 0,
+        pcMax: s.pcMax || 0
       },
-      withdrawDays: s.psWithdrawDuration,
-      transferHours: s.psTransferDuration,
+      withdrawDays: s.psWithdrawDuration || "",
+      transferHours: s.psTransferDuration || "",
       safeMethod: "Comfort Trade",
       paymentMethods: {
         local: ["تحويل بنكي", "المحافظ الرقمية"],
@@ -72,22 +69,18 @@ router.get("/settings", async (req, res) => {
 router.post("/create", async (req, res) => {
   try {
     const counterRef = db.collection("system").doc("orderCounter");
-
     const result = await db.runTransaction(async (tx) => {
       const snap = await tx.get(counterRef);
-
       let orderSeq = 100;
       let refSeq = 1;
-
       if (snap.exists) {
         const data = snap.data();
         orderSeq = data.orderSequence || 100;
         refSeq = data.referenceSequence || 1;
       }
-
       const orderId = `${randomLetters()}${dailyCode()}${orderSeq}`;
       const referenceNumber = `FC${Math.floor(100 + Math.random() * 900)}-${refSeq}`;
-
+      
       tx.set(
         counterRef,
         {
@@ -98,13 +91,34 @@ router.post("/create", async (req, res) => {
       );
 
       const orderRef = db.collection("orders").doc(orderId);
-
       tx.set(orderRef, {
         orderId,
         referenceNumber,
-        status: "pending",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        ...req.body
+
+        // بيانات العميل
+        customerName: req.body.customerName || "",
+        customerEmail: req.body.customerEmail || "",
+        phone: req.body.phone || "",
+        platform: req.body.platform || "",
+        quantity: req.body.quantity || "",
+        totalPrice: req.body.totalPrice || "",
+        paymentMethod: req.body.paymentMethod || "",
+        paymentMethodType: req.body.paymentMethodType || "",
+        paymentInfoData: req.body.paymentInfoData || {},
+
+        // حالات التتبع
+        orderStatus: "new",
+        progressPercentage: 15,
+        withdrawnQuantity: 0,
+        statusMessage: "تم استلام طلبك بنجاح",
+
+        // المدد
+        withdrawDuration: "3-7 أيام",
+        transferDuration: "3-5 أيام",
+
+        // الوقت
+        lastUpdate: new Date().toLocaleString("ar-SA"),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
       return { orderId, referenceNumber };
@@ -115,7 +129,6 @@ router.post("/create", async (req, res) => {
       orderId: result.orderId,
       referenceNumber: result.referenceNumber
     });
-
   } catch (err) {
     console.error("Order Creation Error:", err);
     res.status(500).json({

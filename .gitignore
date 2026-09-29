@@ -1,3 +1,13 @@
-server/serviceAccountKey.json
-.env
+# Firebase Keys
+keys/
+server/services/serviceAccountKey.json
+
+# Temporary files
+*.swp
+*.save
+
+# Dependencies
 node_modules/
+
+# Logs
+*.log

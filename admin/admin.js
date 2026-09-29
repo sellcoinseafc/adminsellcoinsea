@@ -23,9 +23,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-// ==========================================================================
-// 1) استيراد دوال النظام بالكامل من system.js
-// ==========================================================================
 import {
   subscribeToSettings,
   savePricing,
@@ -64,7 +61,7 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 // ==========================================================================
-// 2) حارس الأمان والتوثيق
+// 1) حارس الأمان والتسجيل
 // ==========================================================================
 function startAllListeners() {
   if (!unsubscribeOrders) unsubscribeOrders = initOrdersListener();
@@ -146,24 +143,15 @@ window.handleEmailLogin = async function (e) {
 
 window.handleGoogleLogin = async function () {
   const alertEl = document.getElementById("loginErrorAlert");
-
   try {
     if (alertEl) alertEl.style.display = "none";
-
     const provider = new GoogleAuthProvider();
-
-    // أندرويد والمتصفحات المحمولة
     if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
       await signInWithRedirect(auth, provider);
       return;
     }
-
-    // الكمبيوتر
     await signInWithPopup(auth, provider);
-
   } catch (err) {
-    console.error(err);
-
     if (alertEl) {
       alertEl.innerText = err.message;
       alertEl.style.display = "block";
@@ -187,7 +175,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 3) سجل الأمان والمستندات والطلبات
+// 2) السجل والأدوات المساعدة
 // ==========================================================================
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
@@ -217,15 +205,18 @@ function initAuditLogsListener() {
 function renderAuditLogsTable() {
   const tbody = document.getElementById("auditLogsTableBody");
   if (!tbody) return;
-  tbody.innerHTML = auditLogsData.map(log => `
-    <tr>
-      <td><span style="font-size:0.78rem; color:var(--text-muted);">${log.timeString || '---'}</span></td>
-      <td><b>${log.user || 'مشرف'}</b></td>
-      <td><span class="badge badge-review">${log.action}</span></td>
-      <td><code class="copyable-box" onclick="copyOrderRef('${log.targetOrder}')">#${log.targetOrder || 'عام'}</code></td>
-      <td><span style="font-size:0.75rem; color:var(--text-muted);">${log.details || '---'}</span></td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = auditLogsData.map(log => {
+    const refCode = log.targetOrder || 'عام';
+    return `
+      <tr>
+        <td><span style="font-size:0.78rem; color:var(--text-muted);">${log.timeString || '---'}</span></td>
+        <td><b>${log.user || 'مشرف'}</b></td>
+        <td><span class="badge badge-review">${log.action}</span></td>
+        <td><code class="copyable-box" style="cursor:pointer;" onclick="copyTrackingLink('${refCode}')">#${refCode}</code></td>
+        <td><span style="font-size:0.75rem; color:var(--text-muted);">${log.details || '---'}</span></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 function initAdminsListener() {
@@ -236,49 +227,117 @@ function initAdminsListener() {
 
 function initOrdersListener() {
   loadOrders();
-
   const interval = setInterval(loadOrders, 3000);
-
   return () => clearInterval(interval);
 }
 
-async function loadOrders() {
+// الدالة المعتمدة لنسخ رابط التتبع بالكامل
+window.copyTrackingLink = async function(refCode){
+  if (!refCode || refCode === '---' || refCode === 'عام') return;
+  const url = `https://status.sa4coins.com/?ref=${refCode}`;
   try {
-    const res = await fetch("/api/orders/list");
-    const data = await res.json();
-
-    if (!data.success) return;
-
-    ordersData = data.orders.map(order => ({
-      id: order.id,
-      reference: order.orderId,
-      name: order.customerName || "عميل",
-      phone: order.customerPhone || "",
-      platform: order.platform || "PlayStation",
-      totalQty: Number(order.quantity || 0),
-      totalPrice: order.total || "0 ر.س",
-      status: order.status || "pending",
-      createdAt: order.createdAt || null,
-      ...order
-    }));
-
-    renderDashboardQuickStats();
-    renderStatisticsPage();
-    renderOrdersTables();
-
-  } catch (err) {
-    console.error("Load Orders Error:", err);
+    await navigator.clipboard.writeText(url);
+    alert("تم نسخ رابط التتبع");
+  } catch {
+    prompt("انسخ الرابط:", url);
   }
-}
+};
 
 function formatCoinsNumber(num) {
   if (num === "" || num === null || isNaN(num)) return "0";
   return Number(num).toLocaleString('en-US');
 }
 
+function calculateTransferCountdown(createdAt) {
+  if (!createdAt) return '<span style="color:var(--text-muted);">---</span>';
+  const createdDate = new Date(createdAt);
+  if (isNaN(createdDate.getTime())) return '<span style="color:var(--text-muted);">---</span>';
+
+  const maxHours = 120; // 5 أيام
+  const now = new Date();
+  const diffMs = now.getTime() - createdDate.getTime();
+  const passedHours = diffMs / (1000 * 60 * 60);
+  const remainingHours = Math.max(0, maxHours - passedHours);
+
+  if (remainingHours <= 0) {
+    return `<span style="color:var(--danger); font-weight:900;"><i class="fa-solid fa-triangle-exclamation"></i> منتهي (انتهت المهلة)</span>`;
+  }
+
+  const daysLeft = Math.floor(remainingHours / 24);
+  const hoursLeft = Math.floor(remainingHours % 24);
+
+  let colorStyle = "color:var(--success); font-weight:800;";
+  if (daysLeft <= 1) {
+    colorStyle = "color:var(--danger); font-weight:900;";
+  } else if (daysLeft <= 3) {
+    colorStyle = "color:#f59e0b; font-weight:800;";
+  }
+
+  return `<span style="${colorStyle} font-size:0.8rem;"><i class="fa-solid fa-stopwatch"></i> متبقي ${daysLeft} يوم و ${hoursLeft} ساعة</span>`;
+}
+
 // ==========================================================================
-// 4) الرئيسية المختصرة + صفحة الإحصائيات الشاملة
+// 3) تحميل الطلبات وتحديث الواجهات
 // ==========================================================================
+async function loadOrders() {
+  try {
+    const res = await fetch("/api/orders/list");
+    const data = await res.json();
+    if (!data.success) return;
+
+    ordersData = data.orders.map(order => ({
+      id: order.id,
+      reference: order.orderId,
+      referenceNumber: order.referenceNumber || order.orderId || "",
+      name: order.customerName || "عميل",
+      phone: order.customerPhone || "",
+      platform: order.platform || "PlayStation",
+      totalQty: Number(order.quantity || 0),
+      drawnCoins: Number(order.drawnCoins || 0),
+      totalPrice: order.total || "0 ر.س",
+      status: order.status || "pending",
+      createdAt: order.createdAt || null,
+      paymentMethod: order.paymentMethod || "تحويل بنكي",
+      bankName: order.bankName || "---",
+      accountIban: order.accountIban || "---",
+      ...order
+    }));
+
+    sortOrdersByPriority();
+    renderDashboardQuickStats();
+    renderStatisticsPage();
+    renderOrdersTables();
+    renderWithdrawOrdersTable();
+    renderRecentOrdersTable();
+    renderTransferAlertsTable();
+    renderClientsTable();
+
+  } catch (err) {
+    console.error("Load Orders Error:", err);
+  }
+}
+
+function sortOrdersByPriority() {
+  const priorityMap = {
+    'progress': 1,
+    'new': 2,
+    'pending': 2,
+    'review': 3,
+    'finished': 4,
+    'completed': 4,
+    'transferred': 5
+  };
+
+  ordersData.sort((a, b) => {
+    const pA = priorityMap[a.status] || 6;
+    const pB = priorityMap[b.status] || 6;
+    if (pA !== pB) return pA - pB;
+    const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return timeB - timeA;
+  });
+}
+
 function renderDashboardQuickStats() {
   const countNew = ordersData.filter(o => o.status === 'new' || o.status === 'pending').length;
   const countProgress = ordersData.filter(o => o.status === 'progress').length;
@@ -297,12 +356,7 @@ function renderDashboardQuickStats() {
 function renderStatisticsPage() {
   const now = new Date();
   const todayStr = now.toISOString().split('T')[0];
-
-  let totalCoins = 0;
-  let totalMoney = 0;
-  let todayCoins = 0;
-  let todayMoney = 0;
-
+  let totalCoins = 0, totalMoney = 0, todayCoins = 0, todayMoney = 0;
   const clientsSet = new Set();
 
   ordersData.forEach(o => {
@@ -312,7 +366,6 @@ function renderStatisticsPage() {
     if (o.status === 'completed' || o.status === 'finished' || o.status === 'transferred') {
       totalCoins += o.totalQty;
       totalMoney += pVal;
-
       const orderDateStr = o.createdAt ? new Date(o.createdAt).toISOString().split('T')[0] : "";
       if (orderDateStr === todayStr) {
         todayCoins += o.totalQty;
@@ -325,13 +378,433 @@ function renderStatisticsPage() {
   if (document.getElementById("statTotalClients")) document.getElementById("statTotalClients").innerText = clientsSet.size;
   if (document.getElementById("statTotalCoins")) document.getElementById("statTotalCoins").innerText = formatCoinsNumber(totalCoins);
   if (document.getElementById("statTotalMoney")) document.getElementById("statTotalMoney").innerText = totalMoney.toLocaleString() + " ريال";
-
   if (document.getElementById("statTodayCoins")) document.getElementById("statTodayCoins").innerText = formatCoinsNumber(todayCoins);
   if (document.getElementById("statTodayMoney")) document.getElementById("statTodayMoney").innerText = todayMoney.toLocaleString() + " ريال";
 }
 
 // ==========================================================================
-// 5) صفحة المخزون المخصصة والتعديل اليدوي
+// 4) الجداول وعرض البيانات
+// ==========================================================================
+window.renderOrdersTables = function () {
+  const tbody = document.getElementById("fullOrdersTableBody");
+  if (!tbody) return;
+
+  const filter = document.getElementById("orderStatusFilter")?.value || "all";
+  let filteredData = (filter !== "all") ? ordersData.filter(o => o.status === filter) : ordersData;
+
+  if (filteredData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px; color:var(--text-muted);">لا توجد طلبات مسجلة بحالة (${filter})</td></tr>`;
+    return;
+  }
+
+  const badgeMap = {
+    'progress': '<span class="badge badge-progress">قيد التنفيذ</span>',
+    'new': '<span class="badge badge-new">طلب جديد</span>',
+    'pending': '<span class="badge badge-new">طلب جديد</span>',
+    'review': '<span class="badge badge-review">انتظار المراجعة</span>',
+    'finished': '<span class="badge badge-finished">تم الانتهاء</span>',
+    'transferred': '<span class="badge badge-transferred">تم التحويل</span>',
+    'completed': '<span class="badge badge-completed">مكتمل</span>'
+  };
+
+  tbody.innerHTML = filteredData.map(o => {
+    const ref = o.referenceNumber || o.reference || "";
+    return `
+      <tr>
+        <td><a href="javascript:void(0)" onclick="copyTrackingLink('${ref}')" style="color:var(--text-main); text-decoration:underline;">${ref || "-"}</a></td>
+        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || "---"}</b></td>
+        <td>${o.name}</td>
+        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td>${formatCoinsNumber(o.totalQty)}</td>
+        <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
+        <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
+        <td><button class="btn-action" onclick="openOrderModal('${o.id}')">معاينة</button></td>
+      </tr>
+    `;
+  }).join("");
+};
+
+window.renderRecentOrdersTable = function () {
+  const tbody = document.getElementById("recentOrdersTableBody");
+  if (!tbody) return;
+
+  const recentOrders = [...ordersData]
+    .sort((a, b) => (b.createdAt ? new Date(b.createdAt).getTime() : 0) - (a.createdAt ? new Date(a.createdAt).getTime() : 0))
+    .slice(0, 5);
+
+  if (recentOrders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد طلبات حديثة.</td></tr>`;
+    return;
+  }
+
+  const badgeMap = {
+    'progress': '<span class="badge badge-progress">قيد التنفيذ</span>',
+    'new': '<span class="badge badge-new">طلب جديد</span>',
+    'pending': '<span class="badge badge-new">طلب جديد</span>',
+    'review': '<span class="badge badge-review">انتظار المراجعة</span>',
+    'finished': '<span class="badge badge-finished">تم الانتهاء</span>',
+    'transferred': '<span class="badge badge-transferred">تم التحويل</span>',
+    'completed': '<span class="badge badge-completed">مكتمل</span>'
+  };
+
+  tbody.innerHTML = recentOrders.map(o => {
+    const ref = o.referenceNumber || o.reference || "";
+    return `
+      <tr>
+        <td><a href="javascript:void(0)" onclick="copyTrackingLink('${ref}')" style="color:var(--text-main); text-decoration:underline;">${ref || "-"}</a></td>
+        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || "---"}</b></td>
+        <td>${o.name}</td>
+        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td>${formatCoinsNumber(o.totalQty)}</td>
+        <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
+        <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
+        <td><button class="btn-action" onclick="openOrderModal('${o.id}')">معاينة</button></td>
+      </tr>
+    `;
+  }).join("");
+};
+
+window.renderWithdrawOrdersTable = function () {
+  const tbody = document.getElementById("withdrawOrdersTableBody");
+  if (!tbody) return;
+
+  let withdrawOrders = ordersData.filter(o => o.status === 'new' || o.status === 'pending' || o.status === 'review');
+  const under500k = withdrawOrders.filter(o => (o.totalQty || 0) < 500000);
+  const over500k = withdrawOrders.filter(o => (o.totalQty || 0) >= 500000);
+
+  if (document.getElementById("countUnder500k")) document.getElementById("countUnder500k").innerText = under500k.length;
+  if (document.getElementById("countOver500k")) document.getElementById("countOver500k").innerText = over500k.length;
+  if (document.getElementById("withdrawBadgeCount")) document.getElementById("withdrawBadgeCount").innerText = withdrawOrders.length;
+  if (document.getElementById("withdrawHeaderBadge")) document.getElementById("withdrawHeaderBadge").innerText = withdrawOrders.length + " طلبات بانتظار الإجراء";
+
+  const filterVal = document.getElementById("withdrawFilter")?.value || "all";
+  if (filterVal === "under") withdrawOrders = under500k;
+  else if (filterVal === "over") withdrawOrders = over500k;
+
+  if (withdrawOrders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = withdrawOrders.map(o => {
+    const total = o.totalQty || 0;
+    const isUnder = total < 500000;
+    const badgeStatus = (o.status === 'review') ? '<span class="badge badge-review">انتظار المراجعة</span>' : '<span class="badge badge-new">طلب جديد</span>';
+    const categoryBadge = isUnder 
+      ? '<span class="badge" style="background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3);">أقل من 500K</span>'
+      : '<span class="badge" style="background:rgba(0,255,135,0.12); color:var(--primary); border:1px solid rgba(0,255,135,0.3);">500K فأكثر</span>';
+    const ref = o.referenceNumber || o.reference || "";
+
+    return `
+      <tr>
+        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || '---'}</b></td>
+        <td>${o.name}</td>
+        <td><span class="badge badge-new">${o.platform}</span></td>
+        <td><b>${formatCoinsNumber(total)}</b></td>
+        <td>${badgeStatus}</td>
+        <td>${categoryBadge}</td>
+        <td><button class="btn-action" style="border-color:var(--primary); color:var(--primary);" onclick="openOrderModal('${o.id}')">معاينة وبدء التنفيذ</button></td>
+      </tr>
+    `;
+  }).join('');
+};
+
+window.renderTransferAlertsTable = function () {
+  const tbody = document.getElementById("transferAlertsTableBody");
+  const banner = document.getElementById("urgentTransferBanner");
+  const bannerText = document.getElementById("bannerTransferText");
+  const transferOrders = ordersData.filter(o => o.status === 'finished');
+
+  if (document.getElementById("transferBadgeCount")) document.getElementById("transferBadgeCount").innerText = transferOrders.length;
+  if (document.getElementById("transferHeaderBadge")) document.getElementById("transferHeaderBadge").innerText = transferOrders.length + " طلبات بحاجة للتحويل";
+
+  if (banner) {
+    if (transferOrders.length > 0) {
+      banner.style.display = "flex";
+      if (bannerText) bannerText.innerText = `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
+    } else {
+      banner.style.display = "none";
+    }
+  }
+
+  if (!tbody) return;
+  if (transferOrders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = transferOrders.map(o => {
+    const ref = o.referenceNumber || o.reference || "";
+    return `
+      <tr>
+        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || '---'}</b></td>
+        <td>${o.name}</td>
+        <td><span style="font-family:monospace;">${o.phone || '---'}</span></td>
+        <td><b style="color:#f59e0b;">${o.totalPrice}</b></td>
+        <td><span class="badge badge-review">${o.paymentMethod || 'تحويل بنكي'} - ${o.bankName || ''}</span></td>
+        <td>${calculateTransferCountdown(o.createdAt)}</td>
+        <td><button class="btn-action" style="border-color:#f59e0b; color:#f59e0b;" onclick="openOrderModal('${o.id}')">معاينة وإتمام التحويل</button></td>
+      </tr>
+    `;
+  }).join('');
+};
+
+window.renderClientsTable = function (searchQuery = "") {
+  const tbody = document.getElementById("clientsTableBody");
+  if (!tbody) return;
+
+  const clientsMap = {};
+  ordersData.forEach(o => {
+    const key = o.phone ? o.phone.trim() : (o.name ? o.name.trim() : "عميل غير معروف");
+    if (!clientsMap[key]) {
+      clientsMap[key] = { phone: o.phone || "بدون رقم", name: o.name || "عميل", orderCount: 0, totalCoins: 0, totalMoney: 0 };
+    }
+    clientsMap[key].orderCount += 1;
+    clientsMap[key].totalCoins += (o.totalQty || 0);
+    clientsMap[key].totalMoney += parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 0;
+  });
+
+  let clientsList = Object.values(clientsMap);
+  if (searchQuery.trim() !== "") {
+    const q = searchQuery.toLowerCase().trim();
+    clientsList = clientsList.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
+  }
+
+  if (clientsList.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة للبحث.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = clientsList.map(c => `
+    <tr>
+      <td><b>${c.name}</b></td>
+      <td><span style="font-family:monospace; color:var(--primary);">${c.phone}</span></td>
+      <td><span class="badge badge-new">${c.orderCount} طلبات</span></td>
+      <td><b>${formatCoinsNumber(c.totalCoins)} كوينز</b></td>
+      <td><b style="color:var(--primary);">${c.totalMoney.toLocaleString()} ريال</b></td>
+      <td><button class="btn-action" onclick="openClientModal('${encodeURIComponent(c.phone)}')">سجل الطلبات</button></td>
+    </tr>
+  `).join('');
+};
+
+window.filterClients = function (val) { renderClientsTable(val); };
+
+window.openClientModal = function (encodedPhone) {
+  const phone = decodeURIComponent(encodedPhone);
+  const modal = document.getElementById("clientDetailModal");
+  const modalTitle = document.getElementById("clientModalTitle");
+  const modalBody = document.getElementById("clientModalBody");
+  if (!modal || !modalBody) return;
+
+  const clientOrders = ordersData.filter(o => o.phone === phone || o.name === phone);
+  if (modalTitle) modalTitle.innerText = `سجل طلبات العميل: ${phone}`;
+
+  modalBody.innerHTML = `
+    <div style="margin-bottom:15px; background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+      <strong>إجمالي الطلبات:</strong> ${clientOrders.length} | 
+      <strong>إجمالي الكوينز:</strong> ${formatCoinsNumber(clientOrders.reduce((acc, cur) => acc + (cur.totalQty || 0), 0))}
+    </div>
+    <div class="table-responsive">
+      <table>
+        <thead><tr><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>التاريخ</th></tr></thead>
+        <tbody>
+          ${clientOrders.map(o => {
+            const ref = o.referenceNumber || o.reference || "";
+            return `
+              <tr>
+                <td><b style="color:var(--primary); cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref}</b></td>
+                <td>${o.platform}</td>
+                <td>${formatCoinsNumber(o.totalQty)}</td>
+                <td>${o.totalPrice}</td>
+                <td><span class="badge badge-new">${o.status}</span></td>
+                <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString("ar-SA") : "---"}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  modal.classList.add("active");
+};
+
+window.closeClientModal = function () {
+  const modal = document.getElementById("clientDetailModal");
+  if (modal) modal.classList.remove("active");
+};
+
+// ==========================================================================
+// 5) تفاصيل الطلب والعمليات على الـ Backend
+// ==========================================================================
+window.openOrderModal = function (orderId) {
+  const modal = document.getElementById("orderDetailModal");
+  const modalTitle = document.getElementById("modalOrderIdTitle");
+  const modalBody = document.getElementById("modalOrderBody");
+  if (!modal || !modalBody) return;
+
+  const order = ordersData.find(o => o.id === orderId || o.reference === orderId || o.referenceNumber === orderId);
+  if (!order) { alert("لم يتم العثور على بيانات الطلب المطلوب."); return; }
+
+  const refNum = order.referenceNumber || order.reference || order.id;
+
+  if (modalTitle) modalTitle.innerText = `تفاصيل الطلب رقم: #${refNum}`;
+
+  const statusMap = {
+    'progress': '<span class="badge badge-progress">قيد التنفيذ</span>',
+    'new': '<span class="badge badge-new">طلب جديد</span>',
+    'pending': '<span class="badge badge-new">طلب جديد</span>',
+    'review': '<span class="badge badge-review">انتظار المراجعة</span>',
+    'finished': '<span class="badge badge-finished">تم الانتهاء (بانتظار التحويل)</span>',
+    'transferred': '<span class="badge badge-transferred">تم التحويل</span>',
+    'completed': '<span class="badge badge-completed">مكتمل</span>'
+  };
+
+  const showTransferBtn = (order.status === 'finished');
+
+  modalBody.innerHTML = `
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:20px;">
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">رقم المرجع (اضغط للنسخ)</span>
+        <h4 style="color:var(--primary); font-family:monospace; margin-top:4px; cursor:pointer;" onclick="copyTrackingLink('${refNum}')">
+          ${refNum}
+          <i class="fa-solid fa-copy"></i>
+        </h4>
+      </div>
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">اسم العميل:</span>
+        <h4 style="color:var(--text-main); margin-top:4px;">${order.name}</h4>
+      </div>
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">رقم الجوال:</span>
+        <h4 style="color:var(--text-main); font-family:monospace; margin-top:4px;">${order.phone || '---'}</h4>
+      </div>
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">المنصة والكمية:</span>
+        <h4 style="color:var(--primary); margin-top:4px;">${order.platform} - ${formatCoinsNumber(order.totalQty)} كوينز</h4>
+      </div>
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">المبلغ الإجمالي:</span>
+        <h4 style="color:#f59e0b; margin-top:4px;">${order.totalPrice}</h4>
+      </div>
+      <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
+        <span style="color:var(--text-muted); font-size:0.8rem;">الحالة الحالية:</span>
+        <div style="margin-top:4px;">${statusMap[order.status] || order.status}</div>
+      </div>
+    </div>
+
+    <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--card-border); margin-bottom:20px;">
+      <h4 style="color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-credit-card"></i> بيانات الدفع والتحويل</h4>
+      <p style="margin-bottom:6px;"><b>وسيلة الدفع:</b> ${order.paymentMethod || '---'}</p>
+      <p style="margin-bottom:6px;"><b>اسم البنك:</b> ${order.bankName || '---'}</p>
+      <p style="margin-bottom:6px;"><b>رقم الآيبان (IBAN):</b> <span style="font-family:monospace; color:var(--primary);">${order.accountIban || '---'}</span></p>
+      <p style="margin-bottom:6px;"><b>الكوينز المسحوبة حتى الآن:</b> ${formatCoinsNumber(order.drawnCoins || 0)} / ${formatCoinsNumber(order.totalQty)}</p>
+      <p style="margin-top:6px;"><b>المهلة المتبقية للتحويل:</b> ${calculateTransferCountdown(order.createdAt)}</p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+      ${showTransferBtn ? `
+        <button class="btn-custom" style="background:#f59e0b; color:#fff; box-shadow:0 4px 15px rgba(245,158,11,0.4);" onclick="handleMarkTransferred('${order.id}', '${refNum}')">
+          <i class="fa-solid fa-money-bill-transfer"></i> تم التحويل المالي
+        </button>
+      ` : ''}
+      <button class="btn-custom" style="background:var(--primary); color:#000;" onclick="updateDrawnCoinsPrompt('${order.id}', '${refNum}', ${order.drawnCoins || 0}, ${order.totalQty})">
+        <i class="fa-solid fa-pen"></i> تحديث الكوينز المسحوبة
+      </button>
+      <button class="btn-custom" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--card-border);" onclick="closeOrderModal()">إغلاق</button>
+    </div>
+  `;
+  modal.classList.add("active");
+};
+
+window.closeOrderModal = function () {
+  const modal = document.getElementById("orderDetailModal");
+  if (modal) modal.classList.remove("active");
+};
+
+window.closePurgeModal = function () {
+  const modal = document.getElementById("purgeConfirmModal");
+  if (modal) modal.classList.remove("active");
+};
+
+// تغيير الحالة إلى تم التحويل عن طريق الـ Backend المباشر
+window.handleMarkTransferred = async function (orderId, refNum) {
+  if (!confirm(`هل تؤكد إتمام التحويل المالي للطلب #${refNum} وتغيير حالته إلى (تم التحويل)؟`)) return;
+
+  try {
+    const res = await fetch("/api/orders/update-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: orderId,
+        status: "transferred"
+      })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      await logAuditEvent("تحويل مالي", refNum, "تم تغيير حالة الطلب إلى تم التحويل المالي بنجاح");
+      alert("✅ تم تحديث حالة الطلب إلى (تم التحويل المالي) بنجاح!");
+      closeOrderModal();
+      loadOrders();
+    } else {
+      alert("❌ فشل تغيير الحالة: " + (data.message || "خطأ غير معروف في الخادم"));
+    }
+  } catch (err) {
+    console.error("Mark Transferred Error:", err);
+    alert("❌ خطأ أثناء تغيير الحالة: " + err.message);
+  }
+};
+
+// تحديث الكوينز عن طريق Backend وتغيير الحالة تلقائياً إلى finished عند اكتمال السحب
+window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, totalQty) {
+  const newDrawnStr = prompt(`تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(totalQty)}`, currentDrawn);
+  
+  if (newDrawnStr !== null && !isNaN(newDrawnStr)) {
+    const newDrawn = Number(newDrawnStr);
+    try {
+      const res = await fetch("/api/orders/update-drawn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: orderId,
+          drawnCoins: newDrawn
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        await logAuditEvent("تحديث سحب الكوينز", refNum, `تم تحديث المسحوب إلى: ${formatCoinsNumber(newDrawn)} / ${formatCoinsNumber(totalQty)}`);
+
+        if (newDrawn >= totalQty) {
+          await fetch("/api/orders/update-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: orderId,
+              status: "finished"
+            })
+          });
+          await logAuditEvent("اكتمال السحب تلقائياً", refNum, "انتقال الطلب إلى حالة (بانتظار التحويل) لاكتمال الكمية");
+          alert("🎉 أكتمل سحب الكوينز للطلب بالكامل! تم نقله تلقائياً إلى قسم (بانتظار التحويل المالي).");
+        } else {
+          alert("✅ تم تحديث الكمية المسحوبة بنجاح!");
+        }
+
+        closeOrderModal();
+        loadOrders();
+      } else {
+        alert("❌ فشل التحديث: " + (data.message || "خطأ غير معروف في الخادم"));
+      }
+    } catch (err) {
+      console.error("Update Drawn Coins Error:", err);
+      alert("❌ خطأ في التحديث: " + err.message);
+    }
+  }
+};
+
+// ==========================================================================
+// 6) المخزون والإعدادات
 // ==========================================================================
 function renderInventoryUI(settings) {
   if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
@@ -361,19 +834,13 @@ window.handleSaveManualStock = async function () {
   const newPc = document.getElementById("inputManualStockPC")?.value;
   const reason = document.getElementById("inputStockReason")?.value || "تعديل يدوي";
 
-  if (newPs === "" || newPc === "") {
-    alert("يرجى إدخال قيم المخزون للـ PS والـ PC.");
-    return;
-  }
+  if (newPs === "" || newPc === "") { alert("يرجى إدخال قيم المخزون للـ PS والـ PC."); return; }
 
   await updateStock(newPs, newPc, currentAdmin.name, reason);
   await logAuditEvent("تعديل المخزون يدويًا", "المخزون", `PS: ${newPs} | PC: ${newPc} | السبب: ${reason}`);
   alert("✅ تم تحديث المخزون وسجل التعديلات بنجاح!");
 };
 
-// ==========================================================================
-// 6) المزامنة المباشرة مع system.js للأسعار والبنوك والواجهات
-// ==========================================================================
 function initSystemSettingsListener() {
   return subscribeToSettings((settings) => {
     currentSettingsData = settings;
@@ -381,7 +848,6 @@ function initSystemSettingsListener() {
     populatePricingUI(settings);
     renderInventoryUI(settings);
     renderDashboardQuickStats();
-
     renderBanks(settings.banks || []);
     renderWallets(settings.wallets || []);
     renderCustomPayments(settings.paymentMethods || []);
@@ -403,21 +869,18 @@ window.toggleStoreStatus = async function () {
 };
 
 function populatePricingUI(config = {}) {
-  // بيانات PlayStation / Xbox
   if (document.getElementById("psRate")) document.getElementById("psRate").value = config.psRate || 200;
   if (document.getElementById("psMin")) document.getElementById("psMin").value = formatCoinsNumber(config.psMin || 100000);
   if (document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(config.psMax || 5000000);
   if (document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = config.psWithdrawDuration || "3 - 5 أيام عمل";
   if (document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = config.psTransferDuration || "24 ساعة";
 
-  // بيانات PC
   if (document.getElementById("pcRate")) document.getElementById("pcRate").value = config.pcRate || 150;
   if (document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(config.pcMin || 100000);
   if (document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(config.pcMax || 1000000);
   if (document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = config.pcWithdrawDuration || "2 - 4 أيام عمل";
   if (document.getElementById("pcTransferDuration")) document.getElementById("pcTransferDuration").value = config.pcTransferDuration || "24 ساعة";
 
-  // إعدادات المتجر العامة
   if (document.getElementById("storeNameInput")) document.getElementById("storeNameInput").value = config.storeName || "SAMICOINS";
   if (document.getElementById("supportWhatsappInput")) document.getElementById("supportWhatsappInput").value = config.supportWhatsapp || "";
   if (document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = config.offers ? "true" : "false";
@@ -428,19 +891,16 @@ window.saveProductsConfig = async function () {
   const pricingData = {
     storeName: document.getElementById("storeNameInput")?.value,
     supportWhatsapp: document.getElementById("supportWhatsappInput")?.value,
-
     psRate: Number(document.getElementById("psRate")?.value),
     psMin: Number(String(document.getElementById("psMin")?.value || "").replace(/,/g, "")),
     psMax: Number(String(document.getElementById("psMax")?.value || "").replace(/,/g, "")),
     psWithdrawDuration: document.getElementById("psWithdrawDuration")?.value,
     psTransferDuration: document.getElementById("psTransferDuration")?.value,
-
     pcRate: Number(document.getElementById("pcRate")?.value),
     pcMin: Number(String(document.getElementById("pcMin")?.value || "").replace(/,/g, "")),
     pcMax: Number(String(document.getElementById("pcMax")?.value || "").replace(/,/g, "")),
     pcWithdrawDuration: document.getElementById("pcWithdrawDuration")?.value,
     pcTransferDuration: document.getElementById("pcTransferDuration")?.value,
-
     offers: document.getElementById("promoActiveSelect")?.value === "true",
     offerText: document.getElementById("promoText")?.value || ""
   };
@@ -463,15 +923,9 @@ function renderBanks(banksArray = []) {
 
 window.addBank = async function () {
   const input = document.getElementById("newBankInput");
-  if (input && input.value.trim()) {
-    await systemAddBank(input.value.trim());
-    input.value = "";
-  }
+  if (input && input.value.trim()) { await systemAddBank(input.value.trim()); input.value = ""; }
 };
-
-window.deleteBank = async function (i) {
-  await systemDeleteBank(i);
-};
+window.deleteBank = async function (i) { await systemDeleteBank(i); };
 
 function renderWallets(walletsArray = []) {
   const c = document.getElementById("walletsListContainer");
@@ -486,15 +940,9 @@ function renderWallets(walletsArray = []) {
 
 window.addWallet = async function () {
   const input = document.getElementById("newWalletInput");
-  if (input && input.value.trim()) {
-    await systemAddWallet(input.value.trim());
-    input.value = "";
-  }
+  if (input && input.value.trim()) { await systemAddWallet(input.value.trim()); input.value = ""; }
 };
-
-window.deleteWallet = async function (i) {
-  await systemDeleteWallet(i);
-};
+window.deleteWallet = async function (i) { await systemDeleteWallet(i); };
 
 function renderCustomPayments(methodsArray = []) {
   const c = document.getElementById("customPayMethodsContainer");
@@ -509,15 +957,9 @@ function renderCustomPayments(methodsArray = []) {
 
 window.addCustomPaymentMethod = async function () {
   const input = document.getElementById("newCustomPaymentInput");
-  if (input && input.value.trim()) {
-    await systemAddPaymentMethod(input.value.trim());
-    input.value = "";
-  }
+  if (input && input.value.trim()) { await systemAddPaymentMethod(input.value.trim()); input.value = ""; }
 };
-
-window.deleteCustomPayment = async function (i) {
-  await systemDeletePaymentMethod(i);
-};
+window.deleteCustomPayment = async function (i) { await systemDeletePaymentMethod(i); };
 
 function renderTerms(termsArray = []) {
   const c = document.getElementById("termsListContainer");
@@ -532,19 +974,11 @@ function renderTerms(termsArray = []) {
 
 window.addNewTerm = async function () {
   const input = document.getElementById("newTermInput");
-  if (input && input.value.trim()) {
-    await systemAddTerm(input.value.trim());
-    input.value = "";
-  }
+  if (input && input.value.trim()) { await systemAddTerm(input.value.trim()); input.value = ""; }
 };
+window.deleteTerm = async function (i) { await systemDeleteTerm(i); };
 
-window.deleteTerm = async function (i) {
-  await systemDeleteTerm(i);
-};
-
-// ==========================================================================
-// 7) التنقل والبدء
-// ==========================================================================
+// التنقل بين الأقسام
 window.switchTab = function (tabId, element) {
   document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
   document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
@@ -553,33 +987,5 @@ window.switchTab = function (tabId, element) {
   if (targetTab) targetTab.classList.add("active");
   if (element) element.classList.add("active");
 };
-
-function renderOrdersTables() {
-  const tbody = document.getElementById("fullOrdersTableBody");
-  if (!tbody) return;
-
-  if (ordersData.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" style="text-align:center;padding:20px;">
-          لا توجد طلبات
-        </td>
-      </tr>`;
-    return;
-  }
-
-  tbody.innerHTML = ordersData.map(o => `
-    <tr>
-      <td>${o.referenceNumber || "-"}</td>
-      <td><b>${o.reference}</b></td>
-      <td>${o.name}</td>
-      <td>${o.platform}</td>
-      <td>${Number(o.totalQty).toLocaleString()}</td>
-      <td>${o.totalPrice}</td>
-      <td>${o.status}</td>
-      <td>...</td>
-    </tr>
-  `).join("");
-}
 
 initAuthGuard();

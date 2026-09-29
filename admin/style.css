@@ -76,7 +76,7 @@ body {
 }
 
 /* ==========================================================================
-   1. شاشة تسجيل الدخول المعتمة تماماً (Solid Dedicated Login Screen)
+   1. شاشة تسجيل الدخول الجديدة كلياً (Ultra Glassmorphism Login Card)
    ========================================================================== */
 .login-overlay {
     position: fixed;
@@ -84,7 +84,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: #060913 !important;
+    background: radial-gradient(circle at 50% 30%, rgba(0, 255, 135, 0.12) 0%, #030611 70%) !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -92,7 +92,7 @@ body {
     padding: 20px;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .login-overlay.active {
@@ -100,71 +100,149 @@ body {
     pointer-events: auto;
 }
 
-.login-card {
-    background: var(--card-bg);
-    border: 1.5px solid var(--glass-border);
-    border-radius: var(--radius-lg);
-    padding: 32px 28px;
+.login-card-nextgen {
+    background: rgba(13, 19, 34, 0.85);
+    backdrop-filter: blur(25px);
+    border: 1.5px solid rgba(0, 255, 135, 0.25);
+    border-radius: 28px;
+    padding: 38px 32px;
     max-width: 440px;
     width: 100%;
-    box-shadow: var(--box-shadow);
-    text-align: right;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(0, 255, 135, 0.08);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-.login-header {
-    text-align: center;
-    margin-bottom: 24px;
+.login-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 255, 135, 0.1);
+    border: 1px solid rgba(0, 255, 135, 0.3);
+    color: var(--primary);
+    padding: 6px 16px;
+    border-radius: 30px;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
 }
 
 .login-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.45rem;
     font-weight: 900;
-    color: var(--primary);
+    color: #ffffff;
     margin-bottom: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
 }
 
 .login-header p {
     font-size: 0.85rem;
     color: var(--text-muted);
     font-weight: 700;
+    margin-bottom: 24px;
+}
+
+.form-group-nextgen {
+    text-align: right;
+    margin-bottom: 18px;
+}
+
+.form-group-nextgen label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.input-icon-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.form-control-nextgen {
+    width: 100%;
+    background: rgba(6, 9, 19, 0.8);
+    border: 1.5px solid var(--card-border);
+    padding: 14px 44px 14px 16px;
+    border-radius: 16px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 800;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.form-control-nextgen:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(0, 255, 135, 0.2);
+    background: rgba(6, 9, 19, 0.95);
+}
+
+.field-icon {
+    position: absolute;
+    right: 16px;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.btn-nextgen {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 0.92rem;
+    font-weight: 900;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary-glow {
+    background: var(--primary-gradient);
+    color: #060913;
+    box-shadow: 0 8px 25px rgba(0, 255, 135, 0.3);
+}
+
+.btn-primary-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 255, 135, 0.45);
 }
 
 .login-divider {
     display: flex;
     align-items: center;
-    margin: 20px 0;
+    margin: 22px 0;
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 800;
 }
+
 .login-divider::before, .login-divider::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--card-border);
+    background: rgba(255, 255, 255, 0.1);
 }
+
 .login-divider span {
-    padding: 0 12px;
+    padding: 0 14px;
 }
 
-.btn-primary-block {
-    width: 100%;
-    justify-content: center;
-    padding: 12px;
-    margin-top: 10px;
-}
-
-.btn-google-block {
-    width: 100%;
-    justify-content: center;
-    padding: 12px;
+.btn-google-glow {
     background: #ea4335 !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(234, 67, 53, 0.25) !important;
+    box-shadow: 0 8px 20px rgba(234, 67, 53, 0.3) !important;
+}
+
+.btn-google-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(234, 67, 53, 0.45) !important;
 }
 
 .alert-danger {
@@ -277,11 +355,6 @@ body.light-mode .sidebar-brand {
     color: var(--blue);
     border: 1px solid rgba(56, 189, 248, 0.3);
 }
-.user-role-badge.owner {
-    background: rgba(0, 255, 135, 0.15);
-    color: var(--primary);
-    border-color: rgba(0, 255, 135, 0.3);
-}
 
 .sidebar-menu {
     list-style: none;
@@ -317,9 +390,6 @@ body.light-mode .sidebar-brand {
     color: #060913;
     box-shadow: 0 4px 15px rgba(0, 255, 135, 0.2);
 }
-body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active { 
-    color: #ffffff; 
-}
 
 /* ==========================================================================
    3. المحتوى الرئيسي وشريط التصفح العلوي
@@ -330,11 +400,6 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     padding: 20px;
     transition: margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: calc(100% - 280px);
-}
-
-.main-wrapper.full-width { 
-    margin-right: 0; 
-    width: 100%;
 }
 
 .top-navbar {
@@ -372,10 +437,6 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     align-items: center;
     justify-content: center;
 }
-.toggle-sidebar-btn:hover { 
-    border-color: var(--primary); 
-    color: var(--primary); 
-}
 
 .store-status-btn {
     background: rgba(16, 185, 129, 0.15);
@@ -390,17 +451,7 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     align-items: center;
     gap: 8px;
 }
-.store-status-btn.closed {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--danger);
-    border-color: rgba(239, 68, 68, 0.4);
-}
 
-.search-box { 
-    position: relative; 
-    display: flex; 
-    align-items: center; 
-}
 .search-box input {
     background: var(--input-bg);
     border: 1.5px solid var(--card-border);
@@ -411,15 +462,6 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     font-weight: 700;
     outline: none;
     width: 240px;
-}
-.search-box input:focus { 
-    border-color: var(--primary); 
-}
-.search-icon { 
-    position: absolute; 
-    right: 12px; 
-    font-size: 0.85rem; 
-    color: var(--text-muted); 
 }
 
 .live-datetime-pill {
@@ -443,13 +485,8 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    position: relative;
     font-size: 1.1rem;
     color: var(--text-main);
-}
-.nav-icon-btn:hover { 
-    border-color: var(--primary); 
-    color: var(--primary); 
 }
 
 .content-header { 
@@ -460,15 +497,6 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     flex-wrap: wrap; 
     gap: 10px; 
 }
-.content-header h1 { 
-    font-size: 1.4rem; 
-    font-weight: 900; 
-}
-.breadcrumb { 
-    font-size: 0.82rem; 
-    color: var(--text-muted); 
-    font-weight: 700; 
-}
 
 .tab-content { 
     display: none; 
@@ -478,7 +506,7 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
 }
 
 /* ==========================================================================
-   4. الإحصائيات والبطاقات (Stats, Inventory & Reports)
+   4. الإحصائيات والجداول والوسوم (Stats, Tables & Badges)
    ========================================================================== */
 .stats-grid {
     display: grid;
@@ -499,34 +527,6 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     box-shadow: var(--box-shadow);
     cursor: pointer;
 }
-.stat-card:hover { 
-    border-color: var(--primary); 
-    transform: translateY(-3px); 
-}
-
-.stat-info span { 
-    font-size: 0.78rem; 
-    color: var(--text-muted); 
-    font-weight: 800; 
-    display: block; 
-    margin-bottom: 4px; 
-}
-.stat-info h3 { 
-    font-size: 1.4rem; 
-    font-weight: 900; 
-}
-
-.stat-icon {
-    width: 48px; 
-    height: 48px; 
-    border-radius: var(--radius-sm);
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 1.3rem; 
-    flex-shrink: 0;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-}
 
 .card-panel {
     background: var(--glass-bg);
@@ -546,22 +546,10 @@ body.light-mode .sidebar-link:hover, body.light-mode .sidebar-link.active {
     padding-bottom: 12px; 
     border-bottom: 1.5px solid var(--card-border); 
 }
-.panel-header h2, .panel-header h3 { 
-    font-size: 1.1rem; 
-    font-weight: 900; 
-    color: var(--text-main); 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-}
 
-/* ==========================================================================
-   5. الجداول والوسوم (Tables & Badges)
-   ========================================================================== */
 .table-responsive { 
     width: 100%; 
     overflow-x: auto; 
-    -webkit-overflow-scrolling: touch;
 }
 
 table { 
@@ -577,19 +565,12 @@ th {
     padding: 14px 16px; 
     font-weight: 900; 
     border-bottom: 1.5px solid var(--card-border); 
-    white-space: nowrap; 
 }
 
 td { 
     padding: 14px 16px; 
     border-bottom: 1.5px solid var(--card-border); 
     font-weight: 800; 
-    white-space: nowrap; 
-    vertical-align: middle;
-}
-
-tr:hover td { 
-    background: rgba(255, 255, 255, 0.02); 
 }
 
 .badge { 
@@ -598,7 +579,6 @@ tr:hover td {
     font-size: 0.73rem; 
     font-weight: 900; 
     display: inline-block; 
-    margin: 2px; 
 }
 
 .badge-new { background: rgba(56, 189, 248, 0.12); color: var(--blue); border: 1px solid rgba(56, 189, 248, 0.3); }
@@ -607,132 +587,13 @@ tr:hover td {
 .badge-finished { background: rgba(14, 165, 233, 0.15); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.35); }
 .badge-transferred { background: rgba(236, 72, 153, 0.15); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.35); }
 .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.35); }
-.badge-archived { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
-.badge-error { background: rgba(239, 68, 68, 0.18); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 900; }
-.badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 900; }
 
 /* ==========================================================================
-   6. الأزرار وحقول الإدخال + أزرار التقرير الفني V2 (TSV & Purge Buttons)
-   ========================================================================== */
-.btn-custom {
-    background: var(--primary-gradient);
-    color: #060913;
-    border: none;
-    padding: 10px 20px;
-    border-radius: var(--radius-sm);
-    font-size: 0.88rem;
-    font-weight: 900;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 255, 135, 0.2);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    justify-content: center;
-}
-body.light-mode .btn-custom { color: #ffffff; }
-.btn-custom:hover { opacity: 0.92; transform: translateY(-2px); }
-
-/* زر نسخ البيانات بصيغة TSV لشيست قوقل */
-.btn-tsv-copy {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25) !important;
-}
-.btn-tsv-copy:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
-}
-
-/* زر إتلاف البيانات الحساسة */
-.btn-purge {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3) !important;
-}
-.btn-purge:hover {
-    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%) !important;
-}
-
-.btn-action {
-    background: var(--input-bg);
-    color: var(--text-main);
-    border: 1.5px solid var(--card-border);
-    padding: 6px 12px;
-    border-radius: 10px;
-    font-size: 0.78rem;
-    font-weight: 800;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.btn-action:hover { border-color: var(--primary); color: var(--primary); }
-
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 0.82rem; font-weight: 900; color: var(--text-muted); margin-bottom: 6px; }
-.form-control {
-    width: 100%;
-    background: var(--input-bg);
-    border: 1.5px solid var(--card-border);
-    padding: 12px 14px;
-    border-radius: 14px;
-    color: var(--text-main);
-    font-size: 0.92rem;
-    font-weight: 800;
-    outline: none;
-}
-.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0, 255, 135, 0.1); }
-
-.form-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
-.responsive-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.responsive-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
-/* ==========================================================================
-   7. المربعات القابلة للضغط والنسخ المباشر (Clickable Copy Box)
-   ========================================================================== */
-.copyable-box {
-    cursor: pointer;
-    position: relative;
-    user-select: none;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.copyable-box:hover {
-    border-color: var(--primary) !important;
-    background: rgba(0, 255, 135, 0.08) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 255, 135, 0.15);
-}
-
-.copyable-box:active {
-    transform: scale(0.98);
-}
-
-.copyable-box::after {
-    content: '📋 اضغط للنسخ';
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.72rem;
-    font-weight: 900;
-    color: var(--primary);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.copyable-box:hover::after {
-    opacity: 1;
-}
-
-/* ==========================================================================
-   8. النوافذ المنبثقة وحماية بيانات EA (Modal & EA Box)
+   5. النوافذ المنبثقة والتجاوب (Modals & Responsive)
    ========================================================================== */
 .modal-overlay {
     position: fixed; 
-    top: 0; 
-    left: 0; 
-    right: 0; 
-    bottom: 0;
+    top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(3, 5, 11, 0.85); 
     backdrop-filter: blur(10px);
     display: flex; 
@@ -755,180 +616,11 @@ body.light-mode .btn-custom { color: #ffffff; }
     width: 100%; 
     max-height: 90vh; 
     overflow-y: auto;
-    box-shadow: var(--box-shadow); 
-    text-align: right;
 }
 
-.modal-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    margin-bottom: 18px; 
-    border-bottom: 1.5px solid var(--card-border); 
-    padding-bottom: 12px; 
-}
-.modal-header h3 { font-size: 1.15rem; font-weight: 900; color: var(--primary); }
-.modal-close-btn { 
-    background: rgba(255, 255, 255, 0.05); 
-    border: 1px solid var(--card-border); 
-    color: var(--text-muted); 
-    font-size: 1.1rem; 
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    cursor: pointer; 
-    font-weight: 900; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.modal-close-btn:hover { background: var(--danger); color: #ffffff; }
-
-.modal-actions-row {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.ea-sensitive-box {
-    background: rgba(9, 14, 29, 0.85);
-    border: 1.5px dashed var(--blue);
-    padding: 16px;
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-}
-
-/* ==========================================================================
-   9. أشرطة التقدم والعدادات التنازلية
-   ========================================================================== */
-.progress-bar-wrapper {
-    background: var(--input-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
-    padding: 12px;
-    margin: 14px 0;
-}
-
-.progress-track {
-    width: 100%;
-    height: 12px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 8px;
-}
-
-.progress-fill {
-    height: 100%;
-    width: 0%;
-    border-radius: 10px;
-    transition: width 0.4s ease, background-color 0.4s ease;
-}
-
-.progress-danger { background: var(--danger); box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); }
-.progress-warning { background: var(--warning); box-shadow: 0 0 10px rgba(245, 158, 11, 0.5); }
-.progress-success { background: var(--primary); box-shadow: 0 0 10px rgba(0, 255, 135, 0.5); }
-
-.countdown-pill {
-    background: rgba(245, 158, 11, 0.12);
-    color: var(--warning);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.78rem;
-    font-weight: 900;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.countdown-pill.urgent {
-    background: rgba(239, 68, 68, 0.15);
-    color: var(--danger);
-    border-color: rgba(239, 68, 68, 0.4);
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.03); }
-    100% { transform: scale(1); }
-}
-
-/* ==========================================================================
-   10. التكيف والتجاوب مع شاشات الجوال بالكامل (Mobile Responsiveness)
-   ========================================================================== */
 @media (max-width: 992px) {
     .sidebar { transform: translateX(100%); }
     .sidebar.mobile-open { transform: translateX(0); }
     .sidebar-close-btn { display: flex; }
     .main-wrapper { margin-right: 0 !important; width: 100% !important; padding: 15px; }
-}
-
-@media (max-width: 768px) {
-    .top-navbar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 12px;
-        gap: 10px;
-    }
-    
-    .nav-right, .nav-left {
-        justify-content: space-between;
-        width: 100%;
-    }
-    
-    .search-box input {
-        width: 100%;
-    }
-    
-    .modal-card {
-        padding: 14px !important;
-        border-radius: var(--radius-md) !important;
-        max-height: 92vh !important;
-    }
-    
-    .responsive-grid-3, .responsive-grid-2 {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-    }
-
-    .modal-actions-row {
-        flex-direction: column !important;
-        gap: 8px !important;
-    }
-
-    .modal-actions-row .btn-custom {
-        width: 100% !important;
-        padding: 10px 8px !important;
-        font-size: 0.82rem !important;
-    }
-
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 10px !important;
-    }
-
-    .stat-card {
-        padding: 12px !important;
-    }
-
-    .stat-info h3 {
-        font-size: 1.15rem !important;
-    }
-
-    .stat-icon {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 1rem !important;
-    }
-
-    .form-grid-2 {
-        grid-template-columns: 1fr !important;
-    }
-}
-
-@media (max-width: 480px) {
-    .stats-grid {
-        grid-template-columns: 1fr !important;
-    }
 }

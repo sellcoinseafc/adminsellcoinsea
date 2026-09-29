@@ -10,27 +10,47 @@
 </head>
 <body>
 
-    <!-- نافذة تسجيل الدخول (Overlay) -->
+    <!-- نافذة تسجيل الدخول الزجاجية الجديدة (Ultra Glassmorphism Card) -->
     <div class="login-overlay active" id="loginOverlay">
-        <div class="login-card">
+        <div class="login-card-nextgen">
+            <div class="login-brand-badge">
+                <i class="fa-solid fa-shield-halved"></i> SAMI COINS SYSTEM
+            </div>
             <div class="login-header">
-                <h2><i class="fa-solid fa-shield-halved"></i> لوحة تحكم Sami Coins</h2>
-                <p>تسجيل الدخول المباشر للمشرفين المصرح لهم</p>
+                <h2>تسجيل الدخول للمشرفين</h2>
+                <p>مرحباً بك، أدخل بياناتك للوصول للوحة التشغيل</p>
             </div>
             <div id="loginErrorAlert" class="alert-danger" style="display: none;"></div>
+            
             <form id="loginForm" onsubmit="handleEmailLogin(event)">
-                <div class="form-group">
+                <div class="form-group-nextgen">
                     <label><i class="fa-solid fa-envelope"></i> البريد الإلكتروني</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="name@domain.com" required>
+                    <div class="input-icon-wrapper">
+                        <input type="email" id="loginEmail" class="form-control-nextgen" placeholder="admin@samicoins.com" required autocomplete="off">
+                        <i class="fa-solid fa-at field-icon"></i>
+                    </div>
                 </div>
-                <div class="form-group">
+                
+                <div class="form-group-nextgen">
                     <label><i class="fa-solid fa-lock"></i> كلمة المرور</label>
-                    <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                    <div class="input-icon-wrapper">
+                        <input type="password" id="loginPassword" class="form-control-nextgen" placeholder="••••••••••••" required>
+                        <i class="fa-solid fa-key field-icon"></i>
+                    </div>
                 </div>
-                <button type="submit" class="btn-custom btn-primary-block"><i class="fa-solid fa-right-to-bracket"></i> دخول البريد</button>
+
+                <button type="submit" class="btn-nextgen btn-primary-glow">
+                    <span><i class="fa-solid fa-right-to-bracket"></i> دخول البريد الإلكتروني</span>
+                </button>
             </form>
-            <div class="divider"><span>أو</span></div>
-            <button class="btn-custom btn-google-block" onclick="handleGoogleLogin()"><i class="fa-brands fa-google"></i> الدخول عبر Google</button>
+
+            <div class="login-divider">
+                <span>أو الدخول السريع</span>
+            </div>
+
+            <button type="button" class="btn-nextgen btn-google-glow" onclick="handleGoogleLogin()">
+                <i class="fa-brands fa-google"></i> الدخول الآمن عبر Google
+            </button>
         </div>
     </div>
 
@@ -97,6 +117,10 @@
         <ul class="sidebar-menu">
             <li><a class="sidebar-link active" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-house"></i> الرئيسية السريعة</a></li>
             <li><a class="sidebar-link" onclick="switchTab('ordersTab', this)"><i class="fa-solid fa-box-archive"></i> إدارة الطلبات <span id="sidebarNewOrdersBadge" class="badge badge-new" style="margin-right:auto; display:none;">0</span></a></li>
+            
+            <!-- قسم طلبات السحب -->
+            <li><a class="sidebar-link" onclick="switchTab('withdrawTab', this)"><i class="fa-solid fa-coins" style="color:#00ff87;"></i> طلبات السحب <span id="withdrawBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
+            
             <li><a class="sidebar-link" onclick="switchTab('transferAlertsTab', this)"><i class="fa-solid fa-money-bill-transfer" style="color:#f59e0b;"></i> طلبات بانتظار التحويل <span id="transferBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
             <li><a class="sidebar-link" onclick="switchTab('statsTab', this)"><i class="fa-solid fa-chart-line"></i> تقارير الإحصائيات</a></li>
             <li><a class="sidebar-link" onclick="switchTab('inventoryTab', this)"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزون</a></li>
@@ -140,7 +164,7 @@
                     <span style="font-size:0.82rem; color:var(--text-muted);" id="bannerTransferText">لديك طلبات تحتاج للتحويل البنكي خلال 3-5 أيام عمل.</span>
                 </div>
             </div>
-            <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">عرض الطلبات فوراً</button>
+            <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.8rem; padding:8px 14px;" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(4) a'))">عرض الطلبات فوراً</button>
         </div>
 
         <div class="content-header">
@@ -148,14 +172,15 @@
             <div class="breadcrumb"><span>لوحة التحكم</span> / <span id="breadcrumbActive" style="color: var(--primary);">الرئيسية السريعة</span></div>
         </div>
 
-        <!-- 1. الرئيسية المختصرة (Summary Cards Only) -->
+        <!-- 1. الرئيسية المختصرة -->
         <div id="dashboardTab" class="tab-content active">
+            <!-- جميع البطاقات الحالية متوفرة بكامل أسمائها ومعرفاتها -->
             <div class="stats-grid">
                 <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
                     <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="dashStatNew">0</h3></div>
                     <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-bell"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
+                <div class="stat-card" onclick="switchTab('withdrawTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
                     <div class="stat-info"><span>طلبات قيد التنفيذ</span><h3 id="dashStatProgress">0</h3></div>
                     <div class="stat-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;"><i class="fa-solid fa-spinner"></i></div>
                 </div>
@@ -163,17 +188,34 @@
                     <div class="stat-info"><span>الطلبات المكتملة</span><h3 id="dashStatCompleted">0</h3></div>
                     <div class="stat-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-check"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))">
+                <div class="stat-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(4) a'))">
                     <div class="stat-info"><span>بانتظار التحويل المالي</span><h3 id="dashStatPendingTransfer" style="color:#f59e0b;">0</h3></div>
                     <div class="stat-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(5) a'))">
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(6) a'))">
                     <div class="stat-info"><span>مخزون PS / Xbox</span><h3 id="dashStockPS" style="color:var(--primary);">0 كوينز</h3></div>
                     <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-brands fa-playstation"></i></div>
                 </div>
-                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(5) a'))">
+                <div class="stat-card" onclick="switchTab('inventoryTab', document.querySelector('.sidebar-menu li:nth-child(6) a'))">
                     <div class="stat-info"><span>مخزون PC الحالي</span><h3 id="dashStockPC" style="color:#e81123;">0 كوينز</h3></div>
                     <div class="stat-icon" style="background: rgba(232, 17, 35, 0.12); color: #e81123;"><i class="fa-solid fa-desktop"></i></div>
+                </div>
+            </div>
+
+            <!-- جديد: جدول أحدث الطلبات أسفل البطاقات -->
+            <div class="card-panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-clock-rotate-left"></i> أحدث الطلبات</h2>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>المرجع</th><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr>
+                        </thead>
+                        <tbody id="recentOrdersTableBody">
+                            <tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات حديثة.</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -182,16 +224,16 @@
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
-                    <h2><i class="fa-solid fa-box-archive"></i> جدول الطلبات الشامل والفلترة</h2>
+                    <h2><i class="fa-solid fa-box-archive"></i> جميع الطلبات (مرتبة حسب الأولوية)</h2>
                     <div style="display:flex; gap:8px;">
                         <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:160px;" onchange="renderOrdersTables()">
                             <option value="all">جميع الحالات</option>
-                            <option value="new">طلبات جديدة</option>
-                            <option value="review">انتظار المراجعة</option>
-                            <option value="progress">قيد التنفيذ</option>
-                            <option value="finished">تم الانتهاء</option>
-                            <option value="transferred">تم التحويل</option>
-                            <option value="completed">مكتمل</option>
+                            <option value="progress">1. قيد التنفيذ</option>
+                            <option value="new">2. طلبات جديدة</option>
+                            <option value="review">3. انتظار المراجعة</option>
+                            <option value="finished">4. تم الانتهاء</option>
+                            <option value="transferred">5. تم التحويل</option>
+                            <option value="completed">6. مكتمل</option>
                         </select>
                     </div>
                 </div>
@@ -208,7 +250,55 @@
             </div>
         </div>
 
-        <!-- 3. طلبات تحتاج تحويل مالي -->
+        <!-- 3. قسم طلبات السحب -->
+        <div id="withdrawTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-coins" style="color:var(--primary);"></i> طلبات السحب (جديد + انتظار المراجعة)</h2>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <!-- جديد: الفلتر المطلوب للملاحظة ID: withdrawFilter -->
+                        <select id="withdrawFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:160px;" onchange="renderWithdrawOrdersTable()">
+                            <option value="all">جميع الطلبات</option>
+                            <option value="under">أقل من 500K</option>
+                            <option value="over">500K فأكثر</option>
+                        </select>
+                        <span id="withdrawHeaderBadge" class="badge badge-review">0 طلبات بانتظار الإجراء</span>
+                    </div>
+                </div>
+
+                <!-- البطاقتين الإحصائيتين بدون أي حذف -->
+                <div class="stats-grid" style="margin-bottom: 20px;">
+                    <div class="stat-card" style="border-color: rgba(56, 189, 248, 0.3);">
+                        <div class="stat-info">
+                            <span>طلبات أقل من 500K</span>
+                            <h3 id="countUnder500k" style="color: #38bdf8;">0</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8;"><i class="fa-solid fa-arrow-down-short-wide"></i></div>
+                    </div>
+
+                    <div class="stat-card" style="border-color: rgba(0, 255, 135, 0.3);">
+                        <div class="stat-info">
+                            <span>طلبات 500K فأكثر</span>
+                            <h3 id="countOver500k" style="color: var(--primary);">0</h3>
+                        </div>
+                        <div class="stat-icon" style="background: rgba(0, 255, 135, 0.12); color: var(--primary);"><i class="fa-solid fa-arrow-up-wide-short"></i></div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr><th>رقم الطلب</th><th>العميل</th><th>المنصة</th><th>الكمية المطلوبة</th><th>الحالة</th><th>التصنيف</th><th>الإجراء والتحديث</th></tr>
+                        </thead>
+                        <tbody id="withdrawOrdersTableBody">
+                            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد طلبات سحب جديدة أو بانتظار المراجعة.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. طلبات تحتاج تحويل مالي -->
         <div id="transferAlertsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header">
@@ -229,7 +319,7 @@
             </div>
         </div>
 
-        <!-- 4. صفحة الإحصائيات المستقلة (جديدة) -->
+        <!-- 5. صفحة الإحصائيات -->
         <div id="statsTab" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
@@ -259,7 +349,7 @@
             </div>
         </div>
 
-        <!-- 5. صفحة المخزون المستقلة (جديدة) -->
+        <!-- 6. إدارة المخزون -->
         <div id="inventoryTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-boxes-stacked"></i> إدارة كميات المخزون الحالية واليدوية</h2></div>
@@ -311,7 +401,7 @@
             </div>
         </div>
 
-        <!-- 6. ملف العملاء وسجل الطلبات -->
+        <!-- 7. ملف العملاء وسجل الطلبات -->
         <div id="customerProfileTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-users"></i> ملفات العملاء وسجل الطلبات</h2></div>
@@ -331,7 +421,7 @@
             </div>
         </div>
 
-        <!-- 7. أسعار المنصات والعروض المكونة مفصولة -->
+        <!-- 8. أسعار المنصات والعروض -->
         <div id="pricingTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والمدد لكل منصة بالكامل</h2></div>
@@ -370,7 +460,7 @@
             </div>
         </div>
 
-        <!-- 8. وسائل الدفع والحقول -->
+        <!-- 9. وسائل الدفع والحقول -->
         <div id="paymentsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
@@ -405,7 +495,7 @@
             </div>
         </div>
 
-        <!-- 9. رسائل حالات الطلب -->
+        <!-- 10. رسائل حالات الطلب -->
         <div id="statusMessagesTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-message"></i> إدارة رسائل حالات الطلب والتنبيهات</h2></div>
@@ -419,7 +509,7 @@
             </div>
         </div>
 
-        <!-- 10. الشروط والأحكام -->
+        <!-- 11. الشروط والأحكام -->
         <div id="termsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
@@ -436,7 +526,7 @@
             </div>
         </div>
 
-        <!-- 11. إعدادات عامة -->
+        <!-- 12. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة والدعم</h2></div>
