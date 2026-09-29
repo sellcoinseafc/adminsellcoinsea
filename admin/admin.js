@@ -195,7 +195,7 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 2) السجل والساعة التفاعلية والإشعارات (الأرقام والتواريخ بالإنجليزية الصريحة)
+// 2) السجل والساعة التفاعلية والإشعارات
 // ==========================================================================
 function startLiveClock() {
   const clockEl = document.getElementById("liveDatetime");
@@ -354,9 +354,8 @@ function getPlatformBadgeHTML(platformStr) {
   }
   return `<span class="badge badge-new">${platformStr || '---'}</span>`;
 }
-
 // ==========================================================================
-// 3) قراءة الطلبات والتحميل
+// 3) قراءة الطلبات والتحميل والإحصائيات
 // ==========================================================================
 function initOrdersListener() {
   loadOrders();
@@ -484,7 +483,7 @@ window.handleGlobalSearch = function (queryVal) {
 };
 
 // ==========================================================================
-// 4) رسم الجداول وتحديث إخفاء العناصر غير المطابقة
+// 4) رسم الجداول والتصفية الفورية عند تغيير الفلتر
 // ==========================================================================
 function buildActionButtonsHTML(order) {
   const refNum = order.referenceNumber || order.id;
@@ -718,983 +717,458 @@ window.renderTransferAlertsTable = function () {
     `;
   }).join('');
 };
+// ==========================================================================
+// 5) النافذة المنبثقة الفاخرة للطلب (Order Detail Modal System)
+// ==========================================================================
+let currentModalOrderId = null;
+
+window.openOrderModal = async function (orderId) {
+  currentModalOrderId = orderId;
+  const modal = document.getElementById("orderModalOverlay");
+  if (!modal) return;
+
+  const order = ordersData.find(o => o.id === orderId);
+  if (!order) return;
+
+  // إظهار النافذة الحوارية
+  modal.classList.add("active");
+
+  // تعبئة البيانات الأساسية في الهيدر المتوازي
+  if (document.getElementById("modalOrderNumTitle")) document.getElementById("modalOrderNumTitle").innerText = order.orderNumber || order.id;
+  if (document.getElementById("modalRefSubtitle")) document.getElementById("modalRefSubtitle").innerText = order.referenceNumber || "---";
+  if (document.getElementById("modalCustomerNameHero")) document.getElementById("modalCustomerNameHero").innerText = order.name || "---";
+  if (document.getElementById("modalCustomerPhoneHero")) document.getElementById("modalCustomerPhoneHero").innerText = order.phone || "---";
+
+  // تعبئة بطاقات المعدلات الأساسية الثلاثة
+  if (document.getElementById("modalPlatformBox")) document.getElementById("modalPlatformBox").innerHTML = getPlatformBadgeHTML(order.platform);
+  if (document.getElementById("modalCoinsBox")) document.getElementById("modalCoinsBox").innerText = formatCoinsNumber(order.totalQty) + " Coins";
+  if (document.getElementById("modalPriceBox")) document.getElementById("modalPriceBox").innerText = order.totalPrice;
+
+  // تعيين حالة الطلب المحددة مسبقاً في القائمة
+  const statusSelect = document.getElementById("modalOrderStatusSelect");
+  if (statusSelect) statusSelect.value = order.status || "new";
+
+  // إعداد شريط ومؤشر سحب الكوينز المطور
+  initModalCoinsProgressControl(order);
+
+  // جلب البيانات الحساسة وتجهيز العد التنازلي الحصري
+  await fetchAndRenderSensitiveOrderData(orderId);
+};
+
+window.closeOrderModal = function () {
+  const modal = document.getElementById("orderModalOverlay");
+  if (modal) modal.classList.remove("active");
+  currentModalOrderId = null;
+
+  // إيقاف مؤقت العد التنازلي التلقائي لفك التشفير عند الإغلاق
+  if (decryptTimer) {
+    clearInterval(decryptTimer);
+    decryptTimer = null;
+  }
+};
+
+function initModalCoinsProgressControl(order) {
+  const totalQty = Number(order.totalQty || 0);
+  const drawnCoins = Number(order.drawnCoins || 0);
+  const remainingCoins = Math.max(0, totalQty - drawnCoins);
+  const progressPercent = totalQty > 0 ? Math.min(100, Math.round((drawnCoins / totalQty) * 100)) : 0;
+
+  if (document.getElementById("modalProgressCoinsText")) {
+    document.getElementById("modalProgressCoinsText").innerText = `${formatCoinsNumber(drawnCoins)} / ${formatCoinsNumber(totalQty)} Coins (${progressPercent}%)`;
+  }
+
+  const fillBar = document.getElementById("modalProgressBarFill");
+  if (fillBar) fillBar.style.width = `${progressPercent}%`;
+
+  const inputEl = document.getElementById("modalDrawnCoinsInput");
+  if (inputEl) {
+    inputEl.value = drawnCoins;
+    inputEl.max = totalQty;
+  }
+}
+
+window.handleUpdateDrawnCoins = async function () {
+  if (!currentModalOrderId) return;
+  const inputEl = document.getElementById("modalDrawnCoinsInput");
+  if (!inputEl) return;
+
+  const newDrawnVal = Number(inputEl.value || 0);
+  const order = ordersData.find(o => o.id === currentModalOrderId);
+  if (!order) return;
+
+  try {
+    const res = await fetch(`/api/orders/${currentModalOrderId}/draw-coins`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ drawnCoins: newDrawnVal })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      order.drawnCoins = newDrawnVal;
+      initModalCoinsProgressControl(order);
+      await logAuditEvent("تحديث الكوينز المسحوبة", order.referenceNumber || order.id, `المسحوب الجديد: ${newDrawnVal}`);
+      alert("✅ تم تحديث كمية الكوينز المسحوبة بنجاح");
+    } else {
+      alert("❌ فشل تحديث كمية السحب: " + (data.message || ""));
+    }
+  } catch (err) {
+    alert("⚠️ خطأ في الاتصال بالسيرفر أثناء حفظ السحب");
+  }
+};
+
+window.handleSaveModalOrderStatus = async function () {
+  if (!currentModalOrderId) return;
+  const statusSelect = document.getElementById("modalOrderStatusSelect");
+  if (!statusSelect) return;
+
+  const newStatus = statusSelect.value;
+  const order = ordersData.find(o => o.id === currentModalOrderId);
+  if (!order) return;
+
+  try {
+    const res = await fetch(`/api/orders/${currentModalOrderId}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      order.status = newStatus;
+      renderOrdersTables();
+      renderWithdrawOrdersTable();
+      renderTransferAlertsTable();
+      await logAuditEvent("تغيير حالة الطلب", order.referenceNumber || order.id, `الحالة الجديدة: ${newStatus}`);
+      alert("✅ تم حفظ حالة الطلب الجديدة بنجاح");
+      closeOrderModal();
+    } else {
+      alert("❌ فشل تحديث حالة الطلب: " + (data.message || ""));
+    }
+  } catch (err) {
+    alert("⚠️ خطأ في التواصل مع السيرفر عند حفظ الحالة");
+  }
+};
+
+async function fetchAndRenderSensitiveOrderData(orderId) {
+  const container = document.getElementById("modalSensitiveDataContainer");
+  if (!container) return;
+
+  container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> جاري فك تشفير البيانات الحساسة...</div>`;
+
+  try {
+    const res = await fetch(`/api/orders/${orderId}/sensitive`);
+    const data = await res.json();
+
+    if (!data.success) {
+      container.innerHTML = `<div class="alert-danger" style="display:block;">⚠️ غير مصرح لك بفك تشفير هذا الطلب أو انتهت جلسة الأمان.</div>`;
+      return;
+    }
+
+    const { email, password, backupCodes, iban, bankName } = data.sensitiveData || {};
+
+    container.innerHTML = `
+      <div class="secure-item-row" onclick="copyToClipboardSilent('${email}')" title="انقر للنسخ الفوري">
+        <span class="label"><i class="fa-solid fa-envelope" style="color:var(--blue);"></i> البريد الإلكتروني:</span>
+        <span class="value">${email || '---'}</span>
+      </div>
+
+      <div class="secure-item-row" onclick="copyToClipboardSilent('${password}')" title="انقر للنسخ الفوري">
+        <span class="label"><i class="fa-solid fa-key" style="color:var(--warning);"></i> كلمة المرور:</span>
+        <span class="value">${password || '---'}</span>
+      </div>
+
+      <div style="margin-top:16px;">
+        <span style="font-size:0.85rem; font-weight:800; color:var(--text-muted);"><i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i> الأكواد الاحتياطية (Backup Codes):</span>
+        <div class="backup-codes-grid">
+          ${(backupCodes || ['---', '---', '---']).map(code => `
+            <div class="code-box-single" onclick="copyToClipboardSilent('${code}')" title="انقر للنسخ">${code}</div>
+          `).join('')}
+        </div>
+      </div>
+
+      ${iban ? `
+        <div class="secure-item-row" style="margin-top:16px; border-color:rgba(16,185,129,0.3);" onclick="copyToClipboardSilent('${iban}')" title="انقر لنسخ الآيبان">
+          <span class="label"><i class="fa-solid fa-building-columns" style="color:var(--success);"></i> بيانات التحويل (${bankName || 'البنك'}):</span>
+          <span class="value">${iban}</span>
+        </div>
+      ` : ''}
+
+      <div style="text-align:center; margin-top:18px;">
+        <span id="decryptCountdownBadge" class="badge badge-review" style="font-size:0.82rem;">
+          <i class="fa-solid fa-lock"></i> سيتم قفل وتشفير البيانات تلقائياً خلال: <b class="num-en" id="decryptSecondsText">90</b> ثانية
+        </span>
+      </div>
+    `;
+
+    startDecryptLockTimer();
+
+  } catch (err) {
+    container.innerHTML = `<div class="alert-danger" style="display:block;">⚠️ خطأ في الاتصال عند جلب بيانات الحساب المشفّرة.</div>`;
+  }
+}
+
+function startDecryptLockTimer() {
+  if (decryptTimer) clearInterval(decryptTimer);
+  decryptSeconds = 90;
+
+  decryptTimer = setInterval(() => {
+    decryptSeconds--;
+    const txtEl = document.getElementById("decryptSecondsText");
+    if (txtEl) txtEl.innerText = decryptSeconds;
+
+    if (decryptSeconds <= 0) {
+      clearInterval(decryptTimer);
+      decryptTimer = null;
+      const container = document.getElementById("modalSensitiveDataContainer");
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:20px; background:rgba(239,68,68,0.1); border:1.5px solid rgba(239,68,68,0.3); border-radius:18px;">
+            <i class="fa-solid fa-user-lock" style="font-size:2rem; color:var(--danger); margin-bottom:8px;"></i>
+            <h4 style="color:#fff; font-weight:900;">تم إعادة قفل البيانات الحساسة لأواعي الأمان</h4>
+            <p style="color:var(--text-muted); font-size:0.82rem; margin-top:4px;">يرجى إعادة فتح النافذة في حال احتجت للمعاينة مرة أخرى.</p>
+          </div>
+        `;
+      }
+    }
+  }, 1000);
+}
 
 // ==========================================================================
-// 5) نظام التقييمات اللحظي والشامل
+// 6) إجراءات حذف الطلبات والأرشفة والتعديل السريع
+// ==========================================================================
+window.handleDeleteOrder = async function (orderId, refNum) {
+  if (!confirm(`⚠️ هل أنت متأكد تماماً من حذف الطلب رقم #${refNum}؟ لا يمكن التراجع عن هذه الخطوة!`)) return;
+
+  try {
+    const res = await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+    const data = await res.json();
+
+    if (data.success) {
+      ordersData = ordersData.filter(o => o.id !== orderId);
+      renderOrdersTables();
+      renderWithdrawOrdersTable();
+      renderTransferAlertsTable();
+      await logAuditEvent("حذف طلب النهائي", refNum, "تم مسح الطلب من القاعدة");
+      alert("✅ تم حذف الطلب بنجاح");
+    } else {
+      alert("❌ فشل الحذف: " + (data.message || ""));
+    }
+  } catch (err) {
+    alert("⚠️ خطأ في الاتصال عند الحذف");
+  }
+};
+
+window.handleArchiveOrder = async function (orderId, refNum) {
+  if (!confirm(`هل ترغب بنقل الطلب رقم #${refNum} إلى الأرشيف؟`)) return;
+
+  try {
+    const res = await fetch(`/api/orders/${orderId}/status`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "archived" })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      const order = ordersData.find(o => o.id === orderId);
+      if (order) order.status = "archived";
+      renderOrdersTables();
+      renderWithdrawOrdersTable();
+      await logAuditEvent("أرشفة طلب", refNum, "تم النقل للأرشيف");
+      alert("📦 تم أرشفة الطلب بنجاح");
+    } else {
+      alert("❌ فشل الأرشفة: " + (data.message || ""));
+    }
+  } catch (err) {
+    alert("⚠️ خطأ عند تنفيذ الأرشفة");
+  }
+};
+
+window.promptEditOrder = async function (orderId) {
+  const order = ordersData.find(o => o.id === orderId);
+  if (!order) return;
+
+  const newName = prompt("تعديل اسم العميل:", order.name);
+  if (newName === null) return;
+
+  const newPhone = prompt("تعديل رقم الجوال:", order.phone);
+  if (newPhone === null) return;
+
+  try {
+    const res = await fetch(`/api/orders/${orderId}/update-details`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: newName, phone: newPhone })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      order.name = newName;
+      order.phone = newPhone;
+      renderOrdersTables();
+      await logAuditEvent("تعديل بيانات عميل", order.referenceNumber || order.id, `الاسم: ${newName} | الجوال: ${newPhone}`);
+      alert("✅ تم تحديث بيانات الطلب بنجاح");
+    } else {
+      alert("❌ فشل التعديل: " + (data.message || ""));
+    }
+  } catch (err) {
+    alert("⚠️ خطأ في الاتصال عند التحديث");
+  }
+};
+
+// ==========================================================================
+// 7) إدارة التقييمات وقائمة العملاء وحسابات المشرفين
 // ==========================================================================
 function initReviewsListener() {
-  const q = query(collection(db, "reviews"));
+  const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
   return onSnapshot(q, (snapshot) => {
-    reviewsData = snapshot.docs.map(docSnap => {
-      const d = docSnap.data();
-      return {
-        id: docSnap.id,
-        customerName: d.customerName || d.name || "عميل",
-        referenceNumber: d.referenceNumber || d.orderId || "---",
-        rating: Number(d.rating || 5),
-        comment: d.comment || d.text || "بدون تعليق",
-        createdAt: d.createdAt ? (d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString("en-US") : d.createdAt) : "---",
-        status: d.status || "published",
-        ...d
-      };
-    });
-
-    if (lastReviewsCount !== null && reviewsData.length > lastReviewsCount) {
-      showSystemNotification(
-        "⭐ تقييم جديد من عميل!",
-        "تم استقبال تقييم جديد للخدمة، اضغط لاستعراضه.",
-        () => switchTab("reviewsTab", document.querySelector('.sidebar-menu li:nth-child(5) a'))
-      );
-    }
-    lastReviewsCount = reviewsData.length;
-
+    reviewsData = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
     renderReviewsTable();
-  }, (err) => {
-    console.error("Reviews Snapshot Error:", err);
   });
 }
 
 function renderReviewsTable() {
   const tbody = document.getElementById("reviewsTableBody");
-  const emptyState = document.getElementById("reviewsEmptyState");
   if (!tbody) return;
 
-  const totalReviews = reviewsData.length;
-  const fiveStarsCount = reviewsData.filter(r => r.rating === 5).length;
-  const pendingCount = reviewsData.filter(r => r.status === "pending").length;
-  const avgRating = totalReviews > 0 
-    ? (reviewsData.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
-    : "0.0";
-
-  if (document.getElementById("statTotalReviews")) document.getElementById("statTotalReviews").innerText = totalReviews;
-  if (document.getElementById("statAverageRating")) document.getElementById("statAverageRating").innerText = `${avgRating} ⭐`;
-  if (document.getElementById("statFiveStarReviews")) document.getElementById("statFiveStarReviews").innerText = fiveStarsCount;
-  if (document.getElementById("statPendingReviews")) document.getElementById("statPendingReviews").innerText = pendingCount;
-  if (document.getElementById("reviewsBadgeCount")) document.getElementById("reviewsBadgeCount").innerText = `${totalReviews} تقييمات`;
-
-  const sidebarBadge = document.getElementById("sidebarReviewsBadge");
-  if (sidebarBadge) {
-    sidebarBadge.innerText = pendingCount;
-    sidebarBadge.style.display = pendingCount > 0 ? "inline-block" : "none";
-  }
-
-  const filterVal = document.getElementById("reviewStatusFilter")?.value || "all";
   let filtered = reviewsData;
-
-  if (filterVal !== "all") {
-    filtered = filtered.filter(r => r.status === filterVal);
-  }
-
-  if (activeReviewSearchQuery !== "") {
+  if (activeReviewSearchQuery) {
     filtered = filtered.filter(r =>
-      r.customerName.toLowerCase().includes(activeReviewSearchQuery) ||
-      r.referenceNumber.toLowerCase().includes(activeReviewSearchQuery)
+      (r.clientName && r.clientName.toLowerCase().includes(activeReviewSearchQuery)) ||
+      (r.comment && r.comment.toLowerCase().includes(activeReviewSearchQuery))
     );
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = "";
-    if (emptyState) emptyState.style.display = "block";
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد تقييمات مطابقة.</td></tr>`;
     return;
   }
 
-  if (emptyState) emptyState.style.display = "none";
-
-  const statusBadgeMap = {
-    'published': '<span class="badge badge-completed">منشور</span>',
-    'pending': '<span class="badge badge-review">بانتظار المراجعة</span>',
-    'hidden': '<span class="badge badge-archived">مخفي</span>'
-  };
-
-  tbody.innerHTML = filtered.map(r => {
-    const starsHTML = "⭐".repeat(r.rating);
-    return `
-      <tr>
-        <td><b>${r.customerName}</b></td>
-        <td><code class="copyable-box" onclick="copyTrackingLink('${r.referenceNumber}')">${r.referenceNumber}</code></td>
-        <td><span style="color:#f59e0b;">${starsHTML} (${r.rating})</span></td>
-        <td><span style="font-size:0.85rem; max-width:250px; display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.comment}</span></td>
-        <td><span class="date-en">${r.createdAt}</span></td>
-        <td>${statusBadgeMap[r.status] || r.status}</td>
-        <td>
-          <div style="display:flex; gap:4px;">
-            <button class="btn-action" title="معاينة التقييم" onclick="openReviewModal('${r.id}')"><i class="fa-solid fa-eye"></i></button>
-            ${r.status !== 'published' ? `<button class="btn-action" style="color:var(--primary);" title="نشر التقييم" onclick="updateReviewStatus('${r.id}', 'published')"><i class="fa-solid fa-check"></i></button>` : ''}
-            ${r.status !== 'hidden' ? `<button class="btn-action" style="color:var(--warning);" title="إخفاء التقييم" onclick="updateReviewStatus('${r.id}', 'hidden')"><i class="fa-solid fa-eye-slash"></i></button>` : ''}
-            <button class="btn-action" style="color:var(--danger);" title="حذف التقييم" onclick="deleteReview('${r.id}')"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+  tbody.innerHTML = filtered.map(r => `
+    <tr>
+      <td><b>${r.clientName || 'عميل'}</b></td>
+      <td><span style="color:#ffd700;">${'★'.repeat(r.rating || 5)}</span></td>
+      <td><span style="font-size:0.85rem;">${r.comment || 'بدون تعليق'}</span></td>
+      <td><span class="badge ${r.status === 'approved' ? 'badge-completed' : 'badge-review'}">${r.status === 'approved' ? 'منشور' : 'بانتظار الموافقة'}</span></td>
+      <td><span class="date-en">${r.createdAt?.seconds ? new Date(r.createdAt.seconds * 1000).toLocaleDateString("en-US") : '---'}</span></td>
+      <td>
+        <button class="btn-action" style="color:var(--success);" title="موافقة ونشر" onclick="handleApproveReview('${r.id}')"><i class="fa-solid fa-check"></i></button>
+        <button class="btn-action" style="color:var(--danger);" title="حذف" onclick="handleDeleteReview('${r.id}')"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    </tr>
+  `).join('');
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const reviewSearch = document.getElementById("reviewSearchInput");
-  const reviewFilter = document.getElementById("reviewStatusFilter");
-  if (reviewSearch) {
-    reviewSearch.addEventListener("input", (e) => {
-      activeReviewSearchQuery = e.target.value.trim().toLowerCase();
-      renderReviewsTable();
-    });
-  }
-  if (reviewFilter) {
-    reviewFilter.addEventListener("change", () => renderReviewsTable());
-  }
-});
-
-window.openReviewModal = function(reviewId) {
-  const modal = document.getElementById("reviewModal");
-  const modalTitle = document.getElementById("reviewModalTitle");
-  const modalBody = document.getElementById("reviewModalBody");
-  if (!modal || !modalBody) return;
-
-  const review = reviewsData.find(r => r.id === reviewId);
-  if (!review) return;
-
-  if (modalTitle) modalTitle.innerText = `تفاصيل تقييم العميل: ${review.customerName}`;
-
-  modalBody.innerHTML = `
-    <div style="background:var(--input-bg); padding:16px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:15px;">
-      <p style="margin-bottom:8px;"><b>العميل:</b> ${review.customerName}</p>
-      <p style="margin-bottom:8px;"><b>رقم المرجع:</b> <code class="num-en" style="color:var(--primary);">${review.referenceNumber}</code></p>
-      <p style="margin-bottom:8px;"><b>التقييم:</b> <span style="color:#f59e0b;">${"⭐".repeat(review.rating)} (${review.rating} من 5)</span></p>
-      <p style="margin-bottom:8px;"><b>التاريخ:</b> <span class="date-en">${review.createdAt}</span></p>
-      <p style="margin-bottom:8px;"><b>الحالة:</b> ${review.status}</p>
-    </div>
-    <div style="background:var(--input-bg); padding:16px; border-radius:12px; border:1px solid var(--card-border); margin-bottom:20px;">
-      <h4 style="color:var(--primary); margin-bottom:8px;"><i class="fa-solid fa-comment-dots"></i> نص التقييم:</h4>
-      <p style="font-size:0.95rem; line-height:1.8; color:var(--text-main);">${review.comment}</p>
-    </div>
-    <div style="display:flex; gap:10px; justify-content:flex-end;">
-      <button class="btn-custom" style="background:var(--primary); color:#000;" onclick="updateReviewStatus('${review.id}', 'published'); closeReviewModal();">نشر التقييم</button>
-      <button class="btn-custom" style="background:#f59e0b; color:#fff;" onclick="updateReviewStatus('${review.id}', 'hidden'); closeReviewModal();">إخفاء</button>
-      <button class="btn-custom" style="background:#ef4444; color:#fff;" onclick="deleteReview('${review.id}'); closeReviewModal();">حذف</button>
-      <button class="btn-custom" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--card-border);" onclick="closeReviewModal()">إغلاق</button>
-    </div>
-  `;
-
-  modal.classList.add("active");
-};
-
-window.closeReviewModal = function() {
-  const modal = document.getElementById("reviewModal");
-  if (modal) modal.classList.remove("active");
-};
-
-window.updateReviewStatus = async function(reviewId, newStatus) {
+window.handleApproveReview = async function (reviewId) {
   try {
-    await updateDoc(doc(db, "reviews", reviewId), { status: newStatus });
-    await logAuditEvent("تحديث حالة التقييم", reviewId, `تغيير الحالة إلى: ${newStatus}`);
+    await updateDoc(doc(db, "reviews", reviewId), { status: "approved" });
+    await logAuditEvent("الموافقة على تقييم", "التقييمات", `المعرف: ${reviewId}`);
+    alert("✅ تم نشر التقييم بنجاح");
   } catch (err) {
-    alert("❌ فشل تحديث حالة التقييم: " + err.message);
+    alert("❌ فشل التحديث");
   }
 };
 
-window.deleteReview = async function(reviewId) {
-  if (!confirm("هل أنت متأكد من حذف هذا التقييم نهائياً؟")) return;
+window.handleDeleteReview = async function (reviewId) {
+  if (!confirm("هل ترغب بحذف هذا التقييم؟")) return;
   try {
     await deleteDoc(doc(db, "reviews", reviewId));
-    await logAuditEvent("حذف تقييم", reviewId, "تم حذف التقييم من النظام");
+    await logAuditEvent("حذف تقييم", "التقييمات", `المعرف: ${reviewId}`);
+    alert("✅ تم حذف التقييم");
   } catch (err) {
-    alert("❌ فشل حذف التقييم: " + err.message);
+    alert("❌ فشل الحذف");
   }
 };
 
-// ==========================================================================
-// 6) ملف العملاء وسجل الطلبات
-// ==========================================================================
-window.renderClientsTable = function (searchQuery = "") {
+function renderClientsTable(searchQuery = "") {
   const tbody = document.getElementById("clientsTableBody");
   if (!tbody) return;
 
   const clientsMap = {};
   ordersData.forEach(o => {
-    const key = o.phone ? o.phone.trim() : (o.name ? o.name.trim() : "عميل غير معروف");
-    if (!clientsMap[key]) {
-      clientsMap[key] = { phone: o.phone || "بدون رقم", name: o.name || "عميل", orderCount: 0, totalCoins: 0, totalMoney: 0 };
+    if (!o.phone) return;
+    if (!clientsMap[o.phone]) {
+      clientsMap[o.phone] = {
+        name: o.name || "عميل",
+        phone: o.phone,
+        ordersCount: 0,
+        totalCoins: 0,
+        totalSpent: 0,
+        lastOrderDate: o.createdAt
+      };
     }
-    clientsMap[key].orderCount += 1;
-    clientsMap[key].totalCoins += (o.totalQty || 0);
-    clientsMap[key].totalMoney += parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 0;
+    clientsMap[o.phone].ordersCount++;
+    clientsMap[o.phone].totalCoins += Number(o.totalQty || 0);
+    const pVal = parseFloat(String(o.totalPrice).replace(/[^0-9.]/g, '')) || 0;
+    clientsMap[o.phone].totalSpent += pVal;
   });
 
   let clientsList = Object.values(clientsMap);
-  if (searchQuery && searchQuery.trim() !== "") {
-    const q = searchQuery.toLowerCase().trim();
-    clientsList = clientsList.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
+  if (searchQuery) {
+    clientsList = clientsList.filter(c =>
+      c.name.toLowerCase().includes(searchQuery) ||
+      c.phone.toLowerCase().includes(searchQuery)
+    );
   }
 
   if (clientsList.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد نتائج مطابقة للبحث.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">لا يوجد عملاء مسجلين.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = clientsList.map(c => `
     <tr>
       <td><b>${c.name}</b></td>
-      <td><span class="num-en" style="color:var(--primary);">${c.phone}</span></td>
-      <td><span class="badge badge-new">${c.orderCount} طلبات</span></td>
+      <td><span class="num-en">${c.phone}</span></td>
+      <td><span class="badge badge-review">${c.ordersCount} طلبات</span></td>
       <td><b class="num-en">${formatCoinsNumber(c.totalCoins)} Coins</b></td>
-      <td><b class="price-en">${c.totalMoney.toLocaleString('en-US')} SAR</b></td>
-      <td><button class="btn-action" onclick="openClientModal('${encodeURIComponent(c.phone)}')">سجل الطلبات</button></td>
+      <td><b class="price-en">${c.totalSpent.toLocaleString('en-US')} SAR</b></td>
     </tr>
   `).join('');
-};
-
-window.filterClients = function (val) { renderClientsTable(val); };
-
-window.openClientModal = function (encodedPhone) {
-  const phone = decodeURIComponent(encodedPhone);
-  const modal = document.getElementById("clientDetailModal");
-  const modalTitle = document.getElementById("clientModalTitle");
-  const modalBody = document.getElementById("clientModalBody");
-  if (!modal || !modalBody) return;
-
-  const clientOrders = ordersData.filter(o => o.phone === phone || o.name === phone);
-  if (modalTitle) modalTitle.innerText = `سجل طلبات العميل: ${phone}`;
-
-  modalBody.innerHTML = `
-    <div style="margin-bottom:15px; background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
-      <strong>إجمالي الطلبات:</strong> <span class="num-en">${clientOrders.length}</span> | 
-      <strong>إجمالي الكوينز:</strong> <span class="num-en">${formatCoinsNumber(clientOrders.reduce((acc, cur) => acc + (cur.totalQty || 0), 0))}</span>
-    </div>
-    <div class="table-responsive">
-      <table>
-        <thead><tr><th>رقم الطلب</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th>التاريخ</th></tr></thead>
-        <tbody>
-          ${clientOrders.map(o => {
-            const ref = o.referenceNumber || "";
-            const orderNum = o.orderNumber || o.id;
-            return `
-              <tr>
-                <td><b class="num-en" style="color:var(--primary); cursor:pointer;" onclick="copyTrackingLink('${ref}')">#${orderNum}</b></td>
-                <td>${o.platform}</td>
-                <td class="num-en">${formatCoinsNumber(o.totalQty)}</td>
-                <td class="price-en">${o.totalPrice}</td>
-                <td><span class="badge badge-new">${o.status}</span></td>
-                <td class="date-en">${o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-US") : "---"}</td>
-              </tr>
-            `;
-          }).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-  modal.classList.add("active");
-};
-
-window.closeClientModal = function () {
-  const modal = document.getElementById("clientDetailModal");
-  if (modal) modal.classList.remove("active");
-};
-
-// ==========================================================================
-// 7) فك التشفير والعداد التنازلي
-// ==========================================================================
-async function decryptOrder(orderId) {
-  try {
-    const res = await fetch("/api/admin/decrypt-order", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ orderId })
-    });
-
-    const data = await res.json();
-
-    if (!data.success) {
-      alert("فشل فك التشفير");
-      return;
-    }
-
-    const emailEl = document.getElementById("secureEmail");
-    const eaPassEl = document.getElementById("secureEaPass");
-    const code1El = document.getElementById("secureCode1");
-    const code2El = document.getElementById("secureCode2");
-    const code3El = document.getElementById("secureCode3");
-
-    const fullEmail = data.data.eaEmail || data.data.customerEmail || "-";
-    const fullPass = data.data.eaPassword || "-";
-    const rawCodes = (data.data.backupCodes || "").split(/[\s,]+/).filter(Boolean);
-
-    if (emailEl) {
-      emailEl.textContent = fullEmail;
-      emailEl.onclick = () => copyToClipboardSilent(fullEmail);
-    }
-    if (eaPassEl) {
-      eaPassEl.textContent = fullPass;
-      eaPassEl.onclick = () => copyToClipboardSilent(fullPass);
-    }
-
-    if (code1El) {
-      code1El.textContent = rawCodes[0] || "---";
-      code1El.onclick = () => copyToClipboardSilent(rawCodes[0]);
-    }
-    if (code2El) {
-      code2El.textContent = rawCodes[1] || "---";
-      code2El.onclick = () => copyToClipboardSilent(rawCodes[1]);
-    }
-    if (code3El) {
-      code3El.textContent = rawCodes[2] || "---";
-      code3El.onclick = () => copyToClipboardSilent(rawCodes[2]);
-    }
-
-    startDecryptTimer();
-    await logAuditEvent("فك تشفير بيانات حساسة", orderId, "تم كشف بيانات الحساب لمدة 90 ثانية");
-  } catch (e) {
-    console.error(e);
-    alert("خطأ في الاتصال بالسيرفر");
-  }
-}
-window.decryptOrder = decryptOrder;
-
-function startDecryptTimer() {
-  clearInterval(decryptTimer);
-  decryptSeconds = 90;
-
-  const timerEl = document.getElementById("decryptTimer");
-  if (timerEl) timerEl.textContent = decryptSeconds + " SECONDS";
-
-  decryptTimer = setInterval(() => {
-    decryptSeconds--;
-
-    const timerLabel = document.getElementById("decryptTimer");
-    if (timerLabel) {
-      timerLabel.textContent = decryptSeconds + " SECONDS";
-    }
-
-    if (decryptSeconds <= 0) {
-      clearInterval(decryptTimer);
-
-      ["secureEmail", "secureEaPass", "secureCode1", "secureCode2", "secureCode3"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.textContent = "••••••••";
-          el.onclick = null;
-        }
-      });
-
-      if (timerLabel) timerLabel.textContent = "EXPIRED";
-    }
-  }, 1000);
-}
-
-// ==========================================================================
-// 8) تفاصيل الطلب الشاملة (تصميم متوازي فوق وفي صفوف واحدة)
-// ==========================================================================
-window.openOrderModal = function (orderId) {
-  const modal = document.getElementById("orderDetailModal");
-  const modalTitle = document.getElementById("modalOrderIdTitle");
-  const modalSubTitle = document.getElementById("modalRefNumberSubtitle");
-  const modalBody = document.getElementById("modalOrderBody");
-  if (!modal || !modalBody) return;
-
-  const order = ordersData.find(o => o.id === orderId || o.referenceNumber === orderId || o.orderNumber === orderId);
-  if (!order) { alert("لم يتم العثور على بيانات الطلب المطلوب."); return; }
-
-  const orderNum = order.orderNumber || order.id;
-  const refNum = order.referenceNumber || order.id;
-
-  if (modalTitle) modalTitle.innerText = `ORDER #${orderNum}`;
-  if (modalSubTitle) {
-    modalSubTitle.innerText = `REF: ${refNum}`;
-    modalSubTitle.onclick = () => copyTrackingLink(refNum);
-  }
-
-  const drawn = Number(order.drawnCoins || 0);
-  const total = Number(order.totalQty || 0);
-  const remaining = Math.max(0, total - drawn);
-  const progressPercent = total > 0 ? Math.min(100, Math.round((drawn / total) * 100)) : 0;
-  
-  const isNewOrReview = (order.status === 'new' || order.status === 'pending' || order.status === 'review');
-  const isFinalState = (order.status === 'finished' || order.status === 'transferred' || order.status === 'completed');
-
-  modalBody.innerHTML = `
-    <!-- 1. الهيدر المتوازي (رقم الطلب القابل للنسخ - العميل - الجوال في صف واحد للاب توب وتحت بعض للجوال) -->
-    <div class="order-modal-top-hero">
-      <div class="hero-item">
-        <span class="hero-label">رقم الطلب (اضغط للنسخ):</span>
-        <div class="hero-val num-en" style="color:var(--primary); cursor:pointer;" onclick="copyTrackingLink('${refNum}')">
-          #${orderNum} <i class="fa-solid fa-copy" style="font-size:0.8rem;"></i>
-        </div>
-      </div>
-      <div class="hero-item">
-        <span class="hero-label">اسم العميل الكريم:</span>
-        <div class="hero-val" style="color:#ffffff;">${order.name || '---'}</div>
-      </div>
-      <div class="hero-item">
-        <span class="hero-label">رقم الجوال:</span>
-        <div class="hero-val num-en" style="color:#f59e0b;">${order.phone || '---'}</div>
-      </div>
-    </div>
-
-    <!-- 2. حالة الطلب في الأعلى وزر الحفظ تحتها -->
-    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-      <div style="margin-bottom:12px;">
-        <label style="font-weight:900; color:var(--text-muted); font-size:0.85rem; display:block; margin-bottom:6px;">
-          <i class="fa-solid fa-sliders" style="color:var(--primary);"></i> تعديل حالة الطلب الحالية:
-        </label>
-        <select id="modalOrderStatusSelect" class="form-control" style="font-weight:900; border-color:var(--primary);" onchange="handleStatusSelectionChanged(this)">
-          <option value="new" ${order.status === 'new' || order.status === 'pending' ? 'selected' : ''}>طلب جديد (New Order)</option>
-          <option value="progress" ${order.status === 'progress' ? 'selected' : ''}>قيد التنفيذ (In Progress)</option>
-          <option value="review" ${order.status === 'review' ? 'selected' : ''}>انتظار المراجعة (Under Review)</option>
-          <option value="finished" ${order.status === 'finished' ? 'selected' : ''}>تم الانتهاء (Finished)</option>
-          <option value="transferred" ${order.status === 'transferred' ? 'selected' : ''}>تم التحويل (Transferred)</option>
-          <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>مكتمل (Completed)</option>
-          <option value="archived" ${order.status === 'archived' ? 'selected' : ''}>مؤرشف (Archived)</option>
-        </select>
-      </div>
-
-      <!-- زر الحفظ في الأسفل تحت الخيارات -->
-      <button class="btn-custom" style="width:100%; justify-content:center; padding:12px; font-size:0.9rem;" onclick="saveOrderStatusDirect('${order.id}', '${orderNum}')">
-        <i class="fa-solid fa-check-double"></i> حفظ الطلب وإرسال إشعار الواتساب
-      </button>
-    </div>
-
-    <!-- 3. المنصة - الكمية المطلوبة - السعر الإجمالي على صف واحد متوازي -->
-    <div class="order-metrics-row">
-      <div class="metric-card-single">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:4px;">المنصة</span>
-          <div>${getPlatformBadgeHTML(order.platform)}</div>
-        </div>
-      </div>
-      <div class="metric-card-single">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:4px;">الكمية الكلية المطلوبة</span>
-          <b class="num-en" style="color:var(--primary); font-size:1.2rem;">${formatCoinsNumber(total)}</b>
-        </div>
-        <i class="fa-solid fa-coins" style="color:var(--primary); font-size:1.2rem;"></i>
-      </div>
-      <div class="metric-card-single">
-        <div>
-          <span style="font-size:0.75rem; color:var(--text-muted); font-weight:800; display:block; margin-bottom:4px;">المبلغ المالي الإجمالي</span>
-          <b class="price-en" style="color:#f59e0b; font-size:1.2rem;">${order.totalPrice}</b>
-        </div>
-        <i class="fa-solid fa-sack-dollar" style="color:#f59e0b; font-size:1.2rem;"></i>
-      </div>
-    </div>
-
-    <!-- 4. شريط ومؤشر سحب الكوينز المطور -->
-    ${!isNewOrReview ? `
-      <div class="progress-container-nextgen">
-        <div class="progress-header">
-          <span style="font-size:0.9rem; font-weight:900; color:var(--text-main);"><i class="fa-solid fa-chart-pie" style="color:var(--primary);"></i> متابعة سحب الكوينز اللحظي</span>
-          <span class="num-en" style="font-size:1.1rem; color:var(--primary);" id="modalProgressPercent">${progressPercent}%</span>
-        </div>
-
-        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:16px; text-align:center;">
-          <div style="background:var(--card-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);"><span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية الكلية المباعة</span><b class="num-en" style="font-size:1.05rem;">${formatCoinsNumber(total)}</b></div>
-          <div style="background:var(--card-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);"><span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المسحوبة</span><b class="num-en" style="color:#38bdf8; font-size:1.05rem;" id="modalDrawnVal">${formatCoinsNumber(drawn)}</b></div>
-          <div style="background:var(--card-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);"><span style="font-size:0.72rem; color:var(--text-muted); display:block; margin-bottom:2px;">الكمية المتبقية</span><b class="num-en" style="color:#ef4444; font-size:1.05rem;" id="modalRemainingVal">${formatCoinsNumber(remaining)}</b></div>
-        </div>
-
-        <div class="progress-bar-bg">
-          <div class="progress-bar-fill" id="modalProgressBarFill" style="width: ${progressPercent}%;"></div>
-        </div>
-
-        ${!isFinalState ? `
-          <div class="withdraw-input-control">
-            <input type="text" id="modalDrawnInput" class="form-control num-en" value="${formatCoinsNumber(drawn)}" oninput="formatInputCoinsWithCommas(this)">
-            <button class="btn-custom" style="background:var(--primary); color:#000; flex-shrink:0; padding:12px 22px;" onclick="saveDrawnCoinsDirect('${order.id}', ${total})">
-              <i class="fa-solid fa-floppy-disk"></i> حفظ الكمية المسحوبة
-            </button>
-          </div>
-        ` : `
-          <div style="text-align:center; color:var(--success); font-size:0.88rem; font-weight:900; background:rgba(16,185,129,0.1); padding:12px; border-radius:12px; border:1px solid rgba(16,185,129,0.3);">
-            <i class="fa-solid fa-lock"></i> تم قفل سحب الكوينز لوصول الطلب للحالة النهائية.
-          </div>
-        `}
-      </div>
-    ` : `
-      <div style="background:var(--input-bg); border:1.5px dashed var(--card-border); padding:18px; border-radius:16px; text-align:center; color:var(--text-muted); font-size:0.88rem; margin-bottom:20px;">
-        ℹ️ حقول وشريط سحب الكوينز المتقدم غير مفعلين في حالتي (طلب جديد / انتظار المراجعة).
-      </div>
-    `}
-
-    <!-- 5. البيانات الحساسة -->
-    <div class="secure-box" style="background:var(--input-bg); padding:20px; border-radius:20px; border:1.5px solid var(--card-border); margin-bottom:20px;">
-      <div class="secure-head" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <span style="color:#38bdf8; font-weight:900; font-size:1rem;"><i class="fa-solid fa-shield-cat"></i> البيانات الحساسة (اضغط للنسخ الفوري)</span>
-        <button class="decrypt-btn btn-custom" style="background:#38bdf8; color:#060913; font-size:0.8rem; padding:8px 16px; border:none; border-radius:12px; cursor:pointer;" onclick="decryptOrder('${order.id}')">
-          <i class="fa-solid fa-lock-open"></i> فك التشفير
-        </button>
-      </div>
-
-      <div id="decryptTimer" class="num-en" style="color:#f59e0b; font-weight:900; font-size:0.9rem; margin-bottom:14px;">LOCKED / ENCRYPTED</div>
-
-      <div class="secure-item-row" title="نسخ البريد">
-        <span class="label"><i class="fa-solid fa-at"></i> البريد الإلكتروني:</span>
-        <span class="value" id="secureEmail">••••••••</span>
-      </div>
-
-      <div class="secure-item-row" title="نسخ كلمة المرور">
-        <span class="label"><i class="fa-solid fa-key"></i> كلمة المرور:</span>
-        <span class="value" id="secureEaPass">••••••••</span>
-      </div>
-
-      <div style="margin-top:12px;">
-        <span style="font-size:0.82rem; font-weight:900; color:var(--text-muted); display:block; margin-bottom:8px;">الأكواد الاحتياطية الثلاثة:</span>
-        <div class="backup-codes-grid">
-          <div class="code-box-single" id="secureCode1">••••</div>
-          <div class="code-box-single" id="secureCode2">••••</div>
-          <div class="code-box-single" id="secureCode3">••••</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- أزرار الإغلاق والإتلاف -->
-    <div style="display:flex; gap:12px; justify-content:space-between; align-items:center;">
-      <button class="btn-custom" style="background:#ef4444; color:#fff;" onclick="openPurgeModal('${order.id}')">
-        <i class="fa-solid fa-skull-crossbones"></i> إتلاف البيانات الحساسة
-      </button>
-      <button class="btn-custom" style="background:var(--input-bg); color:var(--text-main); border:1.5px solid var(--card-border);" onclick="closeOrderModal()">إغلاق النافذة</button>
-    </div>
-  `;
-  modal.classList.add("active");
-};
-
-window.handleStatusSelectionChanged = function(selectEl) {
-  if (selectEl) {
-    selectEl.blur();
-  }
-};
-
-window.formatInputCoinsWithCommas = function(inputEl) {
-  let val = inputEl.value.replace(/[^0-9]/g, "");
-  if (!val) { inputEl.value = "0"; return; }
-  inputEl.value = Number(val).toLocaleString("en-US");
-};
-
-window.saveOrderStatusDirect = async function(orderId, orderNum) {
-  const statusSelect = document.getElementById("modalOrderStatusSelect");
-  if (!statusSelect) return;
-  const newStatus = statusSelect.value;
-  try {
-    const res = await fetch("/api/orders/update-status", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, status: newStatus })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("تحديث حالة الطلب", orderId, `تغيير الحالة إلى: ${newStatus}`);
-      const order = ordersData.find(o => o.id === orderId);
-      if (order && order.phone) {
-        let msgTemplate = "";
-        if (newStatus === 'new' || newStatus === 'pending') msgTemplate = document.getElementById("msgTemplateNew")?.value || "";
-        else if (newStatus === 'review') msgTemplate = document.getElementById("msgTemplateReview")?.value || "";
-        else if (newStatus === 'progress') msgTemplate = document.getElementById("msgTemplateProgress")?.value || "";
-        else if (newStatus === 'finished') msgTemplate = document.getElementById("msgTemplateFinished")?.value || "";
-        else if (newStatus === 'transferred') msgTemplate = document.getElementById("msgTemplateTransferred")?.value || "";
-        else if (newStatus === 'completed') msgTemplate = document.getElementById("msgTemplateCompleted")?.value || "";
-
-        if (msgTemplate) {
-          const finalMsg = msgTemplate.replace(/#{orderNumber}/g, orderNum || order.referenceNumber);
-          const cleanPhone = order.phone.replace(/[^0-9]/g, "");
-          const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalMsg)}`;
-          if (confirm("✅ تم حفظ الحالة بنجاح!\nهل تريد فتح الواتساب لإرسال الإشعار للعميل فوراً؟")) {
-            window.open(waUrl, "_blank");
-          }
-        }
-      }
-      loadOrders();
-      closeOrderModal();
-    } else { alert("❌ فشل التحديث: " + data.message); }
-  } catch (err) { alert("❌ خطأ: " + err.message); }
-};
-
-window.saveDrawnCoinsDirect = async function(orderId, totalQty) {
-  const inputEl = document.getElementById("modalDrawnInput");
-  if (!inputEl) return;
-  const newDrawn = Number(inputEl.value.replace(/,/g, "")) || 0;
-  try {
-    const res = await fetch("/api/orders/update-drawn", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, drawnCoins: newDrawn })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("تحديث المسحوب", orderId, `المسحوب: ${newDrawn}`);
-      const remaining = Math.max(0, totalQty - newDrawn);
-      const percent = totalQty > 0 ? Math.min(100, Math.round((newDrawn / totalQty) * 100)) : 0;
-      if (document.getElementById("modalDrawnVal")) document.getElementById("modalDrawnVal").innerText = formatCoinsNumber(newDrawn);
-      if (document.getElementById("modalRemainingVal")) document.getElementById("modalRemainingVal").innerText = formatCoinsNumber(remaining);
-      if (document.getElementById("modalProgressPercent")) document.getElementById("modalProgressPercent").innerText = `${percent}%`;
-      if (document.getElementById("modalProgressBarFill")) document.getElementById("modalProgressBarFill").style.width = `${percent}%`;
-      if (newDrawn >= totalQty) {
-        await fetch("/api/orders/update-status", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, status: "finished" })
-        });
-      }
-      loadOrders();
-    }
-  } catch (err) { alert("❌ خطأ: " + err.message); }
-};
-
-window.closeOrderModal = function () {
-  clearInterval(decryptTimer);
-  decryptTimer = null;
-  decryptSeconds = 90;
-
-  const modal = document.getElementById("orderDetailModal");
-  if (modal) modal.classList.remove("active");
-};
-
-window.openPurgeModal = function (orderId) {
-  const inputEl = document.getElementById("purgeTargetOrderId");
-  const modal = document.getElementById("purgeConfirmModal");
-  if (inputEl) inputEl.value = orderId;
-  if (modal) modal.classList.add("active");
-};
-
-window.closePurgeModal = function () {
-  const modal = document.getElementById("purgeConfirmModal");
-  if (modal) modal.classList.remove("active");
-};
-
-window.confirmPurgeDataFinal = async function () {
-  const orderId = document.getElementById("purgeTargetOrderId")?.value;
-  if (!orderId) return;
-
-  try {
-    const res = await fetch("/api/orders/purge-sensitive", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("إتلاف بيانات حساسة", orderId, "تم إتلاف كلمة المرور والأكواد الاحتياطية نهائياً");
-      alert("✅ تم إتلاف البيانات الحساسة بنجاح!");
-      closePurgeModal();
-      closeOrderModal();
-      loadOrders();
-    } else {
-      alert("❌ فشل الإتلاف: " + (data.message || "حدث خطأ بالخادم"));
-    }
-  } catch (err) {
-    alert("❌ خطأ بالاتصال بالخادم: " + err.message);
-  }
-};
-
-window.promptEditOrder = async function (orderId) {
-  openOrderModal(orderId);
-};
-
-window.handleArchiveOrder = async function (orderId, refNum) {
-  if (!confirm(`هل تؤكد أرشفة الطلب #${refNum}؟`)) return;
-  try {
-    const res = await fetch("/api/orders/update-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, status: "archived" })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("أرشفة طلب", refNum, "تم تغيير الحالة إلى مؤرشف");
-      alert("✅ تم أرشفة الطلب بنجاح!");
-      loadOrders();
-    }
-  } catch (err) {
-    alert("❌ خطأ بالأرشفة: " + err.message);
-  }
-};
-
-window.handleDeleteOrder = async function (orderId, refNum) {
-  if (!confirm(`⚠️ تحذير: هل أنت متأكد من حذف الطلب #${refNum} نهائياً؟`)) return;
-  try {
-    const res = await fetch("/api/orders/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId })
-    });
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("حذف طلب", refNum, "تم حذف الطلب نهائياً من قاعدة البيانات");
-      alert("✅ تم حذف الطلب بنجاح!");
-      loadOrders();
-    } else {
-      alert("❌ فشل الحذف: " + data.message);
-    }
-  } catch (err) {
-    alert("❌ خطأ في الحذف: " + err.message);
-  }
-};
-
-window.handleMarkTransferred = async function (orderId, refNum) {
-  if (!confirm(`هل تؤكد إتمام التحويل المالي للطلب #${refNum} وتغيير حالته إلى (تم التحويل)؟`)) return;
-
-  try {
-    const res = await fetch("/api/orders/update-status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orderId, status: "transferred" })
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      await logAuditEvent("تحويل مالي", refNum, "تم تغيير حالة الطلب إلى تم التحويل المالي بنجاح");
-      alert("✅ تم تحديث حالة الطلب إلى (تم التحويل المالي) بنجاح!");
-      closeOrderModal();
-      loadOrders();
-    } else {
-      alert("❌ فشل تغيير الحالة: " + (data.message || "خطأ غير معروف في الخادم"));
-    }
-  } catch (err) {
-    alert("❌ خطأ أثناء تغيير الحالة: " + err.message);
-  }
-};
-
-window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, totalQty) {
-  const newDrawnStr = prompt(`تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(totalQty)}`, currentDrawn);
-  
-  if (newDrawnStr !== null && !isNaN(newDrawnStr)) {
-    const newDrawn = Number(newDrawnStr);
-    try {
-      const res = await fetch("/api/orders/update-drawn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId: orderId,
-          drawnCoins: newDrawn
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        await logAuditEvent("تحديث سحب الكوينز", refNum, `تم تحديث المسحوب إلى: ${formatCoinsNumber(newDrawn)} / ${formatCoinsNumber(totalQty)}`);
-
-        if (newDrawn >= totalQty) {
-          await fetch("/api/orders/update-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId: orderId, status: "finished" })
-          });
-          await logAuditEvent("اكتمال السحب تلقائياً", refNum, "انتقال الطلب إلى حالة (بانتظار التحويل) لاكتمال الكمية");
-          alert("🎉 اكتمل سحب الكوينز للطلب بالكامل! ونقله تلقائياً إلى (بانتظار التحويل المالي).");
-        } else {
-          alert("✅ تم تحديث الكمية المسحوبة تلقائياً!");
-        }
-
-        closeOrderModal();
-        loadOrders();
-      } else {
-        alert("❌ فشل التحديث: " + (data.message || "خطأ غير معروف في الخادم"));
-      }
-    } catch (err) {
-      alert("❌ خطأ في التحديث: " + err.message);
-    }
-  }
-};
-
-// ==========================================================================
-// 9) لوحة المخزون العرضية وإعدادات النظام
-// ==========================================================================
-function renderInventoryUI(settings) {
-  if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
-  if (document.getElementById("invStockPC")) document.getElementById("invStockPC").innerText = formatCoinsNumber(settings.pcStock || 0);
-  if (document.getElementById("invLastUpdate")) document.getElementById("invLastUpdate").innerText = settings.lastStockUpdate || "تحديث تلقائي لحظي";
 }
 
 function initSystemSettingsListener() {
   return subscribeToSettings((settings) => {
-    currentSettingsData = settings;
-    updateStoreStatusUI(settings.storeOpen !== false);
-    populatePricingUI(settings);
-    renderInventoryUI(settings);
+    currentSettingsData = settings || {};
+    if (document.getElementById("psStockInput")) document.getElementById("psStockInput").value = currentSettingsData.psStock || 0;
+    if (document.getElementById("pcStockInput")) document.getElementById("pcStockInput").value = currentSettingsData.pcStock || 0;
     renderDashboardQuickStats();
-    renderBanks(settings.banks || []);
-    renderWallets(settings.wallets || []);
-    renderCustomPayments(settings.paymentMethods || []);
-    renderTerms(settings.terms || []);
-    if (settings.whatsappTemplates) {
-      if (document.getElementById("msgTemplateNew")) document.getElementById("msgTemplateNew").value = settings.whatsappTemplates.new || "";
-      if (document.getElementById("msgTemplateReview")) document.getElementById("msgTemplateReview").value = settings.whatsappTemplates.review || "";
-      if (document.getElementById("msgTemplateProgress")) document.getElementById("msgTemplateProgress").value = settings.whatsappTemplates.progress || "";
-      if (document.getElementById("msgTemplateFinished")) document.getElementById("msgTemplateFinished").value = settings.whatsappTemplates.finished || "";
-      if (document.getElementById("msgTemplateTransferred")) document.getElementById("msgTemplateTransferred").value = settings.whatsappTemplates.transferred || "";
-      if (document.getElementById("msgTemplateCompleted")) document.getElementById("msgTemplateCompleted").value = settings.whatsappTemplates.completed || "";
-    }
   });
 }
 
-function updateStoreStatusUI(isOpen) {
-  const btn = document.getElementById("storeStatusToggleBtn");
-  const txt = document.getElementById("storeStatusText");
-  if (!btn || !txt) return;
-  btn.className = isOpen ? "store-status-btn" : "store-status-btn closed";
-  txt.innerText = isOpen ? "المتجر مفتوح" : "المتجر مغلق";
-}
-
-window.toggleStoreStatus = async function () {
-  const newStatus = await toggleStore();
-  await logAuditEvent("تغيير حالة المتجر", "المتجر", `الحالة الجديدة: ${newStatus ? 'مفتوح' : 'مغلق'}`);
-};
-
-function populatePricingUI(config = {}) {
-  if (document.getElementById("psRate")) document.getElementById("psRate").value = config.psRate || 200;
-  if (document.getElementById("psMin")) document.getElementById("psMin").value = formatCoinsNumber(config.psMin || 100000);
-  if (document.getElementById("psMax")) document.getElementById("psMax").value = formatCoinsNumber(config.psMax || 5000000);
-  if (document.getElementById("psWithdrawDuration")) document.getElementById("psWithdrawDuration").value = config.psWithdrawDuration || "3 - 5 أيام عمل";
-  if (document.getElementById("psTransferDuration")) document.getElementById("psTransferDuration").value = config.psTransferDuration || "24 ساعة";
-
-  if (document.getElementById("pcRate")) document.getElementById("pcRate").value = config.pcRate || 150;
-  if (document.getElementById("pcMin")) document.getElementById("pcMin").value = formatCoinsNumber(config.pcMin || 100000);
-  if (document.getElementById("pcMax")) document.getElementById("pcMax").value = formatCoinsNumber(config.pcMax || 1000000);
-  if (document.getElementById("pcWithdrawDuration")) document.getElementById("pcWithdrawDuration").value = config.pcWithdrawDuration || "2 - 4 أيام عمل";
-  if (document.getElementById("pcTransferDuration")) document.getElementById("pcTransferDuration").value = config.pcTransferDuration || "24 ساعة";
-
-  if (document.getElementById("storeNameInput")) document.getElementById("storeNameInput").value = config.storeName || "SAMICOINS";
-  if (document.getElementById("supportWhatsappInput")) document.getElementById("supportWhatsappInput").value = config.supportWhatsapp || "";
-  if (document.getElementById("promoActiveSelect")) document.getElementById("promoActiveSelect").value = config.offers ? "true" : "false";
-  if (document.getElementById("promoText")) document.getElementById("promoText").value = config.offerText || "";
-}
-
-window.saveProductsConfig = async function () {
-  const pricingData = {
-    storeName: document.getElementById("storeNameInput")?.value,
-    supportWhatsapp: document.getElementById("supportWhatsappInput")?.value,
-    psRate: Number(document.getElementById("psRate")?.value),
-    psMin: Number(String(document.getElementById("psMin")?.value || "").replace(/,/g, "")),
-    psMax: Number(String(document.getElementById("psMax")?.value || "").replace(/,/g, "")),
-    psWithdrawDuration: document.getElementById("psWithdrawDuration")?.value,
-    psTransferDuration: document.getElementById("psTransferDuration")?.value,
-    pcRate: Number(document.getElementById("pcRate")?.value),
-    pcMin: Number(String(document.getElementById("pcMin")?.value || "").replace(/,/g, "")),
-    pcMax: Number(String(document.getElementById("pcMax")?.value || "").replace(/,/g, "")),
-    pcWithdrawDuration: document.getElementById("pcWithdrawDuration")?.value,
-    pcTransferDuration: document.getElementById("pcTransferDuration")?.value,
-    offers: document.getElementById("promoActiveSelect")?.value === "true",
-    offerText: document.getElementById("promoText")?.value || ""
-  };
-
-  await savePricing(pricingData);
-  await logAuditEvent("حفظ إعدادات الأسعار", "الإعدادات", "تحديث الأسعار وإعدادات المنصات بنجاح");
-  alert("✅ تم حفظ إعدادات الأسعار والمنصات بنجاح!");
-};
-
-window.saveWhatsappTemplates = async function() {
-  const templates = {
-    new: document.getElementById("msgTemplateNew")?.value || "",
-    review: document.getElementById("msgTemplateReview")?.value || "",
-    progress: document.getElementById("msgTemplateProgress")?.value || "",
-    finished: document.getElementById("msgTemplateFinished")?.value || "",
-    transferred: document.getElementById("msgTemplateTransferred")?.value || "",
-    completed: document.getElementById("msgTemplateCompleted")?.value || ""
-  };
-  await savePricing({ whatsappTemplates: templates });
-  await logAuditEvent("حفظ قوالب رسائل الواتساب", "الإعدادات", "تحديث رسائل أتمتة الواتساب بنجاح");
-  alert("✅ تم حفظ قوالب رسائل حالات الطلب بنجاح!");
-};
-
-function renderBanks(banksArray = []) {
-  const c = document.getElementById("banksListContainer");
-  if (!c) return;
-  c.innerHTML = banksArray.map((b, i) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${b}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteBank(${i})"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
-
-window.addBank = async function () {
-  const input = document.getElementById("newBankInput");
-  if (input && input.value.trim()) { await systemAddBank(input.value.trim()); input.value = ""; }
-};
-window.deleteBank = async function (i) { await systemDeleteBank(i); };
-
-function renderWallets(walletsArray = []) {
-  const c = document.getElementById("walletsListContainer");
-  if (!c) return;
-  c.innerHTML = walletsArray.map((w, i) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${w}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteWallet(${i})"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
-
-window.addWallet = async function () {
-  const input = document.getElementById("newWalletInput");
-  if (input && input.value.trim()) { await systemAddWallet(input.value.trim()); input.value = ""; }
-};
-window.deleteWallet = async function (i) { await systemDeleteWallet(i); };
-
-function renderCustomPayments(methodsArray = []) {
-  const c = document.getElementById("customPayMethodsContainer");
-  if (!c) return;
-  c.innerHTML = methodsArray.map((p, i) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
-      <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${p}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteCustomPayment(${i})"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
-
-window.addCustomPaymentMethod = async function () {
-  const input = document.getElementById("newCustomPaymentInput");
-  if (input && input.value.trim()) { await systemAddPaymentMethod(input.value.trim()); input.value = ""; }
-};
-window.deleteCustomPayment = async function (i) { await systemDeleteCustomPayment(i); };
-
-function renderTerms(termsArray = []) {
-  const c = document.getElementById("termsListContainer");
-  if (!c) return;
-  c.innerHTML = termsArray.map((t, i) => `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1px solid var(--card-border); padding:10px; border-radius:10px;">
-      <span style="font-size:0.85rem;">${i + 1}. ${t}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteTerm(${i})"><i class="fa-solid fa-trash"></i></button>
-    </div>
-  `).join('');
-}
-
-window.addNewTerm = async function () {
-  const input = document.getElementById("newTermInput");
-  if (input && input.value.trim()) { await systemAddTerm(input.value.trim()); input.value = ""; }
-};
-window.deleteTerm = async function (i) { await systemDeleteTerm(i); };
-
 // ==========================================================================
-// 10) التنقل وإدارة الواجهة العامة
+// 8) تهيئة وتتبع التبويبات والمستمعات عند تحميل الصفحة
 // ==========================================================================
-window.switchTab = function (tabId, element) {
-  document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
-  document.querySelectorAll(".sidebar-link").forEach(link => link.classList.remove("active"));
+document.addEventListener("DOMContentLoaded", () => {
+  initAuthGuard();
 
-  const targetTab = document.getElementById(tabId);
-  if (targetTab) targetTab.classList.add("active");
-  if (element) element.classList.add("active");
+  // إعداد التنقل بين تبويبات اللوحة
+  const menuLinks = document.querySelectorAll(".sidebar-link[data-tab]");
+  menuLinks.forEach(link => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const targetTabId = link.getAttribute("data-tab");
 
-  const pageHeading = document.getElementById("pageTitleHeading");
-  const breadcrumbActive = document.getElementById("breadcrumbActive");
-  if (element && pageHeading && breadcrumbActive) {
-    const titleText = element.innerText.trim();
-    pageHeading.innerText = titleText;
-    breadcrumbActive.innerText = titleText;
+      menuLinks.forEach(l => l.classList.remove("active"));
+      link.classList.add("active");
+
+      document.querySelectorAll(".tab-content").forEach(content => {
+        content.classList.remove("active");
+      });
+
+      const activeContent = document.getElementById(targetTabId);
+      if (activeContent) activeContent.classList.add("active");
+    });
+  });
+
+  // نموذج تسجيل الدخول
+  const loginForm = document.getElementById("loginForm");
+  if (loginForm) loginForm.addEventListener("submit", window.handleEmailLogin);
+
+  // إعداد البحث العلوى المباشر
+  const globalSearchInput = document.getElementById("globalSearchInput");
+  if (globalSearchInput) {
+    globalSearchInput.addEventListener("input", (e) => window.handleGlobalSearch(e.target.value));
   }
-};
-
-window.toggleSidebar = function () {
-  const sidebar = document.getElementById("sidebar");
-  if (sidebar) sidebar.classList.toggle("mobile-open");
-};
-
-window.toggleTheme = function () {
-  document.body.classList.toggle("light-mode");
-  const themeIcon = document.querySelector("#themeToggleBtn i");
-  if (themeIcon) {
-    if (document.body.classList.contains("light-mode")) {
-      themeIcon.className = "fa-regular fa-sun";
-    } else {
-      themeIcon.className = "fa-regular fa-moon";
-    }
-  }
-};
-
-// تشغيل حارس التوثيق
-initAuthGuard();
+});
