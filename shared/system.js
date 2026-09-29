@@ -17,8 +17,10 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 import { db } from "./firebase.js";
+
 const SETTINGS_DOC_PATH = "system/settings";
 const COUNTER_DOC_PATH = "system/counter";
+
 // ============================================================================
 // الإعدادات الافتراضية للنظام
 // ============================================================================
@@ -89,6 +91,7 @@ export const defaultSettings = {
         "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
     ]
 };
+
 // ============================================================================
 // 1. نظام المزامنة والاستماع للإعدادات (Realtime Listener)
 // ============================================================================
@@ -102,6 +105,7 @@ export function subscribeToSettings(callback) {
         }
     });
 }
+
 // ============================================================================
 // 2. نظام الأكواد اليومية (Daily Codes System)
 // ============================================================================
@@ -114,9 +118,11 @@ function getMakkahDateKey() {
     const day = String(makkahTime.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
+
 function generate3DigitCode() {
     return String(Math.floor(Math.random() * 900) + 100);
 }
+
 export async function getDailyCodes() {
     const todayKey = getMakkahDateKey();
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
@@ -124,24 +130,29 @@ export async function getDailyCodes() {
     let settingsData = settingsSnap.exists() ? settingsSnap.data() : {};
     let dailyCodesObj = settingsData.dailyCodes || {};
     let historyObj = settingsData.dailyCodesHistory || {};
+
     if (dailyCodesObj.dateKey === todayKey && Array.isArray(dailyCodesObj.codes) && dailyCodesObj.codes.length === 5) {
         return dailyCodesObj.codes;
     }
+
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
     const ninetyDaysAgoKey = ninetyDaysAgo.toISOString().split('T')[0];
+
     const cleanHistory = {};
     for (const [dateKey, codes] of Object.entries(historyObj)) {
         if (dateKey >= ninetyDaysAgoKey) {
             cleanHistory[dateKey] = codes;
         }
     }
+
     const usedCodesIn90Days = new Set();
     Object.values(cleanHistory).forEach(codesArray => {
         if (Array.isArray(codesArray)) {
             codesArray.forEach(code => usedCodesIn90Days.add(String(code)));
         }
     });
+
     const newDailyCodes = [];
     let attempts = 0;
     while (newDailyCodes.length < 5 && attempts < 1000) {
@@ -151,20 +162,25 @@ export async function getDailyCodes() {
             newDailyCodes.push(candidate);
         }
     }
+
     while (newDailyCodes.length < 5) {
         const candidate = generate3DigitCode();
         if (!newDailyCodes.includes(candidate)) {
             newDailyCodes.push(candidate);
         }
     }
+
     cleanHistory[todayKey] = newDailyCodes;
     const newDailyCodesObj = { dateKey: todayKey, codes: newDailyCodes };
+
     await setDoc(settingsRef, {
         dailyCodes: newDailyCodesObj,
         dailyCodesHistory: cleanHistory
     }, { merge: true });
+
     return newDailyCodes;
 }
+
 // ============================================================================
 // 3. نظام رقم الطلب (Order ID Generator)
 // ============================================================================
@@ -174,31 +190,51 @@ function getRandomSAMILetters() {
     const letter2 = pool.charAt(Math.floor(Math.random() * pool.length));
     return `${letter1}${letter2}`;
 }
+
 export async function createOrderId(platform) {
     let platCode = "PS";
-    if (platform === "Xbox" || platform === "XB") platCode = "XB";
-    else if (platform === "PC") platCode = "PC";
-    else if (platform === "PlayStation" || platform === "PS") platCode = "PS";
+
+    const p = String(platform || "").toUpperCase();
+
+    if (p === "XBOX" || p === "XB") platCode = "XB";
+    else if (p === "PC") platCode = "PC";
+
+    const todayKey = getMakkahDateKey();
     const dailyCodes = await getDailyCodes();
     const counterRef = doc(db, COUNTER_DOC_PATH);
-    const nextSerial = await runTransaction(db, async (transaction) => {
-        const counterSnap = await transaction.get(counterRef);
-        let currentSerial = 0;
-        if (counterSnap.exists()) {
-            currentSerial = counterSnap.data().lastSerial || 0;
+
+    const serial = await runTransaction(db, async (tx) => {
+        const snap = await tx.get(counterRef);
+
+        let lastSerial = 0;
+        let dateKey = "";
+
+        if (snap.exists()) {
+            lastSerial = snap.data().lastSerial || 0;
+            dateKey = snap.data().dateKey || "";
         }
-        const updatedSerial = currentSerial + 1;
-        transaction.set(counterRef, {
-            lastSerial: updatedSerial,
+
+        if (dateKey !== todayKey) {
+            lastSerial = 0;
+        }
+
+        const next = lastSerial + 1;
+
+        tx.set(counterRef, {
+            dateKey: todayKey,
+            lastSerial: next,
             updatedAt: serverTimestamp()
         }, { merge: true });
-        return updatedSerial;
+
+        return next;
     });
-    const codeIndex = (nextSerial - 1) % 5;
-    const selectedDailyCode = dailyCodes[codeIndex];
-    const randomLetters = getRandomSAMILetters();
-    return `SQ${randomLetters}${selectedDailyCode}${platCode}${nextSerial}`;
+
+    const code = dailyCodes[(serial - 1) % 5];
+    const letters = getRandomSAMILetters();
+
+    return `SQ${letters}${code}${platCode}${String(serial).padStart(3, "0")}`;
 }
+
 // ============================================================================
 // 4. إدارة الإعدادات والأسعار والمخزون الحسابي (Settings, Pricing & Inventory)
 // ============================================================================
@@ -211,6 +247,7 @@ export async function getSettings() {
     }
     return { ...defaultSettings, ...settingsSnap.data() };
 }
+
 export async function savePricing(pricingData) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     const payload = {
@@ -249,6 +286,7 @@ export async function savePricing(pricingData) {
     await setDoc(settingsRef, payload, { merge: true });
     return true;
 }
+
 /**
  * دالة خصم المخزون التلقائي من الطلب المسحوب وتسجيل العملية ومنع التكرار
  * PlayStation & Xbox ➔ psStock
@@ -259,36 +297,44 @@ export async function processWithdrawnStockDeduction(orderId, platform, withdraw
         const orderRef = doc(db, "orders", orderId);
         const orderSnap = await getDoc(orderRef);
         if (!orderSnap.exists()) return false;
+
         const order = orderSnap.data();
+
         // منع الخصم المكرر
         if (order.withdrawnDeducted) {
             return false;
         }
+
         const numericAmount = Number(withdrawnAmount) || 0;
         if (numericAmount <= 0) return false;
+
         // تحديد الحقل المخصص للخصم بناءً على المنصة
         const platUpper = String(platform || "").toUpperCase();
         let stockField = "psStock"; // الافتراضي لـ PlayStation و Xbox
         if (platUpper === "PC") {
             stockField = "pcStock";
         }
+
         // 1. خصم الكمية من المخزون الإجمالي
         const settingsRef = doc(db, SETTINGS_DOC_PATH);
         await updateDoc(settingsRef, {
             [stockField]: increment(-numericAmount)
         });
+
         // 2. تحديث بيانات الطلب لضمان عدم الخصم مرة أخرى وحفظ السجل للوحة التحكم
         await updateDoc(orderRef, {
             withdrawnDeducted: true,
             deductedAmount: numericAmount,
             deductedAt: serverTimestamp()
         });
+
         return true;
     } catch (error) {
         console.error("Error processing withdrawn stock deduction:", error);
         throw error;
     }
 }
+
 // ============================================================================
 // 5. إدارة البنوك والمحافظ وطرق الدفع والشروط
 // ============================================================================
@@ -296,6 +342,7 @@ export async function getBanks() {
     const settings = await getSettings();
     return settings.banks || [];
 }
+
 export async function saveBanks(banksArray) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     await setDoc(settingsRef, {
@@ -304,6 +351,7 @@ export async function saveBanks(banksArray) {
     }, { merge: true });
     return banksArray;
 }
+
 export async function addBank(newBank) {
     const banks = await getBanks();
     if (newBank && !banks.includes(newBank)) {
@@ -312,6 +360,7 @@ export async function addBank(newBank) {
     }
     return banks;
 }
+
 export async function deleteBank(bankIndex) {
     const banks = await getBanks();
     if (bankIndex >= 0 && bankIndex < banks.length) {
@@ -320,10 +369,12 @@ export async function deleteBank(bankIndex) {
     }
     return banks;
 }
+
 export async function getWallets() {
     const settings = await getSettings();
     return settings.wallets || [];
 }
+
 export async function saveWallets(walletsArray) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     await setDoc(settingsRef, {
@@ -332,6 +383,7 @@ export async function saveWallets(walletsArray) {
     }, { merge: true });
     return walletsArray;
 }
+
 export async function addWallet(newWallet) {
     const wallets = await getWallets();
     if (newWallet && !wallets.includes(newWallet)) {
@@ -340,6 +392,7 @@ export async function addWallet(newWallet) {
     }
     return wallets;
 }
+
 export async function deleteWallet(walletIndex) {
     const wallets = await getWallets();
     if (walletIndex >= 0 && walletIndex < wallets.length) {
@@ -348,10 +401,12 @@ export async function deleteWallet(walletIndex) {
     }
     return wallets;
 }
+
 export async function getPaymentMethods() {
     const settings = await getSettings();
     return settings.paymentMethods || [];
 }
+
 export async function savePaymentMethods(methodsArray) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     await setDoc(settingsRef, {
@@ -360,6 +415,7 @@ export async function savePaymentMethods(methodsArray) {
     }, { merge: true });
     return methodsArray;
 }
+
 export async function addPaymentMethod(method) {
     const methods = await getPaymentMethods();
     if (method && !methods.includes(method)) {
@@ -368,6 +424,7 @@ export async function addPaymentMethod(method) {
     }
     return methods;
 }
+
 export async function deletePaymentMethod(methodIndex) {
     const methods = await getPaymentMethods();
     if (methodIndex >= 0 && methodIndex < methods.length) {
@@ -376,10 +433,12 @@ export async function deletePaymentMethod(methodIndex) {
     }
     return methods;
 }
+
 export async function getTerms() {
     const settings = await getSettings();
     return settings.terms || [];
 }
+
 export async function saveTerms(termsArray) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     await setDoc(settingsRef, {
@@ -388,6 +447,7 @@ export async function saveTerms(termsArray) {
     }, { merge: true });
     return termsArray;
 }
+
 export async function addTerm(termText) {
     const terms = await getTerms();
     if (termText) {
@@ -396,6 +456,7 @@ export async function addTerm(termText) {
     }
     return terms;
 }
+
 export async function deleteTerm(index) {
     const terms = await getTerms();
     if (index >= 0 && index < terms.length) {
@@ -404,6 +465,7 @@ export async function deleteTerm(index) {
     }
     return terms;
 }
+
 export async function toggleStore(overrideStatus = null) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
     if (typeof overrideStatus === 'boolean') {
@@ -415,6 +477,7 @@ export async function toggleStore(overrideStatus = null) {
     await setDoc(settingsRef, { storeOpen: newStatus, updatedAt: serverTimestamp() }, { merge: true });
     return newStatus;
 }
+
 export async function updateStock(newPs, newPc, adminName, reason) {
     const settingsRef = doc(db, SETTINGS_DOC_PATH);
 
