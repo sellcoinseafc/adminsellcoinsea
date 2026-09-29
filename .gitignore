@@ -11,3 +11,5 @@ node_modules/
 
 # Logs
 *.log
+.env
+server/.env
