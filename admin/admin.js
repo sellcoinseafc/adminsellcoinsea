@@ -1,4 +1,4 @@
-import { db, auth } from "./firebase.js";
+import { db, auth } from "../shared/firebase.js";
 import {
   collection,
   doc,
@@ -36,7 +36,7 @@ import {
   addTerm as systemAddTerm,
   deleteTerm as systemDeleteTerm,
   toggleStore
-} from "./system.js";
+} from "../shared/system.js";
 
 const ALLOWED_EMAILS = [
   "mt.samicoins@gmail.com",
@@ -54,6 +54,7 @@ let ordersData = [];
 let adminsData = [];
 let auditLogsData = [];
 let currentSettingsData = {};
+let activeSearchQuery = "";
 
 let unsubscribeOrders = null;
 let unsubscribeSettings = null;
@@ -68,6 +69,7 @@ function startAllListeners() {
   if (!unsubscribeSettings) unsubscribeSettings = initSystemSettingsListener();
   if (!unsubscribeAdmins) unsubscribeAdmins = initAdminsListener();
   if (!unsubscribeAudit) unsubscribeAudit = initAuditLogsListener();
+  startLiveClock();
 }
 
 function initAuthGuard() {
@@ -162,8 +164,10 @@ window.handleGoogleLogin = async function () {
 function updateSidebarAdminUI() {
   const nameEl = document.getElementById("sidebarUserName");
   const roleEl = document.getElementById("sidebarUserRole");
+  const avatarEl = document.getElementById("userAvatarText");
   if (nameEl) nameEl.innerText = currentAdmin.name;
   if (roleEl) roleEl.innerText = currentAdmin.role === "owner" ? "Owner (مالك)" : "Admin (مشرف)";
+  if (avatarEl && currentAdmin.name) avatarEl.innerText = currentAdmin.name.charAt(0);
 }
 
 window.handleLogout = async function () {
@@ -175,8 +179,24 @@ window.handleLogout = async function () {
 };
 
 // ==========================================================================
-// 2) السجل والأدوات المساعدة
+// 2) السجل والساعة التفاعلية والأدوات المساعدة
 // ==========================================================================
+function startLiveClock() {
+  const clockEl = document.getElementById("liveDatetime");
+  if (!clockEl) return;
+  setInterval(() => {
+    const now = new Date();
+    clockEl.innerText = now.toLocaleString("ar-SA", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+  }, 1000);
+}
+
 async function logAuditEvent(action, targetOrder = "عام", details = "") {
   try {
     await addDoc(collection(db, "audit_logs"), {
@@ -203,8 +223,12 @@ function initAuditLogsListener() {
 }
 
 function renderAuditLogsTable() {
-  const tbody = document.getElementById("auditLogsTableBody");
+  const tbody = document.getElementById("stockLogsTableBody");
   if (!tbody) return;
+  if (auditLogsData.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted);">لا توجد سجلاّت حركة مسجلة.</td></tr>`;
+    return;
+  }
   tbody.innerHTML = auditLogsData.map(log => {
     const refCode = log.targetOrder || 'عام';
     return `
@@ -227,19 +251,19 @@ function initAdminsListener() {
 
 function initOrdersListener() {
   loadOrders();
-  const interval = setInterval(loadOrders, 3000);
+  const interval = setInterval(loadOrders, 4000);
   return () => clearInterval(interval);
 }
 
 // الدالة المعتمدة لنسخ رابط التتبع بالكامل
-window.copyTrackingLink = async function(refCode){
-  if (!refCode || refCode === '---' || refCode === 'عام') return;
+window.copyTrackingLink = async function(refCode) {
+  if (!refCode || refCode === "---" || refCode === "عام") return;
   const url = `https://status.sa4coins.com/?ref=${refCode}`;
   try {
     await navigator.clipboard.writeText(url);
-    alert("تم نسخ رابط التتبع");
+    alert("✅ تم نسخ رابط التتبع بنجاح:\n" + url);
   } catch {
-    prompt("انسخ الرابط:", url);
+    prompt("نسخ رابط التتبع المباشر:", url);
   }
 };
 
@@ -253,7 +277,7 @@ function calculateTransferCountdown(createdAt) {
   const createdDate = new Date(createdAt);
   if (isNaN(createdDate.getTime())) return '<span style="color:var(--text-muted);">---</span>';
 
-  const maxHours = 120; // 5 أيام
+  const maxHours = 120; // 5 أيام عمل
   const now = new Date();
   const diffMs = now.getTime() - createdDate.getTime();
   const passedHours = diffMs / (1000 * 60 * 60);
@@ -277,7 +301,7 @@ function calculateTransferCountdown(createdAt) {
 }
 
 // ==========================================================================
-// 3) تحميل الطلبات وتحديث الواجهات
+// 3) قراءة الطلبات الموحدة عبر السيرفر وتحديث الواجهات
 // ==========================================================================
 async function loadOrders() {
   try {
@@ -300,6 +324,9 @@ async function loadOrders() {
       paymentMethod: order.paymentMethod || "تحويل بنكي",
       bankName: order.bankName || "---",
       accountIban: order.accountIban || "---",
+      accountEmail: order.accountEmail || "",
+      accountPassword: order.accountPassword || "",
+      backupCodes: order.backupCodes || "",
       ...order
     }));
 
@@ -310,10 +337,10 @@ async function loadOrders() {
     renderWithdrawOrdersTable();
     renderRecentOrdersTable();
     renderTransferAlertsTable();
-    renderClientsTable();
+    renderClientsTable(activeSearchQuery);
 
   } catch (err) {
-    console.error("Load Orders Error:", err);
+    console.error("Load Orders API Error:", err);
   }
 }
 
@@ -325,12 +352,13 @@ function sortOrdersByPriority() {
     'review': 3,
     'finished': 4,
     'completed': 4,
-    'transferred': 5
+    'transferred': 5,
+    'archived': 6
   };
 
   ordersData.sort((a, b) => {
-    const pA = priorityMap[a.status] || 6;
-    const pB = priorityMap[b.status] || 6;
+    const pA = priorityMap[a.status] || 7;
+    const pB = priorityMap[b.status] || 7;
     if (pA !== pB) return pA - pB;
     const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -348,6 +376,11 @@ function renderDashboardQuickStats() {
   if (document.getElementById("dashStatProgress")) document.getElementById("dashStatProgress").innerText = countProgress;
   if (document.getElementById("dashStatCompleted")) document.getElementById("dashStatCompleted").innerText = countFinished;
   if (document.getElementById("dashStatPendingTransfer")) document.getElementById("dashStatPendingTransfer").innerText = countTransferPending;
+  if (document.getElementById("sidebarNewOrdersBadge")) {
+    const badge = document.getElementById("sidebarNewOrdersBadge");
+    badge.innerText = countNew;
+    badge.style.display = countNew > 0 ? "inline-block" : "none";
+  }
 
   if (document.getElementById("dashStockPS")) document.getElementById("dashStockPS").innerText = formatCoinsNumber(currentSettingsData.psStock || 0) + " كوينز";
   if (document.getElementById("dashStockPC")) document.getElementById("dashStockPC").innerText = formatCoinsNumber(currentSettingsData.pcStock || 0) + " كوينز";
@@ -382,18 +415,49 @@ function renderStatisticsPage() {
   if (document.getElementById("statTodayMoney")) document.getElementById("statTodayMoney").innerText = todayMoney.toLocaleString() + " ريال";
 }
 
+window.handleGlobalSearch = function (queryVal) {
+  activeSearchQuery = queryVal.trim().toLowerCase();
+  renderOrdersTables();
+  renderWithdrawOrdersTable();
+  renderClientsTable(activeSearchQuery);
+};
+
 // ==========================================================================
-// 4) الجداول وعرض البيانات
+// 4) رسم الجداول والعمليات الكاملة (تعديل، حذف، أرشفة، معاينة)
 // ==========================================================================
+function buildActionButtonsHTML(order) {
+  const refNum = order.referenceNumber || order.reference || order.id;
+  return `
+    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+      <button class="btn-action" title="معاينة والتفاصيل" onclick="openOrderModal('${order.id}')"><i class="fa-solid fa-eye"></i></button>
+      <button class="btn-action" style="color:var(--warning); border-color:var(--warning);" title="تعديل الطلب" onclick="promptEditOrder('${order.id}')"><i class="fa-solid fa-pen"></i></button>
+      <button class="btn-action" style="color:var(--purple); border-color:var(--purple);" title="أرشفة" onclick="handleArchiveOrder('${order.id}', '${refNum}')"><i class="fa-solid fa-box-archive"></i></button>
+      <button class="btn-action" style="color:var(--danger); border-color:var(--danger);" title="حذف الطلب" onclick="handleDeleteOrder('${order.id}', '${refNum}')"><i class="fa-solid fa-trash"></i></button>
+    </div>
+  `;
+}
+
 window.renderOrdersTables = function () {
   const tbody = document.getElementById("fullOrdersTableBody");
   if (!tbody) return;
 
   const filter = document.getElementById("orderStatusFilter")?.value || "all";
-  let filteredData = (filter !== "all") ? ordersData.filter(o => o.status === filter) : ordersData;
+  let filteredData = ordersData;
+
+  if (filter !== "all") {
+    filteredData = ordersData.filter(o => o.status === filter);
+  }
+
+  if (activeSearchQuery !== "") {
+    filteredData = filteredData.filter(o =>
+      (o.referenceNumber && o.referenceNumber.toLowerCase().includes(activeSearchQuery)) ||
+      (o.name && o.name.toLowerCase().includes(activeSearchQuery)) ||
+      (o.phone && o.phone.toLowerCase().includes(activeSearchQuery))
+    );
+  }
 
   if (filteredData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px; color:var(--text-muted);">لا توجد طلبات مسجلة بحالة (${filter})</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px; color:var(--text-muted);">لا توجد طلبات مسجلة مطابقة.</td></tr>`;
     return;
   }
 
@@ -404,21 +468,22 @@ window.renderOrdersTables = function () {
     'review': '<span class="badge badge-review">انتظار المراجعة</span>',
     'finished': '<span class="badge badge-finished">تم الانتهاء</span>',
     'transferred': '<span class="badge badge-transferred">تم التحويل</span>',
-    'completed': '<span class="badge badge-completed">مكتمل</span>'
+    'completed': '<span class="badge badge-completed">مكتمل</span>',
+    'archived': '<span class="badge" style="background:rgba(100,116,139,0.2); color:#94a3b8;">مؤرشف</span>'
   };
 
   tbody.innerHTML = filteredData.map(o => {
     const ref = o.referenceNumber || o.reference || "";
     return `
       <tr>
-        <td><a href="javascript:void(0)" onclick="copyTrackingLink('${ref}')" style="color:var(--text-main); text-decoration:underline;">${ref || "-"}</a></td>
-        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || "---"}</b></td>
+        <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')" title="اضغط لنسخ رابط التتبع">${ref || "---"} <i class="fa-solid fa-copy" style="font-size:0.75rem;"></i></b></td>
+        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${o.reference || '---'}</span></td>
         <td>${o.name}</td>
         <td><span class="badge badge-new">${o.platform}</span></td>
         <td>${formatCoinsNumber(o.totalQty)}</td>
         <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
         <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
-        <td><button class="btn-action" onclick="openOrderModal('${o.id}')">معاينة</button></td>
+        <td>${buildActionButtonsHTML(o)}</td>
       </tr>
     `;
   }).join("");
@@ -451,14 +516,14 @@ window.renderRecentOrdersTable = function () {
     const ref = o.referenceNumber || o.reference || "";
     return `
       <tr>
-        <td><a href="javascript:void(0)" onclick="copyTrackingLink('${ref}')" style="color:var(--text-main); text-decoration:underline;">${ref || "-"}</a></td>
         <td><b style="color:var(--primary); font-family:monospace; cursor:pointer;" onclick="copyTrackingLink('${ref}')">${ref || "---"}</b></td>
+        <td><span style="font-family:monospace; font-size:0.8rem; color:var(--text-muted);">${o.reference || '---'}</span></td>
         <td>${o.name}</td>
         <td><span class="badge badge-new">${o.platform}</span></td>
         <td>${formatCoinsNumber(o.totalQty)}</td>
         <td><b style="color:var(--primary);">${o.totalPrice}</b></td>
         <td>${badgeMap[o.status] || `<span class="badge badge-archived">${o.status}</span>`}</td>
-        <td><button class="btn-action" onclick="openOrderModal('${o.id}')">معاينة</button></td>
+        <td>${buildActionButtonsHTML(o)}</td>
       </tr>
     `;
   }).join("");
@@ -503,7 +568,7 @@ window.renderWithdrawOrdersTable = function () {
         <td><b>${formatCoinsNumber(total)}</b></td>
         <td>${badgeStatus}</td>
         <td>${categoryBadge}</td>
-        <td><button class="btn-action" style="border-color:var(--primary); color:var(--primary);" onclick="openOrderModal('${o.id}')">معاينة وبدء التنفيذ</button></td>
+        <td>${buildActionButtonsHTML(o)}</td>
       </tr>
     `;
   }).join('');
@@ -543,7 +608,9 @@ window.renderTransferAlertsTable = function () {
         <td><b style="color:#f59e0b;">${o.totalPrice}</b></td>
         <td><span class="badge badge-review">${o.paymentMethod || 'تحويل بنكي'} - ${o.bankName || ''}</span></td>
         <td>${calculateTransferCountdown(o.createdAt)}</td>
-        <td><button class="btn-action" style="border-color:#f59e0b; color:#f59e0b;" onclick="openOrderModal('${o.id}')">معاينة وإتمام التحويل</button></td>
+        <td>
+          <button class="btn-custom" style="background:#f59e0b; color:#fff; font-size:0.75rem; padding:6px 12px;" onclick="openOrderModal('${o.id}')">معاينة وإتمام التحويل</button>
+        </td>
       </tr>
     `;
   }).join('');
@@ -565,7 +632,7 @@ window.renderClientsTable = function (searchQuery = "") {
   });
 
   let clientsList = Object.values(clientsMap);
-  if (searchQuery.trim() !== "") {
+  if (searchQuery && searchQuery.trim() !== "") {
     const q = searchQuery.toLowerCase().trim();
     clientsList = clientsList.filter(c => c.name.toLowerCase().includes(q) || c.phone.toLowerCase().includes(q));
   }
@@ -634,7 +701,7 @@ window.closeClientModal = function () {
 };
 
 // ==========================================================================
-// 5) تفاصيل الطلب والعمليات على الـ Backend
+// 5) نافذة التفاصيل والوظائف الكاملة (تحديث كوينز، أرشفة، إتلاف، حذف، تعديل)
 // ==========================================================================
 window.openOrderModal = function (orderId) {
   const modal = document.getElementById("orderDetailModal");
@@ -656,7 +723,8 @@ window.openOrderModal = function (orderId) {
     'review': '<span class="badge badge-review">انتظار المراجعة</span>',
     'finished': '<span class="badge badge-finished">تم الانتهاء (بانتظار التحويل)</span>',
     'transferred': '<span class="badge badge-transferred">تم التحويل</span>',
-    'completed': '<span class="badge badge-completed">مكتمل</span>'
+    'completed': '<span class="badge badge-completed">مكتمل</span>',
+    'archived': '<span class="badge" style="background:rgba(100,116,139,0.2); color:#94a3b8;">مؤرشف</span>'
   };
 
   const showTransferBtn = (order.status === 'finished');
@@ -666,8 +734,7 @@ window.openOrderModal = function (orderId) {
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
         <span style="color:var(--text-muted); font-size:0.8rem;">رقم المرجع (اضغط للنسخ)</span>
         <h4 style="color:var(--primary); font-family:monospace; margin-top:4px; cursor:pointer;" onclick="copyTrackingLink('${refNum}')">
-          ${refNum}
-          <i class="fa-solid fa-copy"></i>
+          ${refNum} <i class="fa-solid fa-copy"></i>
         </h4>
       </div>
       <div style="background:var(--input-bg); padding:12px; border-radius:12px; border:1px solid var(--card-border);">
@@ -701,6 +768,13 @@ window.openOrderModal = function (orderId) {
       <p style="margin-top:6px;"><b>المهلة المتبقية للتحويل:</b> ${calculateTransferCountdown(order.createdAt)}</p>
     </div>
 
+    <div style="background:var(--input-bg); padding:16px; border-radius:14px; border:1px solid var(--card-border); margin-bottom:20px;">
+      <h4 style="color:#38bdf8; margin-bottom:10px;"><i class="fa-solid fa-key"></i> بيانات الحساب الحساسة</h4>
+      <p style="margin-bottom:6px;"><b>الإيميل:</b> <code style="color:var(--primary);">${order.accountEmail || 'محذوف / مشفر'}</code></p>
+      <p style="margin-bottom:6px;"><b>كلمة المرور:</b> <code>${order.accountPassword || 'محذوفة / مشفرة'}</code></p>
+      <p style="margin-bottom:6px;"><b>الأكواد الاحتياطية:</b> <code>${order.backupCodes || 'محذوفة'}</code></p>
+    </div>
+
     <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
       ${showTransferBtn ? `
         <button class="btn-custom" style="background:#f59e0b; color:#fff; box-shadow:0 4px 15px rgba(245,158,11,0.4);" onclick="handleMarkTransferred('${order.id}', '${refNum}')">
@@ -709,6 +783,9 @@ window.openOrderModal = function (orderId) {
       ` : ''}
       <button class="btn-custom" style="background:var(--primary); color:#000;" onclick="updateDrawnCoinsPrompt('${order.id}', '${refNum}', ${order.drawnCoins || 0}, ${order.totalQty})">
         <i class="fa-solid fa-pen"></i> تحديث الكوينز المسحوبة
+      </button>
+      <button class="btn-custom" style="background:#ef4444; color:#fff;" onclick="openPurgeModal('${order.id}')">
+        <i class="fa-solid fa-skull-crossbones"></i> إتلاف البيانات الحساسة
       </button>
       <button class="btn-custom" style="background:var(--input-bg); color:var(--text-main); border:1px solid var(--card-border);" onclick="closeOrderModal()">إغلاق</button>
     </div>
@@ -721,12 +798,109 @@ window.closeOrderModal = function () {
   if (modal) modal.classList.remove("active");
 };
 
+window.openPurgeModal = function (orderId) {
+  const inputEl = document.getElementById("purgeTargetOrderId");
+  const modal = document.getElementById("purgeConfirmModal");
+  if (inputEl) inputEl.value = orderId;
+  if (modal) modal.classList.add("active");
+};
+
 window.closePurgeModal = function () {
   const modal = document.getElementById("purgeConfirmModal");
   if (modal) modal.classList.remove("active");
 };
 
-// تغيير الحالة إلى تم التحويل عن طريق الـ Backend المباشر
+window.confirmPurgeDataFinal = async function () {
+  const orderId = document.getElementById("purgeTargetOrderId")?.value;
+  if (!orderId) return;
+
+  try {
+    const res = await fetch("/api/orders/purge-sensitive", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await logAuditEvent("إتلاف بيانات حساسة", orderId, "تم إتلاف كلمة المرور والأكواد الاحتياطية نهائياً");
+      alert("✅ تم إتلاف البيانات الحساسة بنجاح!");
+      closePurgeModal();
+      closeOrderModal();
+      loadOrders();
+    } else {
+      alert("❌ فشل الإتلاف: " + (data.message || "حدث خطأ بالخادم"));
+    }
+  } catch (err) {
+    alert("❌ خطأ بالاتصال بالخادم: " + err.message);
+  }
+};
+
+window.promptEditOrder = async function (orderId) {
+  const order = ordersData.find(o => o.id === orderId);
+  if (!order) return;
+
+  const newStatus = prompt("أدخل الحالة الجديدة للطلب (new, progress, review, finished, transferred, completed, archived):", order.status);
+  if (!newStatus) return;
+
+  try {
+    const res = await fetch("/api/orders/update-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: order.id, status: newStatus.trim() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await logAuditEvent("تعديل حالة الطلب", order.referenceNumber, `تعديل الحالة إلى: ${newStatus}`);
+      alert("✅ تم تعديل الطلب بنجاح!");
+      loadOrders();
+    } else {
+      alert("❌ فشل التعديل: " + data.message);
+    }
+  } catch (err) {
+    alert("❌ خطأ: " + err.message);
+  }
+};
+
+window.handleArchiveOrder = async function (orderId, refNum) {
+  if (!confirm(`هل تؤكد أرشفة الطلب #${refNum}؟`)) return;
+  try {
+    const res = await fetch("/api/orders/update-status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, status: "archived" })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await logAuditEvent("أرشفة طلب", refNum, "تم تغيير الحالة إلى مؤرشف");
+      alert("✅ تم أرشفة الطلب بنجاح!");
+      loadOrders();
+    }
+  } catch (err) {
+    alert("❌ خطأ بالأرشفة: " + err.message);
+  }
+};
+
+window.handleDeleteOrder = async function (orderId, refNum) {
+  if (!confirm(`⚠️ تحذير: هل أنت متأكد من حذف الطلب #${refNum} نهائياً؟`)) return;
+  try {
+    const res = await fetch("/api/orders/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await logAuditEvent("حذف طلب", refNum, "تم حذف الطلب نهائياً من قاعدة البيانات");
+      alert("✅ تم حذف الطلب بنجاح!");
+      loadOrders();
+    } else {
+      alert("❌ فشل الحذف: " + data.message);
+    }
+  } catch (err) {
+    alert("❌ خطأ في الحذف: " + err.message);
+  }
+};
+
 window.handleMarkTransferred = async function (orderId, refNum) {
   if (!confirm(`هل تؤكد إتمام التحويل المالي للطلب #${refNum} وتغيير حالته إلى (تم التحويل)؟`)) return;
 
@@ -734,10 +908,7 @@ window.handleMarkTransferred = async function (orderId, refNum) {
     const res = await fetch("/api/orders/update-status", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderId: orderId,
-        status: "transferred"
-      })
+      body: JSON.stringify({ orderId, status: "transferred" })
     });
 
     const data = await res.json();
@@ -750,12 +921,11 @@ window.handleMarkTransferred = async function (orderId, refNum) {
       alert("❌ فشل تغيير الحالة: " + (data.message || "خطأ غير معروف في الخادم"));
     }
   } catch (err) {
-    console.error("Mark Transferred Error:", err);
     alert("❌ خطأ أثناء تغيير الحالة: " + err.message);
   }
 };
 
-// تحديث الكوينز عن طريق Backend وتغيير الحالة تلقائياً إلى finished عند اكتمال السحب
+// تحديث الكوينز عن طريق Backend والخصم المباشر
 window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, totalQty) {
   const newDrawnStr = prompt(`تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(totalQty)}`, currentDrawn);
   
@@ -774,21 +944,18 @@ window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, t
       const data = await res.json();
 
       if (data.success) {
-        await logAuditEvent("تحديث سحب الكوينز", refNum, `تم تحديث المسحوب إلى: ${formatCoinsNumber(newDrawn)} / ${formatCoinsNumber(totalQty)}`);
+        await logAuditEvent("تحديث سحب الكوينز", refNum, `تم تحديث المسحوب إلى: ${formatCoinsNumber(newDrawn)} / ${formatCoinsNumber(totalQty)} (تم الخصم تلقائياً من المخزون)`);
 
         if (newDrawn >= totalQty) {
           await fetch("/api/orders/update-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId: orderId,
-              status: "finished"
-            })
+            body: JSON.stringify({ orderId: orderId, status: "finished" })
           });
           await logAuditEvent("اكتمال السحب تلقائياً", refNum, "انتقال الطلب إلى حالة (بانتظار التحويل) لاكتمال الكمية");
-          alert("🎉 أكتمل سحب الكوينز للطلب بالكامل! تم نقله تلقائياً إلى قسم (بانتظار التحويل المالي).");
+          alert("🎉 اكتمل سحب الكوينز للطلب بالكامل! تم خصم الكمية من المخزون ونقله تلقائياً إلى (بانتظار التحويل المالي).");
         } else {
-          alert("✅ تم تحديث الكمية المسحوبة بنجاح!");
+          alert("✅ تم تحديث الكمية المسحوبة وخصم المخزون تلقائياً!");
         }
 
         closeOrderModal();
@@ -797,49 +964,19 @@ window.updateDrawnCoinsPrompt = async function (orderId, refNum, currentDrawn, t
         alert("❌ فشل التحديث: " + (data.message || "خطأ غير معروف في الخادم"));
       }
     } catch (err) {
-      console.error("Update Drawn Coins Error:", err);
       alert("❌ خطأ في التحديث: " + err.message);
     }
   }
 };
 
 // ==========================================================================
-// 6) المخزون والإعدادات
+// 6) لوحة المخزون العرضية وإعدادات النظام
 // ==========================================================================
 function renderInventoryUI(settings) {
   if (document.getElementById("invStockPS")) document.getElementById("invStockPS").innerText = formatCoinsNumber(settings.psStock || 0);
   if (document.getElementById("invStockPC")) document.getElementById("invStockPC").innerText = formatCoinsNumber(settings.pcStock || 0);
-  if (document.getElementById("invLastUpdate")) document.getElementById("invLastUpdate").innerText = settings.lastStockUpdate || "لم يحدد بعد";
-
-  const logsTbody = document.getElementById("stockLogsTableBody");
-  if (logsTbody && settings.stockLogs) {
-    if (settings.stockLogs.length === 0) {
-      logsTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:15px; color:var(--text-muted);">لا توجد تعديلات مسجلة على المخزون.</td></tr>`;
-    } else {
-      logsTbody.innerHTML = settings.stockLogs.map(log => `
-        <tr>
-          <td><span style="font-size:0.8rem; color:var(--text-muted);">${log.timestamp}</span></td>
-          <td><b>${log.admin}</b></td>
-          <td style="color:var(--primary);">${formatCoinsNumber(log.newPs)} (السابق: ${formatCoinsNumber(log.oldPs)})</td>
-          <td style="color:#38bdf8;">${formatCoinsNumber(log.newPc)} (السابق: ${formatCoinsNumber(log.oldPc)})</td>
-          <td><span style="font-size:0.8rem;">${log.reason}</span></td>
-        </tr>
-      `).join('');
-    }
-  }
+  if (document.getElementById("invLastUpdate")) document.getElementById("invLastUpdate").innerText = settings.lastStockUpdate || "تحديث تلقائي لحظي";
 }
-
-window.handleSaveManualStock = async function () {
-  const newPs = document.getElementById("inputManualStockPS")?.value;
-  const newPc = document.getElementById("inputManualStockPC")?.value;
-  const reason = document.getElementById("inputStockReason")?.value || "تعديل يدوي";
-
-  if (newPs === "" || newPc === "") { alert("يرجى إدخال قيم المخزون للـ PS والـ PC."); return; }
-
-  await updateStock(newPs, newPc, currentAdmin.name, reason);
-  await logAuditEvent("تعديل المخزون يدويًا", "المخزون", `PS: ${newPs} | PC: ${newPc} | السبب: ${reason}`);
-  alert("✅ تم تحديث المخزون وسجل التعديلات بنجاح!");
-};
 
 function initSystemSettingsListener() {
   return subscribeToSettings((settings) => {
@@ -906,7 +1043,7 @@ window.saveProductsConfig = async function () {
   };
 
   await savePricing(pricingData);
-  await logAuditEvent("حفظ إعدادات الأسعار المنفصلة", "الإعدادات", "تحديث أسعار ومدد PS و PC بنجاح");
+  await logAuditEvent("حفظ إعدادات الأسعار", "الإعدادات", "تحديث الأسعار وإعدادات المنصات بنجاح");
   alert("✅ تم حفظ إعدادات الأسعار والمنصات بنجاح!");
 };
 
@@ -916,7 +1053,7 @@ function renderBanks(banksArray = []) {
   c.innerHTML = banksArray.map((b, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
       <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${b}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteBank(${i})">حذف</button>
+      <button class="btn-action" style="color:var(--danger);" onclick="deleteBank(${i})"><i class="fa-solid fa-trash"></i></button>
     </div>
   `).join('');
 }
@@ -933,7 +1070,7 @@ function renderWallets(walletsArray = []) {
   c.innerHTML = walletsArray.map((w, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
       <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${w}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteWallet(${i})">حذف</button>
+      <button class="btn-action" style="color:var(--danger);" onclick="deleteWallet(${i})"><i class="fa-solid fa-trash"></i></button>
     </div>
   `).join('');
 }
@@ -950,7 +1087,7 @@ function renderCustomPayments(methodsArray = []) {
   c.innerHTML = methodsArray.map((p, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--card-bg); border:1px solid var(--card-border); padding:8px 12px; border-radius:10px;">
       <span style="font-size:0.88rem; font-weight:800;">${i + 1}. ${p}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteCustomPayment(${i})">حذف</button>
+      <button class="btn-action" style="color:var(--danger);" onclick="deleteCustomPayment(${i})"><i class="fa-solid fa-trash"></i></button>
     </div>
   `).join('');
 }
@@ -967,7 +1104,7 @@ function renderTerms(termsArray = []) {
   c.innerHTML = termsArray.map((t, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); border:1px solid var(--card-border); padding:10px; border-radius:10px;">
       <span style="font-size:0.85rem;">${i + 1}. ${t}</span>
-      <button class="btn-action" style="color:var(--danger);" onclick="deleteTerm(${i})">حذف</button>
+      <button class="btn-action" style="color:var(--danger);" onclick="deleteTerm(${i})"><i class="fa-solid fa-trash"></i></button>
     </div>
   `).join('');
 }
@@ -986,6 +1123,31 @@ window.switchTab = function (tabId, element) {
   const targetTab = document.getElementById(tabId);
   if (targetTab) targetTab.classList.add("active");
   if (element) element.classList.add("active");
+
+  const pageHeading = document.getElementById("pageTitleHeading");
+  const breadcrumbActive = document.getElementById("breadcrumbActive");
+  if (element && pageHeading && breadcrumbActive) {
+    const titleText = element.innerText.trim();
+    pageHeading.innerText = titleText;
+    breadcrumbActive.innerText = titleText;
+  }
+};
+
+window.toggleSidebar = function () {
+  const sidebar = document.getElementById("sidebar");
+  if (sidebar) sidebar.classList.toggle("mobile-open");
+};
+
+window.toggleTheme = function () {
+  document.body.classList.toggle("light-mode");
+  const themeIcon = document.querySelector("#themeToggleBtn i");
+  if (themeIcon) {
+    if (document.body.classList.contains("light-mode")) {
+      themeIcon.className = "fa-regular fa-sun";
+    } else {
+      themeIcon.className = "fa-regular fa-moon";
+    }
+  }
 };
 
 initAuthGuard();
