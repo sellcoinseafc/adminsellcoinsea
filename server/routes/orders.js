@@ -34,24 +34,25 @@ function encryptSensitiveFields(order) {
   const payment = { ...(order.paymentInfoData || {}) };
   const account = { ...(order.accountData || {}) };
 
-  // بيانات EA
+  // بيانات EA (حساب اللعبة)
   if (account.eaEmail) account.eaEmail = encrypt(account.eaEmail);
   if (account.eaPassword) account.eaPassword = encrypt(account.eaPassword);
   if (account.backupCodes) account.backupCodes = encrypt(account.backupCodes);
 
-  // وسيلة الدفع
+  // وسيلة الدفع بناءً على أسماء الحقول الرسمية
   switch (order.paymentMethodType) {
     case "bank":
-      if (payment.fullName) payment.fullName = encrypt(payment.fullName);
+      if (payment.accountName) payment.accountName = encrypt(payment.accountName);
       if (payment.iban) payment.iban = encrypt(payment.iban);
       break;
 
     case "wallet":
-      if (payment.walletPhone) payment.walletPhone = encrypt(payment.walletPhone);
+      if (payment.walletNumber) payment.walletNumber = encrypt(payment.walletNumber);
+      if (payment.walletType) payment.walletType = encrypt(payment.walletType);
       break;
 
     case "usdt":
-      if (payment.walletAddress) payment.walletAddress = encrypt(payment.walletAddress);
+      if (payment.walletType) payment.walletType = encrypt(payment.walletType);
       break;
 
     case "paypal":
@@ -72,6 +73,40 @@ function encryptSensitiveFields(order) {
 // ==========================
 router.get("/", (_, res) => {
   res.json({ success: true, message: "Orders API Ready" });
+});
+
+// ==========================
+// جلب إعدادات النظام للطلبات (Settings Route)
+// ==========================
+router.get("/settings", async (_, res) => {
+  try {
+    const snap = await db.collection("system").doc("settings").get();
+    const s = snap.data() || {};
+
+    res.json({
+      success: true,
+      rates: {
+        PlayStation: s.psRate,
+        Xbox: s.psRate,
+        PC: s.pcRate
+      },
+      limits: {
+        psMin: s.psMin,
+        psMax: s.psMax,
+        pcMin: s.pcMin,
+        pcMax: s.pcMax
+      },
+      withdrawDays: s.psWithdrawDuration,
+      transferHours: s.psTransferDuration,
+      banks: s.banks || [],
+      wallets: s.wallets || [],
+      paymentMethods: s.paymentMethods || [],
+      terms: s.terms || [],
+      storeOpen: s.storeOpen
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // ==========================
@@ -153,7 +188,7 @@ router.post("/create", async (req, res) => {
 });
 
 // ==========================
-// تحديث الحالة
+// تحديث الحالة والتشفير عند الاكتمال
 // ==========================
 router.post("/update-status", async (req, res) => {
   try {
@@ -255,11 +290,12 @@ router.post("/purge-sensitive", async (req, res) => {
       },
       paymentInfoData: {
         ...data.paymentInfoData,
+        accountName: null,
         iban: null,
-        fullName: null,
-        walletPhone: null,
-        walletAddress: null,
+        walletNumber: null,
+        walletType: null,
         paypalEmail: null,
+        fullName: null,
         country: null
       },
       purgedAt: TS()
