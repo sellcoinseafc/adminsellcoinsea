@@ -54,12 +54,12 @@
         </div>
     </div>
 
-    <!-- 2. نافذة تفاصيل الطلب المحدثة بالكامل -->
+    <!-- 2. نافذة تفاصيل الطلب المحدثة -->
     <div class="modal-overlay" id="orderDetailModal">
         <div class="modal-card modal-card-lg">
             <div class="modal-header">
                 <div>
-                    <h3 id="modalOrderIdTitle" style="display: flex; align-items: center; gap: 8px;">تفاصيل الطلب</h3>
+                    <h3 id="modalOrderIdTitle">تفاصيل الطلب</h3>
                     <span id="modalRefNumberSubtitle" class="ref-badge-subtitle">---</span>
                 </div>
                 <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
@@ -68,7 +68,7 @@
         </div>
     </div>
 
-    <!-- 3. نافذة تفاصيل التقييم (Review Modal) -->
+    <!-- 3. نافذة تفاصيل التقييم -->
     <div class="modal-overlay" id="reviewModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -138,6 +138,7 @@
             <li><a class="sidebar-link" onclick="switchTab('inventoryTab', this)"><i class="fa-solid fa-boxes-stacked"></i> إدارة المخزون</a></li>
             <li><a class="sidebar-link" onclick="switchTab('customerProfileTab', this)"><i class="fa-solid fa-users"></i> ملف العملاء</a></li>
             <li><a class="sidebar-link" onclick="switchTab('pricingTab', this)"><i class="fa-solid fa-tags"></i> أسعار المنصات والعروض</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('whatsappTemplatesTab', this)"><i class="fa-solid fa-comments"></i> رسائل حالات الطلب</a></li>
             <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع والحقول</a></li>
             <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>
             <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات عامة</a></li>
@@ -165,7 +166,7 @@
             </div>
         </header>
 
-        <!-- منطقة الإشعارات والتنبيهات العامة للنظام -->
+        <!-- تنبيهات النظام -->
         <div id="systemNotificationBanner" style="display:none; background:linear-gradient(135deg, rgba(56,189,248,0.15) 0%, rgba(168,85,247,0.15) 100%); border:1.5px solid #38bdf8; padding:14px 20px; border-radius:16px; margin-bottom:20px; justify-content:space-between; align-items:center; box-shadow:var(--box-shadow);">
             <div style="display:flex; align-items:center; gap:12px;">
                 <i class="fa-solid fa-bell" style="font-size:1.5rem; color:#38bdf8;"></i>
@@ -240,24 +241,39 @@
             </div>
         </div>
 
-        <!-- 2. إدارة الطلبات الشاملة -->
+        <!-- 2. إدارة الطلبات الشاملة (مع المربعات المجدولة الحديثة) -->
         <div id="ordersTab" class="tab-content">
             <div class="card-panel">
-                <div class="panel-header">
-                    <h2><i class="fa-solid fa-box-archive"></i> جميع الطلبات (مرتبة حسب الأولوية)</h2>
-                    <div style="display:flex; gap:8px;">
-                        <select id="orderStatusFilter" class="form-control" style="padding:6px 12px; font-size:0.8rem; width:160px;" onchange="renderOrdersTables()">
-                            <option value="all">جميع الحالات</option>
-                            <option value="progress">1. قيد التنفيذ</option>
-                            <option value="new">2. طلبات جديدة</option>
-                            <option value="review">3. انتظار المراجعة</option>
-                            <option value="finished">4. تم الانتهاء</option>
-                            <option value="transferred">5. تم التحويل</option>
-                            <option value="completed">6. مكتمل</option>
-                            <option value="archived">7. مؤرشف</option>
-                        </select>
+                <div class="panel-header" style="flex-wrap: wrap; gap: 12px;">
+                    <h2><i class="fa-solid fa-box-archive"></i> جميع الطلبات</h2>
+                    
+                    <!-- فلاتر حالات الطلب بتصميم مربع احترافي للشاشات الكبيرة وقائمة منسدلة للجوال -->
+                    <div class="order-status-tabs-wrapper" id="orderStatusTabsWrapper">
+                        <div class="desktop-status-pills" id="desktopStatusPills">
+                            <button class="status-pill active" onclick="filterOrdersByTab('all', this)">الكل</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('progress', this)">قيد التنفيذ</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('new', this)">طلبات جديدة</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('review', this)">انتظار المراجعة</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('finished', this)">تم الانتهاء</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('transferred', this)">تم التحويل</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('completed', this)">مكتمل</button>
+                            <button class="status-pill" onclick="filterOrdersByTab('archived', this)">مؤرشف</button>
+                        </div>
+                        <div class="mobile-status-select-box">
+                            <select id="orderStatusFilterMobile" class="form-control" onchange="filterOrdersByTab(this.value, null)">
+                                <option value="all">جميع الحالات (الكل)</option>
+                                <option value="progress">1. قيد التنفيذ</option>
+                                <option value="new">2. طلبات جديدة</option>
+                                <option value="review">3. انتظار المراجعة</option>
+                                <option value="finished">4. تم الانتهاء</option>
+                                <option value="transferred">5. تم التحويل</option>
+                                <option value="completed">6. مكتمل</option>
+                                <option value="archived">7. مؤرشف</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
+
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -338,7 +354,7 @@
             </div>
         </div>
 
-        <!-- 5. قسم التقييمات (Reviews) -->
+        <!-- 5. قسم التقييمات -->
         <div id="reviewsTab" class="tab-content">
             <div id="reviewsSection" class="card-panel">
                 <div class="panel-header">
@@ -348,39 +364,25 @@
                     </div>
                 </div>
 
-                <!-- بطاقات إحصائيات التقييمات -->
                 <div class="stats-grid" style="margin-bottom: 20px;">
                     <div class="stat-card stat-card-transfer">
-                        <div class="stat-info">
-                            <span>إجمالي التقييمات</span>
-                            <h3 id="statTotalReviews">0</h3>
-                        </div>
+                        <div class="stat-info"><span>إجمالي التقييمات</span><h3 id="statTotalReviews">0</h3></div>
                         <div class="stat-icon"><i class="fa-solid fa-comments"></i></div>
                     </div>
                     <div class="stat-card stat-card-star">
-                        <div class="stat-info">
-                            <span>متوسط التقييم</span>
-                            <h3 id="statAverageRating">0.0 ⭐</h3>
-                        </div>
+                        <div class="stat-info"><span>متوسط التقييم</span><h3 id="statAverageRating">0.0 ⭐</h3></div>
                         <div class="stat-icon"><i class="fa-solid fa-star"></i></div>
                     </div>
                     <div class="stat-card stat-card-ps">
-                        <div class="stat-info">
-                            <span>تقييمات 5 نجوم</span>
-                            <h3 id="statFiveStarReviews">0</h3>
-                        </div>
+                        <div class="stat-info"><span>تقييمات 5 نجوم</span><h3 id="statFiveStarReviews">0</h3></div>
                         <div class="stat-icon"><i class="fa-solid fa-award"></i></div>
                     </div>
                     <div class="stat-card stat-card-new">
-                        <div class="stat-info">
-                            <span>التقييمات المعلقة</span>
-                            <h3 id="statPendingReviews">0</h3>
-                        </div>
+                        <div class="stat-info"><span>التقييمات المعلقة</span><h3 id="statPendingReviews">0</h3></div>
                         <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
                     </div>
                 </div>
 
-                <!-- أدوات الفلترة والبحث للربط البرمجي -->
                 <div id="reviewFilters" style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
                     <input type="text" id="reviewSearchInput" class="form-control" placeholder="بحث باسم العميل أو رقم المرجع..." style="max-width:300px;">
                     <select id="reviewStatusFilter" class="form-control" style="max-width:180px;">
@@ -391,19 +393,10 @@
                     </select>
                 </div>
 
-                <!-- جدول التقييمات -->
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr>
-                                <th>اسم العميل</th>
-                                <th>رقم المرجع</th>
-                                <th>التقييم</th>
-                                <th>التعليق / النص</th>
-                                <th>التاريخ</th>
-                                <th>الحالة</th>
-                                <th>الإجراءات</th>
-                            </tr>
+                            <tr><th>اسم العميل</th><th>رقم المرجع</th><th>التقييم</th><th>التعليق / النص</th><th>التاريخ</th><th>الحالة</th><th>الإجراءات</th></tr>
                         </thead>
                         <tbody id="reviewsTableBody">
                             <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">لا توجد تقييمات مسجلة.</td></tr>
@@ -411,7 +404,6 @@
                     </table>
                 </div>
 
-                <!-- حاوية الحالة الفارغة للربط -->
                 <div id="reviewsEmptyState" style="display:none; text-align:center; padding:40px; color:var(--text-muted);">
                     <i class="fa-regular fa-folder-open" style="font-size:2.5rem; margin-bottom:10px;"></i>
                     <p>لا توجد تقييمات مطابقة لشروط البحث.</p>
@@ -507,31 +499,37 @@
             </div>
         </div>
 
-        <!-- 9. أسعار المنصات والعروض -->
+        <!-- 9. أسعار المنصات والعروض (بالتعديلات المعتمدة) -->
         <div id="pricingTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-tags"></i> إعدادات الأسعار والمدد لكل منصة بالكامل</h2></div>
                 <div class="form-grid-2" style="margin-bottom: 20px;">
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <h3 style="font-size:0.95rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
+                        <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:14px;"><i class="fa-brands fa-playstation"></i> PlayStation & Xbox</h3>
                         <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="psRate" class="form-control" value="200"></div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="psMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="psMax" class="form-control" value="5,000,000"></div>
                         </div>
-                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="psWithdrawDuration" class="form-control" value="3 - 5 أيام عمل"></div>
-                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="psTransferDuration" class="form-control" value="24 ساعة"></div>
+                        <!-- مربعي مدة السحب ومدة التحويل على نفس الصف -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div class="form-group"><label>مدة السحب</label><input type="text" id="psWithdrawDuration" class="form-control" value="3 - 5 أيام عمل"></div>
+                            <div class="form-group"><label>مدة التحويل</label><input type="text" id="psTransferDuration" class="form-control" value="24 ساعة"></div>
+                        </div>
                     </div>
 
-                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:16px; border-radius:16px;">
-                        <h3 style="font-size:0.95rem; font-weight:900; color:#e81123; margin-bottom:14px;"><i class="fa-solid fa-desktop"></i> PC (الحاسب الشخصي)</h3>
+                    <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
+                        <h3 style="font-size:1rem; font-weight:900; color:#e81123; margin-bottom:14px;"><i class="fa-solid fa-desktop"></i> PC (الحاسب الشخصي)</h3>
                         <div class="form-group"><label>سعر المليون الأساسي (SAR)</label><input type="number" id="pcRate" class="form-control" value="150"></div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
                             <div class="form-group"><label>الحد الأدنى</label><input type="text" id="pcMin" class="form-control" value="100,000"></div>
                             <div class="form-group"><label>الحد الأعلى</label><input type="text" id="pcMax" class="form-control" value="1,000,000"></div>
                         </div>
-                        <div class="form-group"><label>مدة السحب / التحميل</label><input type="text" id="pcWithdrawDuration" class="form-control" value="2 - 4 أيام عمل"></div>
-                        <div class="form-group"><label>مدة التحويل المالي</label><input type="text" id="pcTransferDuration" class="form-control" value="24 ساعة"></div>
+                        <!-- مربعي مدة السحب ومدة التحويل على نفس الصف -->
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
+                            <div class="form-group"><label>مدة السحب</label><input type="text" id="pcWithdrawDuration" class="form-control" value="2 - 4 أيام عمل"></div>
+                            <div class="form-group"><label>مدة التحويل</label><input type="text" id="pcTransferDuration" class="form-control" value="24 ساعة"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -546,7 +544,39 @@
             </div>
         </div>
 
-        <!-- 10. وسائل الدفع والحقول -->
+        <!-- 10. قسم رسائل حالات الطلب الجديدة (WhatsApp Templates) -->
+        <div id="whatsappTemplatesTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header"><h2><i class="fa-solid fa-comments" style="color:#00ff87;"></i> إدارة رسائل حالات الطلب (أتمتة الواتساب)</h2></div>
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">قم بتخصيص النصوص الداخلية التي ستظهر للمشرف لإرسالها مباشرة عبر الواتساب للعميل عند تحديث حالة الطلب.</p>
+                
+                <div style="display:flex; flex-direction:column; gap:16px;">
+                    <div class="form-group">
+                        <label>رسالة حالة (طلب جديد / قيد المراجعة):</label>
+                        <textarea id="msgTemplateNew" class="form-control" rows="3">تم استلام طلبك رقم #{orderNumber} بنجاح، جاري مراجعته وتجهيزه.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رسالة حالة (قيد التنفيذ - سحب الكوينز):</label>
+                        <textarea id="msgTemplateProgress" class="form-control" rows="3">طلبك رقم #{orderNumber} أصبح الآن قيد التنفيذ وجاري سحب الكوينز، يرجى عدم دخول الـ Ultimate Team.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رسالة حالة (تم الانتهاء - بانتظار التحويل):</label>
+                        <textarea id="msgTemplateFinished" class="form-control" rows="3">تم الانتهاء من سحب الكوينز للطلب رقم #{orderNumber} بنجاح، وجاري معالجة التحويل المالي لحسابك.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رسالة حالة (تم التحويل المالي):</label>
+                        <textarea id="msgTemplateTransferred" class="form-control" rows="3">تم تحويل المبلغ المستحق لحسابك البنكي بنجاح للطلب رقم #{orderNumber}.</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>رسالة حالة (مكتمل نهائياً):</label>
+                        <textarea id="msgTemplateCompleted" class="form-control" rows="3">تم إكمال طلبك رقم #{orderNumber} بنجاح، نشكر تعاملك مع SAMI COINS وننتظر تقييمك!</textarea>
+                    </div>
+                </div>
+                <button class="btn-custom" style="margin-top:20px;" onclick="saveWhatsappTemplates()"><i class="fa-solid fa-floppy-disk"></i> حفظ قوالب الرسائل</button>
+            </div>
+        </div>
+
+        <!-- 11. وسائل الدفع والحقول -->
         <div id="paymentsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
@@ -580,7 +610,7 @@
             </div>
         </div>
 
-        <!-- 11. الشروط والأحكام -->
+        <!-- 12. الشروط والأحكام -->
         <div id="termsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-file-lines"></i> إدارة الشروط والأحكام للعملاء</h2></div>
@@ -597,7 +627,7 @@
             </div>
         </div>
 
-        <!-- 12. إعدادات عامة -->
+        <!-- 13. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة والدعم</h2></div>
