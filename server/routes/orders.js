@@ -1638,6 +1638,11 @@ router.get(
                 data.sensitiveDataPurged ===
                   true,
 
+              history:
+                Array.isArray(data.history)
+                  ? data.history.slice(-50)
+                  : [],
+
               /*
                * Temporary compatibility.
                */
