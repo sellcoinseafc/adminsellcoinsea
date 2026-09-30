@@ -1789,22 +1789,22 @@ function renderIssueState(
 
     const labels = {
         wrong_credentials:
-            "بيانات الدخول غير صحيحة",
+            "الإيميل أو الباسورد غير صحيح",
 
         wrong_backup_codes:
-            "رموز النسخ الاحتياطية غير صحيحة",
+            "الأكواد الاحتياطية غير صحيحة",
+
+        logged_in_platform:
+            "تم تسجيل الدخول عبر المنصة يرجى تسجيل الخروج",
 
         market_closed:
             "سوق الانتقالات مغلق",
 
-        no_player:
-            "لا يوجد لاعب مطابق",
-
         wrong_platform:
-            "المنصة المحددة غير صحيحة",
+            "المنصة غير صحيحة",
 
         other_issue:
-            "توجد مشكلة في الطلب"
+            "مشاكل أخرى"
     };
 
     const title =
@@ -1835,9 +1835,16 @@ function renderIssueState(
     }
 
     if (issueMessageElement) {
+        const lifecycle = {
+            needs_customer_action: "بانتظار إجراء العميل",
+            data_received: "تم استلام البيانات",
+            resolved: "تم الحل"
+        };
+
         issueMessageElement.innerText =
-            issueMessage ||
-            title;
+            (issueMessage || title) +
+            " — " +
+            (lifecycle[order?.issueState] || lifecycle.needs_customer_action);
     }
 
     /*
