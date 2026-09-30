@@ -4911,3 +4911,21 @@ html[dir="ltr"] .footer-brand {
         animation-iteration-count: 1 !important;
     }
 }
+
+
+/* Canonical customer success identifier styling. */
+.internal-reference {
+  color: rgba(255,255,255,.48);
+  font-size: .82rem;
+  direction: rtl;
+}
+.final-order-number {
+  user-select: all;
+  -webkit-user-select: all;
+  cursor: copy;
+}
+@media (max-width: 600px) {
+  .success-header-card,
+  .box-card { border-radius: 18px; }
+  .final-order-number { width: 100%; }
+}
