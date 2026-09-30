@@ -1,6 +1,6 @@
 import express from "express";
 import admin, { db } from "../services/firebase.js";
-import { encrypt } from "../utils/crypto.js";
+import { encrypt, decrypt } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
 import { generateOrderNumbers } from "../services/orderNumber.js";
 
@@ -35,14 +35,37 @@ const PAYOUT_METHODS = new Set([
   "western"
 ]);
 
-const PURGE_DELAY_MS = 5 * 24 * 60 * 60 * 1000;
+const PURGE_DELAY_MS =
+  5 * 24 * 60 * 60 * 1000;
+
+const DEFAULT_ISSUE_MESSAGES = {
+  wrong_credentials:
+    "بيانات الدخول غير صحيحة، يرجى مراجعة البيانات وإعادة إرسالها.",
+
+  wrong_backup_codes:
+    "رموز النسخ الاحتياطية غير صحيحة، يرجى مراجعتها.",
+
+  market_closed:
+    "سوق الانتقالات مغلق حاليًا، وسيتم استكمال الطلب عند توفره.",
+
+  no_player:
+    "لم يتم العثور على اللاعب المطلوب، يرجى مراجعة بيانات اللاعب.",
+
+  wrong_platform:
+    "المنصة المحددة لا تطابق بيانات الطلب، يرجى مراجعتها.",
+
+  other_issue:
+    "توجد مشكلة في الطلب، يرجى التواصل مع الدعم."
+};
 
 /* =========================================================
-   Helpers
+   General Helpers
 ========================================================= */
 
 function cleanString(value) {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === "string"
+    ? value.trim()
+    : "";
 }
 
 function toNumber(value, fallback = 0) {
@@ -54,18 +77,19 @@ function toNumber(value, fallback = 0) {
 }
 
 function normalizeQuantity(value) {
-  const quantity = Math.floor(toNumber(value, 0));
+  const quantity = Math.floor(
+    toNumber(value, 0)
+  );
 
-  return quantity > 0 ? quantity : 0;
+  return quantity > 0
+    ? quantity
+    : 0;
 }
 
 function normalizeStatus(value) {
-  const status = cleanString(value).toLowerCase();
+  const status =
+    cleanString(value).toLowerCase();
 
-  /*
-   * Legacy compatibility:
-   * pending was used by older orders as "new".
-   */
   if (status === "pending") {
     return "new";
   }
@@ -76,9 +100,14 @@ function normalizeStatus(value) {
 }
 
 function normalizeIssue(value) {
-  const issue = cleanString(value).toLowerCase();
+  const issue =
+    cleanString(value).toLowerCase();
 
-  if (!issue || issue === "none" || issue === "no_issue") {
+  if (
+    !issue ||
+    issue === "none" ||
+    issue === "no_issue"
+  ) {
     return null;
   }
 
@@ -88,17 +117,7 @@ function normalizeIssue(value) {
 }
 
 function normalizePlatform(value) {
-  const platform = cleanString(value);
-
-  if (
-    platform === "PlayStation" ||
-    platform === "Xbox" ||
-    platform === "PC"
-  ) {
-    return platform;
-  }
-
-  return platform;
+  return cleanString(value);
 }
 
 function normalizeBackupCodes(value) {
@@ -108,7 +127,10 @@ function normalizeBackupCodes(value) {
       .filter(Boolean);
   }
 
-  if (typeof value === "string" && value.trim()) {
+  if (
+    typeof value === "string" &&
+    value.trim()
+  ) {
     return value
       .split(/\r?\n|,/)
       .map((item) => item.trim())
@@ -119,13 +141,16 @@ function normalizeBackupCodes(value) {
 }
 
 function encryptBackupCodes(codes) {
-  const normalized = normalizeBackupCodes(codes);
+  const normalized =
+    normalizeBackupCodes(codes);
 
   if (!normalized.length) {
     return "";
   }
 
-  return encrypt(JSON.stringify(normalized));
+  return encrypt(
+    JSON.stringify(normalized)
+  );
 }
 
 function normalizeAccountData(body) {
@@ -137,63 +162,26 @@ function normalizeAccountData(body) {
 
   return {
     eaEmail: cleanString(
-      account.eaEmail ?? body.eaEmail
+      account.eaEmail ??
+      body.eaEmail
     ),
+
     eaPassword: cleanString(
-      account.eaPassword ?? body.eaPassword
+      account.eaPassword ??
+      body.eaPassword
     ),
-    backupCodes: normalizeBackupCodes(
-      account.backupCodes ?? body.backupCodes
-    )
+
+    backupCodes:
+      normalizeBackupCodes(
+        account.backupCodes ??
+        body.backupCodes
+      )
   };
 }
 
 /* =========================================================
-   Payout normalization
+   Payout
 ========================================================= */
-
-/**
- * Canonical payout schema:
- *
- * local bank:
- * {
- *   payoutType: "local",
- *   method: "bank",
- *   bankName,
- *   fullName,
- *   iban
- * }
- *
- * local wallet:
- * {
- *   payoutType: "local",
- *   method: "wallet",
- *   walletName,
- *   phone
- * }
- *
- * international USDT:
- * {
- *   payoutType: "international",
- *   method: "usdt",
- *   wallet
- * }
- *
- * international PayPal:
- * {
- *   payoutType: "international",
- *   method: "paypal",
- *   email
- * }
- *
- * international Western Union:
- * {
- *   payoutType: "international",
- *   method: "western",
- *   fullNameEnglish,
- *   country
- * }
- */
 
 function getIncomingPayout(body) {
   if (
@@ -225,17 +213,24 @@ function getPayoutMethod(body, payout) {
 }
 
 function normalizePayout(body) {
-  const payout = getIncomingPayout(body);
+  const payout =
+    getIncomingPayout(body);
 
-  const method = getPayoutMethod(body, payout);
+  const method =
+    getPayoutMethod(
+      body,
+      payout
+    );
 
   if (!PAYOUT_METHODS.has(method)) {
     return {
-      payoutType: cleanString(
-        payout.payoutType ||
-        body.payoutType ||
-        ""
-      ),
+      payoutType:
+        cleanString(
+          payout.payoutType ||
+          body.payoutType ||
+          ""
+        ),
+
       method: method || ""
     };
   }
@@ -245,78 +240,96 @@ function normalizePayout(body) {
       return {
         payoutType: "local",
         method: "bank",
-        bankName: cleanString(
-          payout.bankName ??
-          body.bankName
-        ),
-        fullName: cleanString(
-          payout.fullName ??
-          payout.accountName ??
-          body.accountName ??
-          body.fullName
-        ),
-        iban: cleanString(
-          payout.iban ??
-          body.iban
-        )
+
+        bankName:
+          cleanString(
+            payout.bankName ??
+            body.bankName
+          ),
+
+        fullName:
+          cleanString(
+            payout.fullName ??
+            payout.accountName ??
+            body.accountName ??
+            body.fullName
+          ),
+
+        iban:
+          cleanString(
+            payout.iban ??
+            body.iban
+          )
       };
 
     case "wallet":
       return {
         payoutType: "local",
         method: "wallet",
-        walletName: cleanString(
-          payout.walletName ??
-          payout.walletType ??
-          body.walletName ??
-          body.walletType
-        ),
-        phone: cleanString(
-          payout.phone ??
-          payout.walletNumber ??
-          body.phoneNumber ??
-          body.walletNumber
-        )
+
+        walletName:
+          cleanString(
+            payout.walletName ??
+            payout.walletType ??
+            body.walletName ??
+            body.walletType
+          ),
+
+        phone:
+          cleanString(
+            payout.phone ??
+            payout.walletNumber ??
+            body.phoneNumber ??
+            body.walletNumber
+          )
       };
 
     case "usdt":
       return {
         payoutType: "international",
         method: "usdt",
-        wallet: cleanString(
-          payout.wallet ??
-          payout.walletAddress ??
-          body.wallet ??
-          body.walletAddress ??
-          body.usdtWallet
-        )
+
+        wallet:
+          cleanString(
+            payout.wallet ??
+            payout.walletAddress ??
+            body.wallet ??
+            body.walletAddress ??
+            body.usdtWallet
+          )
       };
 
     case "paypal":
       return {
         payoutType: "international",
         method: "paypal",
-        email: cleanString(
-          payout.email ??
-          payout.paypalEmail ??
-          body.paypalEmail
-        )
+
+        email:
+          cleanString(
+            payout.email ??
+            payout.paypalEmail ??
+            body.paypalEmail
+          )
       };
 
     case "western":
       return {
         payoutType: "international",
         method: "western",
-        fullNameEnglish: cleanString(
-          payout.fullNameEnglish ??
-          payout.fullName ??
-          body.fullNameEnglish ??
-          body.fullName
-        ),
-        country: cleanString(
-          payout.country ??
-          body.country
-        )
+
+        fullNameEnglish:
+          cleanString(
+            payout.fullNameEnglish ??
+            payout.fullName ??
+            body.fullNameEnglish ??
+            body.fullName
+          ),
+
+        country:
+          cleanString(
+            payout.country ??
+            body.country
+          )
       };
 
     default:
@@ -328,53 +341,67 @@ function normalizePayout(body) {
 }
 
 function encryptPayoutDetails(payout) {
-  const method = payout.method;
-
-  switch (method) {
+  switch (payout.method) {
     case "bank":
       return {
         ...payout,
-        fullName: payout.fullName
-          ? encrypt(payout.fullName)
-          : "",
-        iban: payout.iban
-          ? encrypt(payout.iban)
-          : ""
+
+        fullName:
+          payout.fullName
+            ? encrypt(payout.fullName)
+            : "",
+
+        iban:
+          payout.iban
+            ? encrypt(payout.iban)
+            : ""
       };
 
     case "wallet":
       return {
         ...payout,
-        phone: payout.phone
-          ? encrypt(payout.phone)
-          : ""
+
+        phone:
+          payout.phone
+            ? encrypt(payout.phone)
+            : ""
       };
 
     case "usdt":
       return {
         ...payout,
-        wallet: payout.wallet
-          ? encrypt(payout.wallet)
-          : ""
+
+        wallet:
+          payout.wallet
+            ? encrypt(payout.wallet)
+            : ""
       };
 
     case "paypal":
       return {
         ...payout,
-        email: payout.email
-          ? encrypt(payout.email)
-          : ""
+
+        email:
+          payout.email
+            ? encrypt(payout.email)
+            : ""
       };
 
     case "western":
       return {
         ...payout,
-        fullNameEnglish: payout.fullNameEnglish
-          ? encrypt(payout.fullNameEnglish)
-          : "",
-        country: payout.country
-          ? encrypt(payout.country)
-          : ""
+
+        fullNameEnglish:
+          payout.fullNameEnglish
+            ? encrypt(
+                payout.fullNameEnglish
+              )
+            : "",
+
+        country:
+          payout.country
+            ? encrypt(payout.country)
+            : ""
       };
 
     default:
@@ -383,7 +410,7 @@ function encryptPayoutDetails(payout) {
 }
 
 /* =========================================================
-   Legacy sensitive-data compatibility
+   Legacy Encryption
 ========================================================= */
 
 function encryptLegacySensitiveFields(order) {
@@ -396,71 +423,99 @@ function encryptLegacySensitiveFields(order) {
   };
 
   if (account.eaEmail) {
-    account.eaEmail = encrypt(account.eaEmail);
+    account.eaEmail =
+      encrypt(account.eaEmail);
   }
 
   if (account.eaPassword) {
-    account.eaPassword = encrypt(account.eaPassword);
+    account.eaPassword =
+      encrypt(account.eaPassword);
   }
 
   if (account.backupCodes) {
-    account.backupCodes = Array.isArray(account.backupCodes)
-      ? encrypt(JSON.stringify(account.backupCodes))
-      : encrypt(String(account.backupCodes));
+    account.backupCodes =
+      Array.isArray(
+        account.backupCodes
+      )
+        ? encrypt(
+            JSON.stringify(
+              account.backupCodes
+            )
+          )
+        : encrypt(
+            String(
+              account.backupCodes
+            )
+          );
   }
 
-  switch (order.paymentMethodType) {
+  switch (
+    order.paymentMethodType
+  ) {
     case "bank":
       if (payment.accountName) {
-        payment.accountName = encrypt(payment.accountName);
+        payment.accountName =
+          encrypt(
+            payment.accountName
+          );
       }
 
       if (payment.iban) {
-        payment.iban = encrypt(payment.iban);
+        payment.iban =
+          encrypt(
+            payment.iban
+          );
       }
 
       break;
 
     case "wallet":
       if (payment.walletNumber) {
-        payment.walletNumber = encrypt(payment.walletNumber);
+        payment.walletNumber =
+          encrypt(
+            payment.walletNumber
+          );
       }
 
-      if (payment.walletType) {
-        payment.walletType = encrypt(payment.walletType);
-      }
-
+      /*
+       * walletType may be a public wallet name,
+       * so do not blindly encrypt it.
+       */
       break;
 
     case "usdt":
-      if (payment.walletType) {
-        payment.walletType = encrypt(payment.walletType);
-      }
-
       if (payment.walletAddress) {
-        payment.walletAddress = encrypt(
-          payment.walletAddress
-        );
+        payment.walletAddress =
+          encrypt(
+            payment.walletAddress
+          );
       }
 
       break;
 
     case "paypal":
       if (payment.paypalEmail) {
-        payment.paypalEmail = encrypt(
-          payment.paypalEmail
-        );
+        payment.paypalEmail =
+          encrypt(
+            payment.paypalEmail
+          );
       }
 
       break;
 
     case "western":
       if (payment.fullName) {
-        payment.fullName = encrypt(payment.fullName);
+        payment.fullName =
+          encrypt(
+            payment.fullName
+          );
       }
 
       if (payment.country) {
-        payment.country = encrypt(payment.country);
+        payment.country =
+          encrypt(
+            payment.country
+          );
       }
 
       break;
@@ -476,7 +531,7 @@ function encryptLegacySensitiveFields(order) {
 }
 
 /* =========================================================
-   Compatibility helpers
+   Compatibility
 ========================================================= */
 
 function getOrderStatus(data) {
@@ -503,43 +558,34 @@ function getOrderTotal(data) {
   );
 }
 
-function getPayoutForRead(data) {
-  if (
-    data.payoutDetails &&
-    typeof data.payoutDetails === "object"
-  ) {
-    return data.payoutDetails;
-  }
-
-  return data.paymentInfoData || {};
-}
-
-function getBusinessOrderId(data, docId) {
+function getBusinessOrderId(
+  data,
+  docId
+) {
   return data.orderId || docId;
 }
 
-function resolveOrderRef(orderId) {
-  return db.collection("orders").doc(orderId);
-}
+/* =========================================================
+   Find Order
+========================================================= */
 
-/**
- * Finds an order by either:
- * - Firestore document ID
- * - business orderId
- * - referenceNumber
- */
 async function findOrder(orderId) {
-  const value = cleanString(orderId);
+  const value =
+    cleanString(orderId);
 
   if (!value) {
     return null;
   }
 
-  const directRef = db
-    .collection("orders")
-    .doc(value);
+  /*
+   * First: Firestore document ID.
+   */
+  const directRef =
+    db.collection("orders")
+      .doc(value);
 
-  const directSnap = await directRef.get();
+  const directSnap =
+    await directRef.get();
 
   if (directSnap.exists) {
     return {
@@ -548,14 +594,23 @@ async function findOrder(orderId) {
     };
   }
 
-  const byOrderId = await db
-    .collection("orders")
-    .where("orderId", "==", value)
-    .limit(1)
-    .get();
+  /*
+   * Second: business orderId.
+   */
+  const byOrderId =
+    await db
+      .collection("orders")
+      .where(
+        "orderId",
+        "==",
+        value
+      )
+      .limit(1)
+      .get();
 
   if (!byOrderId.empty) {
-    const snap = byOrderId.docs[0];
+    const snap =
+      byOrderId.docs[0];
 
     return {
       ref: snap.ref,
@@ -563,14 +618,23 @@ async function findOrder(orderId) {
     };
   }
 
-  const byReference = await db
-    .collection("orders")
-    .where("referenceNumber", "==", value)
-    .limit(1)
-    .get();
+  /*
+   * Third: customer reference.
+   */
+  const byReference =
+    await db
+      .collection("orders")
+      .where(
+        "referenceNumber",
+        "==",
+        value
+      )
+      .limit(1)
+      .get();
 
   if (!byReference.empty) {
-    const snap = byReference.docs[0];
+    const snap =
+      byReference.docs[0];
 
     return {
       ref: snap.ref,
@@ -585,93 +649,126 @@ async function findOrder(orderId) {
    Settings
 ========================================================= */
 
-router.get("/settings", async (_, res) => {
-  try {
-    const snap = await db
-      .collection("system")
-      .doc("settings")
-      .get();
+router.get(
+  "/settings",
+  async (_, res) => {
+    try {
+      const snap =
+        await db
+          .collection("system")
+          .doc("settings")
+          .get();
 
-    const s = snap.data() || {};
+      const settings =
+        snap.data() || {};
 
-    return res.json({
-      success: true,
+      return res.json({
+        success: true,
 
-      rates: {
-        PlayStation: s.psRate,
-        Xbox: s.psRate,
-        PC: s.pcRate
-      },
+        rates: {
+          PlayStation:
+            settings.psRate,
 
-      limits: {
-        psMin: s.psMin,
-        psMax: s.psMax,
-        pcMin: s.pcMin,
-        pcMax: s.pcMax
-      },
+          Xbox:
+            settings.psRate,
 
-      withdrawDays: s.psWithdrawDuration,
-      transferHours: s.psTransferDuration,
+          PC:
+            settings.pcRate
+        },
 
-      safeMethod:
-        s.safeMethod ||
-        "سوق الانتقالات (Web App)",
+        limits: {
+          psMin:
+            settings.psMin,
 
-      banks: Array.isArray(s.banks)
-        ? s.banks
-        : [],
+          psMax:
+            settings.psMax,
 
-      wallets: Array.isArray(s.wallets)
-        ? s.wallets
-        : [],
+          pcMin:
+            settings.pcMin,
 
-      paymentMethods: Array.isArray(
-        s.paymentMethods
-      )
-        ? s.paymentMethods
-        : [],
+          pcMax:
+            settings.pcMax
+        },
 
-      termsEnabled:
-        s.termsEnabled ?? true,
+        withdrawDays:
+          settings.psWithdrawDuration,
 
-      terms: Array.isArray(s.terms)
-        ? s.terms
-        : [],
+        transferHours:
+          settings.psTransferDuration,
 
-      storeOpen:
-        s.storeOpen ?? true,
+        safeMethod:
+          settings.safeMethod ||
+          "سوق الانتقالات (Web App)",
 
-      supportWhatsapp:
-        s.supportWhatsapp ||
-        s.supportWhatsappNumber ||
-        ""
-    });
-  } catch (err) {
-    console.error(
-      "Orders settings error:",
-      err?.message
-    );
+        banks:
+          Array.isArray(
+            settings.banks
+          )
+            ? settings.banks
+            : [],
 
-    return res.status(500).json({
-      success: false,
-      message: "تعذر تحميل إعدادات الطلبات."
-    });
+        wallets:
+          Array.isArray(
+            settings.wallets
+          )
+            ? settings.wallets
+            : [],
+
+        paymentMethods:
+          Array.isArray(
+            settings.paymentMethods
+          )
+            ? settings.paymentMethods
+            : [],
+
+        termsEnabled:
+          settings.termsEnabled ??
+          true,
+
+        terms:
+          Array.isArray(
+            settings.terms
+          )
+            ? settings.terms
+            : [],
+
+        storeOpen:
+          settings.storeOpen ??
+          true,
+
+        supportWhatsapp:
+          settings.supportWhatsapp ||
+          settings.supportWhatsappNumber ||
+          ""
+      });
+    } catch (error) {
+      console.error(
+        "Orders settings error:",
+        error?.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "تعذر تحميل إعدادات الطلبات."
+      });
+    }
   }
-});
+);
 
 /* =========================================================
-   Health / API test
+   API Test
 ========================================================= */
 
 router.get("/", (_, res) => {
-  res.json({
+  return res.json({
     success: true,
     message: "Orders API Ready"
   });
 });
 
 /* =========================================================
-   Admin order list
+   Admin Orders List
 ========================================================= */
 
 router.get(
@@ -679,607 +776,727 @@ router.get(
   requireAdmin,
   async (_, res) => {
     try {
-      const snapshot = await db
-        .collection("orders")
-        .orderBy("createdAt", "desc")
-        .get();
+      const snapshot =
+        await db
+          .collection("orders")
+          .orderBy(
+            "createdAt",
+            "desc"
+          )
+          .get();
 
-      const orders = snapshot.docs.map((doc) => {
-        const d = doc.data();
+      const orders =
+        snapshot.docs.map(
+          (doc) => {
+            const data =
+              doc.data() || {};
 
-        const status = getOrderStatus(d);
-        const quantity = getOrderQuantity(d);
+            const status =
+              getOrderStatus(
+                data
+              );
 
-        const businessOrderId =
-          getBusinessOrderId(d, doc.id);
+            const quantity =
+              getOrderQuantity(
+                data
+              );
 
-        return {
-          id: doc.id,
+            const businessOrderId =
+              getBusinessOrderId(
+                data,
+                doc.id
+              );
 
-          /*
-           * Business ID.
-           */
-          orderId: businessOrderId,
+            return {
+              id: doc.id,
 
-          /*
-           * Legacy frontend compatibility.
-           */
-          reference: businessOrderId,
+              orderId:
+                businessOrderId,
 
-          referenceNumber:
-            d.referenceNumber || "",
+              /*
+               * Compatibility with current admin.js.
+               */
+              reference:
+                businessOrderId,
 
-          customerName:
-            d.customerName || "",
+              referenceNumber:
+                data.referenceNumber ||
+                "",
 
-          name:
-            d.customerName || "",
+              customerName:
+                data.customerName ||
+                "",
 
-          phone:
-            d.phone || "",
+              name:
+                data.customerName ||
+                "",
 
-          platform:
-            d.platform || "",
+              phone:
+                data.phone ||
+                "",
 
-          quantity,
+              platform:
+                data.platform ||
+                "",
 
-          totalQty: quantity,
+              quantity,
 
-          totalPrice:
-            getOrderTotal(d),
+              totalQty:
+                quantity,
 
-          status,
+              totalPrice:
+                getOrderTotal(
+                  data
+                ),
 
-          issue:
-            d.issue || null,
+              status,
 
-          issueMessage:
-            d.issueMessage || "",
+              issue:
+                data.issue ||
+                null,
 
-          drawnCoins:
-            Number(
-              d.drawnCoins ??
-              d.withdrawnQuantity ??
-              0
-            ),
+              issueMessage:
+                data.issueMessage ||
+                "",
 
-          paymentMethod:
-            d.paymentMethod ||
-            d.payoutDetails?.method ||
-            d.paymentMethodType ||
-            "",
+              drawnCoins:
+                Number(
+                  data.drawnCoins ??
+                  data.withdrawnQuantity ??
+                  0
+                ),
 
-          paymentMethodType:
-            d.paymentMethodType ||
-            d.payoutDetails?.method ||
-            "",
+              paymentMethod:
+                data.paymentMethod ||
+                data.payoutDetails?.method ||
+                data.paymentMethodType ||
+                "",
 
-          /*
-           * Canonical payout data.
-           *
-           * This may contain encrypted values.
-           * It is intentionally returned only to the
-           * authenticated admin API.
-           */
-          payoutDetails:
-            d.payoutDetails || null,
+              paymentMethodType:
+                data.paymentMethodType ||
+                data.payoutDetails?.method ||
+                "",
 
-          /*
-           * Legacy compatibility for current admin UI.
-           */
-          paymentInfoData:
-            d.paymentInfoData || {},
+              payoutDetails:
+                data.payoutDetails ||
+                null,
 
-          transferData: {
-            transferredAt:
-              d.transferredAt || null,
+              paymentInfoData:
+                data.paymentInfoData ||
+                {},
 
-            transferredBy:
-              d.transferredBy || null,
+              transferData: {
+                transferredAt:
+                  data.transferredAt ||
+                  null,
 
-            transferCompleted:
-              d.transferCompleted || false
-          },
+                transferredBy:
+                  data.transferredBy ||
+                  null,
 
-          completedAt:
-            d.completedAt || null,
+                transferCompleted:
+                  data.transferCompleted ||
+                  false
+              },
 
-          purgeDueAt:
-            d.purgeDueAt || null,
+              completedAt:
+                data.completedAt ||
+                null,
 
-          purgedAt:
-            d.purgedAt || null,
+              purgeDueAt:
+                data.purgeDueAt ||
+                null,
 
-          sensitiveDataPurged:
-            d.sensitiveDataPurged === true,
+              purgedAt:
+                data.purgedAt ||
+                null,
 
-          reviewSubmitted:
-            d.reviewSubmitted === true,
+              sensitiveDataPurged:
+                data.sensitiveDataPurged ===
+                true,
 
-          createdAt:
-            d.createdAt?.toDate
-              ? d.createdAt
-                  .toDate()
-                  .toISOString()
-              : null,
+              reviewSubmitted:
+                data.reviewSubmitted ===
+                true,
 
-          lastUpdate:
-            d.lastUpdate?.toDate
-              ? d.lastUpdate
-                  .toDate()
-                  .toISOString()
-              : null
-        };
-      });
+              createdAt:
+                data.createdAt?.toDate
+                  ? data.createdAt
+                      .toDate()
+                      .toISOString()
+                  : null,
+
+              lastUpdate:
+                data.lastUpdate?.toDate
+                  ? data.lastUpdate
+                      .toDate()
+                      .toISOString()
+                  : null
+            };
+          }
+        );
 
       return res.json({
         success: true,
         orders
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "Orders list error:",
-        err?.message
+        error?.message
       );
 
       return res.status(500).json({
         success: false,
-        message: "تعذر تحميل الطلبات."
+        message:
+          "تعذر تحميل الطلبات."
       });
     }
   }
 );
 
 /* =========================================================
-   Create order
+   Create Order
 ========================================================= */
 
-router.post("/create", async (req, res) => {
-  try {
-    const body = req.body || {};
+router.post(
+  "/create",
+  async (req, res) => {
+    try {
+      const body =
+        req.body || {};
 
-    const customerName =
-      cleanString(body.customerName);
+      const customerName =
+        cleanString(
+          body.customerName
+        );
 
-    const phone =
-      cleanString(body.phone);
+      const phone =
+        cleanString(
+          body.phone
+        );
 
-    const platform =
-      normalizePlatform(body.platform);
+      const platform =
+        normalizePlatform(
+          body.platform
+        );
 
-    const quantity =
-      normalizeQuantity(body.quantity);
+      const quantity =
+        normalizeQuantity(
+          body.quantity
+        );
 
-    if (!customerName) {
-      return res.status(400).json({
-        success: false,
-        message: "اسم العميل مطلوب."
-      });
-    }
+      if (!customerName) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "اسم العميل مطلوب."
+        });
+      }
 
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "رقم الجوال مطلوب."
-      });
-    }
+      if (!phone) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "رقم الجوال مطلوب."
+        });
+      }
 
-    if (!platform) {
-      return res.status(400).json({
-        success: false,
-        message: "المنصة مطلوبة."
-      });
-    }
+      if (!platform) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "المنصة مطلوبة."
+        });
+      }
 
-    if (!quantity) {
-      return res.status(400).json({
-        success: false,
-        message: "كمية الكوينز غير صحيحة."
-      });
-    }
-
-    /*
-     * Read current settings so server-side limits can
-     * be enforced.
-     */
-    const settingsSnap = await db
-      .collection("system")
-      .doc("settings")
-      .get();
-
-    const settings =
-      settingsSnap.data() || {};
-
-    const isPc = platform === "PC";
-
-    const minLimit = isPc
-      ? toNumber(settings.pcMin, 0)
-      : toNumber(settings.psMin, 0);
-
-    const maxLimit = isPc
-      ? toNumber(settings.pcMax, 0)
-      : toNumber(settings.psMax, 0);
-
-    if (
-      minLimit > 0 &&
-      quantity < minLimit
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "الكمية أقل من الحد الأدنى المسموح."
-      });
-    }
-
-    if (
-      maxLimit > 0 &&
-      quantity > maxLimit
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "الكمية أكبر من الحد الأقصى المسموح."
-      });
-    }
-
-    /*
-     * Store status is respected server-side.
-     */
-    if (settings.storeOpen === false) {
-      return res.status(403).json({
-        success: false,
-        message: "المتجر مغلق حاليًا."
-      });
-    }
-
-    const account =
-      normalizeAccountData(body);
-
-    if (!account.eaEmail) {
-      return res.status(400).json({
-        success: false,
-        message: "بريد EA مطلوب."
-      });
-    }
-
-    if (!account.eaPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "كلمة مرور EA مطلوبة."
-      });
-    }
-
-    if (account.backupCodes.length !== 3) {
-      return res.status(400).json({
-        success: false,
-        message: "يجب إدخال 3 رموز احتياطية."
-      });
-    }
-
-    const payout =
-      normalizePayout(body);
-
-    if (!PAYOUT_METHODS.has(payout.method)) {
-      return res.status(400).json({
-        success: false,
-        message: "طريقة الدفع غير صحيحة."
-      });
-    }
-
-    /*
-     * Validate required payout fields before encryption.
-     */
-    switch (payout.method) {
-      case "bank":
-        if (
-          !payout.bankName ||
-          !payout.fullName ||
-          !payout.iban
-        ) {
-          return res.status(400).json({
-            success: false,
-            message: "بيانات الحساب البنكي غير مكتملة."
-          });
-        }
-        break;
-
-      case "wallet":
-        if (
-          !payout.walletName ||
-          !payout.phone
-        ) {
-          return res.status(400).json({
-            success: false,
-            message: "بيانات المحفظة غير مكتملة."
-          });
-        }
-        break;
-
-      case "usdt":
-        if (!payout.wallet) {
-          return res.status(400).json({
-            success: false,
-            message: "عنوان محفظة USDT مطلوب."
-          });
-        }
-        break;
-
-      case "paypal":
-        if (!payout.email) {
-          return res.status(400).json({
-            success: false,
-            message: "بريد PayPal مطلوب."
-          });
-        }
-        break;
-
-      case "western":
-        if (
-          !payout.fullNameEnglish ||
-          !payout.country
-        ) {
-          return res.status(400).json({
-            success: false,
-            message:
-              "بيانات Western Union غير مكتملة."
-          });
-        }
-        break;
-
-      default:
-        break;
-    }
-
-    /*
-     * IMPORTANT:
-     * Pricing remains compatible with the current frontend
-     * until orders/order.js is reviewed.
-     *
-     * The client value is normalized and stored as-is for now.
-     * We will replace this with the exact server-side pricing
-     * formula after confirming the existing rate unit.
-     */
-    const clientTotalPrice =
-      cleanString(body.totalPrice);
-
-    /*
-     * Generate business identifiers atomically.
-     */
-    const {
-      orderId,
-      referenceNumber
-    } = await generateOrderNumbers();
-
-    /*
-     * Encrypt immediately.
-     *
-     * EA data is NEVER intentionally written to Firestore
-     * in plaintext.
-     */
-    const encryptedAccountData = {
-      eaEmail: encrypt(account.eaEmail),
-      eaPassword: encrypt(account.eaPassword),
-      backupCodes:
-        encryptBackupCodes(account.backupCodes)
-    };
-
-    /*
-     * Payment data is encrypted immediately as well.
-     */
-    const encryptedPayout =
-      encryptPayoutDetails(payout);
-
-    /*
-     * Keep legacy fields for compatibility with existing
-     * admin/frontend code while the migration is underway.
-     *
-     * These fields contain encrypted values.
-     */
-    const legacyPaymentInfo = {};
-
-    switch (payout.method) {
-      case "bank":
-        legacyPaymentInfo.bankName =
-          payout.bankName;
-
-        legacyPaymentInfo.accountName =
-          payout.fullName
-            ? encrypt(payout.fullName)
-            : "";
-
-        legacyPaymentInfo.iban =
-          payout.iban
-            ? encrypt(payout.iban)
-            : "";
-
-        break;
-
-      case "wallet":
-        legacyPaymentInfo.walletType =
-          payout.walletName
-            ? encrypt(payout.walletName)
-            : "";
-
-        legacyPaymentInfo.walletNumber =
-          payout.phone
-            ? encrypt(payout.phone)
-            : "";
-
-        break;
-
-      case "usdt":
-        legacyPaymentInfo.walletAddress =
-          payout.wallet
-            ? encrypt(payout.wallet)
-            : "";
-
-        break;
-
-      case "paypal":
-        legacyPaymentInfo.paypalEmail =
-          payout.email
-            ? encrypt(payout.email)
-            : "";
-
-        break;
-
-      case "western":
-        legacyPaymentInfo.fullName =
-          payout.fullNameEnglish
-            ? encrypt(
-                payout.fullNameEnglish
-              )
-            : "";
-
-        legacyPaymentInfo.country =
-          payout.country
-            ? encrypt(payout.country)
-            : "";
-
-        break;
-
-      default:
-        break;
-    }
-
-    const now = new Date();
-
-    const orderData = {
-      /*
-       * Canonical business identifiers.
-       */
-      orderId,
-      referenceNumber,
+      if (!quantity) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "كمية الكوينز غير صحيحة."
+        });
+      }
 
       /*
-       * Customer.
+       * Server-side limits.
        */
-      customerName,
-      phone,
-      platform,
-      quantity,
+      const settingsSnap =
+        await db
+          .collection("system")
+          .doc("settings")
+          .get();
+
+      const settings =
+        settingsSnap.data() || {};
+
+      const isPc =
+        platform === "PC";
+
+      const minLimit =
+        isPc
+          ? toNumber(
+              settings.pcMin,
+              0
+            )
+          : toNumber(
+              settings.psMin,
+              0
+            );
+
+      const maxLimit =
+        isPc
+          ? toNumber(
+              settings.pcMax,
+              0
+            )
+          : toNumber(
+              settings.psMax,
+              0
+            );
+
+      if (
+        minLimit > 0 &&
+        quantity < minLimit
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "الكمية أقل من الحد الأدنى المسموح."
+        });
+      }
+
+      if (
+        maxLimit > 0 &&
+        quantity > maxLimit
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "الكمية أكبر من الحد الأقصى المسموح."
+        });
+      }
+
+      if (
+        settings.storeOpen === false
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "المتجر مغلق حاليًا."
+        });
+      }
 
       /*
-       * Current total is retained for compatibility.
-       * Server-side exact calculation will be finalized
-       * after confirming the existing rate unit.
+       * EA account.
        */
-      totalPrice: clientTotalPrice,
+      const account =
+        normalizeAccountData(
+          body
+        );
+
+      if (!account.eaEmail) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "بريد EA مطلوب."
+        });
+      }
+
+      if (!account.eaPassword) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "كلمة مرور EA مطلوبة."
+        });
+      }
+
+      if (
+        account.backupCodes.length !==
+        3
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "يجب إدخال 3 رموز احتياطية."
+        });
+      }
 
       /*
-       * Canonical payout.
+       * Payout.
        */
-      payoutDetails: encryptedPayout,
+      const payout =
+        normalizePayout(body);
+
+      if (
+        !PAYOUT_METHODS.has(
+          payout.method
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "طريقة الدفع غير صحيحة."
+        });
+      }
+
+      switch (
+        payout.method
+      ) {
+        case "bank":
+          if (
+            !payout.bankName ||
+            !payout.fullName ||
+            !payout.iban
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "بيانات الحساب البنكي غير مكتملة."
+            });
+          }
+          break;
+
+        case "wallet":
+          if (
+            !payout.walletName ||
+            !payout.phone
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "بيانات المحفظة غير مكتملة."
+            });
+          }
+          break;
+
+        case "usdt":
+          if (!payout.wallet) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "عنوان محفظة USDT مطلوب."
+            });
+          }
+          break;
+
+        case "paypal":
+          if (!payout.email) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "بريد PayPal مطلوب."
+            });
+          }
+          break;
+
+        case "western":
+          if (
+            !payout.fullNameEnglish ||
+            !payout.country
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "بيانات Western Union غير مكتملة."
+            });
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      /*
+       * IMPORTANT:
+       * لا نعتمد على totalPrice في تحديد
+       * صلاحية الطلب.
+       *
+       * الحساب النهائي للسعر سنوحده لاحقًا
+       * مع صيغة النظام الحالية في settings.
+       *
+       * نحتفظ بقيمة الواجهة مؤقتًا للتوافق.
+       */
+      const clientTotalPrice =
+        cleanString(
+          body.totalPrice
+        );
+
+      /*
+       * Server-side order numbers.
+       */
+      const {
+        orderId,
+        referenceNumber
+      } =
+        await generateOrderNumbers();
+
+      /*
+       * Encrypt EA immediately.
+       */
+      const encryptedAccountData = {
+        eaEmail:
+          encrypt(
+            account.eaEmail
+          ),
+
+        eaPassword:
+          encrypt(
+            account.eaPassword
+          ),
+
+        backupCodes:
+          encryptBackupCodes(
+            account.backupCodes
+          )
+      };
+
+      /*
+       * Encrypt payout immediately.
+       */
+      const encryptedPayout =
+        encryptPayoutDetails(
+          payout
+        );
 
       /*
        * Legacy payment fields.
+       *
+       * These remain encrypted.
        */
-      paymentMethod:
-        body.paymentMethod ||
-        payout.method,
+      const legacyPaymentInfo = {};
 
-      paymentMethodType:
-        payout.method,
+      switch (
+        payout.method
+      ) {
+        case "bank":
+          legacyPaymentInfo.bankName =
+            payout.bankName;
 
-      paymentInfoData:
-        legacyPaymentInfo,
+          legacyPaymentInfo.accountName =
+            payout.fullName
+              ? encrypt(
+                  payout.fullName
+                )
+              : "";
+
+          legacyPaymentInfo.iban =
+            payout.iban
+              ? encrypt(
+                  payout.iban
+                )
+              : "";
+
+          break;
+
+        case "wallet":
+          /*
+           * walletName is not inherently secret.
+           */
+          legacyPaymentInfo.walletType =
+            payout.walletName;
+
+          legacyPaymentInfo.walletNumber =
+            payout.phone
+              ? encrypt(
+                  payout.phone
+                )
+              : "";
+
+          break;
+
+        case "usdt":
+          legacyPaymentInfo.walletAddress =
+            payout.wallet
+              ? encrypt(
+                  payout.wallet
+                )
+              : "";
+
+          break;
+
+        case "paypal":
+          legacyPaymentInfo.paypalEmail =
+            payout.email
+              ? encrypt(
+                  payout.email
+                )
+              : "";
+
+          break;
+
+        case "western":
+          legacyPaymentInfo.fullName =
+            payout.fullNameEnglish
+              ? encrypt(
+                  payout.fullNameEnglish
+                )
+              : "";
+
+          legacyPaymentInfo.country =
+            payout.country
+              ? encrypt(
+                  payout.country
+                )
+              : "";
+
+          break;
+
+        default:
+          break;
+      }
 
       /*
-       * Encrypted EA account.
+       * Canonical order.
        */
-      accountData:
-        encryptedAccountData,
+      const orderData = {
+        /*
+         * Business IDs.
+         */
+        orderId,
+
+        referenceNumber,
+
+        /*
+         * Customer.
+         */
+        customerName,
+
+        phone,
+
+        platform,
+
+        quantity,
+
+        /*
+         * Compatibility total.
+         */
+        totalPrice:
+          clientTotalPrice,
+
+        /*
+         * Canonical encrypted payout.
+         */
+        payoutDetails:
+          encryptedPayout,
+
+        /*
+         * Legacy fields.
+         */
+        paymentMethod:
+          body.paymentMethod ||
+          payout.method,
+
+        paymentMethodType:
+          payout.method,
+
+        paymentInfoData:
+          legacyPaymentInfo,
+
+        /*
+         * Encrypted EA data.
+         */
+        accountData:
+          encryptedAccountData,
+
+        /*
+         * Initial state.
+         */
+        drawnCoins: 0,
+
+        status: "new",
+
+        issue: null,
+
+        issueMessage: "",
+
+        /*
+         * Encryption.
+         */
+        encrypted: true,
+
+        encryptedAt:
+          TS(),
+
+        /*
+         * Completion lifecycle.
+         */
+        completedAt: null,
+
+        purgeDueAt: null,
+
+        purgedAt: null,
+
+        sensitiveDataPurged:
+          false,
+
+        /*
+         * Transfer.
+         */
+        transferredAt: null,
+
+        transferredBy: null,
+
+        transferCompleted:
+          false,
+
+        /*
+         * Review.
+         */
+        reviewSubmitted:
+          false,
+
+        /*
+         * Timestamps.
+         */
+        createdAt:
+          TS(),
+
+        lastUpdate:
+          TS(),
+
+        createdBy:
+          "customer"
+      };
 
       /*
-       * Order state.
+       * IMPORTANT:
+       * Firestore document ID is NOT the business Order ID.
        */
-      drawnCoins: 0,
-      status: "new",
-      issue: null,
-      issueMessage: "",
+      const documentRef =
+        db.collection("orders").doc();
 
-      /*
-       * Encryption metadata.
-       */
-      encrypted: true,
-      encryptedAt:
-        admin.firestore.FieldValue.serverTimestamp(),
+      await documentRef.set(
+        orderData
+      );
 
-      /*
-       * Lifecycle.
-       */
-      completedAt: null,
-      purgeDueAt: null,
-      purgedAt: null,
-      sensitiveDataPurged: false,
+      return res.json({
+        success: true,
 
-      /*
-       * Transfer.
-       */
-      transferredAt: null,
-      transferredBy: null,
-      transferCompleted: false,
+        orderId,
 
-      /*
-       * Review.
-       */
-      reviewSubmitted: false,
+        referenceNumber,
 
-      /*
-       * Timestamps.
-       */
-      createdAt:
-        admin.firestore.FieldValue.serverTimestamp(),
+        documentId:
+          documentRef.id
+      });
+    } catch (error) {
+      console.error(
+        "Create order error:",
+        error?.message
+      );
 
-      lastUpdate:
-        admin.firestore.FieldValue.serverTimestamp(),
-
-      /*
-       * Keep a server-side creation marker.
-       */
-      createdBy: "customer"
-    };
-
-    /*
-     * Do not store plaintext sensitive fields anywhere.
-     */
-    const docRef =
-      db.collection("orders").doc();
-
-    await docRef.set(orderData);
-
-    return res.json({
-      success: true,
-
-      /*
-       * Business order ID.
-       */
-      orderId,
-
-      /*
-       * Tracking reference.
-       */
-      referenceNumber,
-
-      /*
-       * Firestore document ID is returned only for
-       * internal compatibility.
-       */
-      documentId: docRef.id
-    });
-  } catch (err) {
-    console.error(
-      "Create order error:",
-      err?.message
-    );
-
-    return res.status(500).json({
-      success: false,
-      message: "تعذر إنشاء الطلب."
-    });
+      return res.status(500).json({
+        success: false,
+        message:
+          "تعذر إنشاء الطلب."
+      });
+    }
   }
-});
+);
 
 /* =========================================================
-   Update status
+   Update Status
 ========================================================= */
 
 router.post(
@@ -1295,15 +1512,19 @@ router.post(
         transferData,
         issue,
         issueMessage
-      } = req.body || {};
+      } =
+        req.body || {};
 
       const found =
-        await findOrder(orderId);
+        await findOrder(
+          orderId
+        );
 
       if (!found) {
         return res.status(404).json({
           success: false,
-          message: "الطلب غير موجود."
+          message:
+            "الطلب غير موجود."
         });
       }
 
@@ -1311,11 +1532,16 @@ router.post(
         found.snap.data() || {};
 
       const nextStatus =
-        normalizeStatus(status);
+        normalizeStatus(
+          status
+        );
 
       const updateData = {
-        status: nextStatus,
-        lastUpdate: TS()
+        status:
+          nextStatus,
+
+        lastUpdate:
+          TS()
       };
 
       /*
@@ -1325,21 +1551,25 @@ router.post(
         issue !== undefined
       ) {
         const normalizedIssue =
-          normalizeIssue(issue);
+          normalizeIssue(
+            issue
+          );
 
         updateData.issue =
           normalizedIssue;
 
         updateData.issueMessage =
           normalizedIssue
-            ? cleanString(issueMessage)
+            ? cleanString(
+                issueMessage
+              )
             : "";
       }
 
       /*
-       * If completed, start the 5-day lifecycle.
+       * completed starts the 5-day countdown.
        *
-       * We do NOT purge automatically.
+       * No automatic purge.
        */
       if (
         nextStatus === "completed" &&
@@ -1360,6 +1590,13 @@ router.post(
         updateData.purgeDueAt =
           purgeDueAt;
       }
+
+      /*
+       * If an order is moved away from completed
+       * before the lifecycle is finalized, we do not
+       * delete the timestamps. This preserves the audit
+       * history.
+       */
 
       /*
        * Transfer information.
@@ -1384,14 +1621,16 @@ router.post(
       }
 
       /*
-       * Manual issue clearing.
+       * Explicitly clear issue.
        */
       if (
         issue !== undefined &&
         normalizeIssue(issue) === null
       ) {
         updateData.issue = null;
-        updateData.issueMessage = "";
+
+        updateData.issueMessage =
+          "";
       }
 
       await found.ref.update(
@@ -1399,24 +1638,33 @@ router.post(
       );
 
       return res.json({
-        success: true
+        success: true,
+
+        status:
+          nextStatus,
+
+        issue:
+          updateData.issue !== undefined
+            ? updateData.issue
+            : current.issue || null
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "Update status error:",
-        err?.message
+        error?.message
       );
 
       return res.status(500).json({
         success: false,
-        message: "تعذر تحديث حالة الطلب."
+        message:
+          "تعذر تحديث حالة الطلب."
       });
     }
   }
 );
 
 /* =========================================================
-   Update drawn coins
+   Update Drawn Coins
 ========================================================= */
 
 router.post(
@@ -1427,31 +1675,45 @@ router.post(
       const {
         orderId,
         drawnCoins
-      } = req.body || {};
+      } =
+        req.body || {};
 
       const found =
-        await findOrder(orderId);
+        await findOrder(
+          orderId
+        );
 
       if (!found) {
         return res.status(404).json({
           success: false,
-          message: "الطلب غير موجود."
+          message:
+            "الطلب غير موجود."
         });
       }
 
+      const order =
+        found.snap.data() || {};
+
       const quantity =
         getOrderQuantity(
-          found.snap.data() || {}
+          order
         );
 
-      const value = Math.max(
-        0,
-        Math.floor(
-          toNumber(drawnCoins, 0)
-        )
-      );
+      const value =
+        Math.max(
+          0,
+          Math.floor(
+            toNumber(
+              drawnCoins,
+              0
+            )
+          )
+        );
 
-      if (quantity > 0 && value > quantity) {
+      if (
+        quantity > 0 &&
+        value > quantity
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -1461,23 +1723,27 @@ router.post(
 
       /*
        * IMPORTANT:
-       * No automatic status change.
-       *
-       * Statuses are manually controlled by admin.
+       * Updating drawnCoins NEVER changes status
+       * automatically.
        */
       await found.ref.update({
-        drawnCoins: value,
-        lastUpdate: TS()
+        drawnCoins:
+          value,
+
+        lastUpdate:
+          TS()
       });
 
       return res.json({
         success: true,
-        drawnCoins: value
+
+        drawnCoins:
+          value
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "Update drawn error:",
-        err?.message
+        error?.message
       );
 
       return res.status(500).json({
@@ -1490,7 +1756,7 @@ router.post(
 );
 
 /* =========================================================
-   Delete order
+   Delete Order
 ========================================================= */
 
 router.post(
@@ -1498,16 +1764,21 @@ router.post(
   requireAdmin,
   async (req, res) => {
     try {
-      const { orderId } =
+      const {
+        orderId
+      } =
         req.body || {};
 
       const found =
-        await findOrder(orderId);
+        await findOrder(
+          orderId
+        );
 
       if (!found) {
         return res.status(404).json({
           success: false,
-          message: "الطلب غير موجود."
+          message:
+            "الطلب غير موجود."
         });
       }
 
@@ -1516,34 +1787,46 @@ router.post(
       return res.json({
         success: true
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "Delete order error:",
-        err?.message
+        error?.message
       );
 
       return res.status(500).json({
         success: false,
-        message: "تعذر حذف الطلب."
+        message:
+          "تعذر حذف الطلب."
       });
     }
   }
 );
 
 /* =========================================================
-   Purge EA sensitive data
+   Purge Sensitive EA Data
 ========================================================= */
 
-/**
- * Manual destruction only.
+/*
+ * الإتلاف يدوي فقط.
  *
- * Requirements:
- * - Admin authenticated.
- * - Order must be completed.
- * - purgeDueAt must have passed.
- * - sensitiveDataPurged must not already be true.
- * - Only EA data is destroyed.
- * - Payment data remains encrypted and intact.
+ * الشروط:
+ * 1. الأدمن authenticated.
+ * 2. الطلب completed.
+ * 3. مرّت 5 أيام على completedAt.
+ * 4. تأكيد ثانٍ confirm === true.
+ * 5. لم يتم الإتلاف مسبقاً.
+ *
+ * يتم حذف:
+ * - EA Email
+ * - EA Password
+ * - Backup Codes
+ *
+ * ولا يتم حذف:
+ * - بيانات الدفع
+ * - رقم الطلب
+ * - المرجع
+ * - بيانات العميل
+ * - سجل الطلب
  */
 router.post(
   "/purge-sensitive",
@@ -1553,7 +1836,8 @@ router.post(
       const {
         orderId,
         confirm
-      } = req.body || {};
+      } =
+        req.body || {};
 
       if (confirm !== true) {
         return res.status(400).json({
@@ -1564,12 +1848,15 @@ router.post(
       }
 
       const found =
-        await findOrder(orderId);
+        await findOrder(
+          orderId
+        );
 
       if (!found) {
         return res.status(404).json({
           success: false,
-          message: "الطلب غير موجود."
+          message:
+            "الطلب غير موجود."
         });
       }
 
@@ -1577,9 +1864,13 @@ router.post(
         found.snap.data() || {};
 
       const status =
-        getOrderStatus(data);
+        getOrderStatus(
+          data
+        );
 
-      if (status !== "completed") {
+      if (
+        status !== "completed"
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -1588,7 +1879,8 @@ router.post(
       }
 
       if (
-        data.sensitiveDataPurged === true
+        data.sensitiveDataPurged ===
+        true
       ) {
         return res.status(400).json({
           success: false,
@@ -1597,6 +1889,11 @@ router.post(
         });
       }
 
+      /*
+       * Prefer completedAt to calculate the due date
+       * for compatibility with older completed orders
+       * that may not have purgeDueAt.
+       */
       let purgeDueAt = null;
 
       if (
@@ -1608,13 +1905,40 @@ router.post(
         data.purgeDueAt
       ) {
         purgeDueAt =
-          new Date(data.purgeDueAt);
+          new Date(
+            data.purgeDueAt
+          );
+      } else if (
+        data.completedAt?.toDate
+      ) {
+        purgeDueAt =
+          new Date(
+            data.completedAt
+              .toDate()
+              .getTime() +
+            PURGE_DELAY_MS
+          );
+      } else if (
+        data.completedAt
+      ) {
+        const completedAt =
+          new Date(
+            data.completedAt
+          );
+
+        if (
+          !Number.isNaN(
+            completedAt.getTime()
+          )
+        ) {
+          purgeDueAt =
+            new Date(
+              completedAt.getTime() +
+              PURGE_DELAY_MS
+            );
+        }
       }
 
-      /*
-       * Legacy completed orders that do not have
-       * purgeDueAt cannot be destroyed blindly.
-       */
       if (
         !purgeDueAt ||
         Number.isNaN(
@@ -1640,42 +1964,52 @@ router.post(
       }
 
       /*
-       * ONLY EA sensitive data is destroyed.
+       * Only EA sensitive data is destroyed.
        *
-       * Payment data remains untouched.
+       * Payment remains encrypted and untouched.
        */
-      const existingAccount =
+      const account =
         data.accountData || {};
 
       await found.ref.update({
         accountData: {
-          ...existingAccount,
+          ...account,
 
-          eaEmail: null,
-          eaPassword: null,
-          backupCodes: null
+          eaEmail:
+            null,
+
+          eaPassword:
+            null,
+
+          backupCodes:
+            null
         },
 
         sensitiveDataPurged:
           true,
 
-        purgedAt: TS(),
+        purgedAt:
+          TS(),
 
         purgedBy:
           req.admin?.email ||
           req.admin?.uid ||
           "Admin",
 
-        lastUpdate: TS()
+        lastUpdate:
+          TS()
       });
 
       return res.json({
-        success: true
+        success: true,
+
+        message:
+          "تم إتلاف بيانات الحساب الحساسة بنجاح."
       });
-    } catch (err) {
+    } catch (error) {
       console.error(
         "Purge sensitive error:",
-        err?.message
+        error?.message
       );
 
       return res.status(500).json({
