@@ -1,4 +1,6 @@
-import admin, { db } from "../services/firebase.js";
+import admin, {
+  db
+} from "../services/firebase.js";
 
 /**
  * ============================================================================
@@ -12,8 +14,11 @@ import admin, { db } from "../services/firebase.js";
  *
  * Authorization requirements:
  * 1. Valid Firebase ID token.
- * 2. Existing document: admins/{uid}.
- * 3. Admin document must not be explicitly disabled.
+ * 2. Token must not be revoked.
+ * 3. Existing document: admins/{uid}.
+ * 4. Admin document must not be explicitly disabled.
+ * 5. If an email is stored in the admin document,
+ *    it must match the verified Firebase identity.
  *
  * The frontend authentication state is NEVER trusted by the backend.
  *
@@ -25,14 +30,21 @@ import admin, { db } from "../services/firebase.js";
  * ============================================================================
  */
 
-/* =========================================================
-   Response Helpers
-========================================================= */
+/**
+ * ============================================================================
+ * Response Helpers
+ * ============================================================================
+ */
 
 function unauthorized(
   res,
   message = "غير مصرح. يجب تسجيل الدخول."
 ) {
+  res.setHeader(
+    "Cache-Control",
+    "no-store"
+  );
+
   return res.status(401).json({
     success: false,
     message
@@ -41,22 +53,32 @@ function unauthorized(
 
 function forbidden(
   res,
-  message = "ليس لديك صلاحية الوصول إلى لوحة الإدارة."
+  message =
+    "ليس لديك صلاحية الوصول إلى لوحة الإدارة."
 ) {
+  res.setHeader(
+    "Cache-Control",
+    "no-store"
+  );
+
   return res.status(403).json({
     success: false,
     message
   });
 }
 
-/* =========================================================
-   Token Extraction
-========================================================= */
+/**
+ * ============================================================================
+ * Token Extraction
+ * ============================================================================
+ */
 
 /**
  * استخراج Firebase ID Token من:
  *
  * Authorization: Bearer <token>
+ *
+ * لا يتم تسجيل القيمة أو إرجاعها للعميل.
  */
 function extractBearerToken(req) {
   const authorization =
@@ -82,12 +104,52 @@ function extractBearerToken(req) {
       match[1] || ""
     ).trim();
 
-  return token || null;
+  if (!token) {
+    return null;
+  }
+
+  return token;
 }
 
-/* =========================================================
-   Admin Middleware
-========================================================= */
+/**
+ * ============================================================================
+ * Admin Document
+ * ============================================================================
+ */
+
+/**
+ * قراءة مستند المدير من Firestore.
+ *
+ * يتم استخدام UID القادم من Firebase فقط.
+ *
+ * @param {string} uid
+ * @returns {Promise<object|null>}
+ */
+async function getAdminRecord(uid) {
+  const adminRef =
+    db
+      .collection("admins")
+      .doc(uid);
+
+  const adminSnap =
+    await adminRef.get();
+
+  if (!adminSnap.exists) {
+    return null;
+  }
+
+  return {
+    ref: adminRef,
+    data:
+      adminSnap.data() || {}
+  };
+}
+
+/**
+ * ============================================================================
+ * Admin Middleware
+ * ============================================================================
+ */
 
 /**
  * Firebase authentication +
@@ -106,8 +168,10 @@ export async function requireAdmin(
       return unauthorized(res);
     }
 
-    /*
-     * التحقق من Firebase ID Token
+    /**
+     * ================================================================
+     * Firebase Token Verification
+     * ================================================================
      *
      * checkRevoked = true
      *
@@ -124,7 +188,7 @@ export async function requireAdmin(
 
     if (
       !decodedToken ||
-      !decodedToken.uid
+      typeof decodedToken !== "object"
     ) {
       return unauthorized(
         res,
@@ -134,7 +198,7 @@ export async function requireAdmin(
 
     const uid =
       String(
-        decodedToken.uid
+        decodedToken.uid || ""
       ).trim();
 
     if (!uid) {
@@ -144,39 +208,39 @@ export async function requireAdmin(
       );
     }
 
-    /* =====================================================
-       Backend Authorization
-    ===================================================== */
-
-    /*
+    /**
+     * ================================================================
+     * Backend Authorization
+     * ================================================================
+     *
      * وجود:
      *
      * admins/{uid}
      *
      * هو حد الصلاحية الفعلي للوحة الإدارة.
      */
-    const adminRef =
-      db
-        .collection("admins")
-        .doc(uid);
+    const adminRecord =
+      await getAdminRecord(uid);
 
-    const adminSnap =
-      await adminRef.get();
-
-    if (!adminSnap.exists) {
+    if (!adminRecord) {
       return forbidden();
     }
 
     const adminData =
-      adminSnap.data() || {};
+      adminRecord.data || {};
 
-    /*
+    /**
+     * ================================================================
+     * Admin Active State
+     * ================================================================
+     *
      * التوافق مع المستندات القديمة:
      *
      * إذا لم توجد active
      * يعتبر الحساب فعالًا.
      *
      * إذا كانت:
+     *
      * active === false
      *
      * يتم رفض الدخول.
@@ -190,9 +254,23 @@ export async function requireAdmin(
       );
     }
 
-    /* =====================================================
-       Identity Validation
-    ===================================================== */
+    /**
+     * ================================================================
+     * Firebase User Disabled State
+     * ================================================================
+     *
+     * verifyIdToken مع checkRevoked=true
+     * يتعامل مع revoked/disabled authentication
+     * حسب Firebase Admin SDK.
+     *
+     * لا نعتمد على بيانات frontend.
+     */
+
+    /**
+     * ================================================================
+     * Identity Validation
+     * ================================================================
+     */
 
     const storedEmail =
       String(
@@ -208,19 +286,22 @@ export async function requireAdmin(
         .trim()
         .toLowerCase();
 
-    /*
-     * إذا كان البريد محفوظًا داخل
-     * admins/{uid}، يجب أن يطابق البريد
-     * الذي تم التحقق منه بواسطة Firebase.
+    /**
+     * إذا كان البريد محفوظًا في:
      *
-     * لا نفرض وجود email في المستند
-     * حفاظًا على توافق المستندات القديمة.
+     * admins/{uid}
+     *
+     * يجب أن يطابق البريد الموجود
+     * في Firebase ID Token.
+     *
+     * إذا لم يكن البريد محفوظًا في المستند،
+     * لا نفرض وجوده حفاظًا على التوافق
+     * مع المستندات القديمة.
      */
     if (
       storedEmail &&
       verifiedEmail &&
-      storedEmail !==
-        verifiedEmail
+      storedEmail !== verifiedEmail
     ) {
       return forbidden(
         res,
@@ -228,40 +309,69 @@ export async function requireAdmin(
       );
     }
 
-    /* =====================================================
-       Safe Request Identity
-    ===================================================== */
+    /**
+     * إذا كان المستند يحتوي على email
+     * لكن Firebase Token لا يحتوي على email،
+     * لا نسمح بالدخول.
+     *
+     * هذا يمنع تجاوز مطابقة الهوية.
+     */
+    if (
+      storedEmail &&
+      !verifiedEmail
+    ) {
+      return forbidden(
+        res,
+        "تعذر التحقق من هوية حساب الإدارة."
+      );
+    }
 
-    /*
-     * نضع فقط البيانات اللازمة
-     * للـ routes اللاحقة.
+    /**
+     * ================================================================
+     * Safe Request Identity
+     * ================================================================
+     *
+     * نضع فقط البيانات اللازمة للـroutes اللاحقة.
      *
      * لا نضع:
      * - ID Token
      * - Authorization Header
      * - Service Account
-     * - بيانات الطلب الحساسة
+     * - Passwords
+     * - Backup Codes
+     * - IBAN
+     * - Payment credentials
+     * - أي بيانات حساسة للطلب
      */
-    req.admin = {
+    req.admin = Object.freeze({
       uid,
+
       email:
         verifiedEmail ||
         storedEmail ||
         "",
-      name: String(
-        adminData.name || ""
-      ).trim(),
+
+      name:
+        String(
+          adminData.name || ""
+        ).trim(),
+
       active:
         adminData.active !== false
-    };
+    });
 
     return next();
+
   } catch (error) {
-    /*
+    /**
+     * ================================================================
+     * Secure Error Handling
+     * ================================================================
+     *
      * لا نسجل:
      * - Authorization header
      * - Firebase ID Token
-     * - body
+     * - request body
      * - بيانات الطلب
      *
      * نسجل فقط Firebase error code.
@@ -277,13 +387,16 @@ export async function requireAdmin(
         "unknown_error"
     );
 
-    /* =====================================================
-       Authentication Errors
-    ===================================================== */
+    /**
+     * ================================================================
+     * Authentication Errors
+     * ================================================================
+     */
 
     switch (errorCode) {
       case "auth/id-token-expired":
       case "auth/id-token-revoked":
+
         return unauthorized(
           res,
           "انتهت جلسة الدخول. يرجى تسجيل الدخول مرة أخرى."
@@ -292,30 +405,28 @@ export async function requireAdmin(
       case "auth/argument-error":
       case "auth/invalid-id-token":
       case "auth/invalid-credential":
+
         return unauthorized(
           res,
           "رمز الدخول غير صالح."
         );
 
-      /*
-       * بعض إصدارات Firebase Admin SDK
-       * قد تستخدم رموزًا مختلفة لحالات
-       * التحقق من الجلسة.
-       */
       case "auth/user-disabled":
       case "auth/user-not-found":
+
         return unauthorized(
           res,
           "حساب الإدارة غير صالح."
         );
 
       default:
-        /*
-         * لا نكشف تفاصيل Firebase/Firestore
+
+        /**
+         * لا نكشف تفاصيل Firebase أو Firestore
          * للعميل.
          *
-         * إذا كان الخطأ متعلقًا بالمصادقة
-         * نرجع 401 بشكل آمن.
+         * جميع الأخطاء غير المعروفة تتحول
+         * إلى رسالة عامة.
          */
         return unauthorized(
           res,
