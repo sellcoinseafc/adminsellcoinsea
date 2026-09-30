@@ -199,7 +199,7 @@
         </div>
 
         <div id="saveEditsButtonWrap" class="hidden"><button class="primary-btn" type="button" onclick="toggleEditMode()" data-i18n="saveChanges">حفظ التعديلات</button></div>
-        <div class="bottom-actions"><button class="secondary-btn" type="button" onclick="showScreen('step2Screen')" data-i18n="back">الرجوع</button><button class="primary-btn" type="button" class="create-order-final-btn" onclick="submitOrderFinal()"><span data-i18n="createOrder">إنشاء الطلب</span><i class="fa-solid fa-check"></i></button></div>
+        <div class="bottom-actions"><button class="secondary-btn" type="button" onclick="showScreen('step2Screen')" data-i18n="back">الرجوع</button><button class="primary-btn create-order-final-btn" type="button" onclick="submitOrderFinal()"><span data-i18n="createOrder">إنشاء الطلب</span><i class="fa-solid fa-check"></i></button></div>
         <div class="security-note"><i class="fa-solid fa-shield-halved"></i><span data-i18n="finalSecurityNote">عند إنشاء الطلب سيتم تأمين بياناتك ومعالجتها وفقًا لنظام الحماية المعتمد.</span></div>
       </section>
 
@@ -233,6 +233,6 @@
 </div>
 
 <div id="toastContainer" class="toast-container"></div>
-<script src="order.js" defer></script>
+<script type="module" src="order.js"></script>
 </body>
 </html>
