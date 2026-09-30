@@ -145,7 +145,58 @@ function normalizeIssue(value) {
 }
 
 function normalizePlatform(value) {
-  return cleanString(value);
+  const platform = cleanString(value);
+  const normalized = platform.toUpperCase();
+
+  if (normalized === "PLAYSTATION" || normalized === "PS" || normalized === "PS4" || normalized === "PS5") return "PlayStation";
+  if (normalized === "XBOX" || normalized === "XB") return "Xbox";
+  if (normalized === "PC") return "PC";
+
+  return "";
+}
+
+function normalizePaymentMethodCode(value) {
+  const text = cleanString(value).toLowerCase();
+  if (["bank", "bank_transfer", "تحويل بنكي"].includes(text)) return "bank";
+  if (["wallet", "digital_wallet", "المحافظ الرقمية"].includes(text)) return "wallet";
+  if (text === "usdt") return "usdt";
+  if (["paypal", "بايبال"].includes(text)) return "paypal";
+  if (["western", "western_union", "ويسترن يونيون"].includes(text)) return "western";
+  return "";
+}
+
+function getConfiguredPaymentCodes(settings, category) {
+  const configured = settings?.paymentMethods;
+
+  if (configured && typeof configured === "object" && !Array.isArray(configured)) {
+    const values = Array.isArray(configured[category]) ? configured[category] : [];
+    return new Set(values.map(normalizePaymentMethodCode).filter(Boolean));
+  }
+
+  const values = Array.isArray(configured) ? configured : [];
+  const categoryCodes = Array.isArray(settings?.paymentCategories?.[category])
+    ? settings.paymentCategories[category]
+    : [];
+
+  if (categoryCodes.length) {
+    return new Set(categoryCodes.map(normalizePaymentMethodCode).filter(Boolean));
+  }
+
+  return new Set(
+    values.map(normalizePaymentMethodCode).filter((code) =>
+      category === "local"
+        ? code === "bank" || code === "wallet"
+        : code === "usdt" || code === "paypal" || code === "western"
+    )
+  );
+}
+
+function isConfiguredPaymentMethod(settings, payout) {
+  const category = payout?.payoutType === "international"
+    ? "international"
+    : "local";
+
+  return getConfiguredPaymentCodes(settings, category).has(payout?.method);
 }
 
 function normalizeBackupCodes(value) {
@@ -1910,7 +1961,15 @@ router.post(
         });
       }
 
-      switch (
+             if (!isConfiguredPaymentMethod(settings, payout)) {
+         return res.status(400).json({
+           success: false,
+           message:
+             "طريقة الدفع غير متاحة حاليًا."
+         });
+       }
+
+switch (
         payout.method
       ) {
         case "bank":
