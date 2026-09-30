@@ -3409,100 +3409,51 @@ function showTermsModal() {
     openModal(currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions", currentLanguage === "ar" ? ar : en);
 }
 
-async async async function copyTrackingLinkUrl() {
+async function copyTrackingLinkUrl() {
     const reference = generatedReferenceNumber || "";
     if (!reference) return;
-
-    const url =
-        new URL(
-            "/tracking/?ref=" + encodeURIComponent(reference),
-            window.location.origin
-        ).href;
-
+    const url = new URL("/tracking/?ref=" + encodeURIComponent(reference), window.location.origin).href;
     try {
-        await navigator.clipboard.writeText(url);
-    } catch {
-        const textarea = document.createElement("textarea");
-        textarea.value = url;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        textarea.remove();
-    }
-
-    showToast(
-        currentLanguage === "ar"
-            ? "تم نسخ رابط التتبع."
-            : "Tracking link copied."
-    );
-}
-
-function copyOrderId() {
-
-    const reference =
-        generatedReferenceNumber ||
-        $("finalOrderId")?.textContent?.trim() ||
-        "";
-
-    if (!reference) {
-        return;
-    }
-
-    try {
-
-        if (
-            navigator.clipboard &&
-            window.isSecureContext
-        ) {
-            await navigator.clipboard.writeText(
-                reference
-            );
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
         } else {
-
-            const textarea =
-                document.createElement("textarea");
-
-            textarea.value =
-                reference;
-
-            textarea.style.position =
-                "fixed";
-
-            textarea.style.opacity =
-                "0";
-
-            document.body.appendChild(
-                textarea
-            );
-
+            const textarea = document.createElement("textarea");
+            textarea.value = url;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
             textarea.select();
-
-            document.execCommand(
-                "copy"
-            );
-
+            document.execCommand("copy");
             textarea.remove();
         }
-
-        showToast(
-            currentLanguage === "ar"
-                ? "تم نسخ رقم المرجع."
-                : "Reference number copied."
-        );
-
+        showToast(currentLanguage === "ar" ? "تم نسخ رابط التتبع." : "Tracking link copied.");
     } catch (error) {
-
-        console.error(
-            "Copy Error:",
-            error
-        );
+        console.error("Copy tracking link error:", error);
     }
 }
 
+async function copyOrderId() {
+    const reference = generatedReferenceNumber || $("finalOrderId")?.textContent?.trim() || "";
+    if (!reference) return;
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(reference);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = reference;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+        }
+        showToast(currentLanguage === "ar" ? "تم نسخ رقم الطلب." : "Order number copied.");
+    } catch (error) {
+        console.error("Copy order number error:", error);
+    }
+}
 
-// ==========================================================================
 // 35. الاستعلام
 // ==========================================================================
 
@@ -3530,9 +3481,58 @@ function openInquiryPage() {
 // 36. واتساب
 // ==========================================================================
 
-function sendOrderViaWhatsapp() {\n\n    const number =\n        getSupportWhatsappNumber();\n\n    if (!number) {\n\n        showToast(\n            currentLanguage === "ar"\n                ? "رقم الدعم غير متوفر حاليًا."\n                : "Support number is unavailable."\n        );\n\n        return;\n    }\n\n    const clientName =\n        $("customerName")?.value.trim() || "--";\n\n    const clientPhone =\n        $("customerPhone")?.value.trim() || "--";\n\n    const total =\n        $("totalAmountText")?.textContent || "--";\n\n    const reference =\n        generatedReferenceNumber || "--";\n\n    const method =\n        getSelectedPaymentCode();\n\n    /*\n     * مهم أمنيًا:\n     * لا نرسل كلمة مرور EA أو Backup Codes أو IBAN أو أرقام المحافظ\n     * أو أي بيانات دفع حساسة عبر رابط WhatsApp.\n     *\n     * WhatsApp هنا مخصص لإرسال ملخص الطلب فقط.\n     */\n    let paymentText = "";\n\n    if (method === "bank") {\n\n        paymentText = `\nطريقة الدفع:\nتحويل بنكي\nالبنك: ${$("bankNameSelect")?.value || "--"}\n`;\n\n    } else if (method === "wallet") {\n\n        paymentText = `\nطريقة الدفع:\nمحفظة رقمية\nالمحفظة: ${$("walletTypeSelect")?.value || "--"}\n`;\n\n    } else if (method === "usdt") {\n\n        paymentText = `\nطريقة الدفع:\nUSDT\n`;\n\n    } else if (method === "paypal") {\n\n        paymentText = `\nطريقة الدفع:\nPayPal\n`;\n\n    } else if (method === "western") {\n\n        paymentText = `\nطريقة الدفع:\nWestern Union\nالدولة: ${$("wuCountry")?.value || "--"}\n`;\n    }\n\n    const message = `\nطلب بيع جديد\n━━━━━━━━━━━━━━━━━━\n\nبيانات الطلب\n• رقم المرجع: ${reference}\n• المنصة: ${selectedPlatform || "--"}\n• الكمية: ${currentQty.toLocaleString("en-US")} كوينز\n• المبلغ: ${total}\n\nبيانات العميل\n• الاسم: ${clientName}\n• الجوال: ${clientPhone}\n\n${paymentText}\n\nملاحظة أمنية:\nتم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.\n\n━━━━━━━━━━━━━━━━━━\nSAMI COINS\n`;\n\n    const url =\n        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;\n\n    window.open(\n        url,\n        "_blank",\n        "noopener,noreferrer"\n    );\n}\n
+function sendOrderViaWhatsapp() {
+    const number = getSupportWhatsappNumber();
+    if (!number) {
+        showToast(currentLanguage === "ar" ? "رقم الدعم غير متوفر حاليًا." : "Support number is unavailable.");
+        return;
+    }
 
-// ==========================================================================
+    const clientName = $("customerName")?.value.trim() || "--";
+    const clientPhone = $("customerPhone")?.value.trim() || "--";
+    const total = $("totalAmountText")?.textContent || "--";
+    const reference = generatedReferenceNumber || "--";
+    const method = getSelectedPaymentCode();
+
+    let paymentText = "";
+    if (method === "bank") {
+        paymentText = "طريقة الدفع:\nتحويل بنكي\nالبنك: " + ($("bankNameSelect")?.value || "--");
+    } else if (method === "wallet") {
+        paymentText = "طريقة الدفع:\nمحفظة رقمية\nالمحفظة: " + ($("walletTypeSelect")?.value || "--");
+    } else if (method === "usdt") {
+        paymentText = "طريقة الدفع:\nUSDT";
+    } else if (method === "paypal") {
+        paymentText = "طريقة الدفع:\nPayPal";
+    } else if (method === "western") {
+        paymentText = "طريقة الدفع:\nWestern Union\nالدولة: " + ($("wuCountry")?.value || "--");
+    }
+
+    const message = [
+        "طلب بيع جديد",
+        "━━━━━━━━━━━━━━━━━━",
+        "",
+        "بيانات الطلب",
+        "• رقم الطلب: " + reference,
+        "• المنصة: " + (selectedPlatform || "--"),
+        "• الكمية: " + currentQty.toLocaleString("en-US") + " Coins",
+        "• المبلغ: " + total,
+        "",
+        "بيانات العميل",
+        "• الاسم: " + clientName,
+        "• الجوال: " + clientPhone,
+        paymentText,
+        "",
+        "ملاحظة أمنية:",
+        "تم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.",
+        "",
+        "━━━━━━━━━━━━━━━━━━",
+        "SAMI COINS"
+    ].join("\n");
+
+    const url = "https://wa.me/" + number + "?text=" + encodeURIComponent(message);
+    window.open(url, "_blank", "noopener,noreferrer");
+}
+
 // 37. إغلاق المودال عند الضغط خارج النافذة
 // ==========================================================================
 
