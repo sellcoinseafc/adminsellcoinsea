@@ -6484,6 +6484,18 @@ function populatePricingUI(
     };
 
   setValue(
+    "gameVersion",
+    config.gameVersion ||
+      27
+  );
+
+  setValue(
+    "gameName",
+    config.gameName ||
+      "FC"
+  );
+
+  setValue(
     "psRate",
     config.psRate ||
       200
@@ -6585,6 +6597,19 @@ window.saveProductsConfig =
           "storeNameInput"
         )?.value ||
         "",
+
+      gameName:
+        document.getElementById(
+          "gameName"
+        )?.value ||
+        "FC",
+
+      gameVersion:
+        Number(
+          document.getElementById(
+            "gameVersion"
+          )?.value
+        ) || 27,
 
       supportWhatsapp:
         document.getElementById(
