@@ -2279,6 +2279,8 @@ router.post(
 
         referenceNumber,
 
+        internalReference,
+
         documentId:
           documentRef.id,
 
