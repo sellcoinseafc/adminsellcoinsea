@@ -660,17 +660,17 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
 
 /* Canonical mobile order-card presentation. */
 @media (max-width: 760px) {
-  .orders-table,
-  table.orders-table,
-  .orders-table table {
+  .table-responsive table,
+  table.table-responsive table,
+  .table-responsive table table {
     display: block;
     width: 100%;
   }
-  .orders-table thead { display: none; }
-  .orders-table tbody,
-  .orders-table tr,
-  .orders-table td { display: block; width: 100%; box-sizing: border-box; }
-  .orders-table tr {
+  .table-responsive table thead { display: none; }
+  .table-responsive table tbody,
+  .table-responsive table tr,
+  .table-responsive table td { display: block; width: 100%; box-sizing: border-box; }
+  .table-responsive table tr {
     margin: 0 0 12px;
     padding: 14px;
     border: 1px solid rgba(255,255,255,.08);
@@ -678,11 +678,11 @@ td { padding: 14px 16px; border-bottom: 1.5px solid var(--card-border); font-wei
     background: rgba(10,14,25,.94);
     box-shadow: 0 8px 24px rgba(0,0,0,.18);
   }
-  .orders-table td {
+  .table-responsive table td {
     padding: 7px 0;
     border: 0;
   }
-  .orders-table td:first-child {
+  .table-responsive table td:first-child {
     font-size: 18px;
     font-weight: 800;
   }
