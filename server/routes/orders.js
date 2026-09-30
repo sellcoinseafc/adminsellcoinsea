@@ -1,3 +1,4 @@
+server/routes/orders.js
 import express from "express";
 import admin, { db } from "../services/firebase.js";
 import {
@@ -6,7 +7,10 @@ import {
   isEncryptedValue
 } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
-import { generateOrderNumbers } from "../services/orderNumber.js";
+import {
+  generateOrderNumbers,
+  isValidReferenceNumber
+} from "../services/orderNumber.js";
 
 const router = express.Router();
 
@@ -1926,6 +1930,48 @@ router.post(
         serial
       } =
         await generateOrderNumbers();
+
+      /*
+       * The order-number service is the single authority for the
+       * customer-facing reference. Validate its result here as a
+       * defensive boundary before allowing the order to be written.
+       *
+       * Expected format:
+       * - 8 characters
+       * - 5 digits + 3 letters
+       * - first and last character are digits
+       * - letters come from the approved alphabet
+       * - no repeated letter inside the same reference
+       */
+      if (!isValidReferenceNumber(referenceNumber)) {
+        console.error(
+          "Invalid generated order reference:",
+          referenceNumber
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "تعذر إنشاء رقم الطلب بشكل آمن."
+        });
+      }
+
+      if (
+        !cleanString(orderId) ||
+        !Number.isSafeInteger(Number(serial)) ||
+        Number(serial) <= 0
+      ) {
+        console.error(
+          "Invalid order numbering payload:",
+          { orderId, referenceNumber, serial }
+        );
+
+        return res.status(500).json({
+          success: false,
+          message:
+            "تعذر إنشاء بيانات الطلب بشكل آمن."
+        });
+      }
 
       /* =====================================================
          Encryption
