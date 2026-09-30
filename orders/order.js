@@ -719,6 +719,17 @@ function contactClosedStoreWhatsapp() {
 
 function applySettingsToUI() {
 
+    const gameName =
+        storeSettings.gameName || "FC";
+
+    const gameVersion =
+        Number(storeSettings.gameVersion || 27);
+
+    setText(
+        "gameVersionBadge",
+        `${gameName} ${gameVersion}`
+    );
+
     // الأسعار
     const rates =
         storeSettings.rates || {};
