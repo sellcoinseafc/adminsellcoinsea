@@ -900,6 +900,15 @@ router.post(
        * لا نرسل order كامل.
        */
 
+      // Prevent browsers, proxies, and shared caches from storing
+      // the decrypted sensitive response.
+      res.set({
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, private",
+        Pragma: "no-cache",
+        Expires: "0"
+      });
+
       const response = {
         orderId:
           String(
