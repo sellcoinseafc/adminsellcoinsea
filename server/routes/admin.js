@@ -1,10 +1,14 @@
 import express from "express";
+import admin from "firebase-admin";
 import { db } from "../services/firebase.js";
 import {
   decrypt,
   isEncryptedValue
 } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
+import {
+  requireDecryptPermission
+} from "../middleware/decrypt.js";
 
 const router = express.Router();
 
@@ -798,6 +802,7 @@ router.get(
 router.post(
   "/decrypt-order",
   requireAdmin,
+  requireDecryptPermission,
   async (req, res) => {
     try {
       const orderIdentifier =
@@ -900,15 +905,6 @@ router.post(
        * لا نرسل order كامل.
        */
 
-      // Prevent browsers, proxies, and shared caches from storing
-      // the decrypted sensitive response.
-      res.set({
-        "Cache-Control":
-          "no-store, no-cache, must-revalidate, private",
-        Pragma: "no-cache",
-        Expires: "0"
-      });
-
       const response = {
         orderId:
           String(
@@ -1002,5 +998,238 @@ router.post(
     }
   }
 );
+
+/**
+ * ============================================================================
+ * POST /api/admin/destroy-sensitive-data
+ * ============================================================================
+ *
+ * إتلاف نهائي للبيانات الحساسة للطلب.
+ *
+ * - يتطلب مديرًا موثقًا.
+ * - يحذف فقط الحقول الحساسة المعروفة.
+ * - لا يحذف سجل الطلب.
+ * - بعد النجاح يتم وضع علامة sensitivePurged.
+ *
+ * ملاحظة:
+ * Firestore update/deleteField() يجعل الحقول غير قابلة للاسترجاع من السجل.
+ * ============================================================================
+ */
+
+router.post(
+  "/destroy-sensitive-data",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const orderIdentifier =
+        normalizeIdentifier(
+          req.body?.orderId
+        );
+
+      if (!orderIdentifier) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "رقم الطلب مطلوب"
+        });
+      }
+
+      const found =
+        await findOrder(
+          orderIdentifier
+        );
+
+      if (!found) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "الطلب غير موجود"
+        });
+      }
+
+      const order =
+        found.data || {};
+
+      /*
+       * إذا تم الإتلاف مسبقًا، لا نعيد العملية.
+       */
+      if (
+        order.sensitivePurged === true ||
+        order.sensitiveDataPurged === true ||
+        order.purgedAt
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "تم إتلاف البيانات الحساسة لهذا الطلب مسبقًا."
+        });
+      }
+
+      const FieldValue =
+        admin.firestore.FieldValue;
+
+      const updateData = {
+        "accountData.eaEmail":
+          FieldValue.delete(),
+
+        "accountData.eaPassword":
+          FieldValue.delete(),
+
+        "accountData.backupCodes":
+          FieldValue.delete(),
+
+        "payoutDetails.fullName":
+          FieldValue.delete(),
+
+        "payoutDetails.iban":
+          FieldValue.delete(),
+
+        "payoutDetails.phone":
+          FieldValue.delete(),
+
+        "payoutDetails.walletPhone":
+          FieldValue.delete(),
+
+        "payoutDetails.walletNumber":
+          FieldValue.delete(),
+
+        "payoutDetails.wallet":
+          FieldValue.delete(),
+
+        "payoutDetails.usdtWallet":
+          FieldValue.delete(),
+
+        "payoutDetails.walletAddress":
+          FieldValue.delete(),
+
+        "payoutDetails.email":
+          FieldValue.delete(),
+
+        "payoutDetails.paypalEmail":
+          FieldValue.delete(),
+
+        "payoutDetails.fullNameEnglish":
+          FieldValue.delete(),
+
+        "payoutDetails.westernName":
+          FieldValue.delete(),
+
+        "payoutDetails.country":
+          FieldValue.delete(),
+
+        "payoutDetails.westernCountry":
+          FieldValue.delete(),
+
+        /*
+         * Legacy paymentInfoData.
+         */
+        "paymentInfoData.fullName":
+          FieldValue.delete(),
+
+        "paymentInfoData.iban":
+          FieldValue.delete(),
+
+        "paymentInfoData.phone":
+          FieldValue.delete(),
+
+        "paymentInfoData.walletPhone":
+          FieldValue.delete(),
+
+        "paymentInfoData.walletNumber":
+          FieldValue.delete(),
+
+        "paymentInfoData.wallet":
+          FieldValue.delete(),
+
+        "paymentInfoData.usdtWallet":
+          FieldValue.delete(),
+
+        "paymentInfoData.walletAddress":
+          FieldValue.delete(),
+
+        "paymentInfoData.email":
+          FieldValue.delete(),
+
+        "paymentInfoData.paypalEmail":
+          FieldValue.delete(),
+
+        "paymentInfoData.fullNameEnglish":
+          FieldValue.delete(),
+
+        "paymentInfoData.westernName":
+          FieldValue.delete(),
+
+        "paymentInfoData.country":
+          FieldValue.delete(),
+
+        "paymentInfoData.westernCountry":
+          FieldValue.delete(),
+
+        sensitivePurged: true,
+
+        sensitiveDataPurged: true,
+
+        purgedAt:
+          FieldValue.serverTimestamp(),
+
+        purgedBy:
+          String(
+            req.admin.uid
+          )
+      };
+
+      await db
+        .collection("orders")
+        .doc(found.id)
+        .update(updateData);
+
+      /*
+       * تنظيف أي نافذة decrypt موجودة لهذا الطلب
+       * لهذا المدير حتى لا تبقى نافذة قديمة في الذاكرة.
+       */
+      decryptWindows.delete(
+        getDecryptWindowKey(
+          req.admin.uid,
+          found.id
+        )
+      );
+
+      return res.json({
+        success: true,
+        message:
+          "تم إتلاف البيانات الحساسة بنجاح.",
+        data: {
+          orderId:
+            String(
+              order.orderId ||
+              found.id
+            ),
+
+          referenceNumber:
+            String(
+              order.referenceNumber ||
+              ""
+            ),
+
+          sensitivePurged: true
+        }
+      });
+    } catch (error) {
+      console.error(
+        "Admin destroy-sensitive-data error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "تعذر إتلاف البيانات الحساسة."
+      });
+    }
+  }
+);
+
 
 export default router;
