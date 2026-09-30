@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import adminRoutes from "./server/routes/admin.js";
 import ordersRouter from "./server/routes/orders.js";
 import trackingRouter from "./server/routes/tracking.js";
+import { db } from "./server/services/firebase.js";
 
 /**
  * ============================================================================
@@ -258,19 +259,41 @@ app.use(
 
 app.get(
   "/api/health",
-  (req, res) => {
+  async (req, res) => {
     res.setHeader(
       "Cache-Control",
       "no-store"
     );
 
-    return res.json({
-      success: true,
-      status: "online",
-      service:
-        "adminsellcoinsea",
-      port: PORT
-    });
+    try {
+      await db
+        .collection("system")
+        .doc("settings")
+        .get();
+
+      return res.json({
+        success: true,
+        status: "online",
+        database: "online",
+        service:
+          "adminsellcoinsea",
+        port: PORT
+      });
+    } catch (error) {
+      console.error(
+        "Health database check failed:",
+        error?.code || "unknown_error"
+      );
+
+      return res.status(503).json({
+        success: false,
+        status: "online",
+        database: "offline",
+        service:
+          "adminsellcoinsea",
+        port: PORT
+      });
+    }
   }
 );
 
