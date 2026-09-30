@@ -62,35 +62,35 @@ const STATUS_VALUES = [
 const ISSUE_VALUES = [
   "wrong_credentials",
   "wrong_backup_codes",
+  "logged_in_platform",
   "market_closed",
-  "no_player",
   "wrong_platform",
   "other_issue"
 ];
 
 const DEFAULT_ISSUE_MESSAGES = {
   wrong_credentials:
-    "بيانات الدخول غير صحيحة",
+    "يرجى إرسال الإيميل والباسورد الصحيح عبر الواتساب",
 
   wrong_backup_codes:
-    "رموز النسخ الاحتياطية غير صحيحة",
+    "يرجى إرسال أكواد احتياطية جديدة",
+
+  logged_in_platform:
+    "يرجى إعلامنا عبر الواتساب",
 
   market_closed:
-    "سوق الانتقالات مغلق",
-
-  no_player:
-    "لا يوجد لاعب مطابق",
+    "سوق الانتقالات مغلق في Web App، يرجى التواصل معنا عبر الواتساب",
 
   wrong_platform:
-    "المنصة المحددة غير صحيحة",
+    "يرجى التواصل معنا عبر الواتساب",
 
   other_issue:
-    "توجد مشكلة في الطلب"
+    "يرجى التواصل معنا عبر الواتساب بشكل عاجل"
 };
 
 const STATUS_LABELS = {
   new: "طلب جديد",
-  review: "انتظار المراجعة",
+  review: "طلب بانتظار المراجعة",
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوينز من حسابك",
   transferred: "تم تحويل المبلغ إلى حسابك",
@@ -99,12 +99,12 @@ const STATUS_LABELS = {
 };
 
 const ISSUE_LABELS = {
-  wrong_credentials: "بيانات الدخول غير صحيحة",
-  wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
+  wrong_credentials: "الإيميل أو الباسورد غير صحيح",
+  wrong_backup_codes: "الأكواد الاحتياطية غير صحيحة",
+  logged_in_platform: "تم تسجيل الدخول عبر المنصة يرجى تسجيل الخروج",
   market_closed: "سوق الانتقالات مغلق",
-  no_player: "لا يوجد لاعب مطابق",
-  wrong_platform: "المنصة المحددة غير صحيحة",
-  other_issue: "مشكلة أخرى"
+  wrong_platform: "المنصة غير صحيحة",
+  other_issue: "مشاكل أخرى"
 };
 
 const DECRYPT_WINDOW_MS = 90_000;
@@ -1447,6 +1447,94 @@ function getIssueLabel(
   );
 }
 
+async function sendIssueViaWhatsapp(orderId) {
+  const order = ordersData.find((item) => item.id === orderId);
+  if (!order || !order.phone || !order.issue) {
+    alert("لا توجد بيانات كافية لإرسال رسالة واتساب.");
+    return;
+  }
+
+  const message = String(
+    order.issueMessage ||
+    DEFAULT_ISSUE_MESSAGES[order.issue] ||
+    ""
+  ).trim();
+
+  if (!message) {
+    alert("لا توجد رسالة مجهزة لهذه المشكلة.");
+    return;
+  }
+
+  const phone = String(order.phone).replace(/[^0-9]/g, "");
+  const textMessage = (
+    "مرحباً " + (order.name || "") +
+    "\n\n" + message +
+    "\n\nرقم الطلب: " + (order.referenceNumber || "--") +
+    "\n\nسامي كوينز"
+  ).trim();
+
+  localStorage.setItem(
+    "samiCoins:lastWhatsApp:" + order.id,
+    JSON.stringify({
+      phone,
+      message: textMessage,
+      templateCode: order.issue,
+      savedAt: Date.now()
+    })
+  );
+
+  try {
+    await adminFetch("/api/admin/log-whatsapp", {
+      method: "POST",
+      body: JSON.stringify({
+        orderId: order.id,
+        referenceNumber: order.referenceNumber || "",
+        recipient: phone,
+        message: textMessage,
+        templateCode: order.issue
+      })
+    });
+  } catch (error) {
+    console.warn("WhatsApp log failed:", error);
+  }
+
+  window.open(
+    "https://wa.me/" + phone + "?text=" + encodeURIComponent(textMessage),
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
+function resendLastWhatsapp(orderId) {
+  const raw = localStorage.getItem(
+    "samiCoins:lastWhatsApp:" + orderId
+  );
+
+  if (!raw) {
+    alert("لا توجد رسالة واتساب سابقة لهذا الطلب.");
+    return;
+  }
+
+  try {
+    const saved = JSON.parse(raw);
+
+    if (!saved?.phone || !saved?.message) {
+      throw new Error("invalid_saved_message");
+    }
+
+    window.open(
+      "https://wa.me/" +
+        saved.phone +
+        "?text=" +
+        encodeURIComponent(saved.message),
+      "_blank",
+      "noopener,noreferrer"
+    );
+  } catch {
+    alert("تعذر إعادة إرسال الرسالة السابقة.");
+  }
+}
+
 function getIssueBadge(
   issue
 ) {
@@ -2153,6 +2241,23 @@ function buildActionButtonsHTML(
         <i class="fa-solid fa-box-archive"></i>
       </button>
 
+      ${order.issue ? `
+      <button
+        class="btn-action"
+        style="color:#25D366;border-color:#25D366;"
+        title="إرسال رسالة المشكلة عبر واتساب"
+        onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')">
+        <i class="fa-brands fa-whatsapp"></i>
+      </button>
+      <button
+        class="btn-action"
+        style="color:#25D366;border-color:#25D366;"
+        title="إعادة إرسال آخر رسالة واتساب"
+        onclick="resendLastWhatsapp('${escapeAttribute(order.id)}')">
+        <i class="fa-solid fa-rotate-right"></i>
+      </button>
+      ` : ""}
+      
       <button
         class="btn-action"
         style="color:var(--danger);border-color:var(--danger);"
