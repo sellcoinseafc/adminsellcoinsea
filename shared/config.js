@@ -27,6 +27,12 @@
 export const APP_CONFIG = Object.freeze({
     name: "SAMI COINS",
 
+    arabicName: "سامي كوينز",
+
+    gameName: "FC",
+
+    gameVersion: 27,
+
     version: "2.6",
 
     environment:
@@ -99,6 +105,10 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 
     reviews: "reviews",
 
+    auditLogs: "audit_logs",
+
+    whatsappLogs: "whatsappLogs",
+
     archive: "archive"
 });
 
@@ -112,7 +122,9 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 export const SYSTEM_DOCUMENTS = Object.freeze({
     settings: "settings",
 
-    orderNumbering: "orderNumbering"
+    orderNumbering: "orderNumbering",
+
+    settings: "settings"
 });
 
 
@@ -177,13 +189,22 @@ export const ORDER_STATUSES = Object.freeze({
         "جاري سحب الكوينز من حسابك",
 
     WITHDRAWN:
-        "تم الانتهاء من سحب الكوينز بحسابك",
+        "تم الانتهاء من سحب الكوينز من حسابك",
 
     TRANSFERRED:
-        "تم تحويل المبلغ إلى حسابك",
+        "تم تحويل المبلغ لحسابك",
 
     COMPLETED:
         "مكتمل"
+});
+
+export const ORDER_STATUS_CODES = Object.freeze({
+    NEW: "new",
+    PENDING_REVIEW: "review",
+    WITHDRAWING: "progress",
+    WITHDRAWN: "finished",
+    TRANSFERRED: "transferred",
+    COMPLETED: "completed"
 });
 
 
@@ -195,16 +216,31 @@ export const ORDER_STATUSES = Object.freeze({
 
 export const ORDER_ISSUES = Object.freeze({
     WRONG_CREDENTIALS:
-        "بيانات الدخول غير صحيحة",
+        "الإيميل أو الباسورد غير صحيح",
 
     WRONG_BACKUP_CODES:
-        "رموز النسخ الاحتياطية غير صحيحة",
+        "الأكواد الاحتياطية غير صحيحة",
 
-    WEB_APP_ISSUE:
-        "توجد مشكلة في Web App",
+    LOGGED_IN_PLATFORM:
+        "تم تسجيل الدخول عبر المنصة يرجى تسجيل الخروج",
+
+    MARKET_CLOSED:
+        "سوق الانتقالات مغلق",
 
     WRONG_PLATFORM:
-        "المنصة المحددة غير صحيحة"
+        "المنصة غير صحيحة",
+
+    OTHER:
+        "مشاكل أخرى"
+});
+
+export const ORDER_ISSUE_CODES = Object.freeze({
+    WRONG_CREDENTIALS: "wrong_credentials",
+    WRONG_BACKUP_CODES: "wrong_backup_codes",
+    LOGGED_IN_PLATFORM: "logged_in_platform",
+    MARKET_CLOSED: "market_closed",
+    WRONG_PLATFORM: "wrong_platform",
+    OTHER: "other_issue"
 });
 
 
@@ -213,9 +249,16 @@ export const ORDER_ISSUES = Object.freeze({
  */
 
 export const ALL_ORDER_STATUSES = Object.freeze([
-    ...Object.values(ORDER_STATUSES),
+    ...Object.values(ORDER_STATUSES)
+]);
 
+export const ALL_ORDER_ISSUES = Object.freeze([
     ...Object.values(ORDER_ISSUES)
+]);
+
+export const ALL_ORDER_VALUES = Object.freeze([
+    ...ALL_ORDER_STATUSES,
+    ...ALL_ORDER_ISSUES
 ]);
 
 
@@ -306,7 +349,7 @@ export const ALL_SENSITIVE_FIELDS = Object.freeze([
  * هذا الملف يحتوي فقط على مواصفات النظام.
  */
 
-export const REFERENCE_CONFIG = Object.freeze({
+export const ORDER_NUMBER_CONFIG = Object.freeze({
     length: 8,
 
     digitsCount: 5,
@@ -317,15 +360,56 @@ export const REFERENCE_CONFIG = Object.freeze({
 
     lastCharacter: "digit",
 
+    letterPositions: Object.freeze([
+        1, 2, 3, 4, 5, 6
+    ]),
+
     excludedLetters: Object.freeze([
         "I",
-
         "L"
     ]),
+
+    letterAlphabet:
+        "ABCDEFGHJKMNOPQRSTUVWXYZ",
+
+    lettersMustBeDistinct: true,
+
+    generatedServerSide: true,
+
+    uniquenessRequired: true,
+
+    reservationCollection:
+        FIRESTORE_COLLECTIONS.orderReferences,
+
+    neverReuseAfterDeletion: true,
 
     pattern:
         "8 characters / 5 digits / 3 letters"
 });
+
+export const INTERNAL_REFERENCE_CONFIG = Object.freeze({
+    prefix: "FC",
+
+    randomDigits: 3,
+
+    sequenceEnabled: true,
+
+    sequenceDocument:
+        SYSTEM_DOCUMENTS.orderNumbering,
+
+    customerVisible: false,
+
+    usedForTracking: false,
+
+    format: "FC-XXX-N"
+});
+
+/**
+ * Legacy alias kept only to prevent breaking older imports while the
+ * application is migrated to the explicit ORDER_NUMBER_CONFIG name.
+ * New code must use ORDER_NUMBER_CONFIG for the customer-facing order number.
+ */
+export const REFERENCE_CONFIG = ORDER_NUMBER_CONFIG;
 
 
 /**
@@ -341,11 +425,15 @@ export const REFERENCE_CONFIG = Object.freeze({
 export const WITHDRAWAL_CONFIG = Object.freeze({
     manual: true,
 
-    realtime: true,
+    adminControlled: true,
+
+    trackingRealtime: true,
 
     timerEnabled: false,
 
-    quantityField: "withdrawnQuantity"
+    quantityField: "withdrawnQuantity",
+
+    legacyQuantityField: "drawnCoins"
 });
 
 
@@ -404,6 +492,8 @@ export const INVENTORY_CONFIG = Object.freeze({
 
 export const TRACKING_CONFIG = Object.freeze({
     realtime: true,
+
+    transport: "sse",
 
     pollingEnabled: false,
 
@@ -524,6 +614,27 @@ export const PAYMENT_METHODS = Object.freeze({
     PAYPAL: "paypal",
 
     WESTERN_UNION: "western_union"
+});
+
+export const PAYMENT_CATEGORIES = Object.freeze({
+    LOCAL: "local",
+    INTERNATIONAL: "international"
+});
+
+export const PAYMENT_METHOD_CATEGORY = Object.freeze({
+    [PAYMENT_METHODS.BANK_TRANSFER]: PAYMENT_CATEGORIES.LOCAL,
+    [PAYMENT_METHODS.DIGITAL_WALLET]: PAYMENT_CATEGORIES.LOCAL,
+    [PAYMENT_METHODS.USDT]: PAYMENT_CATEGORIES.INTERNATIONAL,
+    [PAYMENT_METHODS.PAYPAL]: PAYMENT_CATEGORIES.INTERNATIONAL,
+    [PAYMENT_METHODS.WESTERN_UNION]: PAYMENT_CATEGORIES.INTERNATIONAL
+});
+
+export const PAYMENT_CONFIG = Object.freeze({
+    usdSarRate: 3.75,
+    usdMethods: Object.freeze([
+        PAYMENT_METHODS.USDT,
+        PAYMENT_METHODS.PAYPAL
+    ])
 });
 
 
@@ -669,6 +780,24 @@ export default {
     UI_CONFIG,
 
     PAYMENT_METHODS,
+
+    PAYMENT_CATEGORIES,
+
+    PAYMENT_METHOD_CATEGORY,
+
+    PAYMENT_CONFIG,
+
+    ORDER_STATUS_CODES,
+
+    ORDER_ISSUE_CODES,
+
+    ALL_ORDER_ISSUES,
+
+    ALL_ORDER_VALUES,
+
+    ORDER_NUMBER_CONFIG,
+
+    INTERNAL_REFERENCE_CONFIG,
 
     getApiUrl,
 
