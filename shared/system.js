@@ -191,6 +191,9 @@ export const defaultSettings = {
     pcTransferDuration:
         "24 ساعة",
 
+    safeMethod:
+        "سوق الانتقالات (Web App)",
+
     /*
      * Legacy/manual value kept only for compatibility.
      *
@@ -298,6 +301,19 @@ export const defaultSettings = {
         "لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.",
         "لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.",
         "إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل."
+    ],
+
+    termsEn: [
+        "Orders are processed according to the market price at the time of processing.",
+        "If the market changes, the seller will be notified of any price adjustment before processing.",
+        "No coins will be withdrawn or transferred without the seller's prior approval.",
+        "Submitting an order does not guarantee full execution or execution at the original price.",
+        "Processing time varies according to market conditions and order volume, and minor delays may occur.",
+        "Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.",
+        "SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.",
+        "SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.",
+        "No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.",
+        "Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions."
     ],
 
     /**
