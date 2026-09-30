@@ -737,38 +737,38 @@ function applySettingsToUI() {
     if (rates.PlayStation !== undefined) {
         setText(
             "psSubPrice",
-            `${rates.PlayStation} ر.س`
+            `${rates.PlayStation} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
         );
     }
 
     if (rates.Xbox !== undefined) {
         setText(
             "xboxSubPrice",
-            `${rates.Xbox} ر.س`
+            `${rates.Xbox} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
         );
     }
 
     if (rates.PC !== undefined) {
         setText(
             "pcSubPrice",
-            `${rates.PC} ر.س`
+            `${rates.PC} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
         );
     }
 
     // المدد
     setText(
         "withdrawText",
-        storeSettings.withdrawDays || "--"
+        localizeSettingText(storeSettings.withdrawDays)
     );
 
     setText(
         "transferText",
-        storeSettings.transferHours || "--"
+        localizeSettingText(storeSettings.transferHours)
     );
 
     setText(
         "safeMethodText",
-        storeSettings.safeMethod || "--"
+        localizeSettingText(storeSettings.safeMethod)
     );
 
     setText(
@@ -1323,7 +1323,7 @@ function calculateTotal() {
     } else {
 
         totalEl.textContent =
-            `${totalSar.toFixed(2)} ر.س`;
+            `${totalSar.toFixed(2)} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`;
     }
 
     const reviewTotal =
@@ -3068,7 +3068,7 @@ async function submitOrderFinal() {
 
         setText(
             "billQty",
-            `${currentQty.toLocaleString("en-US")} كوينز`
+            `${currentQty.toLocaleString("en-US")} ${currentLanguage === "ar" ? "كوينز" : "Coins"}`
         );
 
         setText(
@@ -3334,56 +3334,80 @@ function showSupportModal() {
 // ==========================================================================
 
 function showPrivacyModal() {
-
-    openModal(
-        currentLanguage === "ar"
-            ? "سياسة الخصوصية والأمان"
-            : "Privacy & Security",
-
-        `
-        <div style="text-align:right;line-height:2;">
-            <p>
-                ${
-                    currentLanguage === "ar"
-                        ? "نحن نعمل على حماية بياناتك والتعامل معها بسرية وأمان."
-                        : "We work to protect your data and handle it securely and confidentially."
-                }
-            </p>
-        </div>
-        `
-    );
+    const ar = `
+        <div class="legal-content" dir="rtl">
+            <p><strong>متجر سامي كوينز</strong> يحترم خصوصيتك ويلتزم بالتعامل مع بياناتك الشخصية بسرية وأمان وفق الأنظمة المعمول بها في المملكة العربية السعودية.</p>
+            <h4>البيانات التي يتم جمعها</h4>
+            <p>قد نقوم بجمع الاسم، رقم الجوال، بيانات الطلب، البريد الإلكتروني وكلمة المرور لحساب EA، الأكواد الاحتياطية، وبيانات الدفع اللازمة لتنفيذ الطلب.</p>
+            <h4>الغرض من جمع البيانات</h4>
+            <p>تُستخدم البيانات لمعالجة الطلب، تنفيذ خدمة بيع الكوينز، التواصل مع العميل، تحويل المستحقات، تحديث حالة الطلب، ومعالجة المشكلات المتعلقة بالطلب.</p>
+            <h4>حماية البيانات</h4>
+            <p>نستخدم وسائل تقنية وتنظيمية مناسبة لحماية البيانات الحساسة، بما في ذلك التشفير وضوابط الوصول. لا يتم إرسال كلمات مرور EA أو الأكواد الاحتياطية أو بيانات الدفع الحساسة عبر واتساب.</p>
+            <h4>مشاركة البيانات</h4>
+            <p>لا نبيع بيانات العملاء. وقد يتم الإفصاح عن البيانات عند الحاجة لتقديم الخدمة أو تنفيذ الطلب أو عند وجود مسوغ نظامي.</p>
+            <h4>الاحتفاظ والإتلاف</h4>
+            <p>نحتفظ بالبيانات للمدة اللازمة للغرض من جمعها أو للمدة التي تتطلبها الأنظمة، ثم تُحذف أو تُتلف بصورة آمنة عند انتهاء الحاجة إليها، مع مراعاة الاستثناءات النظامية.</p>
+            <h4>حقوق صاحب البيانات</h4>
+            <p>تشمل الحقوق، وفق الضوابط النظامية، الحق في العلم والوصول والحصول على نسخة مقروءة، وطلب التصحيح أو الإكمال أو التحديث، وطلب الإتلاف عند انتهاء الحاجة إليها.</p>
+            <h4>التواصل</h4>
+            <p>واتساب: <strong dir="ltr">+966 57 077 0465</strong><br>البريد الإلكتروني: <strong dir="ltr">mt.samicoins@gmail.com</strong></p>
+            <p class="legal-update">آخر تحديث: 2026</p>
+        </div>`;
+    const en = `
+        <div class="legal-content" dir="ltr">
+            <p><strong>SAMI COINS Store</strong> respects your privacy and handles personal data confidentially and securely in accordance with applicable laws and regulations in Saudi Arabia.</p>
+            <h4>Data We Collect</h4>
+            <p>We may collect your name, mobile number, order details, EA account email and password, backup codes, and payment information required to process your order.</p>
+            <h4>Purpose of Processing</h4>
+            <p>Data is used to process orders, perform the coin-selling service, communicate with customers, transfer payouts, update order status, and resolve order-related issues.</p>
+            <h4>Data Protection</h4>
+            <p>Sensitive data is protected using appropriate technical and organizational safeguards, including encryption and access controls. EA passwords, backup codes, and sensitive payment data are not sent through WhatsApp.</p>
+            <h4>Data Sharing</h4>
+            <p>We do not sell customer data. Data may be disclosed when necessary to provide the service, process an order, or where there is a legal basis.</p>
+            <h4>Retention & Deletion</h4>
+            <p>Data is retained only as long as necessary for the purpose for which it was collected or as required by law, then securely deleted or destroyed when no longer needed, subject to legal exceptions.</p>
+            <h4>Your Rights</h4>
+            <p>Subject to applicable rules, your rights include being informed, accessing your data, obtaining a readable copy, requesting correction or completion/update, and requesting deletion when the data is no longer needed.</p>
+            <h4>Contact</h4>
+            <p>WhatsApp: <strong>+966 57 077 0465</strong><br>Email: <strong>mt.samicoins@gmail.com</strong></p>
+            <p class="legal-update">Last updated: 2026</p>
+        </div>`;
+    openModal(currentLanguage === "ar" ? "سياسة الخصوصية" : "Privacy Policy", currentLanguage === "ar" ? ar : en);
 }
-
-
-// ==========================================================================
-// 33. الشروط
-// ==========================================================================
 
 function showTermsModal() {
-
-    openModal(
-        currentLanguage === "ar"
-            ? "شروط وقواعد الخدمة"
-            : "Terms & Conditions",
-
-        `
-        <div style="text-align:right;line-height:2;">
-            <p>
-                ${
-                    currentLanguage === "ar"
-                        ? "يجب التأكد من صحة بيانات الحساب والأكواد الاحتياطية، وأن يكون سوق الانتقالات متاحًا لضمان إمكانية تنفيذ الطلب."
-                        : "Please make sure your account details and backup codes are correct and that the transfer market is available."
-                }
-            </p>
-        </div>
-        `
-    );
+    const ar = `
+        <div class="legal-content" dir="rtl">
+            <ol>
+                <li>يتم تنفيذ الطلب وفق سعر السوق وقت المعالجة.</li>
+                <li>في حال تغيّر السوق، سيتم إشعار البائع بأي تعديل في السعر قبل التنفيذ.</li>
+                <li>لن يتم سحب أو تحويل أي عملات دون موافقة البائع المسبقة.</li>
+                <li>تقديم الطلب لا يضمن التنفيذ الكامل أو التنفيذ بالسعر الأصلي.</li>
+                <li>تختلف مدة التنفيذ حسب حالة السوق وحجم الطلبات، وقد تحدث تأخيرات بسيطة.</li>
+                <li>بيع العملات ينطوي على نسبة مخاطر تقديرية أقل من 1% لاحتمالية تقييد أو حظر حساب EA.</li>
+                <li>يعتمد متجر سامي كوينز طرق نقل احترافية لتقليل المخاطر إلى أدنى حد ممكن، دون تقديم ضمان نهائي.</li>
+                <li>لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.</li>
+                <li>لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.</li>
+                <li>إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل.</li>
+            </ol>
+        </div>`;
+    const en = `
+        <div class="legal-content" dir="ltr">
+            <ol>
+                <li>Orders are processed according to the market price at the time of processing.</li>
+                <li>If the market changes, the seller will be notified of any price adjustment before processing.</li>
+                <li>No coins will be withdrawn or transferred without the seller's prior approval.</li>
+                <li>Submitting an order does not guarantee full execution or execution at the original price.</li>
+                <li>Processing time varies according to market conditions and order volume, and minor delays may occur.</li>
+                <li>Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.</li>
+                <li>SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.</li>
+                <li>SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.</li>
+                <li>No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.</li>
+                <li>Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions.</li>
+            </ol>
+        </div>`;
+    openModal(currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions", currentLanguage === "ar" ? ar : en);
 }
-
-
-// ==========================================================================
-// 34. نسخ المرجع
-// ==========================================================================
 
 async async async function copyTrackingLinkUrl() {
     const reference = generatedReferenceNumber || "";
