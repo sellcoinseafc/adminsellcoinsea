@@ -1605,6 +1605,10 @@ async function loadOrders() {
               order.reference ||
               "",
 
+            internalReference:
+              order.internalReference ||
+              "",
+
             name:
               order.customerName ||
               order.name ||
