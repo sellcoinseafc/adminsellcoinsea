@@ -1170,3 +1170,15 @@ body, .tracking-page-body {
     }
 }
 
+
+
+/* Read-only tracking presentation. */
+.tracking-readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .78rem;
+  opacity: .72;
+}
