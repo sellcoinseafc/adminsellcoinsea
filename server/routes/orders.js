@@ -1,3 +1,4 @@
+/* SAMI_COINS_SCHEMA_V3: canonical order/status/payment schema */
 server/routes/orders.js
 import express from "express";
 import admin, { db } from "../services/firebase.js";
