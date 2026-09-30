@@ -28,6 +28,16 @@ const STATUS_VALUES = new Set([
   "archived"
 ]);
 
+const ALLOWED_STATUS_TRANSITIONS = {
+  new: new Set(["new", "review", "progress"]),
+  review: new Set(["review", "progress"]),
+  progress: new Set(["progress", "finished"]),
+  finished: new Set(["finished", "transferred"]),
+  transferred: new Set(["transferred", "completed"]),
+  completed: new Set(["completed"]),
+  archived: new Set(["archived"])
+};
+
 const ISSUE_VALUES = new Set([
   "wrong_credentials",
   "wrong_backup_codes",
@@ -2429,14 +2439,15 @@ router.post(
       const previousStatus =
         normalizeStatus(current.status);
 
-      if (
-        previousStatus !== nextStatus &&
-        nextStatus === "new" &&
-        previousStatus !== "new"
-      ) {
+      const allowedNextStatuses =
+        ALLOWED_STATUS_TRANSITIONS[previousStatus] ||
+        new Set([previousStatus]);
+
+      if (!allowedNextStatuses.has(nextStatus)) {
         return res.status(400).json({
           success: false,
-          message: "لا يمكن إعادة الطلب إلى حالة طلب جديد."
+          message:
+            "انتقال حالة الطلب غير مسموح من الحالة الحالية."
         });
       }
 
