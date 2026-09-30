@@ -1,3 +1,5 @@
+import { subscribeToSettings } from "../shared/system.js";
+
 // ==========================================================================
 // SAMI COINS — ORDERS FRONTEND
 // HTML/CSS V2.8 COMPATIBLE JAVASCRIPT
@@ -35,6 +37,8 @@ let currentQty = 0;
 let generatedOrderId = "";
 let generatedReferenceNumber = "";
 let generatedDocumentId = "";
+let generatedInternalReference = "";
+let unsubscribeSettingsRealtime = null;
 
 let isEditingAll = false;
 let currentLanguage = "ar";
@@ -601,6 +605,7 @@ async function loadSettings() {
         };
 
         applySettingsToUI();
+        startSettingsRealtime();
 
     } catch (error) {
         console.error(
@@ -615,6 +620,54 @@ async function loadSettings() {
                 ? "تعذر تحميل إعدادات المتجر. حاول تحديث الصفحة."
                 : "Unable to load store settings. Please refresh the page."
         );
+    }
+}
+
+
+// ==========================================================================
+// 8. الإعدادات اللحظية
+// ==========================================================================
+
+function startSettingsRealtime() {
+    if (typeof unsubscribeSettingsRealtime === "function") {
+        unsubscribeSettingsRealtime();
+    }
+
+    try {
+        unsubscribeSettingsRealtime = subscribeToSettings((settings) => {
+            storeSettings = {
+                ...storeSettings,
+                storeName: settings.storeName || storeSettings.storeName,
+                arabicStoreName: settings.arabicStoreName || "سامي كوينز",
+                gameName: settings.gameName || "FC",
+                gameVersion: Number(settings.gameVersion || 27),
+                rates: {
+                    ...storeSettings.rates,
+                    PlayStation: Number(settings.psRate ?? storeSettings.rates.PlayStation ?? 0),
+                    Xbox: Number(settings.psRate ?? storeSettings.rates.Xbox ?? 0),
+                    PC: Number(settings.pcRate ?? storeSettings.rates.PC ?? 0)
+                },
+                limits: {
+                    ...storeSettings.limits,
+                    psMin: Number(settings.psMin ?? storeSettings.limits.psMin ?? 0),
+                    psMax: Number(settings.psMax ?? storeSettings.limits.psMax ?? 0),
+                    pcMin: Number(settings.pcMin ?? storeSettings.limits.pcMin ?? 0),
+                    pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
+                },
+                banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
+                wallets: Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets,
+                terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
+                termsEnabled: settings.termsEnabled !== false,
+                storeOpen: settings.storeOpen !== false,
+                withdrawDays: settings.psWithdrawDuration || storeSettings.withdrawDays,
+                transferHours: settings.psTransferDuration || storeSettings.transferHours,
+                supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
+            };
+
+            applySettingsToUI();
+        });
+    } catch (error) {
+        console.error("Realtime settings initialization failed:", error);
     }
 }
 
@@ -2947,12 +3000,20 @@ async function submitOrderFinal() {
         generatedOrderId =
             data.orderId || "";
 
+        generatedInternalReference =
+            data.internalReference || "";
+
         generatedDocumentId =
             data.documentId || "";
 
         setText(
             "finalOrderId",
             generatedReferenceNumber || "--"
+        );
+
+        setText(
+            "finalInternalReference",
+            generatedInternalReference || "--"
         );
 
         setText(
@@ -3289,7 +3350,7 @@ function showTermsModal() {
 // 34. نسخ المرجع
 // ==========================================================================
 
-async function copyOrderId() {
+async async function copyOrderId() {
 
     const reference =
         generatedReferenceNumber ||
