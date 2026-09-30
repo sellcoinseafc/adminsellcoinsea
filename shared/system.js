@@ -194,6 +194,8 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Banks
      * ------------------------------------------------------------------------
+     *
+     * القائمة المعتمدة الجديدة.
      */
 
     banks: [
@@ -215,6 +217,8 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Wallets
      * ------------------------------------------------------------------------
+     *
+     * القائمة المعتمدة الجديدة.
      */
 
     wallets: [
@@ -230,6 +234,12 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Payment methods
      * ------------------------------------------------------------------------
+     *
+     * طرق الدفع الأساسية المعتمدة.
+     *
+     * يمكن لاحقاً إدارتها من لوحة التحكم:
+     * - إضافة
+     * - حذف
      */
 
     paymentMethods: [
@@ -242,9 +252,24 @@ export const defaultSettings = {
 
     /**
      * ------------------------------------------------------------------------
+     * Payment catalog version
+     * ------------------------------------------------------------------------
+     *
+     * تستخدم لترحيل القوائم القديمة الموجودة في Firestore
+     * إلى القائمة الجديدة مرة واحدة فقط.
+     */
+
+    paymentCatalogVersion:
+        2,
+
+    /**
+     * ------------------------------------------------------------------------
      * Terms
      * ------------------------------------------------------------------------
      */
+
+    termsEnabled:
+        true,
 
     terms: [
         "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
@@ -883,8 +908,89 @@ export async function getSettings() {
         return initialSettings;
     }
 
+    const rawSettings =
+        settingsSnap.data() || {};
+
+    /**
+     * ------------------------------------------------------------------------
+     * Payment catalog migration
+     * ------------------------------------------------------------------------
+     *
+     * القوائم القديمة الموجودة في Firestore يتم استبدالها
+     * بالقائمة الجديدة المعتمدة مرة واحدة فقط.
+     *
+     * بعد حفظ paymentCatalogVersion = 2
+     * تصبح إدارة القوائم من لوحة التحكم هي المصدر الفعلي.
+     */
+
+    if (
+        Number(
+            rawSettings.paymentCatalogVersion
+        ) !== 2
+    ) {
+        const migratedSettings = {
+            ...rawSettings,
+
+            banks: [
+                "مصرف الراجحي",
+                "البنك الأهلي السعودي",
+                "بنك الرياض",
+                "مصرف الإنماء",
+                "بنك البلاد",
+                "بنك الجزيرة",
+                "البنك الأول (SAB)",
+                "البنك العربي الوطني",
+                "البنك السعودي الفرنسي",
+                "البنك السعودي للاستثمار",
+                "STC Bank",
+                "D360 Bank"
+            ],
+
+            wallets: [
+                "STC Pay",
+                "Barq",
+                "URPay",
+                "Mobily Pay",
+                "Tiqmo",
+                "Alinma Pay"
+            ],
+
+            paymentMethods: [
+                "تحويل بنكي",
+                "المحافظ الرقمية",
+                "USDT",
+                "PayPal",
+                "Western Union"
+            ],
+
+            paymentCatalogVersion:
+                2,
+
+            termsEnabled:
+                typeof rawSettings.termsEnabled ===
+                "boolean"
+                    ? rawSettings.termsEnabled
+                    : true,
+
+            updatedAt:
+                serverTimestamp()
+        };
+
+        await setDoc(
+            settingsRef,
+            migratedSettings,
+            {
+                merge: true
+            }
+        );
+
+        return normalizeSettings(
+            migratedSettings
+        );
+    }
+
     return normalizeSettings(
-        settingsSnap.data() || {}
+        rawSettings
     );
 }
 
