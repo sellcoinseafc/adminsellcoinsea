@@ -47,6 +47,12 @@ const ISSUE_VALUES = new Set([
   "other_issue"
 ]);
 
+const ISSUE_STATES = new Set([
+  "needs_customer_action",
+  "data_received",
+  "resolved"
+]);
+
 const PAYOUT_METHODS = new Set([
   "bank",
   "wallet",
@@ -2308,7 +2314,8 @@ router.post(
         transferredBy,
         transferData,
         issue,
-        issueMessage
+        issueMessage,
+        issueState
       } =
         req.body || {};
 
@@ -2354,6 +2361,15 @@ router.post(
 
         updateData.issue =
           normalizedIssue;
+
+        updateData.issueState =
+          normalizedIssue
+            ? (
+                ISSUE_STATES.has(String(issueState || "").trim().toLowerCase())
+                  ? String(issueState).trim().toLowerCase()
+                  : String(current.issueState || "needs_customer_action")
+              )
+            : "resolved";
 
         updateData.issueMessage =
           normalizedIssue
