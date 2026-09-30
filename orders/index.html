@@ -2376,7 +2376,7 @@
 
 
                     <p data-i18n="successText">
-                        احتفظ برقم المرجع لمتابعة حالة طلبك.
+                        احتفظ برقم الطلب لمتابعة حالة طلبك.
                     </p>
 
 
@@ -2385,7 +2385,7 @@
                         type="button"
                         class="final-order-number"
                         onclick="copyOrderId()"
-                        aria-label="نسخ رقم المرجع"
+                        aria-label="نسخ رقم الطلب"
                     >
 
                         <span id="finalOrderId">
@@ -2399,8 +2399,16 @@
                         class="reference-copy-hint"
                         data-i18n="referenceCopyHint"
                     >
-                        اضغط على رقم المرجع لنسخه
+                        اضغط على رقم الطلب لنسخه
                     </span>
+
+                    <div
+                        class="internal-reference"
+                        style="margin-top:8px;"
+                    >
+                        الرقم المرجعي الداخلي:
+                        <span id="finalInternalReference">--</span>
+                    </div>
 
                 </div>
 
