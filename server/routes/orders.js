@@ -1579,6 +1579,12 @@ router.get(
                   data.issueMessage
                 ),
 
+              issueState:
+                String(
+                  data.issueState ||
+                  (data.issue ? "needs_customer_action" : "resolved")
+                ),
+
               withdrawnQuantity:
                 Number(
                   data.withdrawnQuantity ??
