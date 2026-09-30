@@ -11,11 +11,11 @@
  * - issue كمشكلة مستقلة عن حالة الطلب
  * - payoutDetails / paymentInfoData
  * - نظام التقييم لمرة واحدة
- * - Smart Polling
+ * - Realtime Server-Sent Events (SSE)
  */
 
 let activeRef = null;
-let pollingInterval = null;
+let trackingEventSource = null;
 
 let cachedState = {
     status: null,
@@ -156,7 +156,7 @@ async function fetchAndRenderOrder(ref) {
         );
 
         if (!response.ok) {
-            stopSmartPolling();
+            stopRealtimeTracking();
             showLookupView();
 
             showLookupError(
@@ -229,7 +229,7 @@ async function fetchAndRenderOrder(ref) {
 
         updateCachedState(data.order);
 
-        startSmartPolling();
+        startRealtimeTracking();
 
     } catch (error) {
         console.error("Tracking fetch error:", error);
@@ -243,103 +243,249 @@ async function fetchAndRenderOrder(ref) {
 }
 
 /* ==========================================
-   Smart Polling
+   Realtime Tracking - Server-Sent Events
    ========================================== */
 
-function startSmartPolling() {
-    stopSmartPolling();
+/**
+ * فتح قناة realtime آمنة لصفحة التتبع.
+ *
+ * لا نستخدم polling ولا setInterval.
+ *
+ * السيرفر يرسل فقط DTO آمن خاص بالتتبع، ولا يرسل:
+ * - EA password
+ * - EA email
+ * - backup codes
+ * - IBAN
+ * - أرقام المحافظ
+ * - أي بيانات حساسة مشفرة
+ *
+ * Endpoint:
+ * GET /api/tracking/:referenceNumber/events
+ *
+ * EventSource يعيد الاتصال تلقائيًا عند انقطاع الاتصال.
+ */
+function startRealtimeTracking() {
+    stopRealtimeTracking();
 
-    pollingInterval = setInterval(async () => {
-        if (!activeRef) {
-            return;
-        }
+    if (!activeRef) {
+        return;
+    }
 
-        try {
-            const response = await fetch(
-                `/api/tracking/${encodeURIComponent(activeRef)}`,
-                {
-                    method: "GET",
-                    cache: "no-store"
-                }
-            );
+    if (typeof EventSource === "undefined") {
+        console.error(
+            "Realtime tracking is not supported by this browser."
+        );
 
-            if (!response.ok) {
-                return;
-            }
+        return;
+    }
 
-            const data = await response.json();
+    const endpoint =
+        `/api/tracking/${encodeURIComponent(activeRef)}/events`;
 
-            if (!data || !data.success || !data.order) {
-                return;
-            }
+    try {
+        trackingEventSource =
+            new EventSource(endpoint);
 
-            const order = data.order;
-
-            const newStatus = normalizeStatus(
-                order.status ||
-                order.orderStatus
-            );
-
-            const newIssue =
-                order.issue ||
-                null;
-
-            const newDrawnCoins =
-                getDrawnCoins(order);
-
-            const newReviewSubmitted =
-                Boolean(order.reviewSubmitted);
-
-            const newSensitivePurged =
-                Boolean(
-                    order.sensitivePurged ||
-                    order.purgedAt
-                );
-
-            const hasChanged =
-                newStatus !== cachedState.status ||
-                newIssue !== cachedState.issue ||
-                newDrawnCoins !== cachedState.drawnCoins ||
-                newReviewSubmitted !== cachedState.reviewSubmitted ||
-                newSensitivePurged !== cachedState.sensitivePurged;
-
-            if (hasChanged) {
-                updateTrackingUI(
-                    order,
-                    data.statusMessage,
-                    data.issueMessage
-                );
-
-                setupSecurityEvents();
-
-                setupReviewSystem(
-                    order,
-                    data.reviewSuggestions
-                );
-
-                updateCachedState(order);
-            }
-
+        trackingEventSource.onopen = () => {
             /*
-             * لا نوقف polling عند completed بشكل مباشر.
-             *
-             * السبب:
-             * الطلب المكتمل قد يحتاج أن يعرض للعميل
-             * حالة الإتلاف/حذف البيانات الحساسة لاحقاً.
-             *
-             * لذلك نواصل التحديث طالما الصفحة مفتوحة.
+             * الاتصال أصبح فعالًا.
+             * لا نحتاج أي polling إضافي.
              */
-        } catch (error) {
-            console.error("Tracking polling error:", error);
-        }
+        };
 
-    }, 10000);
+        trackingEventSource.onmessage =
+            (event) => {
+                handleRealtimeTrackingEvent(
+                    event?.data
+                );
+            };
+
+        /*
+         * ندعم أيضًا event باسم "order-update"
+         * إذا استخدمه السيرفر صراحة.
+         */
+        trackingEventSource.addEventListener(
+            "order-update",
+            (event) => {
+                handleRealtimeTrackingEvent(
+                    event?.data
+                );
+            }
+        );
+
+        trackingEventSource.onerror =
+            (error) => {
+                /*
+                 * EventSource يتولى إعادة الاتصال
+                 * تلقائيًا.
+                 *
+                 * لا نبدأ polling كبديل، لأن النظام
+                 * يعتمد على realtime وليس على refresh دوري.
+                 */
+                console.warn(
+                    "Tracking realtime connection interrupted. Browser will retry automatically.",
+                    error
+                );
+            };
+
+    } catch (error) {
+        console.error(
+            "Unable to start realtime tracking:",
+            error
+        );
+
+        trackingEventSource = null;
+    }
 }
 
-function stopSmartPolling() {
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
+/**
+ * معالجة حدث تحديث الطلب القادم من السيرفر.
+ *
+ * @param {string} rawData
+ */
+function handleRealtimeTrackingEvent(rawData) {
+    if (!rawData) {
+        return;
+    }
+
+    let data;
+
+    try {
+        data = JSON.parse(rawData);
+    } catch (error) {
+        console.warn(
+            "Invalid realtime tracking payload.",
+            error
+        );
+
+        return;
+    }
+
+    if (!data || data.success === false) {
+        return;
+    }
+
+    /*
+     * بعض SSE implementations قد ترسل:
+     *
+     * {
+     *   order: {...}
+     * }
+     *
+     * وبعضها قد ترسل:
+     *
+     * {
+     *   success: true,
+     *   order: {...}
+     * }
+     *
+     * لذلك نعتمد على order مباشرة.
+     */
+    const order = data.order;
+
+    if (!order) {
+        return;
+    }
+
+    /*
+     * حماية إضافية:
+     * لا نقبل تحديثًا يخص طلبًا مختلفًا.
+     */
+    const incomingRef =
+        sanitizeRef(
+            order.referenceNumber ||
+            data.referenceNumber ||
+            ""
+        );
+
+    if (
+        incomingRef &&
+        activeRef &&
+        incomingRef !== activeRef
+    ) {
+        return;
+    }
+
+    const newStatus =
+        normalizeStatus(
+            order.status ||
+            order.orderStatus
+        );
+
+    const newIssue =
+        order.issue ||
+        null;
+
+    const newDrawnCoins =
+        getDrawnCoins(order);
+
+    const newReviewSubmitted =
+        Boolean(order.reviewSubmitted);
+
+    const newSensitivePurged =
+        Boolean(
+            order.sensitivePurged ||
+            order.purgedAt
+        );
+
+    const hasChanged =
+        newStatus !== cachedState.status ||
+        newIssue !== cachedState.issue ||
+        newDrawnCoins !== cachedState.drawnCoins ||
+        newReviewSubmitted !==
+            cachedState.reviewSubmitted ||
+        newSensitivePurged !==
+            cachedState.sensitivePurged;
+
+    /*
+     * حتى لو كان الحدث وصل بدون تغيير في
+     * القيم الرئيسية، نسمح بتحديث الواجهة
+     * إذا أرسل السيرفر payload جديد.
+     */
+    if (
+        hasChanged ||
+        data.forceUpdate === true
+    ) {
+        updateTrackingUI(
+            order,
+            data.statusMessage,
+            data.issueMessage
+        );
+
+        setupSecurityEvents();
+
+        setupReviewSystem(
+            order,
+            data.reviewSuggestions
+        );
+
+        updateCachedState(order);
+    }
+
+    /*
+     * إذا اكتمل الطلب، نستمر في الاستماع.
+     *
+     * السبب:
+     * قد يصل لاحقًا حدث sensitivePurged
+     * من السيرفر، ويجب أن يظهر للعميل مباشرة.
+     */
+}
+
+/**
+ * إغلاق قناة realtime.
+ */
+function stopRealtimeTracking() {
+    if (trackingEventSource) {
+        try {
+            trackingEventSource.close();
+        } catch (error) {
+            console.warn(
+                "Error closing tracking realtime connection:",
+                error
+            );
+        }
+
+        trackingEventSource = null;
     }
 }
 
@@ -379,7 +525,7 @@ function updateCachedState(order) {
    ========================================== */
 
 function resetToLookup() {
-    stopSmartPolling();
+    stopRealtimeTracking();
 
     activeRef = null;
 
@@ -705,8 +851,40 @@ function normalizeStatus(status) {
         return "new";
     }
 
+    const raw =
+        String(status).trim();
+
     const normalized =
-        String(status).trim().toLowerCase();
+        raw.toLowerCase();
+
+    const arabicStatusMap = {
+        "طلب جديد": "new",
+
+        "طلب بانتظار المراجعة":
+            "review",
+
+        "انتظار المراجعة":
+            "review",
+
+        "جاري سحب الكوينز من حسابك":
+            "progress",
+
+        "تم الانتهاء من سحب الكوينز بحسابك":
+            "finished",
+
+        "تم الانتهاء من سحب الكوينز من حسابك":
+            "finished",
+
+        "تم تحويل المبلغ إلى حسابك":
+            "transferred",
+
+        "مكتمل":
+            "completed"
+    };
+
+    if (arabicStatusMap[raw]) {
+        return arabicStatusMap[raw];
+    }
 
     return LEGACY_STATUS_MAP[normalized] ||
         normalized;
@@ -2105,6 +2283,6 @@ function setupReviewSystem(
 window.addEventListener(
     "beforeunload",
     () => {
-        stopSmartPolling();
+        stopRealtimeTracking();
     }
 );
