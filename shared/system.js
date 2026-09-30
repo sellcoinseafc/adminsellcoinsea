@@ -103,6 +103,15 @@ export const defaultSettings = {
     storeName:
         "SAMI COINS",
 
+    arabicStoreName:
+        "سامي كوينز",
+
+    gameName:
+        "FC",
+
+    gameVersion:
+        27,
+
     storeLogo:
         "",
 
