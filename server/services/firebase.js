@@ -15,12 +15,20 @@
  */
 
 import admin from "firebase-admin";
+import dotenv from "dotenv";
 import { existsSync, readFileSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+/* Load the server-local environment file when present. */
+dotenv.config({
+  path: join(__dirname, "../.env")
+});
+
+dotenv.config();
 
 function loadServiceAccount() {
   const projectId =
