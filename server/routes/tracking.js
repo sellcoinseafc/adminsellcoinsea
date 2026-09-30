@@ -38,7 +38,7 @@ const LEGACY_STATUS_MAP = {
 
 const STATUS_MESSAGES = {
   new: "طلب جديد",
-  review: "انتظار المراجعة",
+  review: "طلب بانتظار المراجعة",
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوينز من حسابك",
   transferred: "تم تحويل المبلغ إلى حسابك",
@@ -57,23 +57,21 @@ const ARABIC_STATUS_MAP = {
 };
 
 const ISSUE_LABELS = {
-  wrong_credentials: "بيانات الدخول غير صحيحة",
-  wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
-  web_app_issue: "توجد مشكلة في Web App",
+  wrong_credentials: "الإيميل أو الباسورد غير صحيح",
+  wrong_backup_codes: "الأكواد الاحتياطية غير صحيحة",
+  logged_in_platform: "تم تسجيل الدخول عبر المنصة يرجى تسجيل الخروج",
   market_closed: "سوق الانتقالات مغلق",
-  no_player: "لا يوجد لاعب مطابق",
-  wrong_platform: "المنصة المحددة غير صحيحة",
-  other_issue: "توجد مشكلة في الطلب"
+  wrong_platform: "المنصة غير صحيحة",
+  other_issue: "مشاكل أخرى"
 };
 
 const DEFAULT_ISSUE_MESSAGES = {
-  wrong_credentials: "بيانات الدخول غير صحيحة",
-  wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
-  web_app_issue: "توجد مشكلة في Web App",
-  market_closed: "سوق الانتقالات مغلق",
-  no_player: "لا يوجد لاعب مطابق",
-  wrong_platform: "المنصة المحددة غير صحيحة",
-  other_issue: "توجد مشكلة في الطلب"
+  wrong_credentials: "يرجى إرسال الإيميل والباسورد الصحيح عبر الواتساب",
+  wrong_backup_codes: "يرجى إرسال أكواد احتياطية جديدة",
+  logged_in_platform: "يرجى إعلامنا عبر الواتساب",
+  market_closed: "سوق الانتقالات مغلق في Web App، يرجى التواصل معنا عبر الواتساب",
+  wrong_platform: "يرجى التواصل معنا عبر الواتساب",
+  other_issue: "يرجى التواصل معنا عبر الواتساب بشكل عاجل"
 };
 
 const PURGED_ACCOUNT_MESSAGE =
