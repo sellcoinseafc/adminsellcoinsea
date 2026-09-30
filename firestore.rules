@@ -25,23 +25,34 @@ service cloud.firestore {
     }
 
     // Customer order creation, updates and deletion are server-side only.
-    // Admin actions use protected server routes.
+    // Admin dashboard may read orders; mutations stay behind protected APIs.
     match /orders/{orderId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
-    // Admin identity documents are never publicly readable.
+    // Admin identity documents are readable only to authenticated admins.
+    // Client-side writes remain disabled so role/active fields cannot be escalated.
     match /admins/{uid} {
-      allow read, write: if isAdmin() && request.auth.uid == uid;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
-    // Audit data is server-managed.
+    // Audit history may be read by admins; entries are immutable from the browser.
     match /audit_logs/{logId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
 
     match /whatsappLogs/{logId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Reviews are managed by the admin dashboard.
+    match /reviews/{reviewId} {
+      allow read, write: if isAdmin();
     }
 
     match /{document=**} {
