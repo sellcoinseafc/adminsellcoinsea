@@ -17,19 +17,25 @@
  * مهم جداً:
  * - إنشاء أرقام الطلبات الجديدة Server-Side فقط.
  * - server/services/orderNumber.js هو المصدر الرسمي للترقيم.
- * - الدوال القديمة الخاصة بالأرقام موجودة للتوافق فقط.
  * - لا تستخدم createOrderId() لإنشاء طلب جديد.
+ * - المخزون الحقيقي يحسب من الطلبات:
+ *
+ *     إجمالي الكمية المطلوبة - إجمالي الكمية المسحوبة
+ *
+ * - PlayStation + Xbox مخزون مشترك.
+ * - PC مخزون مستقل.
  *
  * هذا الملف لا يتعامل مباشرة مع DOM.
  * ============================================================================
  */
 
 import {
+    collection,
     doc,
     getDoc,
+    getDocs,
     setDoc,
     updateDoc,
-    increment,
     onSnapshot,
     runTransaction,
     serverTimestamp
@@ -48,6 +54,9 @@ const SETTINGS_DOC_PATH =
 
 const COUNTER_DOC_PATH =
     "system/counter";
+
+const ORDERS_COLLECTION =
+    "orders";
 
 /**
  * ============================================================================
@@ -70,6 +79,9 @@ export const defaultIssueMessages = {
 
     wrong_platform:
         "المنصة المحددة غير صحيحة",
+
+    web_app_issue:
+        "توجد مشكلة في تطبيق الويب",
 
     other_issue:
         "توجد مشكلة في الطلب"
@@ -125,6 +137,8 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * PlayStation / Xbox
      * ------------------------------------------------------------------------
+     *
+     * PlayStation + Xbox share the same inventory pool.
      */
 
     psRate:
@@ -142,6 +156,11 @@ export const defaultSettings = {
     psTransferDuration:
         "24 ساعة",
 
+    /*
+     * Legacy/manual value kept only for compatibility.
+     *
+     * It is NOT the source of truth for inventory.
+     */
     psStock:
         0,
 
@@ -166,6 +185,11 @@ export const defaultSettings = {
     pcTransferDuration:
         "24 ساعة",
 
+    /*
+     * Legacy/manual value kept only for compatibility.
+     *
+     * It is NOT the source of truth for inventory.
+     */
     pcStock:
         0,
 
@@ -194,8 +218,6 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Banks
      * ------------------------------------------------------------------------
-     *
-     * القائمة المعتمدة الجديدة.
      */
 
     banks: [
@@ -217,8 +239,6 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Wallets
      * ------------------------------------------------------------------------
-     *
-     * القائمة المعتمدة الجديدة.
      */
 
     wallets: [
@@ -234,12 +254,6 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      * Payment methods
      * ------------------------------------------------------------------------
-     *
-     * طرق الدفع الأساسية المعتمدة.
-     *
-     * يمكن لاحقاً إدارتها من لوحة التحكم:
-     * - إضافة
-     * - حذف
      */
 
     paymentMethods: [
@@ -249,15 +263,6 @@ export const defaultSettings = {
         "PayPal",
         "Western Union"
     ],
-
-    /**
-     * ------------------------------------------------------------------------
-     * Payment catalog version
-     * ------------------------------------------------------------------------
-     *
-     * تستخدم لترحيل القوائم القديمة الموجودة في Firestore
-     * إلى القائمة الجديدة مرة واحدة فقط.
-     */
 
     paymentCatalogVersion:
         2,
@@ -366,14 +371,174 @@ function normalizeIssueMessages(
 
 /**
  * ============================================================================
- * Normalize settings
+ * Platform normalization
  * ============================================================================
  *
- * الهدف:
- * - الحفاظ على default settings.
- * - عدم فقدان أي إعداد إذا كان الحقل غير موجود في Firestore.
- * - توحيد arrays.
- * - توحيد issueMessages.
+ * PlayStation + Xbox = shared inventory.
+ * PC = separate inventory.
+ */
+
+function normalizePlatform(
+    platform
+) {
+    const value =
+        String(
+            platform ?? ""
+        )
+            .trim()
+            .toLowerCase();
+
+    if (
+        value === "pc"
+    ) {
+        return "PC";
+    }
+
+    if (
+        value === "xbox" ||
+        value === "xb" ||
+        value.includes("xbox")
+    ) {
+        return "XBOX";
+    }
+
+    if (
+        value === "playstation" ||
+        value === "ps" ||
+        value === "ps4" ||
+        value === "ps5" ||
+        value.includes("playstation")
+    ) {
+        return "PLAYSTATION";
+    }
+
+    return "";
+}
+
+/**
+ * ============================================================================
+ * Quantity normalization
+ * ============================================================================
+ */
+
+function normalizeQuantity(
+    value
+) {
+    const numeric =
+        Number(
+            value
+        );
+
+    if (
+        !Number.isFinite(
+            numeric
+        ) ||
+        numeric < 0
+    ) {
+        return 0;
+    }
+
+    return numeric;
+}
+
+/**
+ * ============================================================================
+ * Withdrawn quantity compatibility
+ * ============================================================================
+ *
+ * New field:
+ *   withdrawnQuantity
+ *
+ * Legacy field:
+ *   drawnCoins
+ */
+
+function getWithdrawnQuantity(
+    order
+) {
+    if (
+        order &&
+        Object.prototype.hasOwnProperty.call(
+            order,
+            "withdrawnQuantity"
+        )
+    ) {
+        return normalizeQuantity(
+            order.withdrawnQuantity
+        );
+    }
+
+    return normalizeQuantity(
+        order?.drawnCoins
+    );
+}
+
+/**
+ * ============================================================================
+ * Ordered quantity compatibility
+ * ============================================================================
+ *
+ * Supports the common quantity fields already used by the project.
+ */
+
+function getOrderedQuantity(
+    order
+) {
+    if (
+        order &&
+        Object.prototype.hasOwnProperty.call(
+            order,
+            "quantity"
+        )
+    ) {
+        return normalizeQuantity(
+            order.quantity
+        );
+    }
+
+    if (
+        order &&
+        Object.prototype.hasOwnProperty.call(
+            order,
+            "coinQuantity"
+        )
+    ) {
+        return normalizeQuantity(
+            order.coinQuantity
+        );
+    }
+
+    if (
+        order &&
+        Object.prototype.hasOwnProperty.call(
+            order,
+            "coins"
+        )
+    ) {
+        return normalizeQuantity(
+            order.coins
+        );
+    }
+
+    if (
+        order &&
+        Object.prototype.hasOwnProperty.call(
+            order,
+            "amount"
+        )
+    ) {
+        return normalizeQuantity(
+            order.amount
+        );
+    }
+
+    return 0;
+}
+
+/**
+ * ============================================================================
+ * Normalize settings
+ * ============================================================================
  */
 
 function normalizeSettings(
@@ -563,6 +728,7 @@ function getRiyadhDateKey() {
 /**
  * Legacy alias.
  */
+
 function getMakkahDateKey() {
     return getRiyadhDateKey();
 }
@@ -618,9 +784,6 @@ export async function getDailyCodes() {
     const todayKey =
         getRiyadhDateKey();
 
-    /**
-     * Legacy codes only.
-     */
     if (
         dailyCodesObj.dateKey ===
             todayKey &&
@@ -657,9 +820,6 @@ export async function getDailyCodes() {
         }
     }
 
-    /**
-     * ضمان وجود 4 أكواد.
-     */
     while (
         newDailyCodes.length < 4
     ) {
@@ -740,6 +900,7 @@ function getRandomSAMILetters() {
 /**
  * Legacy only.
  */
+
 export async function createOrderId(
     platform
 ) {
@@ -915,12 +1076,6 @@ export async function getSettings() {
      * ------------------------------------------------------------------------
      * Payment catalog migration
      * ------------------------------------------------------------------------
-     *
-     * القوائم القديمة الموجودة في Firestore يتم استبدالها
-     * بالقائمة الجديدة المعتمدة مرة واحدة فقط.
-     *
-     * بعد حفظ paymentCatalogVersion = 2
-     * تصبح إدارة القوائم من لوحة التحكم هي المصدر الفعلي.
      */
 
     if (
@@ -996,7 +1151,384 @@ export async function getSettings() {
 
 /**
  * ============================================================================
- * 6. Save pricing / general store settings
+ * 6. Inventory calculation
+ * ============================================================================
+ *
+ * SOURCE OF TRUTH:
+ *
+ *     inventory =
+ *         total ordered quantity
+ *         -
+ *         total withdrawn quantity
+ *
+ * Platform groups:
+ *
+ *     PLAYSTATION + XBOX => shared inventory
+ *     PC                => separate inventory
+ *
+ * No manual stock deduction is performed here.
+ */
+
+export async function calculateInventory() {
+    const ordersSnapshot =
+        await getDocs(
+            collection(
+                db,
+                ORDERS_COLLECTION
+            )
+        );
+
+    let orderedShared =
+        0;
+
+    let withdrawnShared =
+        0;
+
+    let orderedPc =
+        0;
+
+    let withdrawnPc =
+        0;
+
+    ordersSnapshot.forEach(
+        (orderDoc) => {
+            const order =
+                orderDoc.data() ||
+                {};
+
+            const platform =
+                normalizePlatform(
+                    order.platform
+                );
+
+            const ordered =
+                getOrderedQuantity(
+                    order
+                );
+
+            const withdrawn =
+                Math.min(
+                    getWithdrawnQuantity(
+                        order
+                    ),
+                    ordered
+                );
+
+            if (
+                platform === "PC"
+            ) {
+                orderedPc +=
+                    ordered;
+
+                withdrawnPc +=
+                    withdrawn;
+
+                return;
+            }
+
+            if (
+                platform ===
+                    "PLAYSTATION" ||
+                platform ===
+                    "XBOX"
+            ) {
+                orderedShared +=
+                    ordered;
+
+                withdrawnShared +=
+                    withdrawn;
+            }
+        }
+    );
+
+    const sharedRemaining =
+        Math.max(
+            0,
+            orderedShared -
+                withdrawnShared
+        );
+
+    const pcRemaining =
+        Math.max(
+            0,
+            orderedPc -
+                withdrawnPc
+        );
+
+    return {
+        shared: {
+            ordered:
+                orderedShared,
+
+            withdrawn:
+                withdrawnShared,
+
+            remaining:
+                sharedRemaining
+        },
+
+        playstation: {
+            ordered:
+                orderedShared,
+
+            withdrawn:
+                withdrawnShared,
+
+            remaining:
+                sharedRemaining
+        },
+
+        xbox: {
+            ordered:
+                orderedShared,
+
+            withdrawn:
+                withdrawnShared,
+
+            remaining:
+                sharedRemaining
+        },
+
+        pc: {
+            ordered:
+                orderedPc,
+
+            withdrawn:
+                withdrawnPc,
+
+            remaining:
+                pcRemaining
+        },
+
+        total: {
+            ordered:
+                orderedShared +
+                orderedPc,
+
+            withdrawn:
+                withdrawnShared +
+                withdrawnPc,
+
+            remaining:
+                sharedRemaining +
+                pcRemaining
+        }
+    };
+}
+
+/**
+ * ============================================================================
+ * Inventory realtime subscription
+ * ============================================================================
+ *
+ * Orders are the source of truth, therefore inventory is recalculated
+ * whenever an order is added, changed, or removed.
+ */
+
+export function subscribeToInventory(
+    callback
+) {
+    if (
+        typeof callback !==
+        "function"
+    ) {
+        throw new TypeError(
+            "subscribeToInventory callback must be a function."
+        );
+    }
+
+    const ordersRef =
+        collection(
+            db,
+            ORDERS_COLLECTION
+        );
+
+    return onSnapshot(
+        ordersRef,
+        (snapshot) => {
+            let orderedShared =
+                0;
+
+            let withdrawnShared =
+                0;
+
+            let orderedPc =
+                0;
+
+            let withdrawnPc =
+                0;
+
+            snapshot.forEach(
+                (orderDoc) => {
+                    const order =
+                        orderDoc.data() ||
+                        {};
+
+                    const platform =
+                        normalizePlatform(
+                            order.platform
+                        );
+
+                    const ordered =
+                        getOrderedQuantity(
+                            order
+                        );
+
+                    const withdrawn =
+                        Math.min(
+                            getWithdrawnQuantity(
+                                order
+                            ),
+                            ordered
+                        );
+
+                    if (
+                        platform === "PC"
+                    ) {
+                        orderedPc +=
+                            ordered;
+
+                        withdrawnPc +=
+                            withdrawn;
+
+                        return;
+                    }
+
+                    if (
+                        platform ===
+                            "PLAYSTATION" ||
+                        platform ===
+                            "XBOX"
+                    ) {
+                        orderedShared +=
+                            ordered;
+
+                        withdrawnShared +=
+                            withdrawn;
+                    }
+                }
+            );
+
+            const sharedRemaining =
+                Math.max(
+                    0,
+                    orderedShared -
+                        withdrawnShared
+                );
+
+            const pcRemaining =
+                Math.max(
+                    0,
+                    orderedPc -
+                        withdrawnPc
+                );
+
+            callback({
+                shared: {
+                    ordered:
+                        orderedShared,
+
+                    withdrawn:
+                        withdrawnShared,
+
+                    remaining:
+                        sharedRemaining
+                },
+
+                playstation: {
+                    ordered:
+                        orderedShared,
+
+                    withdrawn:
+                        withdrawnShared,
+
+                    remaining:
+                        sharedRemaining
+                },
+
+                xbox: {
+                    ordered:
+                        orderedShared,
+
+                    withdrawn:
+                        withdrawnShared,
+
+                    remaining:
+                        sharedRemaining
+                },
+
+                pc: {
+                    ordered:
+                        orderedPc,
+
+                    withdrawn:
+                        withdrawnPc,
+
+                    remaining:
+                        pcRemaining
+                },
+
+                total: {
+                    ordered:
+                        orderedShared +
+                        orderedPc,
+
+                    withdrawn:
+                        withdrawnShared +
+                        withdrawnPc,
+
+                    remaining:
+                        sharedRemaining +
+                        pcRemaining
+                }
+            });
+        },
+        (error) => {
+            console.error(
+                "Inventory realtime listener error:",
+                error?.code ||
+                    error?.message ||
+                    error
+            );
+
+            callback({
+                shared: {
+                    ordered: 0,
+                    withdrawn: 0,
+                    remaining: 0
+                },
+
+                playstation: {
+                    ordered: 0,
+                    withdrawn: 0,
+                    remaining: 0
+                },
+
+                xbox: {
+                    ordered: 0,
+                    withdrawn: 0,
+                    remaining: 0
+                },
+
+                pc: {
+                    ordered: 0,
+                    withdrawn: 0,
+                    remaining: 0
+                },
+
+                total: {
+                    ordered: 0,
+                    withdrawn: 0,
+                    remaining: 0
+                }
+            });
+        }
+    );
+}
+
+/**
+ * ============================================================================
+ * 7. Save pricing / general store settings
  * ============================================================================
  */
 
@@ -1013,9 +1545,6 @@ export async function savePricing(
         await getSettings();
 
     const payload = {
-        /**
-         * Store
-         */
         storeName:
             cleanString(
                 pricingData.storeName,
@@ -1046,9 +1575,6 @@ export async function savePricing(
                 current.siteUrl
             ),
 
-        /**
-         * Announcement
-         */
         announcementActive:
             Boolean(
                 pricingData.announcementActive
@@ -1072,9 +1598,6 @@ export async function savePricing(
                 "#060913"
             ),
 
-        /**
-         * PlayStation / Xbox
-         */
         psRate:
             Number.isFinite(
                 Number(
@@ -1120,6 +1643,10 @@ export async function savePricing(
                 current.psTransferDuration
             ),
 
+        /*
+         * Legacy field only.
+         * Real inventory comes from orders.
+         */
         psStock:
             Number.isFinite(
                 Number(
@@ -1131,9 +1658,6 @@ export async function savePricing(
                   )
                 : current.psStock,
 
-        /**
-         * PC
-         */
         pcRate:
             Number.isFinite(
                 Number(
@@ -1179,6 +1703,10 @@ export async function savePricing(
                 current.pcTransferDuration
             ),
 
+        /*
+         * Legacy field only.
+         * Real inventory comes from orders.
+         */
         pcStock:
             Number.isFinite(
                 Number(
@@ -1190,9 +1718,6 @@ export async function savePricing(
                   )
                 : current.pcStock,
 
-        /**
-         * Offers
-         */
         offers:
             Boolean(
                 pricingData.offers
@@ -1221,9 +1746,6 @@ export async function savePricing(
                 ""
             ),
 
-        /**
-         * Store status
-         */
         storeOpen:
             typeof pricingData.storeOpen ===
             "boolean"
@@ -1232,9 +1754,6 @@ export async function savePricing(
                       current.storeOpen
                   ),
 
-        /**
-         * Issue messages
-         */
         issueMessages:
             normalizeIssueMessages(
                 pricingData.issueMessages ??
@@ -1258,7 +1777,7 @@ export async function savePricing(
 
 /**
  * ============================================================================
- * 7. Issue messages
+ * 8. Issue messages
  * ============================================================================
  */
 
@@ -1346,18 +1865,145 @@ export async function updateIssueMessage(
 
 /**
  * ============================================================================
- * 8. Withdrawn stock deduction
+ * 9. Withdrawn quantity update
  * ============================================================================
  *
- * هذه الدالة تخصم المخزون فقط.
+ * IMPORTANT:
  *
- * لا تغير:
- * - status
- * - issue
- * - completed
+ * This function does NOT directly deduct psStock/pcStock.
  *
- * حالات الطلب أصبحت يدوية من لوحة الإدارة.
+ * Inventory is calculated from:
+ *
+ *     ordered quantity - withdrawn quantity
+ *
+ * Therefore changing withdrawnQuantity automatically changes
+ * the calculated inventory and any realtime inventory listener.
+ *
+ * Status changes remain manual and are NOT changed here.
+ */
+
+export async function updateWithdrawnQuantity(
+    orderId,
+    withdrawnAmount
+) {
+    const cleanOrderId =
+        cleanString(
+            orderId
+        );
+
+    if (!cleanOrderId) {
+        throw new Error(
+            "Order ID is required."
+        );
+    }
+
+    const numericAmount =
+        Number(
+            withdrawnAmount
+        );
+
+    if (
+        !Number.isFinite(
+            numericAmount
+        ) ||
+        numericAmount < 0
+    ) {
+        throw new Error(
+            "Withdrawn quantity must be a valid non-negative number."
+        );
+    }
+
+    const orderRef =
+        doc(
+            db,
+            ORDERS_COLLECTION,
+            cleanOrderId
+        );
+
+    const orderSnap =
+        await getDoc(
+            orderRef
+        );
+
+    if (
+        !orderSnap.exists()
+    ) {
+        throw new Error(
+            "Order not found."
+        );
+    }
+
+    const order =
+        orderSnap.data() ||
+        {};
+
+    const orderedQuantity =
+        getOrderedQuantity(
+            order
+        );
+
+    if (
+        numericAmount >
+        orderedQuantity
+    ) {
+        throw new Error(
+            "Withdrawn quantity cannot exceed ordered quantity."
+        );
+    }
+
+    await updateDoc(
+        orderRef,
+        {
+            withdrawnQuantity:
+                numericAmount,
+
+            /*
+             * Legacy compatibility.
+             *
+             * Existing UI/code that still reads drawnCoins
+             * will continue to receive the current value.
+             */
+            drawnCoins:
+                numericAmount,
+
+            remainingQuantity:
+                Math.max(
+                    0,
+                    orderedQuantity -
+                        numericAmount
+                ),
+
+            updatedAt:
+                serverTimestamp(),
+
+            withdrawnUpdatedAt:
+                serverTimestamp()
+        }
+    );
+
+    return {
+        withdrawnQuantity:
+            numericAmount,
+
+        remainingQuantity:
+            Math.max(
+                0,
+                orderedQuantity -
+                    numericAmount
+            )
+    };
+}
+
+/**
  * ============================================================================
+ * 10. Legacy withdrawn stock deduction
+ * ============================================================================
+ *
+ * Kept for compatibility with old callers.
+ *
+ * IMPORTANT:
+ * It no longer subtracts a fixed amount from settings.psStock/pcStock.
+ * It updates the order's withdrawn quantity instead.
  */
 
 export async function processWithdrawnStockDeduction(
@@ -1375,108 +2021,15 @@ export async function processWithdrawnStockDeduction(
             return false;
         }
 
-        const orderRef =
-            doc(
-                db,
-                "orders",
-                cleanOrderId
-            );
-
-        const orderSnap =
-            await getDoc(
-                orderRef
-            );
-
-        if (
-            !orderSnap.exists()
-        ) {
-            return false;
-        }
-
-        const order =
-            orderSnap.data() ||
-            {};
-
-        /**
-         * منع الخصم المكرر.
-         */
-        if (
-            order.withdrawnDeducted ===
-            true
-        ) {
-            return false;
-        }
-
-        const numericAmount =
-            Number(
-                withdrawnAmount
-            );
-
-        if (
-            !Number.isFinite(
-                numericAmount
-            ) ||
-            numericAmount <= 0
-        ) {
-            return false;
-        }
-
-        const platUpper =
-            String(
-                platform ||
-                order.platform ||
-                ""
-            )
-                .trim()
-                .toUpperCase();
-
-        const stockField =
-            platUpper === "PC"
-                ? "pcStock"
-                : "psStock";
-
-        const settingsRef =
-            doc(
-                db,
-                SETTINGS_DOC_PATH
-            );
-
-        /**
-         * خصم المخزون.
-         */
-        await updateDoc(
-            settingsRef,
-            {
-                [stockField]:
-                    increment(
-                        -numericAmount
-                    )
-            }
-        );
-
-        /**
-         * تسجيل الخصم على الطلب.
-         *
-         * لا يوجد status هنا.
-         */
-        await updateDoc(
-            orderRef,
-            {
-                withdrawnDeducted:
-                    true,
-
-                deductedAmount:
-                    numericAmount,
-
-                deductedAt:
-                    serverTimestamp()
-            }
+        await updateWithdrawnQuantity(
+            cleanOrderId,
+            withdrawnAmount
         );
 
         return true;
     } catch (error) {
         console.error(
-            "Error processing withdrawn stock deduction:",
+            "Error processing withdrawn quantity:",
             error?.code ||
                 error?.message ||
                 error
@@ -1488,7 +2041,7 @@ export async function processWithdrawnStockDeduction(
 
 /**
  * ============================================================================
- * 9. Banks
+ * 11. Banks
  * ============================================================================
  */
 
@@ -1591,7 +2144,7 @@ export async function deleteBank(
 
 /**
  * ============================================================================
- * 10. Wallets
+ * 12. Wallets
  * ============================================================================
  */
 
@@ -1694,7 +2247,7 @@ export async function deleteWallet(
 
 /**
  * ============================================================================
- * 11. Payment methods
+ * 13. Payment methods
  * ============================================================================
  */
 
@@ -1712,9 +2265,6 @@ export async function getPaymentMethods() {
         ];
     }
 
-    /**
-     * Legacy object compatibility.
-     */
     if (
         settings.paymentMethods &&
         typeof settings.paymentMethods ===
@@ -1817,7 +2367,7 @@ export async function deletePaymentMethod(
 
 /**
  * ============================================================================
- * 12. Terms
+ * 14. Terms
  * ============================================================================
  */
 
@@ -1917,7 +2467,7 @@ export async function deleteTerm(
 
 /**
  * ============================================================================
- * 13. Store state
+ * 15. Store state
  * ============================================================================
  */
 
@@ -1978,8 +2528,16 @@ export async function toggleStore(
 
 /**
  * ============================================================================
- * 14. Manual stock update
+ * 16. Manual stock compatibility
  * ============================================================================
+ *
+ * Deprecated:
+ * inventory is now calculated from orders.
+ *
+ * Kept only so old UI code does not crash if it still calls updateStock().
+ *
+ * The values are stored as legacy settings values but are NOT used by
+ * calculateInventory() or subscribeToInventory().
  */
 
 export async function updateStock(
@@ -2004,19 +2562,28 @@ export async function updateStock(
         Number.isFinite(
             parsedPs
         )
-            ? parsedPs
+            ? Math.max(
+                  0,
+                  parsedPs
+              )
             : 0;
 
     const pcStock =
         Number.isFinite(
             parsedPc
         )
-            ? parsedPc
+            ? Math.max(
+                  0,
+                  parsedPc
+              )
             : 0;
 
     await updateDoc(
         settingsRef,
         {
+            /*
+             * Legacy compatibility only.
+             */
             psStock,
 
             pcStock,
@@ -2052,8 +2619,6 @@ export async function updateStock(
  * ============================================================================
  * Legacy export
  * ============================================================================
- *
- * محفوظ فقط للتوافق مع أي كود يستدعيه.
  */
 
 export {
