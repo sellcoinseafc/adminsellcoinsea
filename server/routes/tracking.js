@@ -1105,7 +1105,14 @@ function buildTrackingOrder(
       order.progressPercentage
     );
 
-  if (
+  /*
+   * أثناء السحب، نسبة الإنجاز تعتمد مباشرة على الكمية المسحوبة.
+   * هذا يجعل صفحة التتبع تعكس تعديل withdrawnQuantity فورًا.
+   */
+  if (quantity > 0) {
+    progressPercentage =
+      (drawnCoins / quantity) * 100;
+  } else if (
     !Number.isFinite(
       progressPercentage
     )
@@ -1113,9 +1120,9 @@ function buildTrackingOrder(
     const defaultPercentages = {
       new: 15,
       review: 35,
-      progress: 65,
-      finished: 85,
-      transferred: 95,
+      progress: 0,
+      finished: 100,
+      transferred: 100,
       completed: 100
     };
 
@@ -1131,6 +1138,12 @@ function buildTrackingOrder(
         100,
         progressPercentage
       )
+    );
+
+  const remainingQuantity =
+    Math.max(
+      0,
+      quantity - drawnCoins
     );
 
   /**
@@ -1188,6 +1201,11 @@ function buildTrackingOrder(
     status,
 
     drawnCoins,
+
+    withdrawnQuantity:
+      drawnCoins,
+
+    remainingQuantity,
 
     progressPercentage,
 
@@ -1272,6 +1290,13 @@ router.get(
   "/:ref",
   async (req, res) => {
     try {
+      // Tracking data must never be cached by browsers or intermediate proxies.
+      res.set(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate"
+      );
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
       const ref =
         String(
           req.params.ref || ""
