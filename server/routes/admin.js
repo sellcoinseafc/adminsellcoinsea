@@ -1072,6 +1072,37 @@ router.post(
         });
       }
 
+      const status =
+        String(order.status || "").toLowerCase();
+
+      if (status !== "completed") {
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن إتلاف البيانات الحساسة قبل اكتمال الطلب."
+        });
+      }
+
+      const completedAt = order.completedAt?.toDate
+        ? order.completedAt.toDate()
+        : order.completedAt
+          ? new Date(order.completedAt)
+          : null;
+
+      const purgeDueAt = order.purgeDueAt?.toDate
+        ? order.purgeDueAt.toDate()
+        : order.purgeDueAt
+          ? new Date(order.purgeDueAt)
+          : completedAt
+            ? new Date(completedAt.getTime() + 5 * 24 * 60 * 60 * 1000)
+            : null;
+
+      if (!purgeDueAt || Number.isNaN(purgeDueAt.getTime()) || purgeDueAt.getTime() > Date.now()) {
+        return res.status(400).json({
+          success: false,
+          message: "لم يحِن موعد إتلاف البيانات الحساسة بعد."
+        });
+      }
+
       const FieldValue =
         admin.firestore.FieldValue;
 
