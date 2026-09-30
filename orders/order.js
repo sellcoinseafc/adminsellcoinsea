@@ -43,6 +43,7 @@ let generatedReferenceNumber = "";
 let generatedDocumentId = "";
 let generatedInternalReference = "";
 let unsubscribeSettingsRealtime = null;
+let settingsLoaded = false;
 
 let isEditingAll = false;
 let currentLanguage = "ar";
@@ -661,6 +662,7 @@ async function loadSettings() {
             ...data
         };
 
+        settingsLoaded = true;
         applySettingsToUI();
         startSettingsRealtime();
 
@@ -670,6 +672,7 @@ async function loadSettings() {
             error
         );
 
+        settingsLoaded = false;
         showStoreClosedState(false);
 
         showToast(
@@ -2980,6 +2983,15 @@ function formatAndCalculateInline(input) {
 // ==========================================================================
 
 async function submitOrderFinal() {
+    if (!settingsLoaded) {
+        showToast(
+            currentLanguage === "ar"
+                ? "إعدادات المتجر غير جاهزة. حاول تحديث الصفحة."
+                : "Store settings are not ready. Please refresh the page."
+        );
+        return;
+    }
+
 
     if (isEditingAll) {
         toggleEditMode();
@@ -3102,6 +3114,17 @@ async function submitOrderFinal() {
         generatedDocumentId =
             data.documentId || "";
 
+        const serverPricing = data.pricing || {};
+        const serverDisplayTotal =
+            String(serverPricing.displayTotal || "").trim();
+
+        if (serverDisplayTotal) {
+            setText(
+                "totalAmountText",
+                serverDisplayTotal
+            );
+        }
+
         setText(
             "finalOrderId",
             generatedReferenceNumber || "--"
@@ -3145,7 +3168,9 @@ async function submitOrderFinal() {
 
         setText(
             "billTotal",
-            $("totalAmountText")?.textContent || ""
+            serverDisplayTotal ||
+                $("totalAmountText")?.textContent ||
+                ""
         );
 
         setText(
