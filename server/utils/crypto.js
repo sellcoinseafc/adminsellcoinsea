@@ -1,34 +1,18 @@
-/**
- * ============================================================================
- * SAMI COINS - ENCRYPTION CORE
- * ============================================================================
- *
- * Encryption:
- *   AES-256-GCM
- *
- * Stored format:
- *   Base64(
- *     IV        = 12 bytes
- *     Auth Tag  = 16 bytes
- *     Ciphertext
- *   )
- *
- * IMPORTANT:
- * - Do not change the stored format without a migration plan.
- * - ENCRYPTION_KEY remains backend-only.
- * - Never send ENCRYPTION_KEY to the frontend.
- * - Never log plaintext sensitive data.
- * ============================================================================
- */
-
 import "dotenv/config";
 import crypto from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 12;
+const AUTH_TAG_LENGTH = 16;
 
-const SECRET = String(
-  process.env.ENCRYPTION_KEY || ""
-).trim();
+/*
+ * مفتاح التشفير لا يظهر في الكود.
+ *
+ * يتم قراءته من:
+ * ENCRYPTION_KEY
+ */
+const SECRET =
+  (process.env.ENCRYPTION_KEY || "").trim();
 
 if (SECRET.length < 32) {
   throw new Error(
@@ -36,37 +20,31 @@ if (SECRET.length < 32) {
   );
 }
 
-/**
- * Derive a stable 32-byte AES key from the backend secret.
- *
- * SHA-256 gives exactly 32 bytes required by AES-256.
- *
- * IMPORTANT:
- * Keep this derivation unchanged so existing encrypted
- * Firestore values remain decryptable.
+/*
+ * اشتقاق مفتاح AES-256 بطول 32 بايت.
  */
-const KEY = crypto
-  .createHash("sha256")
-  .update(SECRET, "utf8")
-  .digest();
+const KEY =
+  crypto
+    .createHash("sha256")
+    .update(SECRET)
+    .digest();
+
+/* =========================================================
+   Encrypt
+========================================================= */
 
 /**
- * Stored binary layout:
+ * تشفير قيمة باستخدام:
  *
- * [ 12 bytes IV ][ 16 bytes Auth Tag ][ Ciphertext ]
- */
-const IV_LENGTH = 12;
-const AUTH_TAG_LENGTH = 16;
-const MIN_PAYLOAD_LENGTH =
-  IV_LENGTH + AUTH_TAG_LENGTH;
-
-/**
- * Encrypt a value.
+ * AES-256-GCM
  *
- * Empty/null/undefined values remain empty strings.
+ * التخزين النهائي:
  *
- * Objects/arrays should be serialized by the caller:
- *   encrypt(JSON.stringify(value))
+ * [ IV 12 bytes ]
+ * [ Auth Tag 16 bytes ]
+ * [ Ciphertext ]
+ *
+ * ثم Base64.
  */
 export function encrypt(value) {
   if (
@@ -77,11 +55,10 @@ export function encrypt(value) {
     return "";
   }
 
-  const plaintext = String(value);
-
-  const iv = crypto.randomBytes(
-    IV_LENGTH
-  );
+  const iv =
+    crypto.randomBytes(
+      IV_LENGTH
+    );
 
   const cipher =
     crypto.createCipheriv(
@@ -90,13 +67,14 @@ export function encrypt(value) {
       iv
     );
 
-  const encrypted = Buffer.concat([
-    cipher.update(
-      plaintext,
-      "utf8"
-    ),
-    cipher.final()
-  ]);
+  const encrypted =
+    Buffer.concat([
+      cipher.update(
+        String(value),
+        "utf8"
+      ),
+      cipher.final()
+    ]);
 
   const authTag =
     cipher.getAuthTag();
@@ -108,20 +86,20 @@ export function encrypt(value) {
   ]).toString("base64");
 }
 
+/* =========================================================
+   Decrypt
+========================================================= */
+
 /**
- * Decrypt a value.
+ * فك تشفير قيمة AES-256-GCM.
  *
- * Throws on:
- * - malformed Base64
- * - incomplete encrypted payload
- * - invalid authentication tag
- * - wrong encryption key
- * - corrupted ciphertext
- *
- * Callers that want graceful failure should wrap this
- * function in try/catch, as safeDecrypt() does.
+ * إذا كانت القيمة غير صالحة،
+ * سيتم رمي الخطأ ليتم التعامل معه
+ * في الطبقة المستدعية.
  */
-export function decrypt(cipherText) {
+export function decrypt(
+  cipherText
+) {
   if (
     cipherText === undefined ||
     cipherText === null ||
@@ -130,56 +108,48 @@ export function decrypt(cipherText) {
     return "";
   }
 
-  if (
-    typeof cipherText !== "string"
-  ) {
-    throw new TypeError(
-      "Encrypted value must be a string."
-    );
-  }
+  const value =
+    String(cipherText);
 
-  const normalized =
-    cipherText.trim();
-
-  if (!normalized) {
-    return "";
-  }
-
-  let data;
-
-  try {
-    data = Buffer.from(
-      normalized,
+  const data =
+    Buffer.from(
+      value,
       "base64"
     );
-  } catch {
-    throw new Error(
-      "Invalid encrypted payload."
-    );
-  }
 
+  /*
+   * أقل حجم ممكن:
+   *
+   * IV 12
+   * TAG 16
+   */
   if (
     data.length <
-    MIN_PAYLOAD_LENGTH
+    IV_LENGTH +
+      AUTH_TAG_LENGTH
   ) {
     throw new Error(
-      "Invalid encrypted payload length."
+      "Invalid encrypted value."
     );
   }
 
-  const iv = data.subarray(
-    0,
-    IV_LENGTH
-  );
+  const iv =
+    data.subarray(
+      0,
+      IV_LENGTH
+    );
 
-  const authTag = data.subarray(
-    IV_LENGTH,
-    MIN_PAYLOAD_LENGTH
-  );
+  const authTag =
+    data.subarray(
+      IV_LENGTH,
+      IV_LENGTH +
+        AUTH_TAG_LENGTH
+    );
 
   const encrypted =
     data.subarray(
-      MIN_PAYLOAD_LENGTH
+      IV_LENGTH +
+        AUTH_TAG_LENGTH
     );
 
   const decipher =
@@ -206,15 +176,24 @@ export function decrypt(cipherText) {
   );
 }
 
+/* =========================================================
+   Encryption Detection
+========================================================= */
+
 /**
- * Optional helper for code that needs to determine whether a value
- * looks like one of our encrypted payloads without attempting to
- * expose/decrypt it.
+ * يتحقق بشكل أولي من أن القيمة
+ * تبدو كـ ciphertext صادر من نظامنا.
  *
- * This is only a structural check.
- * It does NOT prove that the value can be decrypted.
+ * مهم:
+ * هذه الدالة لا تعتبر القيمة موثوقة
+ * ولا تقوم مقام decrypt().
+ *
+ * تستخدم فقط لتجنب تشفير قيمة مشفرة
+ * مرة أخرى في طبقة التوافق القديمة.
  */
-export function isEncryptedValue(value) {
+export function isEncryptedValue(
+  value
+) {
   if (
     typeof value !== "string" ||
     !value.trim()
@@ -222,17 +201,71 @@ export function isEncryptedValue(value) {
     return false;
   }
 
-  try {
-    const data = Buffer.from(
-      value.trim(),
-      "base64"
-    );
+  const text =
+    value.trim();
 
-    return (
-      data.length >=
-      MIN_PAYLOAD_LENGTH
-    );
+  /*
+   * Base64 صالح.
+   */
+  if (
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(
+      text
+    )
+  ) {
+    return false;
+  }
+
+  let decoded;
+
+  try {
+    decoded =
+      Buffer.from(
+        text,
+        "base64"
+      );
   } catch {
     return false;
+  }
+
+  /*
+   * يجب أن يحتوي على الأقل على:
+   *
+   * IV + AuthTag
+   */
+  if (
+    decoded.length <
+    IV_LENGTH +
+      AUTH_TAG_LENGTH
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/* =========================================================
+   Safe Decrypt
+========================================================= */
+
+/**
+ * فك تشفير آمن للاستخدام في الأماكن
+ * التي لا نريد فيها إسقاط الطلب كاملًا
+ * بسبب قيمة تالفة أو قديمة.
+ */
+export function safeDecrypt(
+  value
+) {
+  try {
+    if (
+      value === undefined ||
+      value === null ||
+      value === ""
+    ) {
+      return "";
+    }
+
+    return decrypt(value);
+  } catch {
+    return "";
   }
 }
