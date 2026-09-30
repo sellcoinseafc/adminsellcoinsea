@@ -1761,6 +1761,10 @@ async function loadOrders() {
               order.issueMessage ||
               "",
 
+            issueState:
+              order.issueState ||
+              (order.issue ? "needs_customer_action" : "resolved"),
+
             paymentMethod:
               order.paymentPreview
                 ?.method ||
@@ -4769,6 +4773,32 @@ window.openOrderModal =
           </p>
 
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+
+            <span class="badge">
+              ${order.issueState === "data_received"
+                ? "تم استلام البيانات"
+                : order.issueState === "resolved"
+                  ? "تم الحل"
+                  : "بانتظار إجراء العميل"}
+            </span>
+
+            <button
+              class="btn-custom"
+              onclick="setIssueState('${escapeAttribute(order.id)}','needs_customer_action')">
+              بانتظار العميل
+            </button>
+
+            <button
+              class="btn-custom"
+              onclick="setIssueState('${escapeAttribute(order.id)}','data_received')">
+              تم استلام البيانات
+            </button>
+
+            <button
+              class="btn-custom"
+              onclick="setIssueState('${escapeAttribute(order.id)}','resolved')">
+              تم الحل
+            </button>
 
             <select
               id="orderIssueSelect"
