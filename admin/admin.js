@@ -5731,6 +5731,40 @@ window.confirmPurgeDataFinal =
 // 14) تغيير الحالة — يدوي فقط
 // ==========================================================================
 
+window.setIssueState = async function(orderId, state) {
+  const order = ordersData.find((item) => item.id === orderId);
+  if (!order || !order.issue) return;
+
+  try {
+    const response = await adminFetch("/api/orders/update-status", {
+      method: "POST",
+      body: JSON.stringify({
+        orderId: order.id,
+        status: order.status,
+        issue: order.issue,
+        issueMessage: order.issueMessage || "",
+        issueState: state
+      })
+    });
+
+    const data = await readJsonResponse(response);
+
+    if (await handleAdminAuthFailure(response, data)) return;
+
+    if (!data.success) {
+      showToast("❌ " + (data.message || "تعذر تحديث حالة المشكلة."));
+      return;
+    }
+
+    showToast("✅ تم تحديث دورة حياة المشكلة.");
+    await loadOrders();
+    openOrderModal(order.id);
+  } catch (error) {
+    console.error("Issue state update error:", error);
+    showToast("❌ تعذر تحديث دورة حياة المشكلة.");
+  }
+};
+
 window.promptEditOrder =
   async function (
     orderId
