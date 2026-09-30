@@ -2571,7 +2571,15 @@ router.post(
           TS(),
 
         withdrawnUpdatedAt:
-          TS()
+          TS(),
+
+        history:
+          admin.firestore.FieldValue.arrayUnion({
+            type: "withdrawn_quantity",
+            value,
+            actor: "admin",
+            at: new Date()
+          })
       });
 
       return res.json({
