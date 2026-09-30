@@ -1,5 +1,17 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import crypto from "crypto";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+/* Support the project-standard server/.env location. */
+dotenv.config({
+  path: join(__dirname, "../.env")
+});
+
+dotenv.config();
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12;
