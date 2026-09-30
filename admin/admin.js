@@ -2326,7 +2326,8 @@ window.renderOrdersTables =
                 <td>
                   <span style="font-family:monospace;font-size:0.8rem;color:var(--text-muted);">
                     ${escapeHtml(
-                      order.orderId ||
+                      order.internalReference ||
+                        order.orderId ||
                         order.id ||
                         "---"
                     )}
@@ -2455,7 +2456,8 @@ window.renderRecentOrdersTable =
 
                 <td>
                   ${escapeHtml(
-                    order.orderId ||
+                    order.internalReference ||
+                      order.orderId ||
                       order.id ||
                       "---"
                   )}
