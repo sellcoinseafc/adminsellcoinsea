@@ -5,299 +5,313 @@ const NUMBERING_DOC = db
   .collection("system")
   .doc("orderNumbering");
 
-const LETTERS = "SAMICOINS";
-const DAILY_CODE_COUNT = 4;
+const REFERENCE_COLLECTION = "orderReferences";
 
 /*
- * المنطقة الزمنية الرسمية المستخدمة لتوليد
- * الأكواد اليومية.
+ * Customer-facing reference alphabet.
  *
- * الموقع المستهدف للنظام:
- * السعودية - الرياض
+ * I and L are intentionally excluded because they can be confused
+ * with 1 in some fonts/screens.
  */
-const NUMBERING_TIME_ZONE =
-  "Asia/Riyadh";
+const LETTERS = "ABCDEFGHJKMNOPQRSTUVWXYZ";
 
-/* =========================================================
-   Date Helpers
-========================================================= */
+/*
+ * Customer-facing order reference format:
+ *
+ * 8 characters total
+ * 5 digits + 3 letters
+ * first character = digit
+ * last character  = digit
+ * letters are distributed randomly across the six middle positions
+ *
+ * Example:
+ * 7A42M8Q3
+ */
+const REFERENCE_LENGTH = 8;
+const LETTER_COUNT = 3;
+const DIGIT_COUNT = 5;
+const MIN_MIDDLE_LETTER_POSITION = 1;
+const MAX_MIDDLE_LETTER_POSITION = 6;
 
 /**
- * يرجع مفتاح اليوم بصيغة:
- *
- * YYYY-MM-DD
- *
- * حسب توقيت الرياض، وليس UTC.
+ * Number of middle positions available for letters.
+ * Positions are zero-based: 1..6.
  */
-function getTodayKey() {
-  const formatter =
-    new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone:
-          NUMBERING_TIME_ZONE,
-
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }
-    );
-
-  return formatter.format(
-    new Date()
-  );
-}
-
-/* =========================================================
-   Random Helpers
-========================================================= */
+const MIDDLE_POSITIONS = Array.from(
+  {
+    length:
+      MAX_MIDDLE_LETTER_POSITION -
+      MIN_MIDDLE_LETTER_POSITION +
+      1
+  },
+  (_, index) =>
+    MIN_MIDDLE_LETTER_POSITION + index
+);
 
 /**
- * حرف عشوائي من:
- *
- * SAMI COINS
- *
- * التكرار مسموح.
+ * Selects n distinct items from an array using a cryptographically
+ * secure random source.
  */
-function randomLetter() {
-  return LETTERS[
-    crypto.randomInt(
-      0,
-      LETTERS.length
-    )
-  ];
-}
-
-/**
- * حرفان عشوائيان.
- */
-function randomLetters() {
-  return (
-    randomLetter() +
-    randomLetter()
-  );
-}
-
-/**
- * كود يومي مكوّن من 3 أرقام:
- *
- * 100 - 999
- */
-function randomDailyCode() {
-  return String(
-    crypto.randomInt(
-      100,
-      1000
-    )
-  );
-}
-
-/**
- * إنشاء 4 أكواد يومية مختلفة.
- *
- * يتم استدعاؤها فقط عند بداية يوم جديد
- * أو عند اكتشاف بيانات ترقيم غير صالحة.
- */
-function createDailyCodes() {
-  const codes = new Set();
-
-  while (
-    codes.size <
-    DAILY_CODE_COUNT
-  ) {
-    codes.add(
-      randomDailyCode()
+function randomDistinctItems(items, count) {
+  if (count > items.length) {
+    throw new Error(
+      "Cannot select more distinct items than the source contains."
     );
   }
 
-  return Array.from(codes);
+  const pool = [...items];
+  const selected = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const index = crypto.randomInt(
+      0,
+      pool.length
+    );
+
+    selected.push(pool[index]);
+    pool.splice(index, 1);
+  }
+
+  return selected;
 }
 
-/* =========================================================
-   Validation
-========================================================= */
+/**
+ * Generate the customer-facing 8-character reference.
+ *
+ * Rules:
+ * - exactly 5 digits
+ * - exactly 3 letters
+ * - first and last characters are digits
+ * - letters are distributed randomly through the middle
+ * - letters are distinct inside the same reference
+ * - random source is Node crypto, not Math.random
+ */
+function generateReferenceNumber() {
+  const characters =
+    Array(REFERENCE_LENGTH).fill(null);
 
-function isValidDailyCodes(
-  codes
+  /* First and last characters are always digits. */
+  characters[0] = String(
+    crypto.randomInt(0, 10)
+  );
+
+  characters[REFERENCE_LENGTH - 1] =
+    String(
+      crypto.randomInt(0, 10)
+    );
+
+  /* Pick 3 different middle positions for the letters. */
+  const letterPositions =
+    randomDistinctItems(
+      MIDDLE_POSITIONS,
+      LETTER_COUNT
+    );
+
+  /* Pick 3 different letters from the approved alphabet. */
+  const selectedLetters =
+    randomDistinctItems(
+      [...LETTERS],
+      LETTER_COUNT
+    );
+
+  for (
+    let i = 0;
+    i < LETTER_COUNT;
+    i += 1
+  ) {
+    characters[letterPositions[i]] =
+      selectedLetters[i];
+  }
+
+  /* Fill every remaining middle position with a digit. */
+  for (
+    let i = 1;
+    i < REFERENCE_LENGTH - 1;
+    i += 1
+  ) {
+    if (characters[i] === null) {
+      characters[i] = String(
+        crypto.randomInt(0, 10)
+      );
+    }
+  }
+
+  const reference =
+    characters.join("");
+
+  if (
+    !isValidReferenceNumber(reference)
+  ) {
+    throw new Error(
+      "Generated order reference failed validation."
+    );
+  }
+
+  return reference;
+}
+
+/**
+ * Validate the exact customer-facing reference format.
+ */
+function isValidReferenceNumber(
+  reference
 ) {
   if (
-    !Array.isArray(codes) ||
-    codes.length !==
-      DAILY_CODE_COUNT
+    typeof reference !== "string" ||
+    reference.length !== REFERENCE_LENGTH
   ) {
     return false;
   }
 
-  const unique =
-    new Set(codes);
+  if (!/^\d.*\d$/.test(reference)) {
+    return false;
+  }
+
+  const letters =
+    reference.match(/[A-Z]/g) || [];
+
+  const digits =
+    reference.match(/\d/g) || [];
 
   if (
-    unique.size !==
-    DAILY_CODE_COUNT
+    letters.length !== LETTER_COUNT
   ) {
     return false;
   }
 
-  return codes.every(
-    (code) =>
-      /^\d{3}$/.test(
-        String(code)
-      )
+  if (
+    digits.length !== DIGIT_COUNT
+  ) {
+    return false;
+  }
+
+  if (
+    new Set(letters).size !==
+    LETTER_COUNT
+  ) {
+    return false;
+  }
+
+  return letters.every(
+    (letter) =>
+      LETTERS.includes(letter)
   );
 }
 
-/* =========================================================
-   Generate Order Numbers
-========================================================= */
+/**
+ * Generate a separate internal business order ID.
+ *
+ * This value is intentionally not the customer-facing reference.
+ * It is cryptographically random and has no sequential information.
+ */
+function generateInternalOrderId() {
+  return `ORD-${crypto.randomUUID()}`;
+}
 
 /**
- * إنشاء أرقام الطلبات داخل Firestore Transaction.
+ * Reserve a reference and advance the internal serial atomically.
  *
- * Order ID:
+ * Important:
+ * The reference reservation is permanent. Once a reference has been
+ * successfully reserved, it is never returned to the available pool,
+ * even if the related order is later deleted, archived, or destroyed.
  *
- * XXDDDNN
- *
- * حيث:
- * XX = حرفان من SAMI COINS
- * DDD = أحد أكواد اليوم الأربعة
- * NN  = الرقم التسلسلي بدون leading zero
- *
- * مثال:
- *
- * SA42715
- *
- * Reference:
- *
- * FC-RRR-NN
- *
- * مثال:
- *
- * FC-427-15
- *
- * ---------------------------------------------------------
- *
- * ملاحظة:
- * - الأكواد الأربعة تُنشأ مرة واحدة في اليوم.
- * - جميع الطلبات في نفس اليوم تستخدم نفس مجموعة الأكواد.
- * - الرقم التسلسلي يبدأ من 1 كل يوم.
- * - Firestore Transaction تمنع تضارب التسلسل عند
- *   إنشاء طلبات متزامنة.
- * - الطلبات القديمة لا تتأثر.
+ * Firestore transaction guarantees that two concurrent requests cannot
+ * reserve the same reference.
  */
-export async function generateOrderNumbers() {
+async function reserveReferenceInTransaction() {
   return db.runTransaction(
     async (transaction) => {
-      /*
-       * Firestore requires reads before writes
-       * inside a transaction.
-       */
-      const snapshot =
+      const numberingSnapshot =
         await transaction.get(
           NUMBERING_DOC
         );
 
-      const today =
-        getTodayKey();
-
       const data =
-        snapshot.exists
-          ? snapshot.data() || {}
+        numberingSnapshot.exists
+          ? numberingSnapshot.data() || {}
           : {};
 
-      let dailyCodes =
-        Array.isArray(
-          data.codes
+      const currentSerial =
+        Number(data.serial || 0);
+
+      const serial =
+        Number.isSafeInteger(
+          currentSerial
         )
-          ? data.codes
-          : [];
+          ? currentSerial + 1
+          : 1;
 
-      let storedDate =
-        data.date || "";
-
-      /*
-       * إذا بدأ يوم جديد أو أصبحت بيانات الأكواد
-       * غير صالحة، ننشئ مجموعة جديدة.
-       */
       if (
-        storedDate !== today ||
-        !isValidDailyCodes(
-          dailyCodes
-        )
+        serial >
+        Number.MAX_SAFE_INTEGER
       ) {
-        dailyCodes =
-          createDailyCodes();
-
-        storedDate =
-          today;
+        throw new Error(
+          "Order numbering serial has reached the maximum safe integer."
+        );
       }
 
       /*
-       * التسلسل الخاص باليوم الحالي.
-       *
-       * يبدأ من:
-       * 1
-       *
-       * وليس:
-       * 01
-       */
-      const currentSerial =
-        data.serialDate === today
-          ? Number(
-              data.serial || 0
-            )
-          : 0;
-
-      const serial =
-        currentSerial + 1;
-
-      /*
-       * اختيار أحد الأكواد اليومية الأربعة.
-       */
-      const dailyCode =
-        dailyCodes[
-          crypto.randomInt(
-            0,
-            dailyCodes.length
-          )
-        ];
-
-      /*
-       * Order ID:
-       *
-       * XXDDDNN
-       *
-       * مثال:
-       * SA42715
-       */
-      const orderId =
-        `${randomLetters()}${dailyCode}${serial}`;
-
-      /*
-       * Reference:
-       *
-       * FC-RRR-NN
-       *
-       * مثال:
-       * FC-427-15
+       * Generate the candidate inside the transaction callback so a
+       * transaction retry receives a fresh candidate.
        */
       const referenceNumber =
-        `FC-${dailyCode}-${serial}`;
+        generateReferenceNumber();
+
+      const referenceRef =
+        db
+          .collection(
+            REFERENCE_COLLECTION
+          )
+          .doc(referenceNumber);
 
       /*
-       * تحديث سجل الترقيم.
+       * Firestore requires all transaction reads to happen before writes.
        */
+      const referenceSnapshot =
+        await transaction.get(
+          referenceRef
+        );
+
+      if (
+        referenceSnapshot.exists
+      ) {
+        const collision =
+          new Error(
+            "ORDER_REFERENCE_COLLISION"
+          );
+
+        collision.code =
+          "ORDER_REFERENCE_COLLISION";
+
+        throw collision;
+      }
+
+      const orderId =
+        generateInternalOrderId();
+
+      transaction.set(
+        referenceRef,
+        {
+          referenceNumber,
+
+          orderId,
+
+          serial,
+
+          reservedAt:
+            admin.firestore
+              .FieldValue
+              .serverTimestamp()
+        },
+        {
+          merge: false
+        }
+      );
+
       transaction.set(
         NUMBERING_DOC,
         {
-          date:
-            storedDate,
-
-          codes:
-            dailyCodes,
-
-          serialDate:
-            today,
-
           serial,
 
           updatedAt:
@@ -313,13 +327,64 @@ export async function generateOrderNumbers() {
       return {
         orderId,
         referenceNumber,
-        dailyCode,
         serial
       };
     }
   );
 }
 
+/**
+ * Generate and permanently reserve a customer-facing order reference.
+ *
+ * The outer retry is intentionally defensive. Firestore already gives
+ * us atomic transaction behavior, while this loop handles the extremely
+ * unlikely case where a generated reference collides with an existing
+ * reservation.
+ */
+export async function generateOrderNumbers() {
+  const MAX_ATTEMPTS = 20;
+
+  for (
+    let attempt = 1;
+    attempt <= MAX_ATTEMPTS;
+    attempt += 1
+  ) {
+    try {
+      const result =
+        await reserveReferenceInTransaction();
+
+      return {
+        ...result,
+
+        /*
+         * Legacy compatibility field.
+         * It is derived from the generated reference and is no longer
+         * used to generate the customer-facing number.
+         */
+        dailyCode:
+          result.referenceNumber
+            .replace(/\D/g, "")
+            .slice(0, 3)
+      };
+    } catch (error) {
+      if (
+        error?.code ===
+          "ORDER_REFERENCE_COLLISION" &&
+        attempt < MAX_ATTEMPTS
+      ) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error(
+    "Unable to generate a unique order reference after multiple attempts."
+  );
+}
+
 export default {
-  generateOrderNumbers
+  generateOrderNumbers,
+  isValidReferenceNumber
 };
