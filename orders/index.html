@@ -2,381 +2,1886 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    >
+
     <title>SAMI COINS | سامي كوينز - بيع الكوينز</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
+
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <!-- Header Navigation -->
+    <!-- =========================================================
+         HEADER
+    ========================================================== -->
     <header>
         <div class="header-content">
+
             <a href="#" class="brand-logo">
-                <div class="brand-icon"><i class="fa-solid fa-coins"></i></div>
-                <span class="brand-title">SAMI COINS</span>
+                <div class="brand-icon">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+
+                <span class="brand-title">
+                    SAMI COINS
+                </span>
             </a>
+
             <div class="header-actions">
-                <!-- الملاحظة 4: التوجيه المباشر لرابط /tracking -->
-                <button type="button" class="btn-track-header" onclick="openInquiryPage()" id="lblHeaderTrack">
-                    <i class="fa-solid fa-magnifying-glass-location"></i> استعلام عن الطلب
+
+                <button
+                    type="button"
+                    class="btn-track-header"
+                    onclick="openInquiryPage()"
+                    id="lblHeaderTrack"
+                >
+                    <i class="fa-solid fa-magnifying-glass-location"></i>
+                    <span>استعلام عن الطلب</span>
                 </button>
+
             </div>
+
         </div>
     </header>
 
-    <div class="main-container">
 
-        <!-- STEP 1 SCREEN -->
-        <div id="step1Screen">
-            <!-- 1. اختيار المنصة (الأسعار تُجلب ديناميكياً) -->
-            <div class="box-card">
-                <div class="box-card-title"><i class="fa-solid fa-gamepad"></i> اختر المنصة أولاً <span style="color:#ef4444">*</span></div>
-                <div class="platforms-flex">
-                    <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')">
-                        <i class="fa-brands fa-playstation"></i> PlayStation
-                        <span class="platform-sub-price" id="psSubPrice">--</span>
-                    </button>
-                    <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')">
-                        <i class="fa-brands fa-xbox"></i> Xbox
-                        <span class="platform-sub-price" id="xboxSubPrice">--</span>
-                    </button>
-                    <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')">
-                        <i class="fa-solid fa-desktop"></i> PC
-                        <span class="platform-sub-price" id="pcSubPrice">--</span>
-                    </button>
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+    <main class="main-container">
+
+
+        <!-- =====================================================
+             STORE CLOSED SCREEN
+             يتم التحكم بها من storeOpen في لوحة التحكم
+        ====================================================== -->
+        <section
+            id="storeClosedScreen"
+            class="store-closed-screen hidden"
+            aria-live="polite"
+        >
+
+            <div class="store-closed-card">
+
+                <div class="store-closed-icon">
+                    <i class="fa-solid fa-store-slash"></i>
                 </div>
+
+                <div class="store-closed-badge">
+                    <i class="fa-solid fa-circle"></i>
+                    البيع مغلق حاليًا
+                </div>
+
+                <h1>
+                    نعتذر، لا نستقبل طلبات البيع حاليًا
+                </h1>
+
+                <p>
+                    المتجر مغلق في الوقت الحالي.
+                    يمكنك التواصل مع الدعم الفني للاستفسار
+                    عن موعد عودة استقبال طلبات البيع.
+                </p>
+
+                <button
+                    type="button"
+                    class="closed-whatsapp-btn"
+                    id="closedStoreWhatsappBtn"
+                    onclick="contactClosedStoreWhatsapp()"
+                >
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span>تواصل معنا عبر واتساب</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="closed-retry-btn"
+                    onclick="loadSettings()"
+                >
+                    <i class="fa-solid fa-rotate"></i>
+                    إعادة المحاولة
+                </button>
+
             </div>
 
-            <!-- 2. سعر المليون (ديناميكي) -->
-            <div class="rates-container-pro hidden" id="singlePlatformRateCard">
-                <div class="rate-vertical-card">
-                    <div class="rate-v-header">
-                        <i id="selectedPlatformIcon" class="fa-brands fa-playstation"></i>
+        </section>
+
+
+        <!-- =====================================================
+             ORDER APPLICATION
+             يتم إخفاؤه بالكامل عندما يكون المتجر مغلقًا
+        ====================================================== -->
+        <section id="orderApplication">
+
+
+            <!-- =================================================
+                 STEP 1
+            ================================================== -->
+            <div id="step1Screen">
+
+
+                <!-- =============================================
+                     PAGE INTRO
+                ============================================== -->
+                <div class="page-intro-card">
+
+                    <div class="page-intro-icon">
+                        <i class="fa-solid fa-coins"></i>
                     </div>
-                    <div class="rate-v-body">
-                        <span class="rate-v-label">سعر المليون:</span>
-                        <div class="rate-v-val">
-                            <span id="displaySelectedRate" style="color: #ffffff;">--</span> <span class="currency-symbol" style="color: #ffffff;">ر.س</span>
+
+                    <div class="page-intro-content">
+
+                        <span class="page-intro-kicker">
+                            SAMI COINS
+                        </span>
+
+                        <h1>
+                            بيع الكوينز بسهولة وأمان
+                        </h1>
+
+                        <p>
+                            اختر منصتك وأدخل الكمية لعرض
+                            المبلغ المستحق لك.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     1. PLATFORM
+                ============================================== -->
+                <div class="box-card platform-card">
+
+                    <div class="section-heading">
+
+                        <div class="section-heading-icon">
+                            <i class="fa-solid fa-gamepad"></i>
                         </div>
+
+                        <div>
+                            <span class="section-kicker">
+                                الخطوة الأولى
+                            </span>
+
+                            <h2>
+                                اختر المنصة
+                                <span class="required-star">*</span>
+                            </h2>
+                        </div>
+
+                    </div>
+
+
+                    <div class="platforms-flex">
+
+                        <button
+                            type="button"
+                            class="platform-btn ps-btn"
+                            onclick="selectPlatform('PlayStation')"
+                        >
+                            <span class="platform-icon-wrap">
+                                <i class="fa-brands fa-playstation"></i>
+                            </span>
+
+                            <span class="platform-name">
+                                PlayStation
+                            </span>
+
+                            <span
+                                class="platform-sub-price"
+                                id="psSubPrice"
+                            >
+                                --
+                            </span>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="platform-btn xbox-btn"
+                            onclick="selectPlatform('Xbox')"
+                        >
+                            <span class="platform-icon-wrap">
+                                <i class="fa-brands fa-xbox"></i>
+                            </span>
+
+                            <span class="platform-name">
+                                Xbox
+                            </span>
+
+                            <span
+                                class="platform-sub-price"
+                                id="xboxSubPrice"
+                            >
+                                --
+                            </span>
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="platform-btn pc-btn"
+                            onclick="selectPlatform('PC')"
+                        >
+                            <span class="platform-icon-wrap">
+                                <i class="fa-solid fa-desktop"></i>
+                            </span>
+
+                            <span class="platform-name">
+                                PC
+                            </span>
+
+                            <span
+                                class="platform-sub-price"
+                                id="pcSubPrice"
+                            >
+                                --
+                            </span>
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     PLATFORM PROMPT
+                ============================================== -->
+                <div
+                    id="platformPromptBox"
+                    class="platform-prompt-box"
+                >
+                    <div class="prompt-icon">
+                        <i class="fa-solid fa-hand-pointer"></i>
+                    </div>
+
+                    <div>
+                        <strong>
+                            اختر المنصة للبدء
+                        </strong>
+
+                        <span>
+                            بعدها ستظهر لك تفاصيل السعر والكمية وطرق الدفع.
+                        </span>
                     </div>
                 </div>
-            </div>
 
-            <!-- 3. بطاقات المميزات (ديناميكية عبر API) -->
-            <div class="info-cards-grid hidden" id="durationInfoCardsStep1">
-                <div class="info-mini-card">
-                    <div style="color: var(--text-muted);">مدة السحب</div>
-                    <div style="font-weight: 800; color: var(--accent-color);" id="withdrawText">--</div>
-                </div>
-                <div class="info-mini-card">
-                    <div style="color: var(--text-muted);">مدة التحويل</div>
-                    <div style="font-weight: 800; color: var(--accent-color);" id="transferText">--</div>
-                </div>
-                <div class="info-mini-card">
-                    <div style="color: var(--text-muted);">طريقة النقل</div>
-                    <div style="font-weight: 800; color: var(--gold-color);" id="safeMethodText">--</div>
-                </div>
-            </div>
 
-            <!-- 4. كمية الكوينز -->
-            <div class="box-card hidden" id="qtyCardContainer">
-                <div class="box-card-title"><i class="fa-solid fa-coins"></i> <span>أدخل كمية الكوينز <span style="color:#ef4444">*</span></span></div>
-                
-                <div class="hero-qty-input-box" id="qtyInputBoxWrap">
-                    <button type="button" class="qty-adjust-btn" onclick="adjustQty(-100000)">-</button>
-                    <input type="text" id="quantityInput" placeholder="أدخل الكمية" oninput="formatAndCalculate(this)" style="color: #ffffff;">
-                    <button type="button" class="qty-adjust-btn" onclick="adjustQty(100000)">+</button>
+                <!-- =============================================
+                     SELECTED PLATFORM RATE
+                ============================================== -->
+                <div
+                    class="rates-container-pro hidden"
+                    id="singlePlatformRateCard"
+                >
+
+                    <div class="rate-vertical-card">
+
+                        <div class="rate-platform-side">
+
+                            <div
+                                class="rate-platform-icon"
+                                id="selectedPlatformIconWrap"
+                            >
+                                <i
+                                    id="selectedPlatformIcon"
+                                    class="fa-brands fa-playstation"
+                                ></i>
+                            </div>
+
+                            <div class="rate-platform-info">
+
+                                <span>
+                                    سعر المليون
+                                </span>
+
+                                <small>
+                                    حسب المنصة المختارة
+                                </small>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="rate-price-display">
+
+                            <span
+                                id="displaySelectedRate"
+                            >
+                                --
+                            </span>
+
+                            <span class="currency-symbol">
+                                ر.س
+                            </span>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
-                <input type="range" id="qtyRange" value="0" min="0" max="5000000" step="100000" oninput="sliderChanged(this)">
 
-                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; font-weight: 700;">
-                    <span>الحد الأدنى: <span id="minLimitText" style="color: #ffffff;">--</span></span>
-                    <span>الحد الأقصى: <span id="maxLimitText" style="color: #ffffff;">--</span></span>
+                <!-- =============================================
+                     SERVICE INFO
+                ============================================== -->
+                <div
+                    class="info-cards-grid hidden"
+                    id="durationInfoCardsStep1"
+                >
+
+                    <div class="info-mini-card">
+
+                        <div class="info-mini-icon">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+
+                        <div class="info-mini-content">
+
+                            <span class="info-mini-label">
+                                مدة السحب
+                            </span>
+
+                            <strong
+                                id="withdrawText"
+                                class="info-white-value"
+                            >
+                                --
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-mini-card">
+
+                        <div class="info-mini-icon">
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                        </div>
+
+                        <div class="info-mini-content">
+
+                            <span class="info-mini-label">
+                                مدة التحويل
+                            </span>
+
+                            <strong
+                                id="transferText"
+                                class="info-white-value"
+                            >
+                                --
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="info-mini-card safe-info-card">
+
+                        <div class="info-mini-icon">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+
+                        <div class="info-mini-content">
+
+                            <span class="info-mini-label">
+                                طريقة النقل
+                            </span>
+
+                            <strong
+                                id="safeMethodText"
+                                class="safe-method-value"
+                            >
+                                آمنة 99%
+                            </strong>
+
+                        </div>
+
+                    </div>
+
                 </div>
-            </div>
 
-            <!-- 5. مربع المبلغ المصغر -->
-            <div class="box-card hidden" id="totalAmountBoxCard" style="padding: 12px 16px;">
-                <div class="payout-box-compact">
-                    <span style="font-size: 0.88rem; font-weight: 800; color: #ffffff !important;">المبلغ:</span>
-                    <span class="payout-val-compact" id="totalAmountText">0.00 ر.س</span>
+
+                <!-- =============================================
+                     2. QUANTITY
+                ============================================== -->
+                <div
+                    class="box-card quantity-card hidden"
+                    id="qtyCardContainer"
+                >
+
+                    <div class="section-heading">
+
+                        <div class="section-heading-icon quantity-icon">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+
+                        <div>
+                            <span class="section-kicker">
+                                كمية الكوينز
+                            </span>
+
+                            <h2>
+                                أدخل الكمية
+                                <span class="required-star">*</span>
+                            </h2>
+                        </div>
+
+                    </div>
+
+
+                    <div
+                        class="hero-qty-input-box"
+                        id="qtyInputBoxWrap"
+                    >
+
+                        <button
+                            type="button"
+                            class="qty-adjust-btn"
+                            onclick="adjustQty(-100000)"
+                            aria-label="تقليل الكمية"
+                        >
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+
+
+                        <div class="quantity-input-content">
+
+                            <span class="quantity-input-label">
+                                الكمية
+                            </span>
+
+                            <input
+                                type="text"
+                                id="quantityInput"
+                                placeholder="0"
+                                inputmode="numeric"
+                                autocomplete="off"
+                                oninput="formatAndCalculate(this)"
+                                aria-label="كمية الكوينز"
+                            >
+
+                            <span class="quantity-unit">
+                                كوينز
+                            </span>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            class="qty-adjust-btn"
+                            onclick="adjustQty(100000)"
+                            aria-label="زيادة الكمية"
+                        >
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+
+                    </div>
+
+
+                    <div class="quantity-range-wrap">
+
+                        <input
+                            type="range"
+                            id="qtyRange"
+                            value="0"
+                            min="0"
+                            max="5000000"
+                            step="100000"
+                            oninput="sliderChanged(this)"
+                        >
+
+                    </div>
+
+
+                    <div class="quantity-limits">
+
+                        <div>
+                            <span>
+                                الحد الأدنى
+                            </span>
+
+                            <strong id="minLimitText">
+                                --
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                الحد الأقصى
+                            </span>
+
+                            <strong id="maxLimitText">
+                                --
+                            </strong>
+                        </div>
+
+                    </div>
+
                 </div>
-            </div>
 
-            <!-- 6. طريقة الدفع واستلام المبلغ (مُولّدة ديناميكياً) -->
-            <div class="box-card hidden" id="paymentCategoryCard">
-                <div class="box-card-title"><i class="fa-solid fa-wallet"></i> طريقة الدفع واستلام المبلغ <span style="color:#ef4444">*</span></div>
-                
-                <div class="payment-main-types-flex">
-                    <button type="button" class="pay-main-type-btn" id="tabLocal" onclick="switchPaymentCategory('local')">
-                        <i class="fa-solid fa-house-flag"></i> دفع محلي
+
+                <!-- =============================================
+                     TOTAL
+                ============================================== -->
+                <div
+                    class="box-card hidden"
+                    id="totalAmountBoxCard"
+                >
+
+                    <div class="total-amount-card">
+
+                        <div class="total-amount-heading">
+
+                            <div class="total-amount-icon">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+
+                            <div>
+                                <span>
+                                    إجمالي المبلغ المستحق
+                                </span>
+
+                                <small>
+                                    يتم احتسابه حسب الكمية والمنصة
+                                </small>
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            class="payout-box-compact"
+                            id="totalAmountDisplayBox"
+                        >
+
+                            <span
+                                id="totalAmountText"
+                                class="payout-val-compact"
+                            >
+                                0.00 ر.س
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =============================================
+                     PAYMENT
+                ============================================== -->
+                <div
+                    class="box-card hidden payment-card"
+                    id="paymentCategoryCard"
+                >
+
+                    <div class="section-heading">
+
+                        <div class="section-heading-icon payment-icon">
+                            <i class="fa-solid fa-wallet"></i>
+                        </div>
+
+                        <div>
+
+                            <span class="section-kicker">
+                                استلام المبلغ
+                            </span>
+
+                            <h2>
+                                اختر طريقة الدفع
+                                <span class="required-star">*</span>
+                            </h2>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="payment-main-types-flex">
+
+                        <button
+                            type="button"
+                            class="pay-main-type-btn"
+                            id="tabLocal"
+                            onclick="switchPaymentCategory('local')"
+                        >
+
+                            <i class="fa-solid fa-house-flag"></i>
+
+                            <span>
+                                دفع محلي
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            type="button"
+                            class="pay-main-type-btn"
+                            id="tabIntl"
+                            onclick="switchPaymentCategory('international')"
+                        >
+
+                            <i class="fa-solid fa-globe"></i>
+
+                            <span>
+                                دفع دولي
+                            </span>
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        class="payment-category-hint"
+                        id="paymentCategoryHint"
+                    >
+                        <i class="fa-solid fa-circle-info"></i>
+
+                        <span>
+                            اختر نوع الدفع لعرض طرق الاستلام المتاحة.
+                        </span>
+                    </div>
+
+
+                    <div
+                        class="pay-grid hidden"
+                        id="dynamicPaymentMethodsGrid"
+                    ></div>
+
+                </div>
+
+
+                <!-- =============================================
+                     NEXT BUTTON
+                ============================================== -->
+                <div
+                    class="box-card hidden next-step-card"
+                    id="payoutCardContainer"
+                >
+
+                    <button
+                        type="button"
+                        class="btn-action-primary next-step-button"
+                        id="btnNextStep"
+                        onclick="goToStep2()"
+                    >
+                        <span>
+                            ابدأ ببيع كوينز الآن
+                        </span>
+
+                        <i class="fa-solid fa-arrow-left"></i>
                     </button>
-                    <button type="button" class="pay-main-type-btn" id="tabIntl" onclick="switchPaymentCategory('international')">
-                        <i class="fa-solid fa-globe"></i> دفع دولي
-                    </button>
-                </div>
 
-                <div class="pay-grid hidden" id="dynamicPaymentMethodsGrid" style="margin-top: 12px;"></div>
-            </div>
+                    <div class="secure-note">
+                        <i class="fa-solid fa-lock"></i>
 
-            <div id="platformPromptBox" class="box-card" style="text-align: center; color: var(--gold-color); font-weight: 700; font-size: 0.85rem; padding: 16px;">
-                ⚠️ يرجى اختيار المنصة أعلاه أولاً لبدء الطلب وعرض الأسعار.
-            </div>
-
-            <!-- 7. زر الانتقال ببيع كوينزك -->
-            <div class="box-card hidden" id="payoutCardContainer">
-                <button type="button" class="btn-action-primary" id="btnNextStep" onclick="goToStep2()" style="margin-top: 0;">ابدأ ببيع كوينز الآن</button>
-            </div>
-        </div>
-
-        <!-- STEP 2 SCREEN -->
-        <div id="step2Screen" class="hidden">
-            <!-- الملاحظة 2: إضافة onsubmit لتفادي إعادة تحميل الصفحة -->
-            <form id="orderForm" onsubmit="goToReview(); return false;">
-                <div class="box-card" style="border: 1.5px solid rgba(0,210,255,0.3);">
-                    <div class="box-card-title"><i class="fa-solid fa-user"></i> بيانات العميل والتواصل</div>
-                    
-                    <label class="field-label">اسم العميل <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="text" id="customerName" placeholder="أدخل اسمك الكامل" required></div>
-
-                    <label class="field-label">رقم التواصل واتساب <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="tel" id="customerPhone" placeholder="مثال: 966570770465" oninput="convertArabicNumbersToEnglish(this)" required></div>
-                </div>
-
-                <div class="box-card" style="border: 1.5px solid rgba(16,185,129,0.3);">
-                    <div class="box-card-title"><i class="fa-solid fa-shield-halved"></i> البريد الإلكتروني وكلمة المرور لحساب EA</div>
-                    
-                    <label class="field-label">البريد الإلكتروني لحساب EA <span style="color:#ef4444">*</span>:</label>
-                    <div class="input-box-wrap"><input type="email" id="eaEmail" placeholder="example@gmail.com" required></div>
-
-                    <label class="field-label">كلمة مرور حساب EA <span style="color:#ef4444">*</span> (حرف كابيتال واحد على الأقل):</label>
-                    <div class="input-box-wrap"><input type="text" id="eaPass" placeholder="كلمة المرور (مثال: samicoins)" required></div>
-                </div>
-
-                <div class="box-card" style="border: 1.5px solid rgba(245,158,11,0.3);">
-                    <div class="box-card-title">
-                        <span><i class="fa-solid fa-key"></i> الأكواد الاحتياطية <span style="color:#ef4444">*</span></span>
-                        <a href="#" onclick="openBackupGuideModal(); return false;" style="font-size: 0.75rem; color: var(--accent-color); font-weight: 800;"><i class="fa-solid fa-circle-question"></i> طريقة الاستخراج؟</a>
+                        <span>
+                            بياناتك محمية ويتم التعامل معها بسرية وأمان.
+                        </span>
                     </div>
-                    <div class="backup-codes-stack">
-                        <div class="code-input-row" id="rowCode1"><span class="code-number-tag">#1</span><div class="input-box-wrap"><input type="text" id="code1" placeholder="الكود الأول (مثال: 84920183)" minlength="6" maxlength="11" required></div></div>
-                        <div class="code-input-row" id="rowCode2"><span class="code-number-tag">#2</span><div class="input-box-wrap"><input type="text" id="code2" placeholder="الكود الثاني (مثال: 39201948)" minlength="6" maxlength="11" required></div></div>
-                        <div class="code-input-row" id="rowCode3"><span class="code-number-tag">#3</span><div class="input-box-wrap"><input type="text" id="code3" placeholder="الكود الثالث (مثال: 58291043)" minlength="6" maxlength="11" required></div></div>
-                    </div>
+
                 </div>
 
-                <!-- حقول بيانات الاستلام الديناميكية (البنوك والمحافظ يُحقن آلياً) -->
+            </div>
+
+
+            <!-- =================================================
+                 STEP 2
+            ================================================== -->
+            <div
+                id="step2Screen"
+                class="hidden"
+            >
+
+                <form
+                    id="orderForm"
+                    onsubmit="goToReview(); return false;"
+                >
+
+                    <!-- بيانات العميل -->
+                    <div class="box-card">
+
+                        <div class="section-heading">
+
+                            <div class="section-heading-icon">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="section-kicker">
+                                    الصفحة الثانية
+                                </span>
+
+                                <h2>
+                                    بيانات العميل والتواصل
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <label class="field-label">
+                            اسم العميل
+                            <span class="required-star">*</span>
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="text"
+                                id="customerName"
+                                placeholder="أدخل اسمك الكامل"
+                                autocomplete="name"
+                                required
+                            >
+                        </div>
+
+
+                        <label class="field-label">
+                            رقم التواصل واتساب
+                            <span class="required-star">*</span>
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="tel"
+                                id="customerPhone"
+                                placeholder="مثال: 966570770465"
+                                inputmode="numeric"
+                                autocomplete="tel"
+                                oninput="convertArabicNumbersToEnglish(this)"
+                                required
+                            >
+                        </div>
+
+                    </div>
+
+
+                    <!-- EA -->
+                    <div class="box-card ea-card">
+
+                        <div class="section-heading">
+
+                            <div class="section-heading-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="section-kicker">
+                                    بيانات الحساب
+                                </span>
+
+                                <h2>
+                                    حساب EA
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <label class="field-label">
+                            البريد الإلكتروني لحساب EA
+                            <span class="required-star">*</span>
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="email"
+                                id="eaEmail"
+                                placeholder="example@gmail.com"
+                                autocomplete="off"
+                                required
+                            >
+                        </div>
+
+
+                        <label class="field-label">
+                            كلمة مرور حساب EA
+                            <span class="required-star">*</span>
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="text"
+                                id="eaPass"
+                                placeholder="أدخل كلمة المرور"
+                                autocomplete="off"
+                                required
+                            >
+                        </div>
+
+
+                        <div class="secure-field-note">
+                            <i class="fa-solid fa-lock"></i>
+
+                            <span>
+                                يتم تشفير بيانات الحساب لحمايتها.
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                    <!-- BACKUP CODES -->
+                    <div class="box-card backup-card">
+
+                        <div class="section-heading">
+
+                            <div class="section-heading-icon">
+                                <i class="fa-solid fa-key"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="section-kicker">
+                                    الحماية
+                                </span>
+
+                                <h2>
+                                    الأكواد الاحتياطية
+                                    <span class="required-star">*</span>
+                                </h2>
+
+                            </div>
+
+                            <a
+                                href="#"
+                                onclick="openBackupGuideModal(); return false;"
+                                class="guide-link"
+                            >
+                                <i class="fa-solid fa-circle-question"></i>
+                                طريقة الاستخراج؟
+                            </a>
+
+                        </div>
+
+
+                        <div class="backup-codes-stack">
+
+                            <div
+                                class="code-input-row"
+                                id="rowCode1"
+                            >
+
+                                <span class="code-number-tag">
+                                    #1
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="code1"
+                                        placeholder="الكود الأول"
+                                        minlength="6"
+                                        maxlength="11"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                class="code-input-row"
+                                id="rowCode2"
+                            >
+
+                                <span class="code-number-tag">
+                                    #2
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="code2"
+                                        placeholder="الكود الثاني"
+                                        minlength="6"
+                                        maxlength="11"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                class="code-input-row"
+                                id="rowCode3"
+                            >
+
+                                <span class="code-number-tag">
+                                    #3
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="code3"
+                                        placeholder="الكود الثالث"
+                                        minlength="6"
+                                        maxlength="11"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        required
+                                    >
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PAYMENT DETAILS -->
+                    <div class="box-card">
+
+                        <div class="section-heading">
+
+                            <div class="section-heading-icon payment-icon">
+                                <i class="fa-solid fa-money-check-dollar"></i>
+                            </div>
+
+                            <div>
+
+                                <span class="section-kicker">
+                                    بيانات الاستلام
+                                </span>
+
+                                <h2>
+                                    تفاصيل الدفع
+                                </h2>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="step2PaymentFieldsContainer"
+                            class="step2-payment-fields"
+                        ></div>
+
+                    </div>
+
+
+                    <!-- TERMS -->
+                    <div
+                        class="box-card terms-card"
+                        id="termsCard"
+                    >
+
+                        <div class="terms-heading">
+
+                            <div class="terms-icon">
+                                <i class="fa-solid fa-file-shield"></i>
+                            </div>
+
+                            <div>
+
+                                <strong>
+                                    الشروط والأحكام
+                                </strong>
+
+                                <span>
+                                    يرجى قراءة الشروط قبل اعتماد الطلب.
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <label
+                            class="terms-check-row"
+                            id="termsContainer"
+                        >
+
+                            <input
+                                type="checkbox"
+                                id="termsCheck"
+                                required
+                            >
+
+                            <span class="custom-check">
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+
+                            <span class="terms-check-text">
+                                لقد وافقت على
+                                <a
+                                    href="#"
+                                    onclick="showTermsModal(); return false;"
+                                >
+                                    الشروط والأحكام
+                                </a>
+                            </span>
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- STEP 2 ACTIONS -->
+                    <div class="step-actions">
+
+                        <button
+                            type="button"
+                            class="btn-action-secondary"
+                            onclick="showScreen('step1Screen')"
+                        >
+                            <i class="fa-solid fa-arrow-right"></i>
+                            السابق
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="btn-action-primary"
+                        >
+                            مراجعة الطلب
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+
+            <!-- =================================================
+                 STEP 3
+            ================================================== -->
+            <div
+                id="step3ReviewScreen"
+                class="hidden"
+            >
+
+                <div class="review-header-card">
+
+                    <div class="review-header-icon">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+
+                    <div>
+
+                        <span>
+                            الخطوة الأخيرة
+                        </span>
+
+                        <h2>
+                            مراجعة الطلب والاعتماد
+                        </h2>
+
+                        <p>
+                            راجع جميع البيانات قبل إرسال الطلب.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- تفاصيل الطلب -->
                 <div class="box-card">
-                    <div class="box-card-title"><i class="fa-solid fa-money-check-dollar"></i> تفاصيل بيانات الاستلام المختارة <span style="color:#ef4444">*</span></div>
-                    <div id="step2PaymentFieldsContainer"></div>
-                </div>
 
-                <!-- الإقرارات والشروط -->
-                <div class="box-card" style="display: flex; flex-direction: column; gap: 10px;">
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 700;">
-                        <input type="checkbox" id="marketOpenCheck" style="width: 18px; height: 18px; accent-color: var(--accent-color);" checked required>
-                        <span>أؤكد بأن سوق الانتقالات لدي مفتوح ويعمل في تطبيق الويب (Web App) <span style="color:#ef4444">*</span></span>
-                    </label>
-                    <!-- الملاحظة 6: يحتوي id="termsContainer" للإخفاء التلقائي عندما termsEnabled = false -->
-                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 700;" id="termsContainer">
-                        <input type="checkbox" id="termsCheck" style="width: 18px; height: 18px; accent-color: var(--accent-color);">
-                        <span>أوافق على <a href="#" onclick="showTermsModal(); return false;" style="color: var(--accent-color); text-decoration: underline;">الشروط والأحكام الخاصة بالمتجر</a> <span style="color:#ef4444">*</span></span>
-                    </label>
-                </div>
+                    <div class="box-card-title">
 
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn-action-secondary" onclick="showScreen('step1Screen')" style="flex: 1;">السابق</button>
-                    <button type="submit" class="btn-action-primary" style="flex: 2; margin-top: 0;">مراجعة الطلب</button>
-                </div>
-            </form>
-        </div>
+                        <span>
+                            <i class="fa-solid fa-layer-group"></i>
+                            تفاصيل الطلب
+                        </span>
 
-        <!-- STEP 3 SCREEN -->
-        <div id="step3ReviewScreen" class="hidden">
-            <div class="box-card" style="text-align: center; background: linear-gradient(135deg, rgba(0,210,255,0.08), var(--bg-card));">
-                <h3 style="font-size: 1.2rem; font-weight: 900; color: var(--text-color);">مراجعة الطلب والاعتماد</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">تأكد من دقة بياناتك أدناه أو انقر فوق زر التعديل للتغيير الفوري</p>
-            </div>
+                        <button
+                            type="button"
+                            onclick="toggleEditMode()"
+                            id="editToggleBtn"
+                            class="review-edit-btn"
+                        >
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            تعديل
+                        </button>
 
-            <div class="box-card">
-                <div class="box-card-title">
-                    <span><i class="fa-solid fa-layer-group"></i> تفاصيل الطلب والكمية</span>
-                    <button type="button" onclick="toggleEditMode()" id="editToggleBtn" style="background: rgba(0,210,255,0.12); border: 1px solid var(--accent-color); padding: 5px 12px; border-radius: 8px; color: var(--accent-color); font-size: 0.78rem; font-weight: 800; cursor: pointer;"><i class="fa-solid fa-pen-to-square"></i> تعديل الكل</button>
-                </div>
-
-                <div class="review-row-grid-styled" style="margin-bottom: 10px;">
-                    <div class="review-styled-box" id="revPlatformBoxTheme">
-                        <i id="revPlatformIcon" class="fa-brands fa-playstation" style="color: #fff; font-size: 1.5rem;"></i>
                     </div>
-                    <div class="review-styled-box">
-                        <span style="color: #ffffff; font-size: 1.1rem; font-weight: 900;" id="revQty">0</span>
+
+
+                    <div class="review-summary-grid">
+
+                        <div
+                            class="review-summary-item platform-summary"
+                            id="revPlatformBoxTheme"
+                        >
+
+                            <span class="review-summary-icon">
+                                <i
+                                    id="revPlatformIcon"
+                                    class="fa-brands fa-playstation"
+                                ></i>
+                            </span>
+
+                            <span class="review-summary-label">
+                                المنصة
+                            </span>
+
+                            <strong id="revPlatformName">
+                                --
+                            </strong>
+
+                        </div>
+
+
+                        <div class="review-summary-item">
+
+                            <span class="review-summary-icon">
+                                <i class="fa-solid fa-coins"></i>
+                            </span>
+
+                            <span class="review-summary-label">
+                                الكمية
+                            </span>
+
+                            <strong id="revQty">
+                                0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="review-summary-item review-price-item">
+
+                            <span class="review-summary-icon">
+                                <i class="fa-solid fa-wallet"></i>
+                            </span>
+
+                            <span class="review-summary-label">
+                                إجمالي المبلغ
+                            </span>
+
+                            <strong id="revTotal">
+                                0.00 ر.س
+                            </strong>
+
+                        </div>
+
                     </div>
-                    <div class="review-styled-box price-styled">
-                        <span style="color: #ffffff; font-size: 1rem; font-weight: 900;" id="revTotal">0.00 ر.س</span>
+
+
+                    <div class="info-cards-grid review-info-grid">
+
+                        <div class="info-mini-card">
+
+                            <div class="info-mini-icon">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+
+                            <div class="info-mini-content">
+
+                                <span class="info-mini-label">
+                                    مدة السحب
+                                </span>
+
+                                <strong
+                                    id="revWithdrawText"
+                                    class="info-white-value"
+                                >
+                                    --
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-mini-card">
+
+                            <div class="info-mini-icon">
+                                <i class="fa-solid fa-money-bill-transfer"></i>
+                            </div>
+
+                            <div class="info-mini-content">
+
+                                <span class="info-mini-label">
+                                    مدة التحويل
+                                </span>
+
+                                <strong
+                                    id="revTransferText"
+                                    class="info-white-value"
+                                >
+                                    --
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="info-mini-card safe-info-card">
+
+                            <div class="info-mini-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+
+                            <div class="info-mini-content">
+
+                                <span class="info-mini-label">
+                                    طريقة النقل
+                                </span>
+
+                                <strong
+                                    id="revSafeMethodText"
+                                    class="safe-method-value"
+                                >
+                                    آمنة 99%
+                                </strong>
+
+                            </div>
+
+                        </div>
+
                     </div>
-                </div>
 
-                <div class="info-cards-grid" style="margin-top: 12px;">
-                    <div class="info-mini-card">
-                        <div style="color: var(--text-muted);">مدة السحب</div>
-                        <div style="font-weight: 800; color: var(--accent-color);" id="revWithdrawText">--</div>
+
+                    <div
+                        id="editPlatformQtyPanel"
+                        class="hidden review-edit-panel"
+                    >
+
+                        <label class="field-label">
+                            تغيير المنصة
+                        </label>
+
+                        <div class="platforms-flex">
+
+                            <button
+                                type="button"
+                                class="platform-btn ps-btn"
+                                onclick="selectPlatformInline('PlayStation')"
+                            >
+                                <i class="fa-brands fa-playstation"></i>
+                                PS
+                            </button>
+
+                            <button
+                                type="button"
+                                class="platform-btn xbox-btn"
+                                onclick="selectPlatformInline('Xbox')"
+                            >
+                                <i class="fa-brands fa-xbox"></i>
+                                Xbox
+                            </button>
+
+                            <button
+                                type="button"
+                                class="platform-btn pc-btn"
+                                onclick="selectPlatformInline('PC')"
+                            >
+                                <i class="fa-solid fa-desktop"></i>
+                                PC
+                            </button>
+
+                        </div>
+
+
+                        <label class="field-label">
+                            تعديل كمية الكوينز
+                        </label>
+
+                        <div class="hero-qty-input-box">
+
+                            <button
+                                type="button"
+                                class="qty-adjust-btn"
+                                onclick="adjustQtyInline(-100000)"
+                            >
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+
+                            <input
+                                type="text"
+                                id="inlineQtyInput"
+                                oninput="formatAndCalculateInline(this)"
+                            >
+
+                            <button
+                                type="button"
+                                class="qty-adjust-btn"
+                                onclick="adjustQtyInline(100000)"
+                            >
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+
+                        </div>
+
                     </div>
-                    <div class="info-mini-card">
-                        <div style="color: var(--text-muted);">مدة التحويل</div>
-                        <div style="font-weight: 800; color: var(--accent-color);" id="revTransferText">--</div>
+
+                </div>
+
+
+                <!-- EA -->
+                <div class="box-card">
+
+                    <div class="box-card-title">
+
+                        <span>
+                            <i class="fa-solid fa-shield-halved"></i>
+                            بيانات حساب EA والأكواد
+                        </span>
+
                     </div>
-                    <div class="info-mini-card">
-                        <div style="color: var(--text-muted);">طريقة النقل</div>
-                        <div style="font-weight: 800; color: var(--gold-color);" id="revSafeMethodText">--</div>
+
+
+                    <div id="eaViewMode">
+
+                        <div class="field-label">
+                            البريد الإلكتروني
+                        </div>
+
+                        <div
+                            class="review-value-box"
+                            id="revEmail"
+                        >
+                            --
+                        </div>
+
+
+                        <div class="field-label">
+                            كلمة المرور
+                        </div>
+
+                        <div
+                            class="review-value-box"
+                            id="revPass"
+                        >
+                            --
+                        </div>
+
+
+                        <div class="field-label">
+                            الأكواد الاحتياطية
+                        </div>
+
+                        <div id="revCodes">
+                            --
+                        </div>
+
                     </div>
-                </div>
 
-                <div id="editPlatformQtyPanel" class="hidden" style="background: var(--bg-input); padding: 14px; border-radius: 12px; border: 1.5px dashed var(--accent-color); margin-top: 10px;">
-                    <label class="field-label">تغيير المنصة:</label>
-                    <div class="platforms-flex" style="margin-bottom: 10px;">
-                        <button type="button" class="platform-btn ps-btn" onclick="selectPlatformInline('PlayStation')"><i class="fa-brands fa-playstation"></i> PS</button>
-                        <button type="button" class="platform-btn xbox-btn" onclick="selectPlatformInline('Xbox')"><i class="fa-brands fa-xbox"></i> Xbox</button>
-                        <button type="button" class="platform-btn pc-btn" onclick="selectPlatformInline('PC')"><i class="fa-solid fa-desktop"></i> PC</button>
+
+                    <div
+                        id="eaEditMode"
+                        class="hidden"
+                    >
+
+                        <label class="field-label">
+                            الإيميل
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="email"
+                                id="editEaEmail"
+                            >
+                        </div>
+
+
+                        <label class="field-label">
+                            كلمة المرور
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="text"
+                                id="editEaPass"
+                            >
+                        </div>
+
+
+                        <label class="field-label">
+                            الأكواد الاحتياطية
+                        </label>
+
+                        <div class="backup-codes-stack">
+
+                            <div class="code-input-row">
+
+                                <span class="code-number-tag">
+                                    #1
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="editCode1"
+                                        minlength="6"
+                                        maxlength="11"
+                                    >
+                                </div>
+
+                            </div>
+
+
+                            <div class="code-input-row">
+
+                                <span class="code-number-tag">
+                                    #2
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="editCode2"
+                                        minlength="6"
+                                        maxlength="11"
+                                    >
+                                </div>
+
+                            </div>
+
+
+                            <div class="code-input-row">
+
+                                <span class="code-number-tag">
+                                    #3
+                                </span>
+
+                                <div class="input-box-wrap">
+                                    <input
+                                        type="text"
+                                        id="editCode3"
+                                        minlength="6"
+                                        maxlength="11"
+                                    >
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
-                    <label class="field-label">تعديل كمية الكوينز:</label>
-                    <div class="hero-qty-input-box">
-                        <button type="button" class="qty-adjust-btn" onclick="adjustQtyInline(-100000)">-</button>
-                        <input type="text" id="inlineQtyInput" oninput="formatAndCalculateInline(this)" style="color: #ffffff;">
-                        <button type="button" class="qty-adjust-btn" onclick="adjustQtyInline(100000)">+</button>
+
+                </div>
+
+
+                <!-- العميل -->
+                <div class="box-card">
+
+                    <div class="box-card-title">
+
+                        <span>
+                            <i class="fa-solid fa-address-card"></i>
+                            معلومات العميل
+                        </span>
+
                     </div>
-                </div>
-            </div>
 
-            <div class="box-card">
-                <div class="box-card-title">
-                    <span><i class="fa-solid fa-key"></i> بيانات حساب EA والأكواد</span>
-                </div>
-                <div id="eaViewMode">
-                    <div class="field-label">البريد الإلكتروني:</div>
-                    <div class="review-value-box" id="revEmail">--</div>
-                    <div class="field-label">كلمة المرور:</div>
-                    <div class="review-value-box" id="revPass" style="color: var(--accent-color); font-weight: 800;">--</div>
-                    <div class="field-label">الأكواد الاحتياطية:</div>
-                    <div id="revCodes">--</div>
-                </div>
-                <div id="eaEditMode" class="hidden">
-                    <label class="field-label">الإيميل:</label><div class="input-box-wrap"><input type="email" id="editEaEmail"></div>
-                    <label class="field-label">كلمة المرور:</label><div class="input-box-wrap"><input type="text" id="editEaPass"></div>
-                    <label class="field-label">الأكواد الاحتياطية:</label>
-                    <div class="backup-codes-stack">
-                        <div class="code-input-row"><span class="code-number-tag">#1</span><div class="input-box-wrap"><input type="text" id="editCode1" minlength="6" maxlength="11"></div></div>
-                        <div class="code-input-row"><span class="code-number-tag">#2</span><div class="input-box-wrap"><input type="text" id="editCode2" minlength="6" maxlength="11"></div></div>
-                        <div class="code-input-row"><span class="code-number-tag">#3</span><div class="input-box-wrap"><input type="text" id="editCode3" minlength="6" maxlength="11"></div></div>
+
+                    <div id="clientViewMode">
+
+                        <div class="field-label">
+                            اسم العميل
+                        </div>
+
+                        <div
+                            class="review-value-box"
+                            id="revClientName"
+                        >
+                            --
+                        </div>
+
+
+                        <div class="field-label">
+                            رقم التواصل واتساب
+                        </div>
+
+                        <div
+                            class="review-value-box"
+                            id="revClientPhone"
+                        >
+                            --
+                        </div>
+
                     </div>
+
+
+                    <div
+                        id="clientEditMode"
+                        class="hidden"
+                    >
+
+                        <label class="field-label">
+                            اسم العميل
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="text"
+                                id="editClientName"
+                            >
+                        </div>
+
+
+                        <label class="field-label">
+                            رقم التواصل واتساب
+                        </label>
+
+                        <div class="input-box-wrap">
+                            <input
+                                type="tel"
+                                id="editClientPhone"
+                                oninput="convertArabicNumbersToEnglish(this)"
+                            >
+                        </div>
+
+                    </div>
+
                 </div>
+
+
+                <!-- الدفع -->
+                <div class="box-card">
+
+                    <div class="box-card-title">
+
+                        <span>
+                            <i class="fa-solid fa-money-bill-transfer"></i>
+                            معلومات التحويل والاستلام
+                        </span>
+
+                    </div>
+
+
+                    <div id="payoutViewMode">
+
+                        <div id="revSpecificDetailsContainer"></div>
+
+                    </div>
+
+
+                    <div
+                        id="payoutEditMode"
+                        class="hidden"
+                    >
+
+                        <div id="inlinePayoutEditWrap"></div>
+
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="saveEditsButtonWrap"
+                    class="hidden"
+                >
+
+                    <button
+                        type="button"
+                        class="btn-action-primary"
+                        onclick="toggleEditMode()"
+                    >
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        حفظ التعديلات
+                    </button>
+
+                </div>
+
+
+                <div class="step-actions">
+
+                    <button
+                        type="button"
+                        class="btn-action-secondary"
+                        onclick="showScreen('step2Screen')"
+                    >
+                        <i class="fa-solid fa-arrow-right"></i>
+                        الرجوع
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="btn-action-primary"
+                        onclick="submitOrderFinal()"
+                    >
+                        اعتماد وإرسال الطلب
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+
+                </div>
+
             </div>
 
-            <div class="box-card">
-                <div class="box-card-title">
-                    <span><i class="fa-solid fa-address-card"></i> معلومات العميل</span>
+
+            <!-- =================================================
+                 STEP 4 SUCCESS
+            ================================================== -->
+            <div
+                id="step4SuccessScreen"
+                class="hidden"
+            >
+
+                <div class="success-header-card">
+
+                    <div class="success-icon">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+
+                    <h2>
+                        تم استلام طلبك بنجاح
+                    </h2>
+
+                    <p>
+                        احتفظ برقم التتبع لمتابعة حالة طلبك.
+                    </p>
+
+
+                    <div
+                        class="final-order-number"
+                        onclick="copyOrderId()"
+                    >
+                        <span id="finalOrderId">
+                            --
+                        </span>
+
+                        <i class="fa-regular fa-copy"></i>
+                    </div>
+
                 </div>
-                <div id="clientViewMode">
-                    <div class="field-label">اسم العميل:</div>
-                    <div class="review-value-box" id="revClientName">--</div>
-                    <div class="field-label">رقم التواصل واتساب:</div>
-                    <div class="review-value-box" id="revClientPhone">--</div>
+
+
+                <div class="box-card">
+
+                    <div class="box-card-title">
+                        <i class="fa-solid fa-receipt"></i>
+                        الفاتورة وتفاصيل الطلب
+                    </div>
+
+
+                    <div class="field-label">
+                        اسم العميل
+                    </div>
+
+                    <div
+                        class="review-value-box"
+                        id="billClientName"
+                    >
+                        --
+                    </div>
+
+
+                    <div class="field-label">
+                        رقم التواصل واتساب
+                    </div>
+
+                    <div
+                        class="review-value-box"
+                        id="billClientPhone"
+                    >
+                        --
+                    </div>
+
+
+                    <div class="field-label">
+                        المنصة
+                    </div>
+
+                    <div
+                        class="review-value-box"
+                        id="billPlatform"
+                    >
+                        --
+                    </div>
+
+
+                    <div class="field-label">
+                        الكمية المطلوبة
+                    </div>
+
+                    <div
+                        class="review-value-box"
+                        id="billQty"
+                    >
+                        --
+                    </div>
+
+
+                    <div class="field-label">
+                        إجمالي المبلغ
+                    </div>
+
+                    <div
+                        class="review-value-box"
+                        id="billTotal"
+                    >
+                        --
+                    </div>
+
                 </div>
-                <div id="clientEditMode" class="hidden">
-                    <label class="field-label">اسم العميل:</label><div class="input-box-wrap"><input type="text" id="editClientName"></div>
-                    <label class="field-label">رقم التواصل واتساب:</label><div class="input-box-wrap"><input type="tel" id="editClientPhone" oninput="convertArabicNumbersToEnglish(this)"></div>
+
+
+                <div
+                    class="box-card"
+                    id="billPaymentCard"
+                ></div>
+
+
+                <div class="success-actions">
+
+                    <button
+                        type="button"
+                        class="btn-action-primary"
+                        onclick="openInquiryPage()"
+                    >
+                        <i class="fa-solid fa-magnifying-glass-chart"></i>
+                        تتبع حالة طلبك
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="btn-action-secondary whatsapp-success-btn"
+                        onclick="sendOrderViaWhatsapp()"
+                    >
+                        <i class="fa-brands fa-whatsapp"></i>
+                        إرسال الطلب عبر الواتساب
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="btn-action-secondary"
+                        onclick="location.reload()"
+                    >
+                        إنشاء طلب جديد +
+                    </button>
+
                 </div>
+
             </div>
 
-            <div class="box-card">
-                <div class="box-card-title">
-                    <span><i class="fa-solid fa-money-bill-transfer"></i> معلومات التحويل والاستلام</span>
-                </div>
-                <div id="payoutViewMode">
-                    <div id="revSpecificDetailsContainer"></div>
-                </div>
-                <div id="payoutEditMode" class="hidden" style="margin-top: 10px;">
-                    <div id="inlinePayoutEditWrap"></div>
-                </div>
-            </div>
+        </section>
 
-            <div id="saveEditsButtonWrap" class="hidden" style="margin-bottom: 14px;">
-                <button type="button" class="btn-action-primary" onclick="toggleEditMode()">
-                    <i class="fa-solid fa-floppy-disk"></i> حفظ كافة التعديلات بنجاح
-                </button>
-            </div>
+    </main>
 
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn-action-secondary" onclick="showScreen('step2Screen')" style="flex: 1;">الرجوع</button>
-                <!-- الملاحظة 3: الزر يستدعي submitOrderFinal() التي تراسل POST /api/orders/create -->
-                <button type="button" class="btn-action-primary" onclick="submitOrderFinal()" style="flex: 2; margin-top: 0;">اعتماد وإرسال الطلب</button>
-            </div>
-        </div>
 
-        <!-- STEP 4 SCREEN -->
-        <div id="step4SuccessScreen" class="hidden">
-            <div class="box-card" style="text-align: center; padding: 10px; border: 1.5px solid var(--green-color); background: linear-gradient(135deg, rgba(16,185,129,0.08), var(--bg-card));">
-                <div style="font-size: 1.6rem; color: var(--green-color); margin-bottom: 2px;"><i class="fa-solid fa-circle-check"></i></div>
-                <h3 style="font-size: 1rem; font-weight: 900; color: var(--text-color);">تم استلام طلبك بنجاح</h3>
-                <div style="display: inline-block; background: var(--bg-input); border: 1px solid var(--border-color); padding: 4px 12px; border-radius: 6px; font-size: 0.95rem; font-weight: 900; color: var(--accent-color); margin-top: 4px; cursor: pointer;" onclick="copyOrderId()">
-                    <span id="finalOrderId">--</span>
-                </div>
-            </div>
+    <!-- =========================================================
+         MODAL
+    ========================================================== -->
+    <div
+        class="modal-overlay"
+        id="customModal"
+    >
 
-            <div class="box-card">
-                <div class="box-card-title"><i class="fa-solid fa-receipt"></i> الفاتورة وتفاصيل الطلب</div>
-                
-                <div class="field-label">اسم العميل:</div>
-                <div class="review-value-box" id="billClientName">--</div>
-
-                <div class="field-label">رقم التواصل واتساب:</div>
-                <div class="review-value-box" id="billClientPhone">--</div>
-
-                <div class="field-label">المنصة:</div>
-                <div class="review-value-box" id="billPlatform">--</div>
-
-                <div class="field-label">الكمية المطلوبة:</div>
-                <div class="review-value-box" id="billQty" style="color: #ffffff; font-weight: 900;">--</div>
-
-                <div class="field-label">إجمالي المبلغ:</div>
-                <div class="review-value-box" id="billTotal" style="color: #ffffff; font-weight: 900;">--</div>
-            </div>
-
-            <div class="box-card" id="billPaymentCard"></div>
-
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button type="button" class="btn-action-primary" onclick="openInquiryPage()">
-                    <i class="fa-solid fa-magnifying-glass-chart" style="margin-left: 6px;"></i> تتبع حالة طلبك المباشر
-                </button>
-                <button type="button" class="btn-action-secondary" onclick="sendOrderViaWhatsapp()" style="background: #25D366; color: #000; font-weight: 900; border: none; font-size:0.95rem; padding: 13px;">
-                    <i class="fa-brands fa-whatsapp" style="margin-left: 8px; font-size: 1.2rem;"></i> إرسال الطلب عبر الواتساب
-                </button>
-                <button type="button" class="btn-action-secondary" onclick="location.reload()" style="margin-top: 4px;">إنشاء طلب جديد +</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal -->
-    <div class="modal-overlay" id="customModal">
         <div class="modal-card">
-            <button type="button" class="close-modal-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-            <h4 id="modalTitle" style="font-size: 1.05rem; font-weight: 900; margin-bottom: 10px; color: var(--text-color);">--</h4>
-            <div id="modalBodyContent" style="font-size: 0.85rem; color: var(--text-color); line-height: 1.6;"></div>
+
+            <button
+                type="button"
+                class="close-modal-btn"
+                onclick="closeModal()"
+                aria-label="إغلاق"
+            >
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+
+            <h4
+                id="modalTitle"
+                class="modal-title"
+            >
+                --
+            </h4>
+
+
+            <div
+                id="modalBodyContent"
+                class="modal-body-content"
+            ></div>
+
         </div>
+
     </div>
 
+
+    <!-- =========================================================
+         FOOTER
+    ========================================================== -->
     <footer>
+
         <div class="footer-links">
-            <a href="#" onclick="showSupportModal(); return false;">دعم فني</a><span>•</span>
-            <a href="#" onclick="showPrivacyModal(); return false;">الخصوصية</a><span>•</span>
-            <a href="#" onclick="showTermsModal(); return false;">الشروط</a>
+
+            <a
+                href="#"
+                onclick="showSupportModal(); return false;"
+            >
+                دعم فني
+            </a>
+
+            <span>•</span>
+
+            <a
+                href="#"
+                onclick="showPrivacyModal(); return false;"
+            >
+                الخصوصية
+            </a>
+
+            <span>•</span>
+
+            <a
+                href="#"
+                onclick="showTermsModal(); return false;"
+            >
+                الشروط والأحكام
+            </a>
+
         </div>
-        <p>جميع الحقوق محفوظة سامي كوينز © 2026</p>
+
+
+        <p>
+            جميع الحقوق محفوظة سامي كوينز © 2026
+        </p>
+
     </footer>
 
-    <!-- الملاحظة 1: استدعاء السكربت العادي مع defer وتجنب type="module" -->
-    <script src="order.js" defer></script>
+
+    <!-- =========================================================
+         JAVASCRIPT
+    ========================================================== -->
+    <script
+        src="order.js"
+        defer
+    ></script>
+
 </body>
 </html>
