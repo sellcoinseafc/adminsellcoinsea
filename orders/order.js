@@ -601,6 +601,34 @@ function getSupportWhatsappNumber() {
 
 
 // ==========================================================================
+function localizeSettingText(value) {
+    const text = String(value ?? "").trim();
+    if (!text) return "--";
+    if (currentLanguage === "en") {
+        return text
+            .replace(/أيام عمل/g, "business days")
+            .replace(/أيام/g, "days")
+            .replace(/ساعة/g, "hours")
+            .replace(/سوق الانتقالات \(Web App\)/g, "Transfer Market (Web App)");
+    }
+    return text;
+}
+
+function getCurrentPlatformDurations() {
+    if (selectedPlatform === "PC") {
+        return {
+            withdraw: storeSettings.pcWithdrawDays || storeSettings.withdrawDays || "--",
+            transfer: storeSettings.pcTransferHours || storeSettings.transferHours || "--"
+        };
+    }
+    return {
+        withdraw: storeSettings.withdrawDays || "--",
+        transfer: storeSettings.transferHours || "--"
+    };
+}
+
+
+// ==========================================================================
 // 7. الإعدادات
 // ==========================================================================
 
