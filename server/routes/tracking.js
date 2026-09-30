@@ -1,11 +1,39 @@
 import express from "express";
 import { db } from "../services/firebase.js";
+import {
+  decrypt,
+  isEncryptedValue
+} from "../utils/crypto.js";
 
 const router = express.Router();
 
-/* ==========================================
-   Helpers
-   ========================================== */
+/**
+ * ============================================================================
+ * SAMI COINS - PUBLIC TRACKING ROUTES
+ * ============================================================================
+ *
+ * مسؤول عن:
+ * - عرض الطلب للعميل باستخدام referenceNumber.
+ * - عدم كشف Firestore document ID.
+ * - عدم كشف البيانات الحساسة أو ciphertext.
+ * - إظهار بيانات دفع مقنّعة فقط.
+ * - إظهار بيانات EA مقنّعة فقط.
+ * - إظهار رسالة الإتلاف بعد حذف بيانات EA.
+ * - دعم issue مستقل عن status.
+ * - قراءة رسائل المشاكل من system settings.
+ *
+ * مهم:
+ * - لا يوجد requireAdmin هنا لأن هذه واجهة عامة.
+ * - لا يتم إرسال order كامل للعميل.
+ * - لا يتم إرسال password أو backup codes أو IBAN الكامل.
+ * ============================================================================
+ */
+
+/**
+ * ============================================================================
+ * Constants
+ * ============================================================================
+ */
 
 const LEGACY_STATUS_MAP = {
   pending: "new"
@@ -29,6 +57,28 @@ const ISSUE_LABELS = {
   other_issue: "توجد مشكلة في الطلب"
 };
 
+const DEFAULT_ISSUE_MESSAGES = {
+  wrong_credentials: "بيانات الدخول غير صحيحة",
+  wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
+  market_closed: "سوق الانتقالات مغلق",
+  no_player: "لا يوجد لاعب مطابق",
+  wrong_platform: "المنصة المحددة غير صحيحة",
+  other_issue: "توجد مشكلة في الطلب"
+};
+
+const PURGED_ACCOUNT_MESSAGE =
+  "تمت معالجة طلبك بنجاح، وتم حذف بيانات الحساب الحساسة حفاظًا على أمانك.";
+
+const SYSTEM_SETTINGS_DOC = db
+  .collection("system")
+  .doc("settings");
+
+/**
+ * ============================================================================
+ * Generic helpers
+ * ============================================================================
+ */
+
 function normalizeStatus(status) {
   if (!status) {
     return "new";
@@ -38,7 +88,10 @@ function normalizeStatus(status) {
     .trim()
     .toLowerCase();
 
-  return LEGACY_STATUS_MAP[normalized] || normalized;
+  return (
+    LEGACY_STATUS_MAP[normalized] ||
+    normalized
+  );
 }
 
 function toISOStringSafe(value) {
@@ -63,6 +116,14 @@ function toISOStringSafe(value) {
       }
     }
 
+    if (typeof value === "number") {
+      const date = new Date(value);
+
+      if (!Number.isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    }
+
     return null;
   } catch {
     return null;
@@ -80,6 +141,7 @@ function formatDate(value) {
     return new Intl.DateTimeFormat(
       "ar-SA",
       {
+        timeZone: "Asia/Riyadh",
         year: "numeric",
         month: "2-digit",
         day: "2-digit"
@@ -101,6 +163,7 @@ function formatTime(value) {
     return new Intl.DateTimeFormat(
       "ar-SA",
       {
+        timeZone: "Asia/Riyadh",
         hour: "2-digit",
         minute: "2-digit"
       }
@@ -110,12 +173,67 @@ function formatTime(value) {
   }
 }
 
+/**
+ * ============================================================================
+ * Safe decrypt
+ * ============================================================================
+ *
+ * الهدف:
+ * - إذا كانت القيمة encrypted: نفكها.
+ * - إذا كانت قيمة قديمة plaintext: نستخدمها داخلياً ثم نقنعها.
+ * - إذا كانت القيمة غير صالحة: لا نرسل ciphertext.
+ */
+function safeDecrypt(value) {
+  try {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      return "";
+    }
+
+    if (
+      Array.isArray(value) ||
+      typeof value === "object"
+    ) {
+      return value;
+    }
+
+    const text = String(value);
+
+    if (!text.trim()) {
+      return "";
+    }
+
+    if (!isEncryptedValue(text)) {
+      return text;
+    }
+
+    return decrypt(text);
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * ============================================================================
+ * Masking helpers
+ * ============================================================================
+ */
+
 function maskPhone(phone) {
   if (!phone) {
     return "";
   }
 
-  const value = String(phone).replace(/\s+/g, "");
+  const value = String(phone)
+    .replace(/\s+/g, "")
+    .trim();
+
+  if (!value) {
+    return "";
+  }
 
   if (value.length <= 4) {
     return "****";
@@ -134,15 +252,21 @@ function maskEmail(email) {
     return "";
   }
 
-  const value = String(email).trim();
-  const atIndex = value.indexOf("@");
+  const value = String(email)
+    .trim();
+
+  const atIndex =
+    value.indexOf("@");
 
   if (atIndex <= 0) {
     return "****";
   }
 
-  const local = value.substring(0, atIndex);
-  const domain = value.substring(atIndex);
+  const local =
+    value.substring(0, atIndex);
+
+  const domain =
+    value.substring(atIndex);
 
   if (local.length <= 2) {
     return (
@@ -159,12 +283,20 @@ function maskEmail(email) {
   );
 }
 
-function maskPassword() {
+function maskPassword(password) {
+  if (!password) {
+    return "";
+  }
+
   return "••••••••";
 }
 
 function maskBackupCodes(codes) {
-  if (!codes) {
+  if (
+    codes === null ||
+    codes === undefined ||
+    codes === ""
+  ) {
     return "";
   }
 
@@ -173,9 +305,28 @@ function maskBackupCodes(codes) {
   if (Array.isArray(codes)) {
     list = codes;
   } else {
-    list = String(codes)
-      .split(/\r?\n|,|\s+/)
-      .filter(Boolean);
+    const value = String(codes).trim();
+
+    if (!value) {
+      return "";
+    }
+
+    try {
+      const parsed =
+        JSON.parse(value);
+
+      if (Array.isArray(parsed)) {
+        list = parsed;
+      } else {
+        list = value
+          .split(/\r?\n|,|\s+/)
+          .filter(Boolean);
+      }
+    } catch {
+      list = value
+        .split(/\r?\n|,|\s+/)
+        .filter(Boolean);
+    }
   }
 
   if (!list.length) {
@@ -194,7 +345,8 @@ function extractLast6(value) {
   }
 
   const text = String(value)
-    .replace(/\s+/g, "");
+    .replace(/\s+/g, "")
+    .trim();
 
   if (text.length < 6) {
     return "";
@@ -210,6 +362,10 @@ function maskWallet(wallet) {
 
   const value = String(wallet).trim();
 
+  if (!value) {
+    return "";
+  }
+
   if (value.length <= 10) {
     return "********";
   }
@@ -221,41 +377,227 @@ function maskWallet(wallet) {
   );
 }
 
-function getDrawnCoins(order) {
-  const value =
-    order.drawnCoins ??
-    order.withdrawnQuantity ??
-    0;
+/**
+ * ============================================================================
+ * Account helpers
+ * ============================================================================
+ */
 
-  const number = Number(value);
+function getAccountData(order) {
+  if (
+    order.accountData &&
+    typeof order.accountData === "object" &&
+    !Array.isArray(order.accountData)
+  ) {
+    return order.accountData;
+  }
 
-  return Number.isFinite(number)
-    ? number
-    : 0;
+  return {};
+}
+
+function normalizeBackupCodes(value) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      String(item ?? "")
+    );
+  }
+
+  const decrypted =
+    safeDecrypt(value);
+
+  if (Array.isArray(decrypted)) {
+    return decrypted.map((item) =>
+      String(item ?? "")
+    );
+  }
+
+  const text = String(
+    decrypted ?? ""
+  ).trim();
+
+  if (!text) {
+    return [];
+  }
+
+  try {
+    const parsed =
+      JSON.parse(text);
+
+    if (Array.isArray(parsed)) {
+      return parsed.map((item) =>
+        String(item ?? "")
+      );
+    }
+  } catch {
+    // fallback below
+  }
+
+  return text
+    .split(/\r?\n|,|\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * يبني فقط البيانات المقنّعة المسموح بها للعميل.
+ */
+function buildAccountData(
+  order,
+  sensitivePurged
+) {
+  if (sensitivePurged) {
+    return {
+      purged: true,
+      message:
+        PURGED_ACCOUNT_MESSAGE
+    };
+  }
+
+  const account =
+    getAccountData(order);
+
+  const email =
+    safeDecrypt(
+      account.eaEmail
+    );
+
+  const password =
+    safeDecrypt(
+      account.eaPassword
+    );
+
+  const backupCodes =
+    normalizeBackupCodes(
+      account.backupCodes
+    );
+
+  /**
+   * إذا لم تكن البيانات الحساسة موجودة
+   * بسبب طلب قديم جداً أو schema مختلف،
+   * نستخدم القيم المقنّعة القديمة إن وجدت.
+   */
+  const emailMasked =
+    email
+      ? maskEmail(email)
+      : String(
+          order.eaEmailMasked ||
+          account.eaEmailMasked ||
+          ""
+        );
+
+  const passwordMasked =
+    password
+      ? maskPassword(password)
+      : String(
+          order.eaPasswordMasked ||
+          account.eaPasswordMasked ||
+          ""
+        );
+
+  const backupCodesMasked =
+    backupCodes.length
+      ? maskBackupCodes(
+          backupCodes
+        )
+      : String(
+          order.backupCodesMasked ||
+          account.backupCodesMasked ||
+          ""
+        );
+
+  return {
+    purged: false,
+    eaEmailMasked: emailMasked,
+    eaPasswordMasked: passwordMasked,
+    backupCodesMasked
+  };
+}
+
+/**
+ * ============================================================================
+ * Payment helpers
+ * ============================================================================
+ */
+
+function getPayoutDetails(order) {
+  const payout =
+    order.payoutDetails &&
+    typeof order.payoutDetails === "object" &&
+    !Array.isArray(order.payoutDetails)
+      ? order.payoutDetails
+      : null;
+
+  if (payout) {
+    const method =
+      String(
+        payout.method ||
+        order.paymentMethodType ||
+        order.paymentMethod ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+
+    return {
+      ...payout,
+      method
+    };
+  }
+
+  const legacy =
+    order.paymentInfoData &&
+    typeof order.paymentInfoData === "object" &&
+    !Array.isArray(order.paymentInfoData)
+      ? order.paymentInfoData
+      : {};
+
+  const method =
+    String(
+      order.paymentMethodType ||
+      order.paymentMethod ||
+      legacy.method ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  return {
+    ...legacy,
+    method
+  };
 }
 
 function getPaymentMethodCode(order) {
   const payout =
-    order.payoutDetails ||
-    order.paymentInfoData ||
-    {};
+    getPayoutDetails(order);
 
-  return (
+  return String(
     payout.method ||
     order.paymentMethodType ||
     ""
   )
-    .toString()
+    .trim()
     .toLowerCase();
 }
 
 function getPaymentMethodName(order) {
   if (order.paymentMethodName) {
-    return order.paymentMethodName;
+    return String(
+      order.paymentMethodName
+    );
   }
 
   if (order.paymentMethod) {
-    return order.paymentMethod;
+    return String(
+      order.paymentMethod
+    );
   }
 
   const method =
@@ -269,202 +611,294 @@ function getPaymentMethodName(order) {
     western: "Western Union"
   };
 
-  return labels[method] || method;
+  return (
+    labels[method] ||
+    method
+  );
 }
-
-/* ==========================================
-   Payment DTO
-   ========================================== */
 
 function buildPaymentData(order) {
   const method =
     getPaymentMethodCode(order);
 
   const payout =
-    order.payoutDetails ||
-    order.paymentInfoData ||
-    {};
+    getPayoutDetails(order);
 
   const payment = {
     method,
-    methodName: getPaymentMethodName(order)
+    methodName:
+      getPaymentMethodName(order)
   };
 
-  /*
+  /**
    * البنك
    */
   if (method === "bank") {
     payment.bankName =
-      payout.bankName || "";
-
-    /*
-     * لا نرسل IBAN الكامل أبداً.
-     */
-    payment.ibanLast6 =
-      payout.ibanLast6 ||
-      extractLast6(payout.iban) ||
+      payout.bankName ||
       "";
+
+    const iban =
+      safeDecrypt(
+        payout.iban
+      );
+
+    payment.ibanLast6 =
+      extractLast6(iban) ||
+      String(
+        payout.ibanLast6 || ""
+      );
+
+    return payment;
   }
 
-  /*
+  /**
    * المحفظة
    */
-  else if (method === "wallet") {
+  if (method === "wallet") {
     payment.walletName =
       payout.walletName ||
       payout.walletType ||
+      payout.name ||
       "";
 
-    payment.phone =
-      payout.phone ||
-      payout.walletNumber ||
-      payout.walletPhone ||
-      "";
+    const phone =
+      safeDecrypt(
+        payout.phone ||
+        payout.walletPhone ||
+        payout.walletNumber
+      );
 
     payment.phoneMasked =
-      maskPhone(payment.phone);
+      maskPhone(phone);
 
-    /*
-     * نحذف الرقم الكامل من الـDTO.
-     */
-    delete payment.phone;
+    return payment;
   }
 
-  /*
+  /**
    * USDT
    */
-  else if (method === "usdt") {
+  if (method === "usdt") {
     const wallet =
-      payout.wallet ||
-      payout.usdtWallet ||
-      payout.walletAddress ||
-      "";
+      safeDecrypt(
+        payout.wallet ||
+        payout.usdtWallet ||
+        payout.walletAddress
+      );
 
     payment.walletMasked =
       maskWallet(wallet);
+
+    payment.network =
+      payout.network ||
+      "";
+
+    return payment;
   }
 
-  /*
+  /**
    * PayPal
    */
-  else if (method === "paypal") {
+  if (method === "paypal") {
     const email =
-      payout.email ||
-      payout.paypalEmail ||
-      "";
+      safeDecrypt(
+        payout.email ||
+        payout.paypalEmail
+      );
 
     payment.emailMasked =
       maskEmail(email);
+
+    return payment;
   }
 
-  /*
+  /**
    * Western Union
    */
-  else if (method === "western") {
+  if (method === "western") {
+    const fullName =
+      safeDecrypt(
+        payout.fullNameEnglish ||
+        payout.fullName ||
+        payout.westernName
+      );
+
+    const country =
+      safeDecrypt(
+        payout.country ||
+        payout.westernCountry
+      );
+
     payment.fullNameEnglish =
-      payout.fullNameEnglish ||
-      payout.fullName ||
-      payout.westernName ||
-      "";
+      fullName
+        ? String(fullName)
+        : "";
 
     payment.country =
-      payout.country ||
-      payout.westernCountry ||
-      "";
+      country
+        ? String(country)
+        : "";
+
+    return payment;
   }
 
   return payment;
 }
 
-/* ==========================================
-   Account DTO
-   ========================================== */
+/**
+ * ============================================================================
+ * Issue settings
+ * ============================================================================
+ *
+ * رسائل المشاكل مصدرها:
+ *   system/settings.issueMessages
+ *
+ * مع fallback آمن للرسائل الافتراضية.
+ */
+async function getIssueMessages() {
+  try {
+    const snapshot =
+      await SYSTEM_SETTINGS_DOC.get();
 
-function buildAccountData(order, sensitivePurged) {
-  /*
-   * بعد الإتلاف لا نرسل أي بيانات للحساب.
-   */
-  if (sensitivePurged) {
+    if (!snapshot.exists) {
+      return DEFAULT_ISSUE_MESSAGES;
+    }
+
+    const data =
+      snapshot.data() || {};
+
+    const configured =
+      data.issueMessages;
+
+    if (
+      !configured ||
+      typeof configured !== "object" ||
+      Array.isArray(configured)
+    ) {
+      return DEFAULT_ISSUE_MESSAGES;
+    }
+
     return {
-      purged: true,
-      message:
-        "تمت معالجة طلبك بنجاح، وتم حذف بيانات الحساب الحساسة حفاظًا على أمانك."
+      ...DEFAULT_ISSUE_MESSAGES,
+      ...Object.fromEntries(
+        Object.entries(configured)
+          .filter(
+            ([key, value]) =>
+              Object.prototype.hasOwnProperty.call(
+                DEFAULT_ISSUE_MESSAGES,
+                key
+              ) &&
+              typeof value === "string" &&
+              value.trim()
+          )
+          .map(
+            ([key, value]) => [
+              key,
+              value.trim()
+            ]
+          )
+      )
     };
+  } catch {
+    return DEFAULT_ISSUE_MESSAGES;
   }
-
-  /*
-   * بيانات الحساب الحساسة لا ينبغي أن تكون
-   * موجودة أصلاً في Firestore بصيغة plaintext
-   * بعد تطبيق النظام الجديد.
-   *
-   * إذا كانت هناك قيم masked محفوظة من طبقة
-   * سابقة، نستخدمها فقط.
-   */
-  const account =
-    order.accountData || {};
-
-  return {
-    purged: false,
-
-    eaEmailMasked:
-      order.eaEmailMasked ||
-      account.eaEmailMasked ||
-      "",
-
-    eaPasswordMasked:
-      order.eaPasswordMasked ||
-      account.eaPasswordMasked ||
-      "",
-
-    backupCodesMasked:
-      order.backupCodesMasked ||
-      account.backupCodesMasked ||
-      ""
-  };
 }
 
-/* ==========================================
-   Issue DTO
-   ========================================== */
+function buildIssueData(
+  order,
+  issueMessages
+) {
+  const issue =
+    String(
+      order.issue || ""
+    ).trim();
 
-function buildIssueData(order) {
-  /*
-   * issue = null يعني لا توجد مشكلة.
-   *
-   * لا نعرض أي قسم للمشكلة في هذه الحالة.
+  /**
+   * null = لا توجد مشكلة.
    */
-  if (!order.issue) {
+  if (!issue) {
     return {
       issue: null,
       issueMessage: ""
     };
   }
 
-  const issue =
-    String(order.issue).trim();
+  /**
+   * الرسالة المحفوظة مع الطلب
+   * تستخدم فقط إذا كانت موجودة.
+   *
+   * وإلا نستخدم إعدادات النظام.
+   */
+  const orderMessage =
+    String(
+      order.issueMessage ||
+      order.statusIssueMessage ||
+      ""
+    ).trim();
 
   const configuredMessage =
-    order.issueMessage ||
-    order.statusIssueMessage ||
-    "";
+    String(
+      issueMessages?.[issue] ||
+      ""
+    ).trim();
 
   const defaultMessage =
     ISSUE_LABELS[issue] ||
-    "توجد مشكلة في الطلب";
+    DEFAULT_ISSUE_MESSAGES.other_issue;
 
   return {
     issue,
     issueMessage:
+      orderMessage ||
       configuredMessage ||
       defaultMessage
   };
 }
 
-/* ==========================================
-   Public Tracking DTO
-   ========================================== */
+/**
+ * ============================================================================
+ * Order calculations
+ * ============================================================================
+ */
 
-function buildTrackingOrder(order) {
+function getDrawnCoins(order) {
+  const value =
+    order.drawnCoins ??
+    order.withdrawnQuantity ??
+    0;
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : 0;
+}
+
+function getQuantity(order) {
+  const value =
+    order.quantity ??
+    order.totalQty ??
+    0;
+
+  const number =
+    Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : 0;
+}
+
+/**
+ * ============================================================================
+ * Public Tracking DTO
+ * ============================================================================
+ */
+
+function buildTrackingOrder(
+  order,
+  issueMessages
+) {
   const status =
     normalizeStatus(
       order.status ||
@@ -473,7 +907,8 @@ function buildTrackingOrder(order) {
 
   const sensitivePurged =
     Boolean(
-      order.sensitivePurged ||
+      order.sensitivePurged === true ||
+      order.sensitiveDataPurged === true ||
       order.purgedAt
     );
 
@@ -487,7 +922,10 @@ function buildTrackingOrder(order) {
     null;
 
   const issueData =
-    buildIssueData(order);
+    buildIssueData(
+      order,
+      issueMessages
+    );
 
   const paymentData =
     buildPaymentData(order);
@@ -499,11 +937,7 @@ function buildTrackingOrder(order) {
     );
 
   const quantity =
-    Number(
-      order.quantity ||
-      order.totalQty ||
-      0
-    );
+    getQuantity(order);
 
   const drawnCoins =
     getDrawnCoins(order);
@@ -514,10 +948,10 @@ function buildTrackingOrder(order) {
     );
 
   if (
-    !Number.isFinite(progressPercentage)
+    !Number.isFinite(
+      progressPercentage
+    )
   ) {
-    progressPercentage = 0;
-
     const defaultPercentages = {
       new: 15,
       review: 35,
@@ -527,24 +961,35 @@ function buildTrackingOrder(order) {
       completed: 100
     };
 
-    if (
-      defaultPercentages[status] !== undefined
-    ) {
-      progressPercentage =
-        defaultPercentages[status];
-    }
+    progressPercentage =
+      defaultPercentages[status] ??
+      0;
   }
 
-  /*
-   * البيانات التي يسمح للعميل برؤيتها فقط.
+  progressPercentage =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        progressPercentage
+      )
+    );
+
+  /**
+   * السعر الموثوق من الخادم.
    *
-   * مهم جداً:
-   * لا نستخدم ...order هنا.
+   * displayTotalPrice هو الحقل الجديد.
+   * totalPrice هو fallback للطلبات القديمة.
    */
+  const totalPrice =
+    order.displayTotalPrice ??
+    order.totalPrice ??
+    order.total ??
+    "";
+
   return {
     referenceNumber:
       order.referenceNumber ||
-      order.orderId ||
       "",
 
     customerName:
@@ -552,7 +997,9 @@ function buildTrackingOrder(order) {
       "",
 
     phone:
-      maskPhone(order.phone || ""),
+      maskPhone(
+        order.phone || ""
+      ),
 
     platform:
       order.platform ||
@@ -560,10 +1007,19 @@ function buildTrackingOrder(order) {
 
     quantity,
 
-    totalPrice:
-      order.totalPrice ??
-      order.total ??
-      "",
+    totalPrice,
+
+    totalPriceSar:
+      order.totalPriceSar ??
+      null,
+
+    totalPriceUsd:
+      order.totalPriceUsd ??
+      null,
+
+    priceCurrency:
+      order.priceCurrency ||
+      null,
 
     status,
 
@@ -582,17 +1038,14 @@ function buildTrackingOrder(order) {
 
     payment: paymentData,
 
-    /*
-     * أبقينا paymentInfoData بشكل آمن
-     * للتوافق مع tracking.js والطلبات القديمة.
-     * لا يحتوي على البيانات الحساسة الكاملة.
+    /**
+     * Compatibility:
+     * يبقى paymentInfoData موجوداً لكن
+     * يحتوي فقط على DTO آمن.
      */
     paymentInfoData:
       paymentData,
 
-    /*
-     * الحساب لا يحتوي على plaintext.
-     */
     accountData,
 
     sensitivePurged,
@@ -621,9 +1074,6 @@ function buildTrackingOrder(order) {
     lastUpdate:
       formatDate(lastUpdate),
 
-    /*
-     * هذه الحقول اختيارية ولكن آمنة.
-     */
     withdrawDuration:
       order.withdrawDuration ||
       null,
@@ -645,112 +1095,155 @@ function buildTrackingOrder(order) {
   };
 }
 
-/* ==========================================
-   GET /api/tracking/:ref
-   ========================================== */
-
-router.get("/:ref", async (req, res) => {
-  try {
-    const ref =
-      String(
-        req.params.ref || ""
-      )
-        .trim()
-        .toUpperCase();
-
-    if (!ref) {
-      return res.status(400).json({
-        success: false,
-        message: "رقم الطلب مطلوب"
-      });
-    }
-
-    /*
-     * البحث باستخدام referenceNumber
-     * وليس Firestore document ID.
-     */
-    const snapshot =
-      await db
-        .collection("orders")
-        .where(
-          "referenceNumber",
-          "==",
-          ref
+/**
+ * ============================================================================
+ * GET /api/tracking/:ref
+ * ============================================================================
+ *
+ * العميل يستخدم:
+ *   referenceNumber
+ *
+ * مثال:
+ *   /api/tracking/FC-123-7
+ */
+router.get(
+  "/:ref",
+  async (req, res) => {
+    try {
+      const ref =
+        String(
+          req.params.ref || ""
         )
-        .limit(1)
-        .get();
+          .trim()
+          .toUpperCase();
 
-    if (snapshot.empty) {
-      return res.status(404).json({
+      if (!ref) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "رقم الطلب مطلوب"
+        });
+      }
+
+      /**
+       * البحث باستخدام referenceNumber
+       * وليس Firestore document ID.
+       */
+      const snapshot =
+        await db
+          .collection("orders")
+          .where(
+            "referenceNumber",
+            "==",
+            ref
+          )
+          .limit(1)
+          .get();
+
+      if (snapshot.empty) {
+        return res.status(404).json({
+          success: false,
+          message:
+            "الطلب غير موجود"
+        });
+      }
+
+      const document =
+        snapshot.docs[0];
+
+      const order =
+        document.data() || {};
+
+      /**
+       * تحميل رسائل المشاكل من إعدادات النظام.
+       */
+      const issueMessages =
+        await getIssueMessages();
+
+      const publicOrder =
+        buildTrackingOrder(
+          order,
+          issueMessages
+        );
+
+      const issueData =
+        buildIssueData(
+          order,
+          issueMessages
+        );
+
+      const status =
+        publicOrder.status;
+
+      /**
+       * statusMessage:
+       *
+       * الأولوية:
+       * 1. رسالة محفوظة للطلب.
+       * 2. رسالة النظام إن كانت موجودة.
+       * 3. الرسالة الافتراضية.
+       */
+      const configuredStatusMessages =
+        order.statusMessages &&
+        typeof order.statusMessages === "object"
+          ? order.statusMessages
+          : null;
+
+      const statusMessage =
+        String(
+          order.statusMessage ||
+          configuredStatusMessages?.[status] ||
+          STATUS_MESSAGES[status] ||
+          ""
+        );
+
+      const reviewSuggestions =
+        Array.isArray(
+          order.reviewSuggestions
+        )
+          ? order.reviewSuggestions
+          : [];
+
+      /**
+       * لا نرسل أي شيء من order مباشرة.
+       */
+      return res.json({
+        success: true,
+
+        order: publicOrder,
+
+        statusMessage,
+
+        issue:
+          issueData.issue,
+
+        issueMessage:
+          issueData.issueMessage,
+
+        reviewSuggestions
+      });
+    } catch (error) {
+      /**
+       * لا نسجل:
+       * - بيانات العميل.
+       * - payment details.
+       * - EA credentials.
+       * - ciphertext.
+       */
+      console.error(
+        "Tracking API Error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
         success: false,
-        message: "الطلب غير موجود"
+        message:
+          "حدث خطأ في الخادم، يرجى المحاولة لاحقاً."
       });
     }
-
-    const document =
-      snapshot.docs[0];
-
-    const order =
-      document.data() || {};
-
-    const publicOrder =
-      buildTrackingOrder(order);
-
-    const issueData =
-      buildIssueData(order);
-
-    /*
-     * رسالة الحالة الأساسية.
-     *
-     * statusMessage يمكن تخصيصها من system settings
-     * لاحقاً، وإذا لم توجد نستخدم الرسالة الافتراضية.
-     */
-    const status =
-      publicOrder.status;
-
-    const statusMessage =
-      order.statusMessage ||
-      STATUS_MESSAGES[status] ||
-      "";
-
-    /*
-     * اقتراحات التقييم.
-     */
-    const reviewSuggestions =
-      Array.isArray(
-        order.reviewSuggestions
-      )
-        ? order.reviewSuggestions
-        : [];
-
-    return res.json({
-      success: true,
-
-      order: publicOrder,
-
-      statusMessage,
-
-      issueMessage:
-        issueData.issueMessage,
-
-      reviewSuggestions
-    });
-
-  } catch (error) {
-    /*
-     * لا نسجل بيانات الطلب أو البيانات الحساسة.
-     */
-    console.error(
-      "Tracking API Error:",
-      error?.message || error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        "حدث خطأ في الخادم، يرجى المحاولة لاحقاً."
-    });
   }
-});
+);
 
 export default router;
