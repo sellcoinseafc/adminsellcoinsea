@@ -795,7 +795,8 @@ function updateTrackingUI(
         status,
         statusMessage,
         order,
-        Boolean(issue)
+        Boolean(issue),
+        issueMessage
     );
 
     /*
@@ -1430,7 +1431,8 @@ function handleStatusState(
     status,
     message,
     order,
-    hasIssue
+    hasIssue,
+    issueMessage = ""
 ) {
     const statusMessageElement =
         document.getElementById(
@@ -1568,7 +1570,12 @@ function handleStatusState(
      */
     if (statusMessageElement) {
         statusMessageElement.innerText =
-            message ||
+            (
+                hasIssue &&
+                String(issueMessage || "").trim()
+                    ? issueMessage
+                    : message
+            ) ||
             config.text ||
             "";
     }
