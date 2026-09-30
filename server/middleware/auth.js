@@ -5,11 +5,19 @@ import admin, { db } from "../services/firebase.js";
  *
  * Expected header:
  * Authorization: Bearer <Firebase ID Token>
+ *
+ * Requirements:
+ * - Valid Firebase ID token
+ * - Existing document: admins/{uid}
+ * - Admin must not be explicitly disabled
+ *
+ * The backend is the final authority for admin permissions.
+ * Never trust frontend-only authentication checks.
  */
 
 export async function requireAdmin(req, res, next) {
   try {
-    const authorization = req.headers.authorization || "";
+    const authorization = String(req.headers.authorization || "").trim();
 
     if (!authorization.startsWith("Bearer ")) {
       return res.status(401).json({
@@ -27,6 +35,7 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
+    // Verify the Firebase ID token server-side.
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
     if (!decodedToken?.uid) {
@@ -36,9 +45,12 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
+    const uid = decodedToken.uid;
+
+    // Backend-side admin authorization.
     const adminSnap = await db
       .collection("admins")
-      .doc(decodedToken.uid)
+      .doc(uid)
       .get();
 
     if (!adminSnap.exists) {
@@ -50,6 +62,7 @@ export async function requireAdmin(req, res, next) {
 
     const adminData = adminSnap.data() || {};
 
+    // Only an explicitly disabled account is rejected.
     if (adminData.active === false) {
       return res.status(403).json({
         success: false,
@@ -57,43 +70,51 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
+    /**
+     * Attach only the information needed by downstream routes.
+     *
+     * Keep the Firebase token itself out of req.admin.
+     * Never store or log the ID token.
+     */
     req.admin = {
-      uid: decodedToken.uid,
-      email: decodedToken.email || "",
+      uid,
+      email: decodedToken.email || adminData.email || "",
       name: adminData.name || "",
-      ...adminData
+      active: adminData.active !== false
     };
 
-    next();
+    return next();
   } catch (error) {
+    /**
+     * Do not log tokens or request headers.
+     * Only log Firebase's error code/message.
+     */
     console.error(
       "Admin authentication error:",
-      error?.code || error?.message
+      error?.code || error?.message || "unknown_error"
     );
 
-    if (
-      error?.code === "auth/id-token-expired" ||
-      error?.code === "auth/id-token-revoked"
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "انتهت جلسة الدخول. يرجى تسجيل الدخول مرة أخرى."
-      });
-    }
+    switch (error?.code) {
+      case "auth/id-token-expired":
+      case "auth/id-token-revoked":
+        return res.status(401).json({
+          success: false,
+          message: "انتهت جلسة الدخول. يرجى تسجيل الدخول مرة أخرى."
+        });
 
-    if (
-      error?.code === "auth/argument-error" ||
-      error?.code === "auth/invalid-id-token"
-    ) {
-      return res.status(401).json({
-        success: false,
-        message: "رمز الدخول غير صالح."
-      });
-    }
+      case "auth/argument-error":
+      case "auth/invalid-id-token":
+      case "auth/invalid-credential":
+        return res.status(401).json({
+          success: false,
+          message: "رمز الدخول غير صالح."
+        });
 
-    return res.status(401).json({
-      success: false,
-      message: "تعذر التحقق من صلاحيات الإدارة."
-    });
+      default:
+        return res.status(401).json({
+          success: false,
+          message: "تعذر التحقق من صلاحيات الإدارة."
+        });
+    }
   }
 }
