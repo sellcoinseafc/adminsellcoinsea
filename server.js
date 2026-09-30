@@ -77,8 +77,32 @@ const PORT =
  * يمكن لاحقًا تقييده إلى domains محددة
  * إذا احتجنا ذلك.
  */
+const allowedOrigins = String(
+  process.env.ALLOWED_ORIGINS ||
+    "https://samicoins.com,https://www.samicoins.com"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
-  cors()
+  cors({
+    origin(origin, callback) {
+      /*
+       * Same-origin requests and non-browser requests may not send Origin.
+       */
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(
+        null,
+        allowedOrigins.includes(origin)
+      );
+    },
+    credentials: false
+  })
 );
 
 /**
