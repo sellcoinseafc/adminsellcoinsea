@@ -1984,6 +1984,19 @@ switch (
                 "بيانات الحساب البنكي غير مكتملة."
             });
           }
+
+          if (
+            Array.isArray(settings.banks) &&
+            settings.banks.length &&
+            !settings.banks.includes(payout.bankName)
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "البنك المحدد غير متاح حاليًا."
+            });
+          }
+
           break;
 
         case "wallet":
@@ -1997,6 +2010,19 @@ switch (
                 "بيانات المحفظة غير مكتملة."
             });
           }
+
+          if (
+            Array.isArray(settings.wallets) &&
+            settings.wallets.length &&
+            !settings.wallets.includes(payout.walletName)
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "المحفظة المحددة غير متاحة حاليًا."
+            });
+          }
+
           break;
 
         case "usdt":
