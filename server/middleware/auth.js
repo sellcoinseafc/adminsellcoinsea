@@ -1,20 +1,10 @@
-import { db } from "../services/firebase.js";
+import admin, { db } from "../services/firebase.js";
 
 /**
  * Firebase Admin authentication middleware
  *
  * Expected header:
  * Authorization: Bearer <Firebase ID Token>
- *
- * The middleware:
- * 1. Extracts the Firebase ID token.
- * 2. Verifies it using Firebase Admin SDK.
- * 3. Checks admins/{uid} in Firestore.
- * 4. Requires active !== false.
- * 5. Stores verified admin information in req.admin.
- *
- * This middleware does NOT expose secrets and does NOT decrypt
- * any customer data.
  */
 
 export async function requireAdmin(req, res, next) {
@@ -37,8 +27,6 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
-    const { default: admin } = await import("../services/firebase.js");
-
     const decodedToken = await admin.auth().verifyIdToken(idToken);
 
     if (!decodedToken?.uid) {
@@ -48,8 +36,10 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
-    const adminRef = db.collection("admins").doc(decodedToken.uid);
-    const adminSnap = await adminRef.get();
+    const adminSnap = await db
+      .collection("admins")
+      .doc(decodedToken.uid)
+      .get();
 
     if (!adminSnap.exists) {
       return res.status(403).json({
@@ -76,7 +66,10 @@ export async function requireAdmin(req, res, next) {
 
     next();
   } catch (error) {
-    console.error("Admin authentication error:", error?.code || error?.message);
+    console.error(
+      "Admin authentication error:",
+      error?.code || error?.message
+    );
 
     if (
       error?.code === "auth/id-token-expired" ||
