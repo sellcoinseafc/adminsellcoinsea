@@ -1562,6 +1562,37 @@ export async function savePricing(
                 current.storeName
             ),
 
+        arabicStoreName:
+            cleanString(
+                pricingData.arabicStoreName,
+                current.arabicStoreName
+            ),
+
+        gameName:
+            cleanString(
+                pricingData.gameName,
+                current.gameName
+            ),
+
+        gameVersion:
+            Number.isInteger(
+                Number(pricingData.gameVersion)
+            ) && Number(pricingData.gameVersion) > 0
+                ? Number(pricingData.gameVersion)
+                : current.gameVersion,
+
+        usdSarRate:
+            Number.isFinite(Number(pricingData.usdSarRate)) &&
+            Number(pricingData.usdSarRate) > 0
+                ? Number(pricingData.usdSarRate)
+                : current.usdSarRate,
+
+        paymentCategories:
+            pricingData.paymentCategories &&
+            typeof pricingData.paymentCategories === "object"
+                ? pricingData.paymentCategories
+                : current.paymentCategories,
+
         storeLogo:
             cleanString(
                 pricingData.storeLogo,
