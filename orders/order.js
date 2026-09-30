@@ -2826,7 +2826,7 @@ function formatAndCalculateInline(input) {
 }
 
 
-// ==========================================================================
+// ==========================================================================\n// 28.1 حماية البيانات الحساسة في المتصفح\n// ==========================================================================\n\n/**\n * يمسح البيانات الحساسة من حقول الصفحة بعد اكتمال إرسال الطلب.\n *\n * البيانات الحساسة لا نحتاج أن تبقى في DOM بعد إنشاء الطلب؛\n * السيرفر يكون قد استلمها وشفرها قبل حفظها في Firestore.\n */\nfunction clearSensitiveOrderFields() {\n\n    const sensitiveFieldIds = [\n        "eaEmail",\n        "eaPass",\n        "code1",\n        "code2",\n        "code3",\n        "accountName",\n        "iban",\n        "walletNumber",\n        "usdtWalletType",\n        "paypalEmail",\n        "wuName",\n        "wuCountry"\n    ];\n\n    sensitiveFieldIds.forEach((id) => {\n        const field = $(id);\n\n        if (field) {\n            field.value = "";\n        }\n    });\n}\n\n/**\n * يمسح البيانات الحساسة بعد فترة قصيرة من نجاح الطلب.\n *\n * لا يؤثر ذلك على البيانات التي تم إرسالها؛ الهدف فقط تقليل مدة بقاء\n * البيانات الحساسة داخل ذاكرة/DOM المتصفح.\n */\nfunction scheduleSensitiveFieldCleanup() {\n\n    window.setTimeout(\n        () => {\n            clearSensitiveOrderFields();\n        },\n        90 * 1000\n    );\n}\n\n// ==========================================================================
 // 28. إنشاء الطلب
 // ==========================================================================
 
@@ -3019,6 +3019,8 @@ async function submitOrderFinal() {
         showScreen(
             "step4SuccessScreen"
         );
+
+        scheduleSensitiveFieldCleanup();
 
     } catch (error) {
 
@@ -3378,138 +3380,7 @@ function openInquiryPage() {
 // 36. واتساب
 // ==========================================================================
 
-function sendOrderViaWhatsapp() {
-
-    const number =
-        getSupportWhatsappNumber();
-
-    if (!number) {
-
-        alert(
-            currentLanguage === "ar"
-                ? "رقم الدعم غير متوفر حاليًا."
-                : "Support number is unavailable."
-        );
-
-        return;
-    }
-
-    const clientName =
-        $("customerName")?.value.trim() || "--";
-
-    const clientPhone =
-        $("customerPhone")?.value.trim() || "--";
-
-    const email =
-        $("eaEmail")?.value.trim() || "--";
-
-    const password =
-        $("eaPass")?.value.trim() || "--";
-
-    const code1 =
-        $("code1")?.value.trim() || "--";
-
-    const code2 =
-        $("code2")?.value.trim() || "--";
-
-    const code3 =
-        $("code3")?.value.trim() || "--";
-
-    const total =
-        $("totalAmountText")?.textContent || "--";
-
-    const reference =
-        generatedReferenceNumber || "--";
-
-    const method =
-        getSelectedPaymentCode();
-
-    let paymentText = "";
-
-    if (method === "bank") {
-
-        paymentText = `
-طريقة الدفع:
-تحويل بنكي
-البنك: ${$("bankNameSelect")?.value || "--"}
-اسم الحساب: ${$("accountName")?.value || "--"}
-IBAN: ${$("iban")?.value || "--"}
-`;
-
-    } else if (method === "wallet") {
-
-        paymentText = `
-طريقة الدفع:
-محفظة رقمية
-المحفظة: ${$("walletTypeSelect")?.value || "--"}
-رقم الجوال: ${$("walletNumber")?.value || "--"}
-`;
-
-    } else if (method === "usdt") {
-
-        paymentText = `
-طريقة الدفع:
-USDT
-عنوان المحفظة: ${$("usdtWalletType")?.value || "--"}
-`;
-
-    } else if (method === "paypal") {
-
-        paymentText = `
-طريقة الدفع:
-PayPal
-البريد: ${$("paypalEmail")?.value || "--"}
-`;
-
-    } else if (method === "western") {
-
-        paymentText = `
-طريقة الدفع:
-Western Union
-الاسم: ${$("wuName")?.value || "--"}
-الدولة: ${$("wuCountry")?.value || "--"}
-`;
-    }
-
-    const message = `
-طلب بيع جديد
-━━━━━━━━━━━━━━━━━━
-
-بيانات الطلب
-• رقم المرجع: ${reference}
-• المنصة: ${selectedPlatform || "--"}
-• الكمية: ${currentQty.toLocaleString("en-US")} كوينز
-• المبلغ: ${total}
-
-بيانات العميل
-• الاسم: ${clientName}
-• الجوال: ${clientPhone}
-
-${paymentText}
-
-بيانات حساب EA
-• البريد: ${email}
-• كلمة المرور: ${password}
-
-الأكواد الاحتياطية
-• #1: ${code1}
-• #2: ${code2}
-• #3: ${code3}
-
-━━━━━━━━━━━━━━━━━━
-SAMI COINS
-`;
-
-    const url =
-        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
-
-    window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-    );
-}
-
+function sendOrderViaWhatsapp() {\n\n    const number =\n        getSupportWhatsappNumber();\n\n    if (!number) {\n\n        alert(\n            currentLanguage === "ar"\n                ? "رقم الدعم غير متوفر حاليًا."\n                : "Support number is unavailable."\n        );\n\n        return;\n    }\n\n    const clientName =\n        $("customerName")?.value.trim() || "--";\n\n    const clientPhone =\n        $("customerPhone")?.value.trim() || "--";\n\n    const total =\n        $("totalAmountText")?.textContent || "--";\n\n    const reference =\n        generatedReferenceNumber || "--";\n\n    const method =\n        getSelectedPaymentCode();\n\n    /*\n     * مهم أمنيًا:\n     * لا نرسل كلمة مرور EA أو Backup Codes أو IBAN أو أرقام المحافظ\n     * أو أي بيانات دفع حساسة عبر رابط WhatsApp.\n     *\n     * WhatsApp هنا مخصص لإرسال ملخص الطلب فقط.\n     */\n    let paymentText = "";\n\n    if (method === "bank") {\n\n        paymentText = `\nطريقة الدفع:\nتحويل بنكي\nالبنك: ${$("bankNameSelect")?.value || "--"}\n`;\n\n    } else if (method === "wallet") {\n\n        paymentText = `\nطريقة الدفع:\nمحفظة رقمية\nالمحفظة: ${$("walletTypeSelect")?.value || "--"}\n`;\n\n    } else if (method === "usdt") {\n\n        paymentText = `\nطريقة الدفع:\nUSDT\n`;\n\n    } else if (method === "paypal") {\n\n        paymentText = `\nطريقة الدفع:\nPayPal\n`;\n\n    } else if (method === "western") {\n\n        paymentText = `\nطريقة الدفع:\nWestern Union\nالدولة: ${$("wuCountry")?.value || "--"}\n`;\n    }\n\n    const message = `\nطلب بيع جديد\n━━━━━━━━━━━━━━━━━━\n\nبيانات الطلب\n• رقم المرجع: ${reference}\n• المنصة: ${selectedPlatform || "--"}\n• الكمية: ${currentQty.toLocaleString("en-US")} كوينز\n• المبلغ: ${total}\n\nبيانات العميل\n• الاسم: ${clientName}\n• الجوال: ${clientPhone}\n\n${paymentText}\n\nملاحظة أمنية:\nتم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.\n\n━━━━━━━━━━━━━━━━━━\nSAMI COINS\n`;\n\n    const url =\n        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;\n\n    window.open(\n        url,\n        "_blank",\n        "noopener,noreferrer"\n    );\n}\n
 
 // ==========================================================================
 // 37. إغلاق المودال عند الضغط خارج النافذة
@@ -3539,6 +3410,14 @@ function setupModalEvents() {
 // ==========================================================================
 // 38. تهيئة الصفحة
 // ==========================================================================
+
+window.addEventListener(
+    "beforeunload",
+    () => {
+        clearSensitiveOrderFields();
+    }
+);
+
 
 window.addEventListener(
     "DOMContentLoaded",
