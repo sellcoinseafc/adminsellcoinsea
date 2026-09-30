@@ -1,190 +1,327 @@
 import crypto from "crypto";
 import admin, { db } from "./firebase.js";
 
+/*
+ * Internal numbering document.
+ *
+ * The serial stored here is NOT exposed to the customer.
+ * It exists as a permanent internal sequence and is never reset.
+ */
 const NUMBERING_DOC = db
   .collection("system")
   .doc("orderNumbering");
 
-const REFERENCE_COLLECTION = "orderReferences";
-
 /*
- * Customer-facing reference alphabet.
+ * Every customer-facing reference is permanently reserved
+ * in this collection.
  *
- * I and L are intentionally excluded because they can be confused
- * with 1 in some fonts/screens.
- */
-const LETTERS = "ABCDEFGHJKMNOPQRSTUVWXYZ";
-
-/*
- * Customer-facing order reference format:
- *
- * 8 characters total
- * 5 digits + 3 letters
- * first character = digit
- * last character  = digit
- * letters are distributed randomly across the six middle positions
+ * Document ID = customer-facing reference number.
  *
  * Example:
+ *
+ * orderReferences/7A42M8Q3
+ */
+const REFERENCE_COLLECTION =
+  "orderReferences";
+
+/*
+ * Customer-facing alphabet.
+ *
+ * I and L are intentionally excluded because they can be
+ * confused with the number 1 in some fonts/screens.
+ */
+const LETTERS =
+  "ABCDEFGHJKMNOPQRSTUVWXYZ";
+
+/*
+ * Customer-facing reference format:
+ *
+ * 8 characters
+ * 5 digits
+ * 3 letters
+ *
+ * First character = digit
+ * Last character  = digit
+ *
+ * The three letters are distributed randomly
+ * across the six middle positions.
+ *
+ * Example:
+ *
  * 7A42M8Q3
  */
 const REFERENCE_LENGTH = 8;
 const LETTER_COUNT = 3;
 const DIGIT_COUNT = 5;
-const MIN_MIDDLE_LETTER_POSITION = 1;
-const MAX_MIDDLE_LETTER_POSITION = 6;
+
+/*
+ * Zero-based positions available for letters.
+ *
+ * Position 0 = first character and MUST be a digit.
+ * Position 7 = last character and MUST be a digit.
+ *
+ * Therefore letters can only occupy positions 1..6.
+ */
+const MIDDLE_POSITIONS = [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+];
+
+/* =========================================================
+   Random Helpers
+========================================================= */
 
 /**
- * Number of middle positions available for letters.
- * Positions are zero-based: 1..6.
+ * Returns a cryptographically secure random item.
  */
-const MIDDLE_POSITIONS = Array.from(
-  {
-    length:
-      MAX_MIDDLE_LETTER_POSITION -
-      MIN_MIDDLE_LETTER_POSITION +
-      1
-  },
-  (_, index) =>
-    MIN_MIDDLE_LETTER_POSITION + index
-);
-
-/**
- * Selects n distinct items from an array using a cryptographically
- * secure random source.
- */
-function randomDistinctItems(items, count) {
-  if (count > items.length) {
+function randomItem(items) {
+  if (
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
     throw new Error(
-      "Cannot select more distinct items than the source contains."
+      "Cannot select a random item from an empty collection."
+    );
+  }
+
+  return items[
+    crypto.randomInt(
+      0,
+      items.length
+    )
+  ];
+}
+
+/**
+ * Returns distinct random items.
+ */
+function randomDistinctItems(
+  items,
+  count
+) {
+  if (
+    !Array.isArray(items) ||
+    items.length < count
+  ) {
+    throw new Error(
+      "Not enough unique items available."
     );
   }
 
   const pool = [...items];
-  const selected = [];
+  const result = [];
 
-  for (let i = 0; i < count; i += 1) {
-    const index = crypto.randomInt(
-      0,
-      pool.length
+  while (
+    result.length < count
+  ) {
+    const index =
+      crypto.randomInt(
+        0,
+        pool.length
+      );
+
+    result.push(
+      pool[index]
     );
 
-    selected.push(pool[index]);
-    pool.splice(index, 1);
+    pool.splice(
+      index,
+      1
+    );
   }
 
-  return selected;
+  return result;
 }
 
 /**
- * Generate the customer-facing 8-character reference.
+ * Generates one random decimal digit.
+ */
+function randomDigit() {
+  return String(
+    crypto.randomInt(
+      0,
+      10
+    )
+  );
+}
+
+/* =========================================================
+   Customer Reference Generation
+========================================================= */
+
+/**
+ * Generates the final customer-facing order reference.
  *
  * Rules:
- * - exactly 5 digits
- * - exactly 3 letters
- * - first and last characters are digits
- * - letters are distributed randomly through the middle
- * - letters are distinct inside the same reference
- * - random source is Node crypto, not Math.random
+ *
+ * - Exactly 8 characters.
+ * - Exactly 5 digits.
+ * - Exactly 3 letters.
+ * - First character is always a digit.
+ * - Last character is always a digit.
+ * - Letters are randomly distributed through the middle.
+ * - Letters are unique within the same reference.
+ * - I and L are excluded.
+ * - Uses Node.js crypto instead of Math.random().
+ *
+ * Examples:
+ *
+ * 7A42M8Q3
+ * 3N6C91W8
+ * 8K27R5D4
  */
 function generateReferenceNumber() {
-  const characters =
-    Array(REFERENCE_LENGTH).fill(null);
+  const reference =
+    Array(
+      REFERENCE_LENGTH
+    ).fill(null);
 
-  /* First and last characters are always digits. */
-  characters[0] = String(
-    crypto.randomInt(0, 10)
-  );
+  /*
+   * First character must be a number.
+   */
+  reference[0] =
+    randomDigit();
 
-  characters[REFERENCE_LENGTH - 1] =
-    String(
-      crypto.randomInt(0, 10)
-    );
+  /*
+   * Last character must be a number.
+   */
+  reference[
+    REFERENCE_LENGTH - 1
+  ] = randomDigit();
 
-  /* Pick 3 different middle positions for the letters. */
+  /*
+   * Select three different positions
+   * from the six middle positions.
+   */
   const letterPositions =
     randomDistinctItems(
       MIDDLE_POSITIONS,
       LETTER_COUNT
     );
 
-  /* Pick 3 different letters from the approved alphabet. */
+  /*
+   * Select three different letters.
+   */
   const selectedLetters =
     randomDistinctItems(
       [...LETTERS],
       LETTER_COUNT
     );
 
+  /*
+   * Place the letters.
+   */
   for (
     let i = 0;
     i < LETTER_COUNT;
     i += 1
   ) {
-    characters[letterPositions[i]] =
+    reference[
+      letterPositions[i]
+    ] =
       selectedLetters[i];
   }
 
-  /* Fill every remaining middle position with a digit. */
+  /*
+   * Fill the remaining middle positions
+   * with random digits.
+   */
   for (
-    let i = 1;
-    i < REFERENCE_LENGTH - 1;
-    i += 1
+    let position = 1;
+    position <
+      REFERENCE_LENGTH - 1;
+    position += 1
   ) {
-    if (characters[i] === null) {
-      characters[i] = String(
-        crypto.randomInt(0, 10)
-      );
+    if (
+      reference[position] ===
+      null
+    ) {
+      reference[position] =
+        randomDigit();
     }
   }
 
-  const reference =
-    characters.join("");
-
-  if (
-    !isValidReferenceNumber(reference)
-  ) {
-    throw new Error(
-      "Generated order reference failed validation."
-    );
-  }
-
-  return reference;
+  return reference.join("");
 }
 
+/* =========================================================
+   Validation
+========================================================= */
+
 /**
- * Validate the exact customer-facing reference format.
+ * Validates the customer-facing reference.
  */
-function isValidReferenceNumber(
+export function isValidReferenceNumber(
   reference
 ) {
   if (
-    typeof reference !== "string" ||
-    reference.length !== REFERENCE_LENGTH
+    typeof reference !==
+      "string" ||
+    reference.length !==
+      REFERENCE_LENGTH
   ) {
     return false;
   }
 
-  if (!/^\d.*\d$/.test(reference)) {
+  /*
+   * First and last must be digits.
+   */
+  if (
+    !/^\d/.test(reference) ||
+    !/\d$/.test(reference)
+  ) {
+    return false;
+  }
+
+  /*
+   * Only approved digits/letters
+   * are allowed.
+   */
+  if (
+    !/^[0-9A-Z]+$/.test(
+      reference
+    )
+  ) {
     return false;
   }
 
   const letters =
-    reference.match(/[A-Z]/g) || [];
+    reference.match(
+      /[A-Z]/g
+    ) || [];
 
   const digits =
-    reference.match(/\d/g) || [];
+    reference.match(
+      /[0-9]/g
+    ) || [];
 
+  /*
+   * Exactly 3 letters.
+   */
   if (
-    letters.length !== LETTER_COUNT
+    letters.length !==
+    LETTER_COUNT
   ) {
     return false;
   }
 
+  /*
+   * Exactly 5 digits.
+   */
   if (
-    digits.length !== DIGIT_COUNT
+    digits.length !==
+    DIGIT_COUNT
   ) {
     return false;
   }
 
+  /*
+   * Letters must be unique.
+   */
   if (
     new Set(letters).size !==
     LETTER_COUNT
@@ -192,199 +329,38 @@ function isValidReferenceNumber(
     return false;
   }
 
-  return letters.every(
-    (letter) =>
-      LETTERS.includes(letter)
-  );
+  /*
+   * Make sure every letter belongs
+   * to our approved alphabet.
+   */
+  if (
+    !letters.every(
+      (letter) =>
+        LETTERS.includes(
+          letter
+        )
+    )
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
+/* =========================================================
+   Internal Order ID
+========================================================= */
+
 /**
- * Generate a separate internal business order ID.
+ * Generates the internal order ID.
  *
- * This value is intentionally not the customer-facing reference.
- * It is cryptographically random and has no sequential information.
+ * This value is NOT the customer-facing order number.
+ *
+ * It is intentionally independent from the visible reference.
  */
 function generateInternalOrderId() {
   return `ORD-${crypto.randomUUID()}`;
 }
 
-/**
- * Reserve a reference and advance the internal serial atomically.
- *
- * Important:
- * The reference reservation is permanent. Once a reference has been
- * successfully reserved, it is never returned to the available pool,
- * even if the related order is later deleted, archived, or destroyed.
- *
- * Firestore transaction guarantees that two concurrent requests cannot
- * reserve the same reference.
- */
-async function reserveReferenceInTransaction() {
-  return db.runTransaction(
-    async (transaction) => {
-      const numberingSnapshot =
-        await transaction.get(
-          NUMBERING_DOC
-        );
-
-      const data =
-        numberingSnapshot.exists
-          ? numberingSnapshot.data() || {}
-          : {};
-
-      const currentSerial =
-        Number(data.serial || 0);
-
-      const serial =
-        Number.isSafeInteger(
-          currentSerial
-        )
-          ? currentSerial + 1
-          : 1;
-
-      if (
-        serial >
-        Number.MAX_SAFE_INTEGER
-      ) {
-        throw new Error(
-          "Order numbering serial has reached the maximum safe integer."
-        );
-      }
-
-      /*
-       * Generate the candidate inside the transaction callback so a
-       * transaction retry receives a fresh candidate.
-       */
-      const referenceNumber =
-        generateReferenceNumber();
-
-      const referenceRef =
-        db
-          .collection(
-            REFERENCE_COLLECTION
-          )
-          .doc(referenceNumber);
-
-      /*
-       * Firestore requires all transaction reads to happen before writes.
-       */
-      const referenceSnapshot =
-        await transaction.get(
-          referenceRef
-        );
-
-      if (
-        referenceSnapshot.exists
-      ) {
-        const collision =
-          new Error(
-            "ORDER_REFERENCE_COLLISION"
-          );
-
-        collision.code =
-          "ORDER_REFERENCE_COLLISION";
-
-        throw collision;
-      }
-
-      const orderId =
-        generateInternalOrderId();
-
-      transaction.set(
-        referenceRef,
-        {
-          referenceNumber,
-
-          orderId,
-
-          serial,
-
-          reservedAt:
-            admin.firestore
-              .FieldValue
-              .serverTimestamp()
-        },
-        {
-          merge: false
-        }
-      );
-
-      transaction.set(
-        NUMBERING_DOC,
-        {
-          serial,
-
-          updatedAt:
-            admin.firestore
-              .FieldValue
-              .serverTimestamp()
-        },
-        {
-          merge: true
-        }
-      );
-
-      return {
-        orderId,
-        referenceNumber,
-        serial
-      };
-    }
-  );
-}
-
-/**
- * Generate and permanently reserve a customer-facing order reference.
- *
- * The outer retry is intentionally defensive. Firestore already gives
- * us atomic transaction behavior, while this loop handles the extremely
- * unlikely case where a generated reference collides with an existing
- * reservation.
- */
-export async function generateOrderNumbers() {
-  const MAX_ATTEMPTS = 20;
-
-  for (
-    let attempt = 1;
-    attempt <= MAX_ATTEMPTS;
-    attempt += 1
-  ) {
-    try {
-      const result =
-        await reserveReferenceInTransaction();
-
-      return {
-        ...result,
-
-        /*
-         * Legacy compatibility field.
-         * It is derived from the generated reference and is no longer
-         * used to generate the customer-facing number.
-         */
-        dailyCode:
-          result.referenceNumber
-            .replace(/\D/g, "")
-            .slice(0, 3)
-      };
-    } catch (error) {
-      if (
-        error?.code ===
-          "ORDER_REFERENCE_COLLISION" &&
-        attempt < MAX_ATTEMPTS
-      ) {
-        continue;
-      }
-
-      throw error;
-    }
-  }
-
-  throw new Error(
-    "Unable to generate a unique order reference after multiple attempts."
-  );
-}
-
-export default {
-  generateOrderNumbers,
-  isValidReferenceNumber
-};
+/* =========================================================
+  
