@@ -1,172 +1,136 @@
 import crypto from "crypto";
 import admin, { db } from "./firebase.js";
 
-const DAILY_CODES_COLLECTION = "system";
-const DAILY_CODES_DOC = "orderNumbering";
+const NUMBERING_DOC = db
+  .collection("system")
+  .doc("orderNumbering");
 
 const LETTERS = "SAMICOINS";
 const DAILY_CODE_COUNT = 4;
 
 /**
- * Generates two random letters from "SAMI COINS".
- * Repetition is allowed.
- */
-function randomLetters() {
-  const first =
-    LETTERS[crypto.randomInt(0, LETTERS.length)];
-
-  const second =
-    LETTERS[crypto.randomInt(0, LETTERS.length)];
-
-  return `${first}${second}`;
-}
-
-/**
- * Generates a random 3-digit daily code.
- */
-function randomDailyCode() {
-  return String(crypto.randomInt(100, 1000));
-}
-
-/**
- * Returns today's UTC date in YYYY-MM-DD format.
+ * تاريخ اليوم بتوقيت UTC.
+ * يتم حفظ الأكواد والتسلسل بحسب هذا التاريخ.
  */
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
 /**
- * Creates the four daily codes once per day.
- *
- * They are stored in:
- * system/orderNumbering
- *
- * The same four codes are reused for every order created
- * during that day.
+ * حرف عشوائي من SAMI COINS.
+ * التكرار مسموح.
  */
-async function getDailyCodes(transaction) {
-  const ref = db
-    .collection(DAILY_CODES_COLLECTION)
-    .doc(DAILY_CODES_DOC);
+function randomLetter() {
+  return LETTERS[crypto.randomInt(0, LETTERS.length)];
+}
 
-  const snap = await transaction.get(ref);
-  const today = getTodayKey();
+/**
+ * حرفان عشوائيان.
+ */
+function randomLetters() {
+  return `${randomLetter()}${randomLetter()}`;
+}
 
-  if (snap.exists) {
-    const data = snap.data() || {};
+/**
+ * كود يومي من 3 أرقام.
+ */
+function randomDailyCode() {
+  return String(crypto.randomInt(100, 1000));
+}
 
-    if (
-      data.date === today &&
-      Array.isArray(data.codes) &&
-      data.codes.length === DAILY_CODE_COUNT
-    ) {
-      return {
-        ref,
-        date: today,
-        codes: data.codes
-      };
-    }
-  }
-
+/**
+ * إنشاء 4 أكواد يومية مختلفة.
+ */
+function createDailyCodes() {
   const codes = new Set();
 
   while (codes.size < DAILY_CODE_COUNT) {
     codes.add(randomDailyCode());
   }
 
-  const dailyCodes = [...codes];
-
-  transaction.set(
-    ref,
-    {
-      date: today,
-      codes: dailyCodes,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  return {
-    ref,
-    date: today,
-    codes: dailyCodes
-  };
+  return [...codes];
 }
 
 /**
- * Creates the next atomic serial number.
- *
- * Serial is stored separately from the formatted order ID.
- */
-async function getNextSerial(transaction, date) {
-  const ref = db
-    .collection(DAILY_CODES_COLLECTION)
-    .doc(DAILY_CODES_DOC);
-
-  const snap = await transaction.get(ref);
-  const data = snap.exists ? snap.data() || {} : {};
-
-  const serialDate = data.serialDate === date
-    ? date
-    : date;
-
-  const currentSerial =
-    data.serialDate === serialDate
-      ? Number(data.serial || 0)
-      : 0;
-
-  const nextSerial = currentSerial + 1;
-
-  transaction.set(
-    ref,
-    {
-      serialDate,
-      serial: nextSerial,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    },
-    { merge: true }
-  );
-
-  return nextSerial;
-}
-
-/**
- * Creates:
+ * توليد رقم الطلب والمرجع بشكل ذري داخل Firestore Transaction.
  *
  * Order ID:
  * XXDDDNN
  *
  * Reference:
- * FC-RRR-NN
+ * FC-DDD-NN
  *
- * Example:
+ * مثال:
  * SA42715
- * FC-583-15
- *
- * The daily code is selected from the four codes generated
- * for the current day.
+ * FC-427-15
  */
 export async function generateOrderNumbers() {
   return db.runTransaction(async (transaction) => {
-    const daily = await getDailyCodes(transaction);
+    // يجب إجراء جميع القراءات قبل أي write داخل الـ transaction.
+    const snap = await transaction.get(NUMBERING_DOC);
 
-    const serial = await getNextSerial(
-      transaction,
-      daily.date
-    );
+    const today = getTodayKey();
+    const data = snap.exists ? snap.data() || {} : {};
 
+    let dailyCodes = Array.isArray(data.codes)
+      ? data.codes
+      : [];
+
+    let storedDate = data.date || "";
+
+    /*
+     * إذا تغير اليوم أو كانت الأكواد غير صالحة،
+     * ننشئ 4 أكواد جديدة لهذا اليوم.
+     */
+    if (
+      storedDate !== today ||
+      dailyCodes.length !== DAILY_CODE_COUNT ||
+      new Set(dailyCodes).size !== DAILY_CODE_COUNT
+    ) {
+      dailyCodes = createDailyCodes();
+      storedDate = today;
+    }
+
+    /*
+     * التسلسل يبدأ من 1 في كل يوم.
+     * لا يوجد leading zero.
+     */
+    const currentSerial =
+      data.serialDate === today
+        ? Number(data.serial || 0)
+        : 0;
+
+    const serial = currentSerial + 1;
+
+    /*
+     * اختيار أحد الأكواد الأربعة اليومية.
+     */
     const dailyCode =
-      daily.codes[
-        crypto.randomInt(0, daily.codes.length)
+      dailyCodes[
+        crypto.randomInt(0, dailyCodes.length)
       ];
 
-    const letters = randomLetters();
-
     const orderId =
-      `${letters}${dailyCode}${serial}`;
+      `${randomLetters()}${dailyCode}${serial}`;
 
     const referenceNumber =
       `FC-${dailyCode}-${serial}`;
+
+    /*
+     * كتابة الحالة الجديدة بعد إتمام جميع القراءات.
+     */
+    transaction.set(
+      NUMBERING_DOC,
+      {
+        date: storedDate,
+        codes: dailyCodes,
+        serialDate: today,
+        serial,
+        updatedAt:
+          admin.firestore.FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
 
     return {
       orderId,
