@@ -5878,16 +5878,14 @@ window.handleArchiveOrder =
     try {
       const response =
         await adminFetch(
-          "/api/orders/update-status",
+          "/api/admin/archive-order",
           {
             method:
               "POST",
 
             body:
               JSON.stringify({
-                orderId,
-                status:
-                  "archived"
+                orderId
               })
           }
         );
