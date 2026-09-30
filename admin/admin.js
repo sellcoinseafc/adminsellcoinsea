@@ -447,7 +447,7 @@ function initAuthGuard() {
       ) {
         await signOut(auth);
 
-        alert(
+        showToast(
           "غير مصرح لك بدخول لوحة التحكم."
         );
 
@@ -474,7 +474,7 @@ function initAuthGuard() {
           );
 
         if (!adminSnap.exists()) {
-          alert(
+          showToast(
             "الحساب غير مصرح له بدخول لوحة الإدارة."
           );
 
@@ -497,7 +497,7 @@ function initAuthGuard() {
           adminData.active ===
           false
         ) {
-          alert(
+          showToast(
             "حساب الإدارة غير مفعل."
           );
 
@@ -1088,7 +1088,7 @@ window.copyTrackingLink =
         url
       );
 
-      alert(
+      showToast(
         "✅ تم نسخ رابط التتبع بنجاح:\n" +
           url
       );
@@ -1450,7 +1450,7 @@ function getIssueLabel(
 async function sendIssueViaWhatsapp(orderId) {
   const order = ordersData.find((item) => item.id === orderId);
   if (!order || !order.phone || !order.issue) {
-    alert("لا توجد بيانات كافية لإرسال رسالة واتساب.");
+    showToast("لا توجد بيانات كافية لإرسال رسالة واتساب.");
     return;
   }
 
@@ -1461,7 +1461,7 @@ async function sendIssueViaWhatsapp(orderId) {
   ).trim();
 
   if (!message) {
-    alert("لا توجد رسالة مجهزة لهذه المشكلة.");
+    showToast("لا توجد رسالة مجهزة لهذه المشكلة.");
     return;
   }
 
@@ -1511,7 +1511,7 @@ function resendLastWhatsapp(orderId) {
   );
 
   if (!raw) {
-    alert("لا توجد رسالة واتساب سابقة لهذا الطلب.");
+    showToast("لا توجد رسالة واتساب سابقة لهذا الطلب.");
     return;
   }
 
@@ -1531,7 +1531,7 @@ function resendLastWhatsapp(orderId) {
       "noopener,noreferrer"
     );
   } catch {
-    alert("تعذر إعادة إرسال الرسالة السابقة.");
+    showToast("تعذر إعادة إرسال الرسالة السابقة.");
   }
 }
 
@@ -3870,7 +3870,7 @@ window.updateReviewStatus =
         `تغيير الحالة إلى: ${newStatus}`
       );
     } catch (error) {
-      alert(
+      showToast(
         "❌ فشل تحديث حالة التقييم: " +
           (
             error?.message ||
@@ -3907,7 +3907,7 @@ window.deleteReview =
         "تم حذف التقييم من النظام"
       );
     } catch (error) {
-      alert(
+      showToast(
         "❌ فشل حذف التقييم: " +
           (
             error?.message ||
@@ -4355,7 +4355,7 @@ async function decryptOrder(
     }
 
     if (!data.success) {
-      alert(
+      showToast(
         data.message ||
           "فشل فك التشفير."
       );
@@ -4469,7 +4469,7 @@ async function decryptOrder(
         error
     );
 
-    alert(
+    showToast(
       "❌ تعذر فك تشفير بيانات الطلب."
     );
   }
@@ -4600,7 +4600,7 @@ window.openOrderModal =
       );
 
     if (!order) {
-      alert(
+      showToast(
         "لم يتم العثور على بيانات الطلب المطلوب."
       );
 
@@ -5265,7 +5265,7 @@ window.saveOrderIssue =
       );
 
     if (!order) {
-      alert(
+      showToast(
         "الطلب غير موجود."
       );
 
@@ -5300,7 +5300,7 @@ window.saveOrderIssue =
           selectedIssue
         )
       ) {
-        alert(
+        showToast(
           "❌ نوع المشكلة غير صحيح."
         );
 
@@ -5373,7 +5373,7 @@ window.saveOrderIssue =
       if (
         !data.success
       ) {
-        alert(
+        showToast(
           "❌ فشل تحديث المشكلة: " +
             (
               data.message ||
@@ -5395,7 +5395,7 @@ window.saveOrderIssue =
           : "تم اختيار: لا توجد مشكلة"
       );
 
-      alert(
+      showToast(
         issue
           ? "✅ تم حفظ المشكلة بنجاح."
           : "✅ تم إزالة المشكلة من الطلب."
@@ -5422,7 +5422,7 @@ window.saveOrderIssue =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر تحديث مشكلة الطلب."
       );
     }
@@ -5442,7 +5442,7 @@ window.openPurgeModal =
       );
 
     if (!order) {
-      alert(
+      showToast(
         "الطلب غير موجود."
       );
 
@@ -5453,7 +5453,7 @@ window.openPurgeModal =
       order.status !==
       "completed"
     ) {
-      alert(
+      showToast(
         "لا يمكن إتلاف البيانات إلا بعد اكتمال الطلب."
       );
 
@@ -5464,7 +5464,7 @@ window.openPurgeModal =
       order.sensitivePurged ===
       true
     ) {
-      alert(
+      showToast(
         "تم إتلاف البيانات الحساسة لهذا الطلب مسبقاً."
       );
 
@@ -5479,7 +5479,7 @@ window.openPurgeModal =
           order
         );
 
-      alert(
+      showToast(
         dueDate
           ? `لم يحِن موعد الإتلاف بعد.\nالموعد: ${dueDate.toLocaleString(
               "ar-SA",
@@ -5549,7 +5549,7 @@ window.confirmPurgeDataFinal =
       );
 
     if (!order) {
-      alert(
+      showToast(
         "الطلب غير موجود."
       );
 
@@ -5560,7 +5560,7 @@ window.confirmPurgeDataFinal =
       order.status !==
       "completed"
     ) {
-      alert(
+      showToast(
         "لا يمكن إتلاف البيانات إلا بعد اكتمال الطلب."
       );
 
@@ -5570,7 +5570,7 @@ window.confirmPurgeDataFinal =
     if (
       !isPurgeDue(order)
     ) {
-      alert(
+      showToast(
         "لا يمكن الإتلاف قبل مرور 5 أيام من اكتمال الطلب."
       );
 
@@ -5581,7 +5581,7 @@ window.confirmPurgeDataFinal =
       order.sensitivePurged ===
       true
     ) {
-      alert(
+      showToast(
         "تم إتلاف البيانات مسبقاً."
       );
 
@@ -5640,7 +5640,7 @@ window.confirmPurgeDataFinal =
           "تم إتلاف بيانات EA الحساسة نهائياً بعد مرور 5 أيام وتأكيد المشرف"
         );
 
-        alert(
+        showToast(
           "✅ تم إتلاف البيانات الحساسة بنجاح."
         );
 
@@ -5652,7 +5652,7 @@ window.confirmPurgeDataFinal =
         return;
       }
 
-      alert(
+      showToast(
         "❌ فشل الإتلاف: " +
           (
             data.message ||
@@ -5660,7 +5660,7 @@ window.confirmPurgeDataFinal =
           )
       );
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر تنفيذ الإتلاف."
       );
 
@@ -5716,7 +5716,7 @@ window.promptEditOrder =
         normalizedStatus
       )
     ) {
-      alert(
+      showToast(
         "❌ الحالة المدخلة غير صحيحة."
       );
 
@@ -5783,7 +5783,7 @@ window.promptEditOrder =
                 )
             ) || "";
         } else {
-          alert(
+          showToast(
             "❌ كود المشكلة غير صحيح."
           );
 
@@ -5842,13 +5842,13 @@ window.promptEditOrder =
           }`
         );
 
-        alert(
+        showToast(
           "✅ تم تعديل حالة الطلب بنجاح."
         );
 
         await loadOrders();
       } else {
-        alert(
+        showToast(
           "❌ فشل التعديل: " +
             (
               data.message ||
@@ -5857,7 +5857,7 @@ window.promptEditOrder =
         );
       }
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر تعديل الحالة."
       );
 
@@ -5920,13 +5920,13 @@ window.handleArchiveOrder =
           "تم تغيير الحالة إلى مؤرشف"
         );
 
-        alert(
+        showToast(
           "✅ تم أرشفة الطلب بنجاح."
         );
 
         await loadOrders();
       } else {
-        alert(
+        showToast(
           "❌ فشل الأرشفة: " +
             (
               data.message ||
@@ -5935,7 +5935,7 @@ window.handleArchiveOrder =
         );
       }
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر أرشفة الطلب."
       );
 
@@ -5998,13 +5998,13 @@ window.handleDeleteOrder =
           "تم حذف الطلب نهائياً من قاعدة البيانات"
         );
 
-        alert(
+        showToast(
           "✅ تم حذف الطلب بنجاح."
         );
 
         await loadOrders();
       } else {
-        alert(
+        showToast(
           "❌ فشل الحذف: " +
             (
               data.message ||
@@ -6013,7 +6013,7 @@ window.handleDeleteOrder =
         );
       }
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر حذف الطلب."
       );
 
@@ -6092,7 +6092,7 @@ window.handleMarkTransferred =
           `تم التحويل المالي بواسطة: ${currentAdmin.name}`
         );
 
-        alert(
+        showToast(
           "✅ تم إتمام التحويل المالي وتوثيق البيانات بنجاح."
         );
 
@@ -6100,7 +6100,7 @@ window.handleMarkTransferred =
 
         await loadOrders();
       } else {
-        alert(
+        showToast(
           "❌ فشل تغيير الحالة: " +
             (
               data.message ||
@@ -6109,7 +6109,7 @@ window.handleMarkTransferred =
         );
       }
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر إتمام التحويل."
       );
 
@@ -6154,7 +6154,7 @@ window.updateDrawnCoinsPrompt =
         newDrawnStr
       )
     ) {
-      alert(
+      showToast(
         "❌ أدخل رقماً صحيحاً."
       );
 
@@ -6172,7 +6172,7 @@ window.updateDrawnCoinsPrompt =
       ) ||
       newDrawn < 0
     ) {
-      alert(
+      showToast(
         "❌ الكمية غير صحيحة."
       );
 
@@ -6183,7 +6183,7 @@ window.updateDrawnCoinsPrompt =
       newDrawn >
       Number(totalQty)
     ) {
-      alert(
+      showToast(
         "❌ الكمية المسحوبة لا يمكن أن تتجاوز الكمية المطلوبة."
       );
 
@@ -6224,7 +6224,7 @@ window.updateDrawnCoinsPrompt =
       if (
         !data.success
       ) {
-        alert(
+        showToast(
           "❌ فشل التحديث: " +
             (
               data.message ||
@@ -6245,7 +6245,7 @@ window.updateDrawnCoinsPrompt =
         )}`
       );
 
-      alert(
+      showToast(
         "✅ تم تحديث الكمية المسحوبة بنجاح."
       );
 
@@ -6253,7 +6253,7 @@ window.updateDrawnCoinsPrompt =
 
       await loadOrders();
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر تحديث الكمية."
       );
 
@@ -6562,7 +6562,7 @@ window.toggleStoreStatus =
         }`
       );
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر تغيير حالة المتجر."
       );
 
@@ -6841,11 +6841,11 @@ window.saveProductsConfig =
         "تحديث الأسعار وإعدادات المنصات بنجاح"
       );
 
-      alert(
+      showToast(
         "✅ تم حفظ إعدادات الأسعار والمنصات بنجاح!"
       );
     } catch (error) {
-      alert(
+      showToast(
         "❌ تعذر حفظ الإعدادات."
       );
 
@@ -6961,7 +6961,7 @@ window.addBank =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر إضافة البنك."
       );
     }
@@ -7011,7 +7011,7 @@ window.deleteBank =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر حذف البنك."
       );
     }
@@ -7121,7 +7121,7 @@ window.addWallet =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر إضافة المحفظة."
       );
     }
@@ -7171,7 +7171,7 @@ window.deleteWallet =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر حذف المحفظة."
       );
     }
@@ -7278,7 +7278,7 @@ window.addCustomPaymentMethod =
         );
 
       if (exists) {
-        alert(
+        showToast(
           "⚠️ طريقة الدفع موجودة بالفعل."
         );
 
@@ -7304,7 +7304,7 @@ window.addCustomPaymentMethod =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر إضافة طريقة الدفع."
       );
     }
@@ -7354,7 +7354,7 @@ window.deleteCustomPayment =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر حذف طريقة الدفع."
       );
     }
@@ -7458,7 +7458,7 @@ window.addNewTerm =
         );
 
       if (exists) {
-        alert(
+        showToast(
           "⚠️ هذا الشرط موجود بالفعل."
         );
 
@@ -7484,7 +7484,7 @@ window.addNewTerm =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر إضافة الشرط."
       );
     }
@@ -7534,7 +7534,7 @@ window.deleteTerm =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر حذف الشرط."
       );
     }
@@ -7596,7 +7596,7 @@ window.toggleTermsEnabled =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر تحديث حالة الشروط والأحكام."
       );
 
@@ -7717,7 +7717,7 @@ window.saveIssueMessages =
         messages
       ).length === 0
     ) {
-      alert(
+      showToast(
         "لم يتم العثور على حقول رسائل المشاكل في الصفحة."
       );
 
@@ -7752,7 +7752,7 @@ window.saveIssueMessages =
         "تم تحديث رسائل المشاكل الخاصة بالطلبات"
       );
 
-      alert(
+      showToast(
         "✅ تم حفظ رسائل الحالات بنجاح."
       );
     } catch (error) {
@@ -7762,7 +7762,7 @@ window.saveIssueMessages =
           error
       );
 
-      alert(
+      showToast(
         "❌ تعذر حفظ رسائل الحالات."
       );
     }
