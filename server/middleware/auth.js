@@ -183,7 +183,29 @@ export async function requireAdmin(
     }
 
     /* =====================================================
-       3. Load Admin Document
+       3. Verify Firebase User State
+    ===================================================== */
+
+    /*
+     * verifyIdToken(..., true) checks revoked tokens, but
+     * disabled-account state must be checked explicitly.
+     */
+    const firebaseUser =
+      await admin
+        .auth()
+        .getUser(uid);
+
+    if (
+      firebaseUser.disabled === true
+    ) {
+      return unauthorized(
+        res,
+        "حساب الإدارة غير صالح."
+      );
+    }
+
+    /* =====================================================
+       4. Load Admin Document
     ===================================================== */
 
     const adminRef =
@@ -202,7 +224,7 @@ export async function requireAdmin(
       adminSnap.data() || {};
 
     /* =====================================================
-       4. Check Admin Status
+       5. Check Admin Status
     ===================================================== */
 
     /*
@@ -224,7 +246,7 @@ export async function requireAdmin(
     }
 
     /* =====================================================
-       5. Identity Validation
+       6. Identity Validation
     ===================================================== */
 
     const storedEmail =
@@ -251,7 +273,6 @@ export async function requireAdmin(
      */
     if (
       storedEmail &&
-      verifiedEmail &&
       storedEmail !== verifiedEmail
     ) {
       return forbidden(
@@ -261,7 +282,7 @@ export async function requireAdmin(
     }
 
     /* =====================================================
-       6. Firebase Account State
+       7. Firebase Account State
     ===================================================== */
 
     /*
@@ -271,7 +292,7 @@ export async function requireAdmin(
      */
 
     /* =====================================================
-       7. Safe Admin Identity
+       8. Safe Admin Identity
     ===================================================== */
 
     /*
@@ -302,7 +323,7 @@ export async function requireAdmin(
     });
 
     /* =====================================================
-       8. Security Headers
+       9. Security Headers
     ===================================================== */
 
     res.setHeader(
