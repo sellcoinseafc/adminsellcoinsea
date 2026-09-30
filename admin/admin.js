@@ -1797,6 +1797,13 @@ async function loadOrders() {
                 ?.ibanMasked ||
               "",
 
+            withdrawnQuantity:
+              Number(
+                order.withdrawnQuantity ??
+                order.drawnCoins ??
+                0
+              ),
+
             drawnCoins:
               Number(
                 order.drawnCoins ??
