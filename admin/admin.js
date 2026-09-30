@@ -1827,6 +1827,11 @@ async function loadOrders() {
               order.sensitivePurged ===
               true,
 
+            history:
+              Array.isArray(order.history)
+                ? order.history
+                : [],
+
             createdAt:
               parseFirestoreDate(
                 order.createdAt
@@ -4639,6 +4644,27 @@ window.openOrderModal =
         order
       );
 
+    const historyHTML =
+      Array.isArray(order.history) && order.history.length
+        ? `
+          <div style="background:rgba(255,255,255,.03);padding:16px;border-radius:14px;border:1px solid var(--card-border);margin-bottom:20px;">
+            <h4 style="margin:0 0 12px;">سجل الطلب</h4>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${order.history.slice(-20).reverse().map((entry) => `
+                <div style="padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.03);">
+                  <b>${escapeHtml(entry.type || "تحديث")}</b>
+                  ${entry.status ? " — " + escapeHtml(entry.status) : ""}
+                  ${entry.to ? " → " + escapeHtml(entry.to) : ""}
+                  <small style="display:block;color:var(--text-muted);margin-top:3px;">
+                    ${escapeHtml(entry.actor || "")}
+                  </small>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `
+        : "";
+
     const transferCardHTML =
       isTransferred
         ? `
@@ -4902,8 +4928,7 @@ window.openOrderModal =
             </h4>
 
             <p>
-              تم حذف بيانات EA الحساسة نهائياً.
-              بيانات الدفع محفوظة ومشفرة.
+              تم حذف بيانات EA وبيانات الدفع الحساسة نهائياً.
             </p>
 
           </div>
