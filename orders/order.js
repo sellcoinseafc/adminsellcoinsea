@@ -615,7 +615,7 @@ async function loadSettings() {
 
         showStoreClosedState(false);
 
-        alert(
+        showToast(
             currentLanguage === "ar"
                 ? "تعذر تحميل إعدادات المتجر. حاول تحديث الصفحة."
                 : "Unable to load store settings. Please refresh the page."
@@ -697,7 +697,7 @@ function contactClosedStoreWhatsapp() {
         getSupportWhatsappNumber();
 
     if (!number) {
-        alert(
+        showToast(
             currentLanguage === "ar"
                 ? "رقم الدعم غير متوفر حاليًا."
                 : "Support number is currently unavailable."
@@ -2634,7 +2634,7 @@ function saveAllEdits() {
         !newName ||
         !newPhone
     ) {
-        alert(
+        showToast(
             currentLanguage === "ar"
                 ? "يرجى تعبئة جميع بيانات التعديل."
                 : "Please complete all edited fields."
@@ -3101,7 +3101,7 @@ async function submitOrderFinal() {
             error
         );
 
-        alert(
+        showToast(
             currentLanguage === "ar"
                 ? `فشل إنشاء الطلب: ${
                     error?.message ||
@@ -3384,7 +3384,7 @@ async async async function copyTrackingLinkUrl() {
         textarea.remove();
     }
 
-    alert(
+    showToast(
         currentLanguage === "ar"
             ? "تم نسخ رابط التتبع."
             : "Tracking link copied."
@@ -3438,7 +3438,7 @@ function copyOrderId() {
             textarea.remove();
         }
 
-        alert(
+        showToast(
             currentLanguage === "ar"
                 ? "تم نسخ رقم المرجع."
                 : "Reference number copied."
@@ -3482,7 +3482,7 @@ function openInquiryPage() {
 // 36. واتساب
 // ==========================================================================
 
-function sendOrderViaWhatsapp() {\n\n    const number =\n        getSupportWhatsappNumber();\n\n    if (!number) {\n\n        alert(\n            currentLanguage === "ar"\n                ? "رقم الدعم غير متوفر حاليًا."\n                : "Support number is unavailable."\n        );\n\n        return;\n    }\n\n    const clientName =\n        $("customerName")?.value.trim() || "--";\n\n    const clientPhone =\n        $("customerPhone")?.value.trim() || "--";\n\n    const total =\n        $("totalAmountText")?.textContent || "--";\n\n    const reference =\n        generatedReferenceNumber || "--";\n\n    const method =\n        getSelectedPaymentCode();\n\n    /*\n     * مهم أمنيًا:\n     * لا نرسل كلمة مرور EA أو Backup Codes أو IBAN أو أرقام المحافظ\n     * أو أي بيانات دفع حساسة عبر رابط WhatsApp.\n     *\n     * WhatsApp هنا مخصص لإرسال ملخص الطلب فقط.\n     */\n    let paymentText = "";\n\n    if (method === "bank") {\n\n        paymentText = `\nطريقة الدفع:\nتحويل بنكي\nالبنك: ${$("bankNameSelect")?.value || "--"}\n`;\n\n    } else if (method === "wallet") {\n\n        paymentText = `\nطريقة الدفع:\nمحفظة رقمية\nالمحفظة: ${$("walletTypeSelect")?.value || "--"}\n`;\n\n    } else if (method === "usdt") {\n\n        paymentText = `\nطريقة الدفع:\nUSDT\n`;\n\n    } else if (method === "paypal") {\n\n        paymentText = `\nطريقة الدفع:\nPayPal\n`;\n\n    } else if (method === "western") {\n\n        paymentText = `\nطريقة الدفع:\nWestern Union\nالدولة: ${$("wuCountry")?.value || "--"}\n`;\n    }\n\n    const message = `\nطلب بيع جديد\n━━━━━━━━━━━━━━━━━━\n\nبيانات الطلب\n• رقم المرجع: ${reference}\n• المنصة: ${selectedPlatform || "--"}\n• الكمية: ${currentQty.toLocaleString("en-US")} كوينز\n• المبلغ: ${total}\n\nبيانات العميل\n• الاسم: ${clientName}\n• الجوال: ${clientPhone}\n\n${paymentText}\n\nملاحظة أمنية:\nتم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.\n\n━━━━━━━━━━━━━━━━━━\nSAMI COINS\n`;\n\n    const url =\n        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;\n\n    window.open(\n        url,\n        "_blank",\n        "noopener,noreferrer"\n    );\n}\n
+function sendOrderViaWhatsapp() {\n\n    const number =\n        getSupportWhatsappNumber();\n\n    if (!number) {\n\n        showToast(\n            currentLanguage === "ar"\n                ? "رقم الدعم غير متوفر حاليًا."\n                : "Support number is unavailable."\n        );\n\n        return;\n    }\n\n    const clientName =\n        $("customerName")?.value.trim() || "--";\n\n    const clientPhone =\n        $("customerPhone")?.value.trim() || "--";\n\n    const total =\n        $("totalAmountText")?.textContent || "--";\n\n    const reference =\n        generatedReferenceNumber || "--";\n\n    const method =\n        getSelectedPaymentCode();\n\n    /*\n     * مهم أمنيًا:\n     * لا نرسل كلمة مرور EA أو Backup Codes أو IBAN أو أرقام المحافظ\n     * أو أي بيانات دفع حساسة عبر رابط WhatsApp.\n     *\n     * WhatsApp هنا مخصص لإرسال ملخص الطلب فقط.\n     */\n    let paymentText = "";\n\n    if (method === "bank") {\n\n        paymentText = `\nطريقة الدفع:\nتحويل بنكي\nالبنك: ${$("bankNameSelect")?.value || "--"}\n`;\n\n    } else if (method === "wallet") {\n\n        paymentText = `\nطريقة الدفع:\nمحفظة رقمية\nالمحفظة: ${$("walletTypeSelect")?.value || "--"}\n`;\n\n    } else if (method === "usdt") {\n\n        paymentText = `\nطريقة الدفع:\nUSDT\n`;\n\n    } else if (method === "paypal") {\n\n        paymentText = `\nطريقة الدفع:\nPayPal\n`;\n\n    } else if (method === "western") {\n\n        paymentText = `\nطريقة الدفع:\nWestern Union\nالدولة: ${$("wuCountry")?.value || "--"}\n`;\n    }\n\n    const message = `\nطلب بيع جديد\n━━━━━━━━━━━━━━━━━━\n\nبيانات الطلب\n• رقم المرجع: ${reference}\n• المنصة: ${selectedPlatform || "--"}\n• الكمية: ${currentQty.toLocaleString("en-US")} كوينز\n• المبلغ: ${total}\n\nبيانات العميل\n• الاسم: ${clientName}\n• الجوال: ${clientPhone}\n\n${paymentText}\n\nملاحظة أمنية:\nتم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.\n\n━━━━━━━━━━━━━━━━━━\nSAMI COINS\n`;\n\n    const url =\n        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;\n\n    window.open(\n        url,\n        "_blank",\n        "noopener,noreferrer"\n    );\n}\n
 
 // ==========================================================================
 // 37. إغلاق المودال عند الضغط خارج النافذة
