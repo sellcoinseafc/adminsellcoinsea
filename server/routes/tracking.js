@@ -1263,7 +1263,12 @@ function buildTrackingOrder(
       issueData.issue,
 
     issueMessage:
-      issueData.issueMessage
+      issueData.issueMessage,
+
+    issueState:
+      order.issue
+        ? String(order.issueState || "needs_customer_action")
+        : "resolved"
   };
 }
 
