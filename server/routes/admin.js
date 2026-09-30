@@ -811,6 +811,13 @@ router.post(
           req.body?.orderId
         );
 
+      if (req.body?.confirm !== true) {
+        return res.status(400).json({
+          success: false,
+          message: "يجب تأكيد إتلاف البيانات الحساسة."
+        });
+      }
+
       if (!orderIdentifier) {
         return res.status(400).json({
           success: false,
