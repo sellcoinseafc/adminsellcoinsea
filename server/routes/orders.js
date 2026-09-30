@@ -1272,6 +1272,37 @@ router.get(
       return res.json({
         success: true,
 
+        gameName:
+          settings.gameName ||
+          "FC",
+
+        gameVersion:
+          Number(settings.gameVersion || 27),
+
+        arabicStoreName:
+          settings.arabicStoreName ||
+          "سامي كوينز",
+
+        usdSarRate:
+          toNumber(
+            settings.usdSarRate,
+            3.75
+          ),
+
+        paymentCategories:
+          settings.paymentCategories ||
+          {
+            local: [
+              "bank_transfer",
+              "digital_wallet"
+            ],
+            international: [
+              "usdt",
+              "paypal",
+              "western_union"
+            ]
+          },
+
         rates: {
           PlayStation:
             toNumber(
@@ -1472,6 +1503,10 @@ router.get(
                 data.referenceNumber ||
                 "",
 
+              internalReference:
+                data.internalReference ||
+                "",
+
               customerName:
                 data.customerName ||
                 "",
@@ -1526,6 +1561,13 @@ router.get(
               issueMessage:
                 cleanString(
                   data.issueMessage
+                ),
+
+              withdrawnQuantity:
+                Number(
+                  data.withdrawnQuantity ??
+                  data.drawnCoins ??
+                  0
                 ),
 
               drawnCoins:
