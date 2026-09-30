@@ -45,9 +45,21 @@ const STATUS_MESSAGES = {
   completed: "مكتمل"
 };
 
+const ARABIC_STATUS_MAP = {
+  "طلب جديد": "new",
+  "طلب بانتظار المراجعة": "review",
+  "انتظار المراجعة": "review",
+  "جاري سحب الكوينز من حسابك": "progress",
+  "تم الانتهاء من سحب الكوينز بحسابك": "finished",
+  "تم الانتهاء من سحب الكوينز من حسابك": "finished",
+  "تم تحويل المبلغ إلى حسابك": "transferred",
+  "مكتمل": "completed"
+};
+
 const ISSUE_LABELS = {
   wrong_credentials: "بيانات الدخول غير صحيحة",
   wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
+  web_app_issue: "توجد مشكلة في Web App",
   market_closed: "سوق الانتقالات مغلق",
   no_player: "لا يوجد لاعب مطابق",
   wrong_platform: "المنصة المحددة غير صحيحة",
@@ -57,6 +69,7 @@ const ISSUE_LABELS = {
 const DEFAULT_ISSUE_MESSAGES = {
   wrong_credentials: "بيانات الدخول غير صحيحة",
   wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
+  web_app_issue: "توجد مشكلة في Web App",
   market_closed: "سوق الانتقالات مغلق",
   no_player: "لا يوجد لاعب مطابق",
   wrong_platform: "المنصة المحددة غير صحيحة",
@@ -72,17 +85,57 @@ const SYSTEM_SETTINGS_DOC = db
 
 /**
  * ============================================================================
+ * Realtime SSE registry
+ * ============================================================================
+ *
+ * Firestore remains the source of truth.
+ * The map only stores active HTTP response streams.
+ */
+const trackingConnections = new Map();
+
+/**
+ * ============================================================================
  * Generic helpers
  * ============================================================================
  */
 
-function normalizeStatus(status) {
-  const normalized = String(status || "")
+function normalizeReference(value) {
+  return String(value || "")
     .trim()
-    .toLowerCase();
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
 
-  if (!normalized) {
+function isValidReference(value) {
+  const ref = normalizeReference(value);
+
+  if (!/^[0-9A-HJ-KM-NOPQRSTUVWXYZ]{8}$/.test(ref)) {
+    return false;
+  }
+
+  if (!/^\d/.test(ref) || !/\d$/.test(ref)) {
+    return false;
+  }
+
+  const letters =
+    ref.match(/[A-HJ-KM-NOPQRSTUVWXYZ]/g) || [];
+
+  return letters.length === 3;
+}
+
+function normalizeStatus(status) {
+  const raw = String(status || "")
+    .trim();
+
+  if (!raw) {
     return "new";
+  }
+
+  const normalized =
+    raw.toLowerCase();
+
+  if (ARABIC_STATUS_MAP[raw]) {
+    return ARABIC_STATUS_MAP[raw];
   }
 
   return (
@@ -180,14 +233,6 @@ function formatTime(value) {
  * ============================================================================
  * Safe decrypt
  * ============================================================================
- *
- * مهم:
- * لا نعيد ciphertext للعميل.
- *
- * إذا كانت القيمة:
- * - encrypted -> يتم فكها داخليًا.
- * - plaintext قديم -> تستخدم داخليًا ثم يتم تقنيعها.
- * - غير صالحة -> ترجع قيمة فارغة.
  */
 
 function safeDecrypt(value) {
@@ -200,10 +245,6 @@ function safeDecrypt(value) {
       return "";
     }
 
-    /**
-     * بعض الحقول القديمة قد تكون arrays/objects.
-     * لا نحاول تمرير object كامل إلى decrypt.
-     */
     if (
       Array.isArray(value) ||
       typeof value === "object"
@@ -223,10 +264,6 @@ function safeDecrypt(value) {
 
     const decrypted = decrypt(text);
 
-    /**
-     * حماية إضافية:
-     * decrypt قد يرجع قيمة غير نصية في schemas قديمة.
-     */
     if (
       decrypted === null ||
       decrypted === undefined
@@ -236,9 +273,6 @@ function safeDecrypt(value) {
 
     return decrypted;
   } catch {
-    /**
-     * لا نعيد ciphertext بأي حال.
-     */
     return "";
   }
 }
@@ -507,10 +541,6 @@ function buildAccountData(
   order,
   sensitivePurged
 ) {
-  /**
-   * بعد الإتلاف:
-   * لا نحاول قراءة أو إعادة بناء بيانات EA.
-   */
   if (sensitivePurged) {
     return {
       purged: true,
@@ -532,10 +562,6 @@ function buildAccountData(
       account.backupCodes
     );
 
-  /**
-   * Compatibility مع الطلبات القديمة
-   * التي قد تحتوي masking جاهز.
-   */
   const emailMasked =
     email
       ? maskEmail(email)
@@ -602,9 +628,6 @@ function getPayoutDetails(order) {
     };
   }
 
-  /**
-   * Compatibility مع schema القديم.
-   */
   const legacy =
     order.paymentInfoData &&
     typeof order.paymentInfoData === "object" &&
@@ -659,10 +682,13 @@ function getPaymentMethodName(order) {
 
   const labels = {
     bank: "تحويل بنكي",
+    bank_transfer: "تحويل بنكي",
     wallet: "محفظة إلكترونية",
+    digital_wallet: "محفظة إلكترونية",
     usdt: "USDT",
     paypal: "PayPal",
-    western: "Western Union"
+    western: "Western Union",
+    western_union: "Western Union"
   };
 
   return (
@@ -684,13 +710,10 @@ function buildPaymentData(order) {
       getPaymentMethodName(order)
   };
 
-  /**
-   * --------------------------------------------------------------------------
-   * Bank
-   * --------------------------------------------------------------------------
-   */
-
-  if (method === "bank") {
+  if (
+    method === "bank" ||
+    method === "bank_transfer"
+  ) {
     payment.bankName =
       String(
         safeDecrypt(
@@ -712,13 +735,10 @@ function buildPaymentData(order) {
     return payment;
   }
 
-  /**
-   * --------------------------------------------------------------------------
-   * Wallet
-   * --------------------------------------------------------------------------
-   */
-
-  if (method === "wallet") {
+  if (
+    method === "wallet" ||
+    method === "digital_wallet"
+  ) {
     payment.walletName =
       String(
         safeDecrypt(
@@ -739,10 +759,6 @@ function buildPaymentData(order) {
     payment.phoneMasked =
       maskPhone(phone);
 
-    /**
-     * Compatibility مع بيانات قديمة
-     * كانت مخزنة مقنّعة مسبقاً.
-     */
     if (!payment.phoneMasked) {
       payment.phoneMasked =
         String(
@@ -753,12 +769,6 @@ function buildPaymentData(order) {
 
     return payment;
   }
-
-  /**
-   * --------------------------------------------------------------------------
-   * USDT
-   * --------------------------------------------------------------------------
-   */
 
   if (method === "usdt") {
     const wallet =
@@ -790,12 +800,6 @@ function buildPaymentData(order) {
     return payment;
   }
 
-  /**
-   * --------------------------------------------------------------------------
-   * PayPal
-   * --------------------------------------------------------------------------
-   */
-
   if (method === "paypal") {
     const email =
       safeDecrypt(
@@ -817,15 +821,10 @@ function buildPaymentData(order) {
     return payment;
   }
 
-  /**
-   * --------------------------------------------------------------------------
-   * Western Union
-   * --------------------------------------------------------------------------
-   *
-   * لا نرسل الاسم الكامل للعميل.
-   */
-
-  if (method === "western") {
+  if (
+    method === "western" ||
+    method === "western_union"
+  ) {
     const fullName =
       safeDecrypt(
         payout.fullNameEnglish ||
@@ -946,9 +945,6 @@ function buildIssueData(
       .trim()
       .toLowerCase();
 
-  /**
-   * لا توجد مشكلة.
-   */
   if (!issue) {
     return {
       issue: null,
@@ -956,10 +952,6 @@ function buildIssueData(
     };
   }
 
-  /**
-   * لا نسمح بإظهار issue code
-   * غير معروف للعميل كحالة صالحة.
-   */
   const isKnownIssue =
     Object.prototype.hasOwnProperty.call(
       DEFAULT_ISSUE_MESSAGES,
@@ -977,10 +969,6 @@ function buildIssueData(
     };
   }
 
-  /**
-   * الرسالة المحفوظة مع الطلب
-   * تستخدم أولاً إذا كانت موجودة.
-   */
   const orderMessage =
     String(
       order.issueMessage ||
@@ -1015,35 +1003,40 @@ function buildIssueData(
 
 function getDrawnCoins(order) {
   const value =
-    order.drawnCoins ??
     order.withdrawnQuantity ??
+    order.drawnCoins ??
     0;
 
   const number =
-    Number(value);
+    Number(
+      typeof value === "string"
+        ? value.replace(/,/g, "")
+        : value
+    );
 
   return Number.isFinite(number)
-    ? number
+    ? Math.max(0, number)
     : 0;
 }
 
 function getQuantity(order) {
-  /**
-   * لا نستخدم withdrawnQuantity أو drawnCoins
-   * ككمية أصلية.
-   *
-   * drawnCoins كمية مسحوبة وليست كمية الطلب.
-   */
   const value =
+    order.orderedQuantity ??
     order.quantity ??
     order.totalQty ??
+    order.coinQuantity ??
+    order.coins ??
     0;
 
   const number =
-    Number(value);
+    Number(
+      typeof value === "string"
+        ? value.replace(/,/g, "")
+        : value
+    );
 
   return Number.isFinite(number)
-    ? number
+    ? Math.max(0, number)
     : 0;
 }
 
@@ -1088,12 +1081,6 @@ function buildTrackingOrder(
   const paymentData =
     buildPaymentData(order);
 
-  const accountData =
-    buildAccountData(
-      order,
-      sensitivePurged
-    );
-
   const quantity =
     getQuantity(order);
 
@@ -1105,13 +1092,14 @@ function buildTrackingOrder(
       order.progressPercentage
     );
 
-  /*
-   * أثناء السحب، نسبة الإنجاز تعتمد مباشرة على الكمية المسحوبة.
-   * هذا يجعل صفحة التتبع تعكس تعديل withdrawnQuantity فورًا.
-   */
-  if (quantity > 0) {
-    progressPercentage =
-      (drawnCoins / quantity) * 100;
+  if (
+    status === "progress" ||
+    quantity > 0
+  ) {
+    if (quantity > 0) {
+      progressPercentage =
+        (drawnCoins / quantity) * 100;
+    }
   } else if (
     !Number.isFinite(
       progressPercentage
@@ -1146,12 +1134,6 @@ function buildTrackingOrder(
       quantity - drawnCoins
     );
 
-  /**
-   * السعر الموثوق من الخادم.
-   *
-   * displayTotalPrice هو الحقل الجديد.
-   * totalPrice هو fallback للطلبات القديمة.
-   */
   const totalPrice =
     order.displayTotalPrice ??
     order.totalPrice ??
@@ -1184,6 +1166,9 @@ function buildTrackingOrder(
 
     quantity,
 
+    orderedQuantity:
+      quantity,
+
     totalPrice,
 
     totalPriceSar:
@@ -1200,6 +1185,13 @@ function buildTrackingOrder(
 
     status,
 
+    statusKey:
+      status,
+
+    statusLabel:
+      STATUS_MESSAGES[status] ||
+      status,
+
     drawnCoins,
 
     withdrawnQuantity:
@@ -1209,9 +1201,6 @@ function buildTrackingOrder(
 
     progressPercentage,
 
-    /**
-     * طريقة الدفع تبقى ظاهرة دائماً.
-     */
     paymentMethod:
       getPaymentMethodName(order),
 
@@ -1223,11 +1212,6 @@ function buildTrackingOrder(
 
     payment: paymentData,
 
-    /**
-     * Compatibility مع tracking frontend القديم.
-     *
-     * هذا DTO آمن فقط.
-     */
     paymentInfoData:
       paymentData,
 
@@ -1259,6 +1243,11 @@ function buildTrackingOrder(
     lastUpdate:
       formatDate(lastUpdate),
 
+    updatedAt:
+      toISOStringSafe(
+        lastUpdate
+      ),
+
     withdrawDuration:
       order.withdrawDuration ||
       null,
@@ -1282,6 +1271,110 @@ function buildTrackingOrder(
 
 /**
  * ============================================================================
+ * Tracking snapshot helper
+ * ============================================================================
+ */
+
+async function getTrackingSnapshot(
+  ref
+) {
+  const snapshot =
+    await db
+      .collection("orders")
+      .where(
+        "referenceNumber",
+        "==",
+        ref
+      )
+      .limit(1)
+      .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const document =
+    snapshot.docs[0];
+
+  return {
+    id: document.id,
+    data:
+      document.data() || {}
+  };
+}
+
+/**
+ * ============================================================================
+ * SSE helpers
+ * ============================================================================
+ */
+
+function addTrackingConnection(
+  ref,
+  response
+) {
+  let connections =
+    trackingConnections.get(ref);
+
+  if (!connections) {
+    connections = new Set();
+
+    trackingConnections.set(
+      ref,
+      connections
+    );
+  }
+
+  connections.add(response);
+}
+
+function removeTrackingConnection(
+  ref,
+  response
+) {
+  const connections =
+    trackingConnections.get(ref);
+
+  if (!connections) {
+    return;
+  }
+
+  connections.delete(response);
+
+  if (connections.size === 0) {
+    trackingConnections.delete(ref);
+  }
+}
+
+function writeSseEvent(
+  response,
+  eventName,
+  payload
+) {
+  if (
+    response.writableEnded ||
+    response.destroyed
+  ) {
+    return false;
+  }
+
+  try {
+    response.write(
+      `event: ${eventName}\n`
+    );
+
+    response.write(
+      `data: ${JSON.stringify(payload)}\n\n`
+    );
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * ============================================================================
  * GET /api/tracking/:ref
  * ============================================================================
  */
@@ -1290,45 +1383,34 @@ router.get(
   "/:ref",
   async (req, res) => {
     try {
-      // Tracking data must never be cached by browsers or intermediate proxies.
       res.set(
         "Cache-Control",
         "no-store, no-cache, must-revalidate, proxy-revalidate"
       );
       res.set("Pragma", "no-cache");
       res.set("Expires", "0");
-      const ref =
-        String(
-          req.params.ref || ""
-        )
-          .trim()
-          .toUpperCase();
 
-      if (!ref) {
+      const ref =
+        normalizeReference(
+          req.params.ref
+        );
+
+      if (
+        !isValidReference(ref)
+      ) {
         return res.status(400).json({
           success: false,
           message:
-            "رقم الطلب مطلوب"
+            "رقم الطلب غير صحيح"
         });
       }
 
-      /**
-       * البحث باستخدام referenceNumber.
-       *
-       * لا نستخدم Firestore document ID.
-       */
-      const snapshot =
-        await db
-          .collection("orders")
-          .where(
-            "referenceNumber",
-            "==",
-            ref
-          )
-          .limit(1)
-          .get();
+      const found =
+        await getTrackingSnapshot(
+          ref
+        );
 
-      if (snapshot.empty) {
+      if (!found) {
         return res.status(404).json({
           success: false,
           message:
@@ -1336,15 +1418,9 @@ router.get(
         });
       }
 
-      const document =
-        snapshot.docs[0];
-
       const order =
-        document.data() || {};
+        found.data || {};
 
-      /**
-       * رسائل المشاكل من system/settings.
-       */
       const issueMessages =
         await getIssueMessages();
 
@@ -1363,17 +1439,6 @@ router.get(
       const status =
         publicOrder.status;
 
-      /**
-       * statusMessage:
-       *
-       * الأولوية:
-       * 1. الرسالة المحفوظة للطلب.
-       * 2. رسالة status مخصصة إن كانت محفوظة.
-       * 3. الرسالة الافتراضية.
-       *
-       * ملاحظة:
-       * لا نرسل statusMessages كاملة للعميل.
-       */
       const configuredStatusMessages =
         order.statusMessages &&
         typeof order.statusMessages === "object" &&
@@ -1401,21 +1466,6 @@ router.get(
               .filter(Boolean)
           : [];
 
-      /**
-       * مهم جداً:
-       *
-       * لا نرسل order الأصلي.
-       * لا نرسل:
-       * - Firestore document ID
-       * - EA password
-       * - backup codes
-       * - IBAN كامل
-       * - wallet address كامل
-       * - PayPal email كامل
-       * - Western Union name كامل
-       * - ciphertext
-       * - service account data
-       */
       return res.json({
         success: true,
 
@@ -1432,9 +1482,6 @@ router.get(
         reviewSuggestions
       });
     } catch (error) {
-      /**
-       * لا نسجل أي بيانات حساسة.
-       */
       console.error(
         "Tracking API Error:",
         error?.code ||
@@ -1448,6 +1495,414 @@ router.get(
           "حدث خطأ في الخادم، يرجى المحاولة لاحقاً."
       });
     }
+  }
+);
+
+/**
+ * ============================================================================
+ * GET /api/tracking/:ref/events
+ * ============================================================================
+ *
+ * Realtime tracking.
+ *
+ * لا يوجد polling.
+ * لا يوجد refresh دوري.
+ *
+ * Firestore onSnapshot يدفع التغيير إلى SSE.
+ */
+router.get(
+  "/:ref/events",
+  async (req, res) => {
+    const ref =
+      normalizeReference(
+        req.params.ref
+      );
+
+    if (
+      !isValidReference(ref)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "رقم الطلب غير صحيح"
+      });
+    }
+
+    let initialSnapshot;
+
+    try {
+      initialSnapshot =
+        await getTrackingSnapshot(
+          ref
+        );
+    } catch (error) {
+      console.error(
+        "Tracking SSE lookup error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          "تعذر فتح اتصال التتبع."
+      });
+    }
+
+    if (!initialSnapshot) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "الطلب غير موجود"
+      });
+    }
+
+    res.status(200);
+
+    res.set(
+      "Content-Type",
+      "text/event-stream; charset=utf-8"
+    );
+
+    res.set(
+      "Cache-Control",
+      "no-cache, no-store, must-revalidate"
+    );
+
+    res.set(
+      "Connection",
+      "keep-alive"
+    );
+
+    res.set(
+      "X-Accel-Buffering",
+      "no"
+    );
+
+    if (
+      typeof res.flushHeaders ===
+      "function"
+    ) {
+      res.flushHeaders();
+    }
+
+    let closed = false;
+    let unsubscribe = null;
+
+    /**
+     * Heartbeat transport فقط.
+     * لا يوجد استعلام Firestore هنا.
+     */
+    const heartbeat =
+      setInterval(
+        () => {
+          if (
+            closed ||
+            res.writableEnded ||
+            res.destroyed
+          ) {
+            return;
+          }
+
+          try {
+            res.write(
+              ": heartbeat\n\n"
+            );
+          } catch {
+            cleanup();
+          }
+        },
+        25000
+      );
+
+    function cleanup() {
+      if (closed) {
+        return;
+      }
+
+      closed = true;
+
+      clearInterval(
+        heartbeat
+      );
+
+      if (
+        typeof unsubscribe ===
+        "function"
+      ) {
+        try {
+          unsubscribe();
+        } catch {
+          // Listener already closed.
+        }
+
+        unsubscribe = null;
+      }
+
+      removeTrackingConnection(
+        ref,
+        res
+      );
+
+      if (
+        !res.writableEnded
+      ) {
+        try {
+          res.end();
+        } catch {
+          // Connection already closed.
+        }
+      }
+    }
+
+    addTrackingConnection(
+      ref,
+      res
+    );
+
+    try {
+      const issueMessages =
+        await getIssueMessages();
+
+      const initialOrder =
+        buildTrackingOrder(
+          initialSnapshot.data,
+          issueMessages
+        );
+
+      const initialIssue =
+        buildIssueData(
+          initialSnapshot.data,
+          issueMessages
+        );
+
+      const initialStatus =
+        initialOrder.status;
+
+      const configuredStatusMessages =
+        initialSnapshot.data.statusMessages &&
+        typeof initialSnapshot.data.statusMessages === "object" &&
+        !Array.isArray(
+          initialSnapshot.data.statusMessages
+        )
+          ? initialSnapshot.data.statusMessages
+          : null;
+
+      const initialStatusMessage =
+        String(
+          initialSnapshot.data.statusMessage ||
+          configuredStatusMessages?.[
+            initialStatus
+          ] ||
+          STATUS_MESSAGES[initialStatus] ||
+          ""
+        ).trim();
+
+      const initialSuggestions =
+        Array.isArray(
+          initialSnapshot.data.reviewSuggestions
+        )
+          ? initialSnapshot.data.reviewSuggestions
+              .slice(0, 10)
+              .map((item) =>
+                String(item ?? "").trim()
+              )
+              .filter(Boolean)
+          : [];
+
+      writeSseEvent(
+        res,
+        "order-update",
+        {
+          success: true,
+
+          order:
+            initialOrder,
+
+          statusMessage:
+            initialStatusMessage,
+
+          issue:
+            initialIssue.issue,
+
+          issueMessage:
+            initialIssue.issueMessage,
+
+          reviewSuggestions:
+            initialSuggestions
+        }
+      );
+
+      /**
+       * Firestore realtime listener.
+       *
+       * هذا هو مصدر التغيير.
+       * لا يوجد polling.
+       */
+      unsubscribe =
+        db
+          .collection("orders")
+          .where(
+            "referenceNumber",
+            "==",
+            ref
+          )
+          .limit(1)
+          .onSnapshot(
+            async (snapshot) => {
+              if (
+                closed ||
+                res.writableEnded ||
+                res.destroyed
+              ) {
+                return;
+              }
+
+              if (
+                snapshot.empty
+              ) {
+                return;
+              }
+
+              try {
+                const document =
+                  snapshot.docs[0];
+
+                const order =
+                  document.data() || {};
+
+                const issueMessages =
+                  await getIssueMessages();
+
+                const publicOrder =
+                  buildTrackingOrder(
+                    order,
+                    issueMessages
+                  );
+
+                const issueData =
+                  buildIssueData(
+                    order,
+                    issueMessages
+                  );
+
+                const status =
+                  publicOrder.status;
+
+                const configuredStatusMessages =
+                  order.statusMessages &&
+                  typeof order.statusMessages === "object" &&
+                  !Array.isArray(
+                    order.statusMessages
+                  )
+                    ? order.statusMessages
+                    : null;
+
+                const statusMessage =
+                  String(
+                    order.statusMessage ||
+                    configuredStatusMessages?.[
+                      status
+                    ] ||
+                    STATUS_MESSAGES[status] ||
+                    ""
+                  ).trim();
+
+                const reviewSuggestions =
+                  Array.isArray(
+                    order.reviewSuggestions
+                  )
+                    ? order.reviewSuggestions
+                        .slice(0, 10)
+                        .map((item) =>
+                          String(item ?? "").trim()
+                        )
+                        .filter(Boolean)
+                    : [];
+
+                const ok =
+                  writeSseEvent(
+                    res,
+                    "order-update",
+                    {
+                      success: true,
+
+                      order:
+                        publicOrder,
+
+                      statusMessage,
+
+                      issue:
+                        issueData.issue,
+
+                      issueMessage:
+                        issueData.issueMessage,
+
+                      reviewSuggestions
+                    }
+                  );
+
+                if (!ok) {
+                  cleanup();
+                }
+              } catch (error) {
+                console.error(
+                  "Tracking SSE update error:",
+                  error?.code ||
+                    error?.message ||
+                    "unknown_error"
+                );
+              }
+            },
+            (error) => {
+              console.error(
+                "Tracking Firestore listener error:",
+                error?.code ||
+                  error?.message ||
+                  "unknown_error"
+              );
+
+              if (
+                closed ||
+                res.writableEnded
+              ) {
+                return;
+              }
+
+              writeSseEvent(
+                res,
+                "error",
+                {
+                  success: false,
+                  message:
+                    "تعذر تحديث بيانات التتبع."
+                }
+              );
+
+              cleanup();
+            }
+          );
+    } catch (error) {
+      console.error(
+        "Tracking SSE listener setup error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      cleanup();
+    }
+
+    req.on(
+      "close",
+      cleanup
+    );
+
+    res.on(
+      "close",
+      cleanup
+    );
   }
 );
 
