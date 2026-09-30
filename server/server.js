@@ -5,12 +5,36 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import adminRoutes from "./server/routes/admin.js";
-import ordersRouter from "./server/routes/orders.js";
-import trackingRouter from "./server/routes/tracking.js";
+import adminRoutes from "./routes/admin.js";
+import ordersRouter from "./routes/orders.js";
+import trackingRouter from "./routes/tracking.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * ============================================================================
+ * SAMI COINS - SERVER ENTRY POINT
+ * ============================================================================
+ *
+ * هذا الملف هو نقطة تشغيل بديلة للسيرفر من داخل مجلد:
+ *
+ * /server/server.js
+ *
+ * الملفات الرئيسية للمشروع موجودة في المستوى الأعلى:
+ *
+ * /admin
+ * /orders
+ * /tracking
+ * /shared
+ *
+ * لذلك يتم استخدام:
+ *
+ * path.join(__dirname, "..", ...)
+ *
+ * للوصول إليها بشكل صحيح.
+ * ============================================================================
+ */
 
 const app = express();
 
@@ -20,105 +44,55 @@ const PORT = Number(
 
 /**
  * ============================================================================
- * SAMI COINS - MAIN SERVER
- * ============================================================================
- *
- * التطبيق الرئيسي:
- * - Admin API
- * - Orders API
- * - Tracking API
- * - Static frontend files
- *
- * PM2 يشغل هذا الملف من:
- * /var/www/adminsellcoinsea/server.js
- * ============================================================================
- */
-
-/**
- * ============================================================================
- * Basic Server Security
+ * Basic Security
  * ============================================================================
  */
 
 app.disable("x-powered-by");
 
-/**
- * ============================================================================
- * Security / Cache Headers
- * ============================================================================
- *
- * بيانات الطلبات وخصوصًا أي استجابة مرتبطة ببيانات حساسة
- * لا يجب أن تدخل في browser/proxy cache.
- *
- * ملاحظة:
- * لا نضع Connection: close هنا حتى يبقى SSE ممكنًا.
- */
+app.use((req, res, next) => {
+  res.setHeader(
+    "X-Content-Type-Options",
+    "nosniff"
+  );
 
-app.use(
-  (req, res, next) => {
-    res.setHeader(
-      "X-Content-Type-Options",
-      "nosniff"
-    );
+  res.setHeader(
+    "X-Frame-Options",
+    "SAMEORIGIN"
+  );
 
-    res.setHeader(
-      "X-Frame-Options",
-      "DENY"
-    );
+  res.setHeader(
+    "Referrer-Policy",
+    "strict-origin-when-cross-origin"
+  );
 
-    res.setHeader(
-      "Referrer-Policy",
-      "strict-origin-when-cross-origin"
-    );
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()"
+  );
 
-    res.setHeader(
-      "Permissions-Policy",
-      "camera=(), microphone=(), geolocation=()"
-    );
-
-    if (
-      req.path.startsWith("/api")
-    ) {
-      res.setHeader(
-        "Cache-Control",
-        "no-store, no-cache, must-revalidate, private"
-      );
-
-      res.setHeader(
-        "Pragma",
-        "no-cache"
-      );
-
-      res.setHeader(
-        "Expires",
-        "0"
-      );
-    }
-
-    next();
-  }
-);
+  next();
+});
 
 /**
  * ============================================================================
  * CORS
  * ============================================================================
  *
- * يسمح بالـsame-origin بشكل طبيعي.
+ * يسمح فقط بالنطاقات الموجودة في:
  *
- * ويمكن تحديد Origins إضافية من:
+ * ALLOWED_ORIGINS
+ *
+ * مثال:
  *
  * ALLOWED_ORIGINS=https://example.com,https://www.example.com
  *
- * إذا لم يتم تحديد ALLOWED_ORIGINS:
- * - same-origin يعمل.
- * - requests بدون Origin تعمل.
- * - في بيئة التطوير يسمح بالـOrigin المرسل.
- *
- * لا نسمح باستخدام wildcard "*" مع credentials.
+ * وفي حالة عدم تعريفها، يسمح بالطلبات القادمة من نفس المصدر
+ * أو باستخدام إعداد CORS الافتراضي الحالي.
+ * ============================================================================
  */
 
-const configuredOrigins = String(
+const allowedOrigins = String(
   process.env.ALLOWED_ORIGINS || ""
 )
   .split(",")
@@ -127,37 +101,35 @@ const configuredOrigins = String(
 
 app.use(
   cors({
-    credentials: true,
-
     origin(origin, callback) {
-      /*
-       * Requests من نفس السيرفر أو الأدوات التي لا ترسل
-       * Origin header.
+      /**
+       * الطلبات التي لا تحتوي Origin مثل:
+       * - server-to-server
+       * - health checks
+       * - بعض الأدوات الداخلية
        */
       if (!origin) {
         return callback(null, true);
       }
 
-      /*
-       * Origins محددة صراحة.
+      /**
+       * إذا لم يتم تحديد قائمة Origins،
+       * نحافظ على السلوك المرن السابق.
        */
-      if (
-        configuredOrigins.length > 0
-      ) {
-        return callback(
-          null,
-          configuredOrigins.includes(origin)
-        );
+      if (allowedOrigins.length === 0) {
+        return callback(null, true);
       }
 
-      /*
-       * توافق مع بيئة التطوير الحالية.
-       *
-       * إذا تم الانتقال للإنتاج مع Frontend منفصل،
-       * يفضل تحديد ALLOWED_ORIGINS صراحة في .env.
-       */
-      return callback(null, true);
-    }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("CORS origin not allowed")
+      );
+    },
+
+    credentials: true
   })
 );
 
@@ -184,13 +156,22 @@ app.use(
  * ============================================================================
  * Static Files
  * ============================================================================
+ *
+ * هذا الملف موجود داخل /server
+ * لذلك نرجع مستوى واحد للوصول إلى جذر المشروع.
+ * ============================================================================
  */
+
+const projectRoot = path.join(
+  __dirname,
+  ".."
+);
 
 app.use(
   "/shared",
   express.static(
     path.join(
-      __dirname,
+      projectRoot,
       "shared"
     )
   )
@@ -200,7 +181,7 @@ app.use(
   "/admin",
   express.static(
     path.join(
-      __dirname,
+      projectRoot,
       "admin"
     )
   )
@@ -210,7 +191,7 @@ app.use(
   "/orders",
   express.static(
     path.join(
-      __dirname,
+      projectRoot,
       "orders"
     )
   )
@@ -220,7 +201,7 @@ app.use(
   "/tracking",
   express.static(
     path.join(
-      __dirname,
+      projectRoot,
       "tracking"
     )
   )
@@ -237,7 +218,17 @@ app.get(
   (_req, res) => {
     res.setHeader(
       "Cache-Control",
-      "no-store"
+      "no-store, no-cache, must-revalidate, private"
+    );
+
+    res.setHeader(
+      "Pragma",
+      "no-cache"
+    );
+
+    res.setHeader(
+      "Expires",
+      "0"
     );
 
     return res.json({
@@ -279,7 +270,9 @@ app.use(
 app.get(
   "/",
   (_req, res) => {
-    res.redirect("/admin/");
+    return res.redirect(
+      "/admin/"
+    );
   }
 );
 
@@ -287,13 +280,16 @@ app.get(
  * ============================================================================
  * API 404
  * ============================================================================
- *
- * أي API غير معروف يرجع JSON بدلاً من HTML.
  */
 
 app.use(
   "/api",
   (req, res) => {
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, private"
+    );
+
     return res.status(404).json({
       success: false,
       message: "API Not Found"
@@ -305,8 +301,6 @@ app.use(
  * ============================================================================
  * Invalid JSON Handler
  * ============================================================================
- *
- * إذا أرسل العميل JSON غير صالح، يرجع 400 بدل 500.
  */
 
 app.use(
@@ -314,11 +308,11 @@ app.use(
     if (
       error instanceof SyntaxError &&
       error.status === 400 &&
-      "body" in error
+      error.type === "entity.parse.failed"
     ) {
       return res.status(400).json({
         success: false,
-        message: "صيغة البيانات المرسلة غير صحيحة."
+        message: "بيانات JSON غير صالحة."
       });
     }
 
@@ -331,8 +325,14 @@ app.use(
  * Global Error Handler
  * ============================================================================
  *
- * لا نرسل stack trace للعميل.
- * ولا نسجل body أو headers أو Authorization.
+ * لا يتم إرسال:
+ * - stack trace
+ * - مفاتيح Firebase
+ * - بيانات الطلب الحساسة
+ * - بيانات المستخدم الحساسة
+ *
+ * إلى العميل.
+ * ============================================================================
  */
 
 app.use(
@@ -358,7 +358,7 @@ app.use(
 
 /**
  * ============================================================================
- * Start
+ * Start Server
  * ============================================================================
  */
 
