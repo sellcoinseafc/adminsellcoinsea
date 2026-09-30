@@ -2158,7 +2158,7 @@ function setupReviewSystem(
                 reviewTextarea.value.trim();
 
             if (text.length < 150) {
-                alert(
+                showToast(
                     "الحد الأدنى للتقييم 150 حرف."
                 );
 
@@ -2166,7 +2166,7 @@ function setupReviewSystem(
             }
 
             if (text.length > 500) {
-                alert(
+                showToast(
                     "الحد الأقصى للتقييم 500 حرف."
                 );
 
@@ -2255,7 +2255,7 @@ function setupReviewSystem(
                     return;
                 }
 
-                alert(
+                showToast(
                     result.message ||
                     "حدث خطأ أثناء إرسال التقييم، يرجى المحاولة لاحقاً."
                 );
@@ -2266,7 +2266,7 @@ function setupReviewSystem(
                     error
                 );
 
-                alert(
+                showToast(
                     "حدث خطأ في الاتصال بالشبكة."
                 );
             } finally {
