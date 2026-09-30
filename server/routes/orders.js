@@ -329,17 +329,10 @@ function getPlatformRate(
   }
 
   /*
-   * The frontend currently sends:
-   * PlayStation / Xbox / PC.
-   *
-   * Unknown non-PC platforms are treated like
-   * PlayStation for compatibility with the existing
-   * pricing structure.
+   * Unknown platforms must never inherit a real price.
+   * The server should fail closed.
    */
-  return toNumber(
-    settings.psRate,
-    0
-  );
+  return 0;
 }
 
 /**
