@@ -15,12 +15,12 @@
  * - رسائل المشاكل
  *
  * مهم جداً:
- * - إنشاء أرقام الطلبات الجديدة أصبح Server-Side فقط.
+ * - إنشاء أرقام الطلبات الجديدة Server-Side فقط.
  * - server/services/orderNumber.js هو المصدر الرسمي للترقيم.
- * - الدوال القديمة الخاصة بالأرقام موجودة فقط للتوافق مع أي كود قديم.
+ * - الدوال القديمة الخاصة بالأرقام موجودة للتوافق فقط.
  * - لا تستخدم createOrderId() لإنشاء طلب جديد.
  *
- * هذا الملف خالي من أي تعامل مباشر مع DOM.
+ * هذا الملف لا يتعامل مباشرة مع DOM.
  * ============================================================================
  */
 
@@ -37,106 +37,164 @@ import {
 
 import { db } from "./firebase.js";
 
-const SETTINGS_DOC_PATH = "system/settings";
-const COUNTER_DOC_PATH = "system/counter";
+/**
+ * ============================================================================
+ * Firestore paths
+ * ============================================================================
+ */
+
+const SETTINGS_DOC_PATH =
+    "system/settings";
+
+const COUNTER_DOC_PATH =
+    "system/counter";
 
 /**
  * ============================================================================
- * رسائل الحالات والمشاكل الافتراضية
+ * Issue messages
  * ============================================================================
  */
 
 export const defaultIssueMessages = {
-    wrong_credentials: "بيانات الدخول غير صحيحة",
-    wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
-    market_closed: "سوق الانتقالات مغلق",
-    no_player: "لا يوجد لاعب مطابق",
-    wrong_platform: "المنصة المحددة غير صحيحة",
-    other_issue: "توجد مشكلة في الطلب"
+    wrong_credentials:
+        "بيانات الدخول غير صحيحة",
+
+    wrong_backup_codes:
+        "رموز النسخ الاحتياطية غير صحيحة",
+
+    market_closed:
+        "سوق الانتقالات مغلق",
+
+    no_player:
+        "لا يوجد لاعب مطابق",
+
+    wrong_platform:
+        "المنصة المحددة غير صحيحة",
+
+    other_issue:
+        "توجد مشكلة في الطلب"
 };
 
 /**
  * ============================================================================
- * الإعدادات الافتراضية للنظام
+ * Default settings
  * ============================================================================
  */
 
 export const defaultSettings = {
-    // ------------------------------------------------------------------------
-    // بيانات المتجر الأساسية
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Store identity
+     * ------------------------------------------------------------------------
+     */
 
-    storeName: "SAMI COINS",
+    storeName:
+        "SAMI COINS",
 
-    storeLogo: "",
+    storeLogo:
+        "",
 
-    supportWhatsapp: "966570770465",
+    supportWhatsapp:
+        "966570770465",
 
-    supportEmail: "support@samicoins.com",
+    supportEmail:
+        "support@samicoins.com",
 
-    siteUrl: "https://samicoins.com",
+    siteUrl:
+        "https://samicoins.com",
 
-    // ------------------------------------------------------------------------
-    // الشريط الإعلاني
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Announcement
+     * ------------------------------------------------------------------------
+     */
 
-    announcementActive: true,
+    announcementActive:
+        true,
 
-    announcementText: "",
+    announcementText:
+        "",
 
-    announcementBgColor: "#00ff87",
+    announcementBgColor:
+        "#00ff87",
 
-    announcementTextColor: "#060913",
+    announcementTextColor:
+        "#060913",
 
-    // ------------------------------------------------------------------------
-    // PlayStation / Xbox
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * PlayStation / Xbox
+     * ------------------------------------------------------------------------
+     */
 
-    psRate: 200,
+    psRate:
+        200,
 
-    psMin: 100000,
+    psMin:
+        100000,
 
-    psMax: 5000000,
+    psMax:
+        5000000,
 
-    psWithdrawDuration: "3 - 5 أيام عمل",
+    psWithdrawDuration:
+        "3 - 5 أيام عمل",
 
-    psTransferDuration: "24 ساعة",
+    psTransferDuration:
+        "24 ساعة",
 
-    psStock: 0,
+    psStock:
+        0,
 
-    // ------------------------------------------------------------------------
-    // PC
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * PC
+     * ------------------------------------------------------------------------
+     */
 
-    pcRate: 150,
+    pcRate:
+        150,
 
-    pcMin: 100000,
+    pcMin:
+        100000,
 
-    pcMax: 1000000,
+    pcMax:
+        1000000,
 
-    pcWithdrawDuration: "2 - 4 أيام عمل",
+    pcWithdrawDuration:
+        "2 - 4 أيام عمل",
 
-    pcTransferDuration: "24 ساعة",
+    pcTransferDuration:
+        "24 ساعة",
 
-    pcStock: 0,
+    pcStock:
+        0,
 
-    // ------------------------------------------------------------------------
-    // العروض وحالة المتجر
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Offers / store state
+     * ------------------------------------------------------------------------
+     */
 
-    offers: false,
+    offers:
+        false,
 
-    offerText: "",
+    offerText:
+        "",
 
-    promoRate: 220,
+    promoRate:
+        220,
 
-    promoExpiry: "",
+    promoExpiry:
+        "",
 
-    storeOpen: true,
+    storeOpen:
+        true,
 
-    // ------------------------------------------------------------------------
-    // البنوك
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Banks
+     * ------------------------------------------------------------------------
+     */
 
     banks: [
         "مصرف الراجحي",
@@ -153,9 +211,11 @@ export const defaultSettings = {
         "D360 Bank"
     ],
 
-    // ------------------------------------------------------------------------
-    // المحافظ
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Wallets
+     * ------------------------------------------------------------------------
+     */
 
     wallets: [
         "STC Pay",
@@ -166,9 +226,11 @@ export const defaultSettings = {
         "Alinma Pay"
     ],
 
-    // ------------------------------------------------------------------------
-    // طرق الدفع
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Payment methods
+     * ------------------------------------------------------------------------
+     */
 
     paymentMethods: [
         "تحويل بنكي",
@@ -178,9 +240,11 @@ export const defaultSettings = {
         "Western Union"
     ],
 
-    // ------------------------------------------------------------------------
-    // الشروط
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Terms
+     * ------------------------------------------------------------------------
+     */
 
     terms: [
         "حالة سوق الانتقالات: يجب أن يكون سوق الانتقالات مفتوحاً ومتاحاً في تطبيق الويب (Web App).",
@@ -188,9 +252,11 @@ export const defaultSettings = {
         "أمان الحساب: لا تقم بتسجيل الدخول إلى اللعبة أثناء عملية السحب لضمان إتمام الطلب بنجاح."
     ],
 
-    // ------------------------------------------------------------------------
-    // رسائل المشاكل
-    // ------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------------------------
+     * Issue messages
+     * ------------------------------------------------------------------------
+     */
 
     issueMessages: {
         ...defaultIssueMessages
@@ -199,122 +265,250 @@ export const defaultSettings = {
 
 /**
  * ============================================================================
- * Helpers
+ * Generic helpers
  * ============================================================================
  */
 
-function normalizeIssueMessages(value) {
+function cleanString(
+    value,
+    fallback = ""
+) {
+    const text =
+        String(
+            value ?? ""
+        ).trim();
+
+    return text || fallback;
+}
+
+function normalizeStringArray(
+    value
+) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .map((item) =>
+            String(
+                item ?? ""
+            ).trim()
+        )
+        .filter(Boolean);
+}
+
+function normalizeIssueMessages(
+    value
+) {
+    const normalized = {
+        ...defaultIssueMessages
+    };
+
     if (
         !value ||
         typeof value !== "object" ||
         Array.isArray(value)
     ) {
-        return {
-            ...defaultIssueMessages
-        };
+        return normalized;
     }
 
+    for (
+        const [key, message]
+        of Object.entries(value)
+    ) {
+        if (
+            !Object.prototype.hasOwnProperty.call(
+                defaultIssueMessages,
+                key
+            )
+        ) {
+            continue;
+        }
+
+        if (
+            typeof message !== "string" ||
+            !message.trim()
+        ) {
+            continue;
+        }
+
+        normalized[key] =
+            message.trim();
+    }
+
+    return normalized;
+}
+
+/**
+ * ============================================================================
+ * Normalize settings
+ * ============================================================================
+ *
+ * الهدف:
+ * - الحفاظ على default settings.
+ * - عدم فقدان أي إعداد إذا كان الحقل غير موجود في Firestore.
+ * - توحيد arrays.
+ * - توحيد issueMessages.
+ */
+
+function normalizeSettings(
+    data = {}
+) {
+    const raw =
+        data &&
+        typeof data === "object" &&
+        !Array.isArray(data)
+            ? data
+            : {};
+
     return {
-        ...defaultIssueMessages,
-        ...Object.fromEntries(
-            Object.entries(value)
-                .filter(
-                    ([key, message]) =>
-                        Object.prototype.hasOwnProperty.call(
-                            defaultIssueMessages,
-                            key
-                        ) &&
-                        typeof message === "string" &&
-                        message.trim()
-                )
-                .map(
-                    ([key, message]) => [
-                        key,
-                        message.trim()
-                    ]
-                )
-        )
+        ...defaultSettings,
+        ...raw,
+
+        banks:
+            Array.isArray(
+                raw.banks
+            )
+                ? normalizeStringArray(
+                      raw.banks
+                  )
+                : [
+                      ...defaultSettings.banks
+                  ],
+
+        wallets:
+            Array.isArray(
+                raw.wallets
+            )
+                ? normalizeStringArray(
+                      raw.wallets
+                  )
+                : [
+                      ...defaultSettings.wallets
+                  ],
+
+        paymentMethods:
+            Array.isArray(
+                raw.paymentMethods
+            )
+                ? normalizeStringArray(
+                      raw.paymentMethods
+                  )
+                : normalizeStringArray(
+                      raw.paymentMethods &&
+                          typeof raw.paymentMethods ===
+                              "object"
+                          ? Object.values(
+                                raw.paymentMethods
+                            )
+                          : defaultSettings.paymentMethods
+                  ),
+
+        terms:
+            Array.isArray(
+                raw.terms
+            )
+                ? normalizeStringArray(
+                      raw.terms
+                  )
+                : [
+                      ...defaultSettings.terms
+                  ],
+
+        issueMessages:
+            normalizeIssueMessages(
+                raw.issueMessages
+            )
     };
 }
 
 /**
  * ============================================================================
- * 1. نظام المزامنة والاستماع للإعدادات
+ * 1. Settings realtime subscription
  * ============================================================================
  */
 
-export function subscribeToSettings(callback) {
+export function subscribeToSettings(
+    callback
+) {
+    if (
+        typeof callback !==
+        "function"
+    ) {
+        throw new TypeError(
+            "subscribeToSettings callback must be a function."
+        );
+    }
+
     const settingsRef =
-        doc(db, SETTINGS_DOC_PATH);
+        doc(
+            db,
+            SETTINGS_DOC_PATH
+        );
 
     return onSnapshot(
         settingsRef,
         (snap) => {
             if (snap.exists()) {
-                const data =
-                    snap.data() || {};
-
-                callback({
-                    ...defaultSettings,
-                    ...data,
-                    issueMessages:
-                        normalizeIssueMessages(
-                            data.issueMessages
-                        )
-                });
+                callback(
+                    normalizeSettings(
+                        snap.data() || {}
+                    )
+                );
 
                 return;
             }
 
             getSettings()
                 .then(
-                    (defaultData) =>
+                    (settings) =>
                         callback(
-                            defaultData
+                            settings
                         )
                 )
-                .catch((error) => {
-                    console.error(
-                        "Failed to load default settings:",
-                        error
-                    );
+                .catch(
+                    (error) => {
+                        console.error(
+                            "Failed to initialize settings:",
+                            error?.code ||
+                                error?.message ||
+                                error
+                        );
 
-                    callback({
-                        ...defaultSettings,
-                        issueMessages:
-                            {
-                                ...defaultIssueMessages
-                            }
-                    });
-                });
+                        callback(
+                            normalizeSettings(
+                                defaultSettings
+                            )
+                        );
+                    }
+                );
         },
         (error) => {
             console.error(
                 "Settings realtime listener error:",
-                error
+                error?.code ||
+                    error?.message ||
+                    error
             );
 
-            callback({
-                ...defaultSettings,
-                issueMessages:
-                    {
-                        ...defaultIssueMessages
-                    }
-            });
+            callback(
+                normalizeSettings(
+                    defaultSettings
+                )
+            );
         }
     );
 }
 
 /**
  * ============================================================================
- * 2. نظام التاريخ اليومي
+ * 2. Riyadh daily date
  * ============================================================================
  *
- * يستخدم توقيت الرياض.
+ * تستخدم فقط للتوافق مع النظام القديم.
  *
- * هذه الدوال محفوظة للتوافق مع الكود القديم.
- * لا تستخدم لإنشاء أرقام الطلبات الجديدة.
- * ============================================================================
+ * الترقيم الرسمي الجديد موجود في:
+ *   server/services/orderNumber.js
  */
 
 function getRiyadhDateKey() {
@@ -322,10 +516,17 @@ function getRiyadhDateKey() {
         new Intl.DateTimeFormat(
             "en-CA",
             {
-                timeZone: "Asia/Riyadh",
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit"
+                timeZone:
+                    "Asia/Riyadh",
+
+                year:
+                    "numeric",
+
+                month:
+                    "2-digit",
+
+                day:
+                    "2-digit"
             }
         );
 
@@ -335,7 +536,7 @@ function getRiyadhDateKey() {
 }
 
 /**
- * اسم قديم محفوظ للتوافق.
+ * Legacy alias.
  */
 function getMakkahDateKey() {
     return getRiyadhDateKey();
@@ -343,22 +544,17 @@ function getMakkahDateKey() {
 
 /**
  * ============================================================================
- * 3. نظام الأكواد اليومية - Legacy Compatibility
+ * 3. Legacy daily codes
  * ============================================================================
  *
- * ملاحظة:
+ * WARNING:
  *
- * الترقيم الرسمي الجديد:
+ * هذه ليست مصدر الترقيم الجديد.
+ *
+ * المصدر الرسمي:
  *   server/services/orderNumber.js
  *
- * يقوم بإنشاء:
- *   - 4 أكواد يومية
- *   - توقيت Asia/Riyadh
- *   - حفظها في system/orderNumbering
- *
- * لذلك هذه الدالة ليست مصدر الترقيم الجديد.
- *
- * تم إبقاؤها فقط حتى لا تنكسر أي واجهة قديمة تعتمد عليها.
+ * أبقيناها فقط حتى لا ينكسر أي كود قديم يعتمد عليها.
  * ============================================================================
  */
 
@@ -384,21 +580,21 @@ export async function getDailyCodes() {
 
     const settingsData =
         settingsSnap.exists()
-            ? settingsSnap.data()
+            ? settingsSnap.data() || {}
             : {};
 
     const dailyCodesObj =
-        settingsData.dailyCodes || {};
+        settingsData.dailyCodes &&
+        typeof settingsData.dailyCodes ===
+            "object"
+            ? settingsData.dailyCodes
+            : {};
 
     const todayKey =
         getRiyadhDateKey();
 
     /**
-     * الحفاظ على النظام القديم
-     * إن كان موجوداً.
-     *
-     * لا نستخدم هذه الأكواد
-     * في orderId الجديد.
+     * Legacy codes only.
      */
     if (
         dailyCodesObj.dateKey ===
@@ -406,7 +602,8 @@ export async function getDailyCodes() {
         Array.isArray(
             dailyCodesObj.codes
         ) &&
-        dailyCodesObj.codes.length >= 4
+        dailyCodesObj.codes.length >=
+            4
     ) {
         return dailyCodesObj.codes;
     }
@@ -435,6 +632,9 @@ export async function getDailyCodes() {
         }
     }
 
+    /**
+     * ضمان وجود 4 أكواد.
+     */
     while (
         newDailyCodes.length < 4
     ) {
@@ -456,9 +656,13 @@ export async function getDailyCodes() {
         settingsRef,
         {
             dailyCodes: {
-                dateKey: todayKey,
-                codes: newDailyCodes
+                dateKey:
+                    todayKey,
+
+                codes:
+                    newDailyCodes
             },
+
             updatedAt:
                 serverTimestamp()
         },
@@ -472,17 +676,16 @@ export async function getDailyCodes() {
 
 /**
  * ============================================================================
- * 4. نظام رقم الطلب - Legacy Compatibility Only
+ * 4. Legacy client-side order ID
  * ============================================================================
  *
- * IMPORTANT:
+ * DO NOT USE FOR NEW ORDERS.
  *
- * لا تستخدم createOrderId() لإنشاء طلب جديد.
+ * الطلبات الجديدة يجب أن تستخدم:
  *
- * المصدر الرسمي حالياً:
  *   server/services/orderNumber.js
  *
- * الدالة موجودة فقط للتوافق مع أي كود قديم.
+ * الموجود هنا فقط لمنع كسر أي كود قديم.
  * ============================================================================
  */
 
@@ -510,15 +713,13 @@ function getRandomSAMILetters() {
 }
 
 /**
- * Legacy order ID generator.
- *
- * لا تستخدم هذه الدالة للطلبات الجديدة.
+ * Legacy only.
  */
 export async function createOrderId(
     platform
 ) {
     console.warn(
-        "createOrderId() is a legacy client-side helper. New orders must use server/services/orderNumber.js."
+        "createOrderId() is legacy only. New orders must use server/services/orderNumber.js."
     );
 
     const dailyCodes =
@@ -542,12 +743,18 @@ export async function createOrderId(
                         counterRef
                     );
 
-                let lastSerial = 0;
-                let dateKey = "";
+                let lastSerial =
+                    0;
 
-                if (snap.exists()) {
+                let dateKey =
+                    "";
+
+                if (
+                    snap.exists()
+                ) {
                     const data =
-                        snap.data() || {};
+                        snap.data() ||
+                        {};
 
                     lastSerial =
                         Number(
@@ -556,15 +763,18 @@ export async function createOrderId(
                         );
 
                     dateKey =
-                        data.dateKey ||
-                        "";
+                        String(
+                            data.dateKey ||
+                                ""
+                        );
                 }
 
                 if (
                     dateKey !==
                     todayKey
                 ) {
-                    lastSerial = 0;
+                    lastSerial =
+                        0;
                 }
 
                 const next =
@@ -600,37 +810,45 @@ export async function createOrderId(
     const letters =
         getRandomSAMILetters();
 
-    const p =
+    const platformCode =
         String(
             platform || ""
         )
             .trim()
             .toUpperCase();
 
-    let platCode = "PS";
+    let platCode =
+        "PS";
 
     if (
-        p === "XBOX" ||
-        p === "XB"
+        platformCode ===
+            "XBOX" ||
+        platformCode ===
+            "XB"
     ) {
-        platCode = "XB";
+        platCode =
+            "XB";
     } else if (
-        p === "PC"
+        platformCode ===
+        "PC"
     ) {
-        platCode = "PC";
+        platCode =
+            "PC";
     }
 
     return (
         `SQ${letters}` +
         `${code}` +
         `${platCode}` +
-        `${String(serial).padStart(3, "0")}`
+        `${String(
+            serial
+        ).padStart(3, "0")}`
     );
 }
 
 /**
  * ============================================================================
- * 5. إدارة الإعدادات
+ * 5. Get settings
  * ============================================================================
  */
 
@@ -649,12 +867,10 @@ export async function getSettings() {
     if (
         !settingsSnap.exists()
     ) {
-        const initialSettings = {
-            ...defaultSettings,
-            issueMessages: {
-                ...defaultIssueMessages
-            }
-        };
+        const initialSettings =
+            normalizeSettings(
+                defaultSettings
+            );
 
         await setDoc(
             settingsRef,
@@ -667,22 +883,14 @@ export async function getSettings() {
         return initialSettings;
     }
 
-    const data =
-        settingsSnap.data() || {};
-
-    return {
-        ...defaultSettings,
-        ...data,
-        issueMessages:
-            normalizeIssueMessages(
-                data.issueMessages
-            )
-    };
+    return normalizeSettings(
+        settingsSnap.data() || {}
+    );
 }
 
 /**
  * ============================================================================
- * 6. حفظ الأسعار وإعدادات المتجر
+ * 6. Save pricing / general store settings
  * ============================================================================
  */
 
@@ -695,145 +903,236 @@ export async function savePricing(
             SETTINGS_DOC_PATH
         );
 
+    const current =
+        await getSettings();
+
     const payload = {
+        /**
+         * Store
+         */
         storeName:
-            pricingData.storeName ||
-            "SAMI COINS",
+            cleanString(
+                pricingData.storeName,
+                current.storeName
+            ),
 
         storeLogo:
-            pricingData.storeLogo ||
-            "",
+            cleanString(
+                pricingData.storeLogo,
+                current.storeLogo
+            ),
 
         supportWhatsapp:
-            pricingData.supportWhatsapp ||
-            "",
+            cleanString(
+                pricingData.supportWhatsapp,
+                current.supportWhatsapp
+            ),
 
         supportEmail:
-            pricingData.supportEmail ||
-            "",
+            cleanString(
+                pricingData.supportEmail,
+                current.supportEmail
+            ),
 
         siteUrl:
-            pricingData.siteUrl ||
-            "",
+            cleanString(
+                pricingData.siteUrl,
+                current.siteUrl
+            ),
 
-        // --------------------------------------------------------------------
-        // Announcement
-        // --------------------------------------------------------------------
-
+        /**
+         * Announcement
+         */
         announcementActive:
             Boolean(
                 pricingData.announcementActive
             ),
 
         announcementText:
-            pricingData.announcementText ||
-            "",
+            cleanString(
+                pricingData.announcementText,
+                ""
+            ),
 
         announcementBgColor:
-            pricingData.announcementBgColor ||
-            "#00ff87",
+            cleanString(
+                pricingData.announcementBgColor,
+                "#00ff87"
+            ),
 
         announcementTextColor:
-            pricingData.announcementTextColor ||
-            "#060913",
+            cleanString(
+                pricingData.announcementTextColor,
+                "#060913"
+            ),
 
-        // --------------------------------------------------------------------
-        // PlayStation / Xbox
-        // --------------------------------------------------------------------
-
+        /**
+         * PlayStation / Xbox
+         */
         psRate:
-            Number(
-                pricingData.psRate
-            ) || 200,
+            Number.isFinite(
+                Number(
+                    pricingData.psRate
+                )
+            )
+                ? Number(
+                      pricingData.psRate
+                  )
+                : current.psRate,
 
         psMin:
-            Number(
-                pricingData.psMin
-            ) || 100000,
+            Number.isFinite(
+                Number(
+                    pricingData.psMin
+                )
+            )
+                ? Number(
+                      pricingData.psMin
+                  )
+                : current.psMin,
 
         psMax:
-            Number(
-                pricingData.psMax
-            ) || 5000000,
+            Number.isFinite(
+                Number(
+                    pricingData.psMax
+                )
+            )
+                ? Number(
+                      pricingData.psMax
+                  )
+                : current.psMax,
 
         psWithdrawDuration:
-            pricingData.psWithdrawDuration ||
-            "3 - 5 أيام عمل",
+            cleanString(
+                pricingData.psWithdrawDuration,
+                current.psWithdrawDuration
+            ),
 
         psTransferDuration:
-            pricingData.psTransferDuration ||
-            "24 ساعة",
+            cleanString(
+                pricingData.psTransferDuration,
+                current.psTransferDuration
+            ),
 
         psStock:
-            Number(
-                pricingData.psStock
-            ) || 0,
+            Number.isFinite(
+                Number(
+                    pricingData.psStock
+                )
+            )
+                ? Number(
+                      pricingData.psStock
+                  )
+                : current.psStock,
 
-        // --------------------------------------------------------------------
-        // PC
-        // --------------------------------------------------------------------
-
+        /**
+         * PC
+         */
         pcRate:
-            Number(
-                pricingData.pcRate
-            ) || 150,
+            Number.isFinite(
+                Number(
+                    pricingData.pcRate
+                )
+            )
+                ? Number(
+                      pricingData.pcRate
+                  )
+                : current.pcRate,
 
         pcMin:
-            Number(
-                pricingData.pcMin
-            ) || 100000,
+            Number.isFinite(
+                Number(
+                    pricingData.pcMin
+                )
+            )
+                ? Number(
+                      pricingData.pcMin
+                  )
+                : current.pcMin,
 
         pcMax:
-            Number(
-                pricingData.pcMax
-            ) || 1000000,
+            Number.isFinite(
+                Number(
+                    pricingData.pcMax
+                )
+            )
+                ? Number(
+                      pricingData.pcMax
+                  )
+                : current.pcMax,
 
         pcWithdrawDuration:
-            pricingData.pcWithdrawDuration ||
-            "2 - 4 أيام عمل",
+            cleanString(
+                pricingData.pcWithdrawDuration,
+                current.pcWithdrawDuration
+            ),
 
         pcTransferDuration:
-            pricingData.pcTransferDuration ||
-            "24 ساعة",
+            cleanString(
+                pricingData.pcTransferDuration,
+                current.pcTransferDuration
+            ),
 
         pcStock:
-            Number(
-                pricingData.pcStock
-            ) || 0,
+            Number.isFinite(
+                Number(
+                    pricingData.pcStock
+                )
+            )
+                ? Number(
+                      pricingData.pcStock
+                  )
+                : current.pcStock,
 
-        // --------------------------------------------------------------------
-        // Store
-        // --------------------------------------------------------------------
-
+        /**
+         * Offers
+         */
         offers:
             Boolean(
                 pricingData.offers
             ),
 
         offerText:
-            pricingData.offerText ||
-            "",
+            cleanString(
+                pricingData.offerText,
+                ""
+            ),
 
         promoRate:
-            Number(
-                pricingData.promoRate
-            ) || 0,
+            Number.isFinite(
+                Number(
+                    pricingData.promoRate
+                )
+            )
+                ? Number(
+                      pricingData.promoRate
+                  )
+                : current.promoRate,
 
         promoExpiry:
-            pricingData.promoExpiry ||
-            "",
+            cleanString(
+                pricingData.promoExpiry,
+                ""
+            ),
 
+        /**
+         * Store status
+         */
         storeOpen:
-            pricingData.storeOpen ??
-            true,
+            typeof pricingData.storeOpen ===
+            "boolean"
+                ? pricingData.storeOpen
+                : Boolean(
+                      current.storeOpen
+                  ),
 
-        // --------------------------------------------------------------------
-        // Issue messages
-        // --------------------------------------------------------------------
-
+        /**
+         * Issue messages
+         */
         issueMessages:
             normalizeIssueMessages(
-                pricingData.issueMessages
+                pricingData.issueMessages ??
+                    current.issueMessages
             ),
 
         updatedAt:
@@ -853,7 +1152,7 @@ export async function savePricing(
 
 /**
  * ============================================================================
- * 7. رسائل المشاكل
+ * 7. Issue messages
  * ============================================================================
  */
 
@@ -901,18 +1200,10 @@ export async function updateIssueMessage(
     issueCode,
     message
 ) {
-    const settings =
-        await getSettings();
-
-    const current =
-        normalizeIssueMessages(
-            settings.issueMessages
-        );
-
     const code =
-        String(
-            issueCode || ""
-        ).trim();
+        cleanString(
+            issueCode
+        );
 
     if (
         !Object.prototype.hasOwnProperty.call(
@@ -926,15 +1217,18 @@ export async function updateIssueMessage(
     }
 
     const cleanMessage =
-        String(
-            message || ""
-        ).trim();
+        cleanString(
+            message
+        );
 
     if (!cleanMessage) {
         throw new Error(
             "Issue message cannot be empty."
         );
     }
+
+    const current =
+        await getIssueMessages();
 
     current[code] =
         cleanMessage;
@@ -946,19 +1240,17 @@ export async function updateIssueMessage(
 
 /**
  * ============================================================================
- * 8. خصم المخزون من الكمية المسحوبة
+ * 8. Withdrawn stock deduction
  * ============================================================================
  *
- * هذه الدالة:
- * - تخصم المخزون.
- * - تمنع الخصم المكرر.
- * - تسجل عملية الخصم.
+ * هذه الدالة تخصم المخزون فقط.
  *
- * لا تغيّر status.
+ * لا تغير:
+ * - status
+ * - issue
+ * - completed
  *
- * مهم:
- * status أصبح يدار يدوياً من لوحة الإدارة.
- * لا يوجد auto-finish هنا.
+ * حالات الطلب أصبحت يدوية من لوحة الإدارة.
  * ============================================================================
  */
 
@@ -968,11 +1260,20 @@ export async function processWithdrawnStockDeduction(
     withdrawnAmount
 ) {
     try {
+        const cleanOrderId =
+            cleanString(
+                orderId
+            );
+
+        if (!cleanOrderId) {
+            return false;
+        }
+
         const orderRef =
             doc(
                 db,
                 "orders",
-                orderId
+                cleanOrderId
             );
 
         const orderSnap =
@@ -987,13 +1288,15 @@ export async function processWithdrawnStockDeduction(
         }
 
         const order =
-            orderSnap.data() || {};
+            orderSnap.data() ||
+            {};
 
         /**
          * منع الخصم المكرر.
          */
         if (
-            order.withdrawnDeducted
+            order.withdrawnDeducted ===
+            true
         ) {
             return false;
         }
@@ -1001,9 +1304,12 @@ export async function processWithdrawnStockDeduction(
         const numericAmount =
             Number(
                 withdrawnAmount
-            ) || 0;
+            );
 
         if (
+            !Number.isFinite(
+                numericAmount
+            ) ||
             numericAmount <= 0
         ) {
             return false;
@@ -1018,15 +1324,10 @@ export async function processWithdrawnStockDeduction(
                 .trim()
                 .toUpperCase();
 
-        let stockField =
-            "psStock";
-
-        if (
+        const stockField =
             platUpper === "PC"
-        ) {
-            stockField =
-                "pcStock";
-        }
+                ? "pcStock"
+                : "psStock";
 
         const settingsRef =
             doc(
@@ -1034,6 +1335,9 @@ export async function processWithdrawnStockDeduction(
                 SETTINGS_DOC_PATH
             );
 
+        /**
+         * خصم المخزون.
+         */
         await updateDoc(
             settingsRef,
             {
@@ -1044,6 +1348,11 @@ export async function processWithdrawnStockDeduction(
             }
         );
 
+        /**
+         * تسجيل الخصم على الطلب.
+         *
+         * لا يوجد status هنا.
+         */
         await updateDoc(
             orderRef,
             {
@@ -1062,7 +1371,9 @@ export async function processWithdrawnStockDeduction(
     } catch (error) {
         console.error(
             "Error processing withdrawn stock deduction:",
-            error
+            error?.code ||
+                error?.message ||
+                error
         );
 
         throw error;
@@ -1071,7 +1382,7 @@ export async function processWithdrawnStockDeduction(
 
 /**
  * ============================================================================
- * 9. البنوك
+ * 9. Banks
  * ============================================================================
  */
 
@@ -1082,7 +1393,9 @@ export async function getBanks() {
     return Array.isArray(
         settings.banks
     )
-        ? settings.banks
+        ? [
+              ...settings.banks
+          ]
         : [];
 }
 
@@ -1096,16 +1409,15 @@ export async function saveBanks(
         );
 
     const banks =
-        Array.isArray(
+        normalizeStringArray(
             banksArray
-        )
-            ? banksArray
-            : [];
+        );
 
     await setDoc(
         settingsRef,
         {
             banks,
+
             updatedAt:
                 serverTimestamp()
         },
@@ -1124,15 +1436,16 @@ export async function addBank(
         await getBanks();
 
     const value =
-        String(
-            newBank || ""
-        ).trim();
+        cleanString(
+            newBank
+        );
 
     if (
         value &&
         !banks.includes(value)
     ) {
         banks.push(value);
+
         await saveBanks(
             banks
         );
@@ -1172,7 +1485,7 @@ export async function deleteBank(
 
 /**
  * ============================================================================
- * 10. المحافظ
+ * 10. Wallets
  * ============================================================================
  */
 
@@ -1183,7 +1496,9 @@ export async function getWallets() {
     return Array.isArray(
         settings.wallets
     )
-        ? settings.wallets
+        ? [
+              ...settings.wallets
+          ]
         : [];
 }
 
@@ -1197,16 +1512,15 @@ export async function saveWallets(
         );
 
     const wallets =
-        Array.isArray(
+        normalizeStringArray(
             walletsArray
-        )
-            ? walletsArray
-            : [];
+        );
 
     await setDoc(
         settingsRef,
         {
             wallets,
+
             updatedAt:
                 serverTimestamp()
         },
@@ -1225,9 +1539,9 @@ export async function addWallet(
         await getWallets();
 
     const value =
-        String(
-            newWallet || ""
-        ).trim();
+        cleanString(
+            newWallet
+        );
 
     if (
         value &&
@@ -1274,7 +1588,7 @@ export async function deleteWallet(
 
 /**
  * ============================================================================
- * 11. طرق الدفع
+ * 11. Payment methods
  * ============================================================================
  */
 
@@ -1282,27 +1596,28 @@ export async function getPaymentMethods() {
     const settings =
         await getSettings();
 
-    /**
-     * النظام الجديد يستخدم array.
-     * نعيد array فقط للواجهات القديمة.
-     */
     if (
         Array.isArray(
             settings.paymentMethods
         )
     ) {
-        return settings.paymentMethods;
+        return [
+            ...settings.paymentMethods
+        ];
     }
 
     /**
-     * توافق مع شكل object قديم.
+     * Legacy object compatibility.
      */
     if (
         settings.paymentMethods &&
-        typeof settings.paymentMethods === "object"
+        typeof settings.paymentMethods ===
+            "object"
     ) {
-        return Object.values(
-            settings.paymentMethods
+        return normalizeStringArray(
+            Object.values(
+                settings.paymentMethods
+            )
         );
     }
 
@@ -1319,11 +1634,9 @@ export async function savePaymentMethods(
         );
 
     const methods =
-        Array.isArray(
+        normalizeStringArray(
             methodsArray
-        )
-            ? methodsArray
-            : [];
+        );
 
     await setDoc(
         settingsRef,
@@ -1349,9 +1662,9 @@ export async function addPaymentMethod(
         await getPaymentMethods();
 
     const value =
-        String(
-            method || ""
-        ).trim();
+        cleanString(
+            method
+        );
 
     if (
         value &&
@@ -1398,7 +1711,7 @@ export async function deletePaymentMethod(
 
 /**
  * ============================================================================
- * 12. الشروط
+ * 12. Terms
  * ============================================================================
  */
 
@@ -1409,7 +1722,9 @@ export async function getTerms() {
     return Array.isArray(
         settings.terms
     )
-        ? settings.terms
+        ? [
+              ...settings.terms
+          ]
         : [];
 }
 
@@ -1423,16 +1738,15 @@ export async function saveTerms(
         );
 
     const terms =
-        Array.isArray(
+        normalizeStringArray(
             termsArray
-        )
-            ? termsArray
-            : [];
+        );
 
     await setDoc(
         settingsRef,
         {
             terms,
+
             updatedAt:
                 serverTimestamp()
         },
@@ -1451,9 +1765,9 @@ export async function addTerm(
         await getTerms();
 
     const value =
-        String(
-            termText || ""
-        ).trim();
+        cleanString(
+            termText
+        );
 
     if (value) {
         terms.push(value);
@@ -1497,7 +1811,7 @@ export async function deleteTerm(
 
 /**
  * ============================================================================
- * 13. حالة المتجر
+ * 13. Store state
  * ============================================================================
  */
 
@@ -1558,7 +1872,7 @@ export async function toggleStore(
 
 /**
  * ============================================================================
- * 14. تحديث المخزون يدوياً
+ * 14. Manual stock update
  * ============================================================================
  */
 
@@ -1574,28 +1888,32 @@ export async function updateStock(
             SETTINGS_DOC_PATH
         );
 
-    const psStock =
+    const parsedPs =
         Number(newPs);
 
-    const pcStock =
+    const parsedPc =
         Number(newPc);
+
+    const psStock =
+        Number.isFinite(
+            parsedPs
+        )
+            ? parsedPs
+            : 0;
+
+    const pcStock =
+        Number.isFinite(
+            parsedPc
+        )
+            ? parsedPc
+            : 0;
 
     await updateDoc(
         settingsRef,
         {
-            psStock:
-                Number.isFinite(
-                    psStock
-                )
-                    ? psStock
-                    : 0,
+            psStock,
 
-            pcStock:
-                Number.isFinite(
-                    pcStock
-                )
-                    ? pcStock
-                    : 0,
+            pcStock,
 
             lastStockUpdate:
                 new Date().toLocaleString(
@@ -1607,12 +1925,14 @@ export async function updateStock(
                 ),
 
             lastStockUpdateBy:
-                adminName ||
-                "",
+                cleanString(
+                    adminName
+                ),
 
             lastStockUpdateReason:
-                reason ||
-                "",
+                cleanString(
+                    reason
+                ),
 
             updatedAt:
                 serverTimestamp()
@@ -1621,3 +1941,15 @@ export async function updateStock(
 
     return true;
 }
+
+/**
+ * ============================================================================
+ * Legacy export
+ * ============================================================================
+ *
+ * محفوظ فقط للتوافق مع أي كود يستدعيه.
+ */
+
+export {
+    normalizeIssueMessages
+};
