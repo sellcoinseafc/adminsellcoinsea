@@ -3650,7 +3650,6 @@ window.addEventListener(
 window.addEventListener(
     "DOMContentLoaded",
     () => {
-
         const savedLanguage =
             localStorage.getItem(
                 "samiCoinsLanguage"
@@ -3676,14 +3675,17 @@ window.addEventListener(
         );
 
         applyLanguage();
-
-        showScreen(
-            "step1Screen"
-        );
-
+        showScreen("step1Screen");
         setupModalEvents();
 
-        loadSettings();
+        /*
+         * Single initialization path:
+         * settings are loaded by the main initialization block below.
+         * Keeping this listener free of loadSettings() prevents:
+         * - duplicate API requests
+         * - duplicate Firestore realtime subscriptions
+         * - duplicated UI refreshes
+         */
     }
 );
 
