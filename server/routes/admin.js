@@ -1,3 +1,4 @@
+/* SAMI_COINS_ADMIN_V3: canonical admin/security lifecycle */
 import express from "express";
 import admin from "firebase-admin";
 import { db } from "../services/firebase.js";
