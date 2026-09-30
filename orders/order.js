@@ -3361,7 +3361,37 @@ function showTermsModal() {
 // 34. نسخ المرجع
 // ==========================================================================
 
-async async function copyOrderId() {
+async async async function copyTrackingLinkUrl() {
+    const reference = generatedReferenceNumber || "";
+    if (!reference) return;
+
+    const url =
+        new URL(
+            "/tracking/?ref=" + encodeURIComponent(reference),
+            window.location.origin
+        ).href;
+
+    try {
+        await navigator.clipboard.writeText(url);
+    } catch {
+        const textarea = document.createElement("textarea");
+        textarea.value = url;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+    }
+
+    alert(
+        currentLanguage === "ar"
+            ? "تم نسخ رابط التتبع."
+            : "Tracking link copied."
+    );
+}
+
+function copyOrderId() {
 
     const reference =
         generatedReferenceNumber ||
@@ -3634,6 +3664,9 @@ window.showTermsModal =
 
 window.copyOrderId =
     copyOrderId;
+
+window.copyTrackingLinkUrl =
+    copyTrackingLinkUrl;
 
 window.openInquiryPage =
     openInquiryPage;
