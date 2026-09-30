@@ -19,7 +19,11 @@ let storeSettings = {
     wallets: [],
     withdrawDays: "",
     transferHours: "",
+    pcWithdrawDays: "",
+    pcTransferHours: "",
     safeMethod: "",
+    paymentCategories: {},
+    termsEn: [],
     termsEnabled: true,
     terms: [],
     storeOpen: true,
@@ -657,10 +661,16 @@ function startSettingsRealtime() {
                 banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
                 wallets: Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets,
                 terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
+                termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
                 termsEnabled: settings.termsEnabled !== false,
                 storeOpen: settings.storeOpen !== false,
                 withdrawDays: settings.psWithdrawDuration || storeSettings.withdrawDays,
                 transferHours: settings.psTransferDuration || storeSettings.transferHours,
+                pcWithdrawDays: settings.pcWithdrawDuration || storeSettings.pcWithdrawDays,
+                pcTransferHours: settings.pcTransferDuration || storeSettings.pcTransferHours,
+                safeMethod: settings.safeMethod || storeSettings.safeMethod,
+                paymentCategories: settings.paymentCategories || storeSettings.paymentCategories,
+                paymentMethods: settings.paymentMethods || storeSettings.paymentMethods,
                 supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
             };
 
@@ -755,16 +765,10 @@ function applySettingsToUI() {
         );
     }
 
-    // المدد
-    setText(
-        "withdrawText",
-        localizeSettingText(storeSettings.withdrawDays)
-    );
-
-    setText(
-        "transferText",
-        localizeSettingText(storeSettings.transferHours)
-    );
+    // المدد حسب المنصة
+    const durations = getCurrentPlatformDurations();
+    setText("withdrawText", localizeSettingText(durations.withdraw));
+    setText("transferText", localizeSettingText(durations.transfer));
 
     setText(
         "safeMethodText",
@@ -773,12 +777,12 @@ function applySettingsToUI() {
 
     setText(
         "revWithdrawText",
-        storeSettings.withdrawDays || "--"
+        localizeSettingText(durations.withdraw)
     );
 
     setText(
         "revTransferText",
-        storeSettings.transferHours || "--"
+        localizeSettingText(durations.transfer)
     );
 
     setText(
@@ -788,12 +792,12 @@ function applySettingsToUI() {
 
     setText(
         "successWithdrawText",
-        storeSettings.withdrawDays || "--"
+        localizeSettingText(durations.withdraw)
     );
 
     setText(
         "successTransferText",
-        storeSettings.transferHours || "--"
+        localizeSettingText(durations.transfer)
     );
 
     setText(
@@ -3391,37 +3395,37 @@ function showPrivacyModal() {
 }
 
 function showTermsModal() {
-    const ar = `
-        <div class="legal-content" dir="rtl">
-            <ol>
-                <li>يتم تنفيذ الطلب وفق سعر السوق وقت المعالجة.</li>
-                <li>في حال تغيّر السوق، سيتم إشعار البائع بأي تعديل في السعر قبل التنفيذ.</li>
-                <li>لن يتم سحب أو تحويل أي عملات دون موافقة البائع المسبقة.</li>
-                <li>تقديم الطلب لا يضمن التنفيذ الكامل أو التنفيذ بالسعر الأصلي.</li>
-                <li>تختلف مدة التنفيذ حسب حالة السوق وحجم الطلبات، وقد تحدث تأخيرات بسيطة.</li>
-                <li>بيع العملات ينطوي على نسبة مخاطر تقديرية أقل من 1% لاحتمالية تقييد أو حظر حساب EA.</li>
-                <li>يعتمد متجر سامي كوينز طرق نقل احترافية لتقليل المخاطر إلى أدنى حد ممكن، دون تقديم ضمان نهائي.</li>
-                <li>لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.</li>
-                <li>لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.</li>
-                <li>إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل.</li>
-            </ol>
-        </div>`;
-    const en = `
-        <div class="legal-content" dir="ltr">
-            <ol>
-                <li>Orders are processed according to the market price at the time of processing.</li>
-                <li>If the market changes, the seller will be notified of any price adjustment before processing.</li>
-                <li>No coins will be withdrawn or transferred without the seller's prior approval.</li>
-                <li>Submitting an order does not guarantee full execution or execution at the original price.</li>
-                <li>Processing time varies according to market conditions and order volume, and minor delays may occur.</li>
-                <li>Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.</li>
-                <li>SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.</li>
-                <li>SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.</li>
-                <li>No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.</li>
-                <li>Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions.</li>
-            </ol>
-        </div>`;
-    openModal(currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions", currentLanguage === "ar" ? ar : en);
+    const fallbackAr = [
+        "يتم تنفيذ الطلب وفق سعر السوق وقت المعالجة.",
+        "في حال تغيّر السوق، سيتم إشعار البائع بأي تعديل في السعر قبل التنفيذ.",
+        "لن يتم سحب أو تحويل أي عملات دون موافقة البائع المسبقة.",
+        "تقديم الطلب لا يضمن التنفيذ الكامل أو التنفيذ بالسعر الأصلي.",
+        "تختلف مدة التنفيذ حسب حالة السوق وحجم الطلبات، وقد تحدث تأخيرات بسيطة.",
+        "بيع العملات ينطوي على نسبة مخاطر تقديرية أقل من 1% لاحتمالية تقييد أو حظر حساب EA.",
+        "يعتمد متجر سامي كوينز طرق نقل احترافية لتقليل المخاطر إلى أدنى حد ممكن، دون تقديم ضمان نهائي.",
+        "لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.",
+        "لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.",
+        "إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل."
+    ];
+    const fallbackEn = [
+        "Orders are processed according to the market price at the time of processing.",
+        "If the market changes, the seller will be notified of any price adjustment before processing.",
+        "No coins will be withdrawn or transferred without the seller's prior approval.",
+        "Submitting an order does not guarantee full execution or execution at the original price.",
+        "Processing time varies according to market conditions and order volume, and minor delays may occur.",
+        "Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.",
+        "SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.",
+        "SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.",
+        "No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.",
+        "Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions."
+    ];
+    const terms = currentLanguage === "en"
+        ? (Array.isArray(storeSettings.termsEn) && storeSettings.termsEn.length ? storeSettings.termsEn : fallbackEn)
+        : (Array.isArray(storeSettings.terms) && storeSettings.terms.length ? storeSettings.terms : fallbackAr);
+    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
+    const title = currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions";
+    const html = `<div class="legal-content" dir="${dir}"><ol>${terms.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol></div>`;
+    openModal(title, html);
 }
 
 async function copyTrackingLinkUrl() {
@@ -3502,48 +3506,35 @@ function sendOrderViaWhatsapp() {
         showToast(currentLanguage === "ar" ? "رقم الدعم غير متوفر حاليًا." : "Support number is unavailable.");
         return;
     }
-
+    const en = currentLanguage === "en";
     const clientName = $("customerName")?.value.trim() || "--";
     const clientPhone = $("customerPhone")?.value.trim() || "--";
     const total = $("totalAmountText")?.textContent || "--";
     const reference = generatedReferenceNumber || "--";
     const method = getSelectedPaymentCode();
-
     let paymentText = "";
-    if (method === "bank") {
-        paymentText = "طريقة الدفع:\nتحويل بنكي\nالبنك: " + ($("bankNameSelect")?.value || "--");
-    } else if (method === "wallet") {
-        paymentText = "طريقة الدفع:\nمحفظة رقمية\nالمحفظة: " + ($("walletTypeSelect")?.value || "--");
-    } else if (method === "usdt") {
-        paymentText = "طريقة الدفع:\nUSDT";
-    } else if (method === "paypal") {
-        paymentText = "طريقة الدفع:\nPayPal";
-    } else if (method === "western") {
-        paymentText = "طريقة الدفع:\nWestern Union\nالدولة: " + ($("wuCountry")?.value || "--");
-    }
-
-    const message = [
-        "طلب بيع جديد",
-        "━━━━━━━━━━━━━━━━━━",
-        "",
-        "بيانات الطلب",
-        "• رقم الطلب: " + reference,
-        "• المنصة: " + (selectedPlatform || "--"),
-        "• الكمية: " + currentQty.toLocaleString("en-US") + " Coins",
-        "• المبلغ: " + total,
-        "",
-        "بيانات العميل",
-        "• الاسم: " + clientName,
-        "• الجوال: " + clientPhone,
-        paymentText,
-        "",
-        "ملاحظة أمنية:",
+    if (method === "bank") paymentText = en ? "Payment Method:\\nBank Transfer\\nBank: " + ($("bankNameSelect")?.value || "--") : "طريقة الدفع:\\nتحويل بنكي\\nالبنك: " + ($("bankNameSelect")?.value || "--");
+    else if (method === "wallet") paymentText = en ? "Payment Method:\\nDigital Wallet\\nWallet: " + ($("walletTypeSelect")?.value || "--") : "طريقة الدفع:\\nمحفظة رقمية\\nالمحفظة: " + ($("walletTypeSelect")?.value || "--");
+    else if (method === "usdt") paymentText = en ? "Payment Method:\\nUSDT" : "طريقة الدفع:\\nUSDT";
+    else if (method === "paypal") paymentText = en ? "Payment Method:\\nPayPal" : "طريقة الدفع:\\nPayPal";
+    else if (method === "western") paymentText = en ? "Payment Method:\\nWestern Union\\nCountry: " + ($("wuCountry")?.value || "--") : "طريقة الدفع:\\nWestern Union\\nالدولة: " + ($("wuCountry")?.value || "--");
+    const message = en ? [
+        "New Coin Selling Order", "━━━━━━━━━━━━━━━━━━", "", "Order Details",
+        "• Order Number: " + reference, "• Platform: " + (selectedPlatform || "--"),
+        "• Quantity: " + currentQty.toLocaleString("en-US") + " Coins", "• Amount: " + total,
+        "", "Customer Details", "• Name: " + clientName, "• Phone: " + clientPhone,
+        paymentText, "", "Security Note:",
+        "Account and sensitive payment data were submitted through the secure order form and are not sent via WhatsApp.",
+        "", "━━━━━━━━━━━━━━━━━━", "SAMI COINS"
+    ].join("\\n") : [
+        "طلب بيع جديد", "━━━━━━━━━━━━━━━━━━", "", "بيانات الطلب",
+        "• رقم الطلب: " + reference, "• المنصة: " + (selectedPlatform || "--"),
+        "• الكمية: " + currentQty.toLocaleString("en-US") + " Coins", "• المبلغ: " + total,
+        "", "بيانات العميل", "• الاسم: " + clientName, "• الجوال: " + clientPhone,
+        paymentText, "", "ملاحظة أمنية:",
         "تم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.",
-        "",
-        "━━━━━━━━━━━━━━━━━━",
-        "SAMI COINS"
-    ].join("\n");
-
+        "", "━━━━━━━━━━━━━━━━━━", "SAMI COINS"
+    ].join("\\n");
     const url = "https://wa.me/" + number + "?text=" + encodeURIComponent(message);
     window.open(url, "_blank", "noopener,noreferrer");
 }
