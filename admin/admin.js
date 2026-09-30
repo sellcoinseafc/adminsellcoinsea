@@ -2291,7 +2291,7 @@ function getStatusBadge(
       '<span class="badge badge-new">طلب جديد</span>',
 
     review:
-      '<span class="badge badge-review">انتظار المراجعة</span>',
+      '<span class="badge badge-review">طلب بانتظار المراجعة</span>',
 
     finished:
       '<span class="badge badge-finished">تم الانتهاء من سحب الكوينز من حسابك</span>',
