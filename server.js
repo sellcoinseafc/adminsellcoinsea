@@ -52,6 +52,11 @@ const __dirname =
 
 const app = express();
 
+/**
+ * لا نكشف نوع/إصدار Express في response headers.
+ */
+app.disable("x-powered-by");
+
 const PORT =
   Number(process.env.PORT) ||
   3211;
@@ -112,6 +117,10 @@ app.use(
 app.use(
   "/api",
   (req, res, next) => {
+    /*
+     * APIs لا يجب أن تدخل في browser/proxy cache.
+     * هذا مهم خصوصًا لبيانات الطلبات الحساسة.
+     */
     res.setHeader(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, private"
@@ -123,8 +132,63 @@ app.use(
     );
 
     res.setHeader(
+      "Expires",
+      "0"
+    );
+
+    res.setHeader(
       "X-Content-Type-Options",
       "nosniff"
+    );
+
+    /*
+     * منع تحميل API responses داخل frame.
+     */
+    res.setHeader(
+      "X-Frame-Options",
+      "DENY"
+    );
+
+    /*
+     * تقليل تسريب Referer من صفحات API.
+     */
+    res.setHeader(
+      "Referrer-Policy",
+      "no-referrer"
+    );
+
+    /*
+     * SSE يحتاج اتصالًا طويلًا.
+     * لا نضع Connection: close هنا.
+     */
+    next();
+  }
+);
+
+/**
+ * ============================================================================
+ * Frontend security headers
+ * ============================================================================
+ *
+ * هذه headers لا تغيّر سلوك التطبيق أو تصميمه.
+ * الهدف منها تقليل مخاطر المتصفح الأساسية.
+ */
+
+app.use(
+  (req, res, next) => {
+    res.setHeader(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
+
+    res.setHeader(
+      "Referrer-Policy",
+      "strict-origin-when-cross-origin"
+    );
+
+    res.setHeader(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=()"
     );
 
     next();
@@ -195,6 +259,11 @@ app.use(
 app.get(
   "/api/health",
   (req, res) => {
+    res.setHeader(
+      "Cache-Control",
+      "no-store"
+    );
+
     return res.json({
       success: true,
       status: "online",
