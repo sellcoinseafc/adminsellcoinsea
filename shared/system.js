@@ -66,25 +66,22 @@ const ORDERS_COLLECTION =
 
 export const defaultIssueMessages = {
     wrong_credentials:
-        "بيانات الدخول غير صحيحة",
+        "الإيميل أو الباسورد غير صحيح",
 
     wrong_backup_codes:
-        "رموز النسخ الاحتياطية غير صحيحة",
+        "الأكواد الاحتياطية غير صحيحة",
+
+    logged_in_platform:
+        "تم تسجيل الدخول عبر المنصة يرجى تسجيل الخروج",
 
     market_closed:
         "سوق الانتقالات مغلق",
 
-    no_player:
-        "لا يوجد لاعب مطابق",
-
     wrong_platform:
-        "المنصة المحددة غير صحيحة",
-
-    web_app_issue:
-        "توجد مشكلة في تطبيق الويب",
+        "المنصة غير صحيحة",
 
     other_issue:
-        "توجد مشكلة في الطلب"
+        "مشاكل أخرى"
 };
 
 /**
