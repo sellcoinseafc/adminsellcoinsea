@@ -1320,4 +1320,54 @@ router.post(
 );
 
 
+
+/**
+ * POST /api/admin/log-whatsapp
+ * Logs a non-sensitive WhatsApp action initiated by an admin.
+ */
+router.post(
+  "/log-whatsapp",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const orderId = normalizeIdentifier(req.body?.orderId);
+      const referenceNumber = normalizeIdentifier(req.body?.referenceNumber);
+      const recipient = String(req.body?.recipient || "").replace(/[^0-9+]/g, "").slice(0, 32);
+      const message = String(req.body?.message || "").trim().slice(0, 4000);
+      const templateCode = String(req.body?.templateCode || "").trim().slice(0, 100);
+
+      if (!orderId || !message) {
+        return res.status(400).json({
+          success: false,
+          message: "بيانات رسالة واتساب غير مكتملة."
+        });
+      }
+
+      await db.collection("whatsappLogs").add({
+        orderId,
+        referenceNumber,
+        recipient,
+        message,
+        templateCode,
+        sentBy: String(req.admin.uid),
+        sentByEmail: String(req.admin.email || ""),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      return res.json({ success: true });
+    } catch (error) {
+      console.error(
+        "Admin log-whatsapp error:",
+        error?.code || error?.message || "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر تسجيل رسالة واتساب."
+      });
+    }
+  }
+);
+
+
 export default router;
