@@ -2,9 +2,10 @@
   "name": "samicoins-server",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
+  "main": "../server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --check server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
