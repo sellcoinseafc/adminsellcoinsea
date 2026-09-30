@@ -1,27 +1,29 @@
 // ==========================================================================
-// SAMI COINS - Orders Frontend
+// SAMI COINS — ORDERS FRONTEND
+// HTML/CSS V2.8 COMPATIBLE JAVASCRIPT
 // ==========================================================================
+
+"use strict";
 
 // ==========================================================================
 // 0. إعدادات التطبيق
 // ==========================================================================
 
 let storeSettings = {
-  rates: {},
-  limits: {},
-  paymentMethods: {},
-  banks: [],
-  wallets: [],
-  withdrawDays: "",
-  transferHours: "",
-  safeMethod: "",
-  termsEnabled: true,
-  terms: [],
-  storeOpen: true,
-  supportWhatsapp: ""
+    rates: {},
+    limits: {},
+    paymentMethods: {},
+    banks: [],
+    wallets: [],
+    withdrawDays: "",
+    transferHours: "",
+    safeMethod: "",
+    termsEnabled: true,
+    terms: [],
+    storeOpen: true,
+    supportWhatsapp: ""
 };
 
-// حالة التطبيق المتغيرة ديناميكياً
 let selectedPlatform = null;
 let currentPaymentCategory = null;
 let selectedPaymentMethod = "";
@@ -35,18 +37,469 @@ let generatedReferenceNumber = "";
 let generatedDocumentId = "";
 
 let isEditingAll = false;
+let currentLanguage = "ar";
 
 
 // ==========================================================================
-// 1. أدوات عامة
+// 1. أدوات DOM
+// ==========================================================================
+
+function $(id) {
+    return document.getElementById(id);
+}
+
+function showElement(id) {
+    $(id)?.classList.remove("hidden");
+}
+
+function hideElement(id) {
+    $(id)?.classList.add("hidden");
+}
+
+function setText(id, value) {
+    const el = $(id);
+    if (el) {
+        el.textContent = value ?? "";
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// ==========================================================================
+// 2. اللغة
+// ==========================================================================
+
+const translations = {
+    ar: {
+        brandSubtitle: "Sa4coins.com",
+        trackOrder: "استعلام عن الطلب",
+        storeClosedBadge: "البيع مغلق حاليًا",
+        storeName: "متجر سامي كوينز",
+        storeClosedTitle: "نعتذر، لا نستقبل طلبات البيع حاليًا",
+        storeClosedText:
+            "المتجر مغلق في الوقت الحالي. يمكنك التواصل مع الدعم الفني للاستفسار عن موعد عودة استقبال طلبات البيع.",
+        contactWhatsapp: "تواصل معنا عبر واتساب",
+        retry: "إعادة المحاولة",
+
+        introTitle:
+            "اشتري كوينزك بسعر منافس وبطريقة سريعة وآمنة تضمن لك تجربة بيع مريحة",
+        introText:
+            "اختر منصتك وكمية الكوينز لعرض المبلغ المستحق لك.",
+
+        trustSecure: "آمن",
+        trustFast: "سريع",
+        trustSupport: "دعم",
+
+        orderProgressKicker: "خطوات بيع الكوينز",
+        step1Title: "اختر المنصة والكمية",
+        step2Title: "أدخل بياناتك",
+        step3Title: "راجع طلبك",
+        step4Title: "تم إنشاء الطلب",
+
+        progressStep1: "المنصة والكمية",
+        progressStep2: "البيانات",
+        progressStep3: "المراجعة",
+        progressStep4: "تم الطلب",
+
+        stepOne: "الخطوة الأولى",
+        choosePlatform: "اختر المنصة",
+        playstation: "PlayStation",
+        xbox: "Xbox",
+        pc: "PC",
+        pricePerMillion: "سعر المليون",
+        choosePlatformPrompt: "اختر المنصة للبدء",
+        choosePlatformPromptText:
+            "بعدها ستظهر لك تفاصيل السعر والكمية وطرق الدفع.",
+
+        millionPrice: "سعر المليون",
+        selectedPlatform: "حسب المنصة المختارة",
+        sar: "ر.س",
+
+        withdrawDuration: "مدة السحب",
+        transferDuration: "مدة التحويل",
+        safeMethod: "طريقة النقل",
+
+        coinQuantity: "كمية الكوينز",
+        enterQuantity: "أدخل الكمية",
+        quantity: "الكمية",
+        coins: "كوينز",
+        quantityQuickSelect: "اختيار سريع للكمية",
+        minimum: "الحد الأدنى",
+        maximum: "الحد الأقصى",
+
+        totalDue: "إجمالي المبلغ المستحق",
+        totalCalculation: "يتم احتسابه حسب الكمية والمنصة",
+
+        receiveMoney: "استلام المبلغ",
+        choosePayment: "اختر طريقة الدفع",
+        localPayment: "دفع محلي",
+        internationalPayment: "دفع دولي",
+        paymentHint: "اختر نوع الدفع لعرض طرق الاستلام المتاحة.",
+
+        startSelling: "ابدأ ببيع كوينز الآن",
+        secureData: "بياناتك محمية ويتم التعامل معها بسرية وأمان.",
+
+        stepTwo: "الصفحة الثانية",
+        customerDetails: "بيانات العميل والتواصل",
+        customerName: "اسم العميل",
+        whatsappNumber: "رقم التواصل واتساب",
+        accountData: "بيانات الحساب",
+        eaAccount: "حساب EA",
+        eaEmail: "البريد الإلكتروني لحساب EA",
+        eaPassword: "كلمة مرور حساب EA",
+        encryptedData: "يتم تشفير بيانات الحساب لحمايتها.",
+        security: "الحماية",
+        backupCodes: "الأكواد الاحتياطية",
+        howToGetCodes: "طريقة الاستخراج؟",
+        backupCodesNote:
+            "أدخل 3 أكواد احتياطية مختلفة من حساب EA الخاص بك.",
+        receivingData: "بيانات الاستلام",
+        paymentDetails: "تفاصيل الدفع",
+
+        termsTitle: "الشروط والأحكام",
+        termsSubtitle: "يرجى قراءة الشروط قبل اعتماد الطلب.",
+        termsAgreement: "لقد وافقت على",
+        termsLink: "الشروط والأحكام",
+
+        previous: "السابق",
+        reviewOrder: "مراجعة الطلب",
+
+        finalStep: "الخطوة الأخيرة",
+        reviewAndConfirm: "مراجعة الطلب والاعتماد",
+        reviewDescription: "راجع جميع البيانات قبل إنشاء الطلب.",
+        orderDetails: "تفاصيل الطلب",
+        edit: "تعديل",
+        platform: "المنصة",
+        totalAmount: "إجمالي المبلغ",
+        changePlatform: "تغيير المنصة",
+        psShort: "PS",
+        editCoinQuantity: "تعديل كمية الكوينز",
+
+        eaDataAndCodes: "بيانات حساب EA والأكواد",
+        email: "البريد الإلكتروني",
+        password: "كلمة المرور",
+        customerInformation: "معلومات العميل",
+        transferAndPayout: "معلومات التحويل والاستلام",
+        saveChanges: "حفظ التعديلات",
+        back: "الرجوع",
+        createOrder: "إنشاء الطلب",
+        finalSecurityNote:
+            "عند إنشاء الطلب سيتم تأمين بياناتك ومعالجتها وفقًا لنظام الحماية المعتمد.",
+
+        orderCreated: "تم إنشاء الطلب",
+        successTitle: "تم استلام طلبك بنجاح",
+        successText: "احتفظ برقم المرجع لمتابعة حالة طلبك.",
+        referenceCopyHint: "اضغط على رقم المرجع لنسخه",
+        invoiceDetails: "الفاتورة وتفاصيل الطلب",
+        requestedQuantity: "الكمية المطلوبة",
+        trackYourOrder: "تتبع حالة طلبك",
+        sendViaWhatsapp: "إرسال تفاصيل الطلب عبر الواتساب",
+        newOrder: "إنشاء طلب جديد",
+        successSupportNote:
+            "في حال وجود أي استفسار، يمكنك التواصل مع الدعم الفني.",
+
+        footerBrandText: "بيع الكوينز بسهولة وأمان",
+        support: "دعم فني",
+        privacy: "الخصوصية",
+        terms: "الشروط والأحكام",
+        orderInquiry: "استعلام عن الطلب",
+        allRightsReserved: "جميع الحقوق محفوظة"
+    },
+
+    en: {
+        brandSubtitle: "Sa4coins.com",
+        trackOrder: "Track Order",
+        storeClosedBadge: "Selling is currently closed",
+        storeName: "SAMI COINS Store",
+        storeClosedTitle: "Sorry, we are not accepting selling orders now",
+        storeClosedText:
+            "The store is currently closed. Contact support to ask when selling orders will reopen.",
+        contactWhatsapp: "Contact us via WhatsApp",
+        retry: "Retry",
+
+        introTitle:
+            "Sell your coins at a competitive price with a fast and secure process.",
+        introText:
+            "Choose your platform and coin quantity to see your payout.",
+
+        trustSecure: "Secure",
+        trustFast: "Fast",
+        trustSupport: "Support",
+
+        orderProgressKicker: "Coin Selling Steps",
+        step1Title: "Choose Platform & Quantity",
+        step2Title: "Enter Your Details",
+        step3Title: "Review Your Order",
+        step4Title: "Order Created",
+
+        progressStep1: "Platform & Quantity",
+        progressStep2: "Details",
+        progressStep3: "Review",
+        progressStep4: "Completed",
+
+        stepOne: "Step One",
+        choosePlatform: "Choose Platform",
+        playstation: "PlayStation",
+        xbox: "Xbox",
+        pc: "PC",
+        pricePerMillion: "Price per Million",
+        choosePlatformPrompt: "Choose a platform to start",
+        choosePlatformPromptText:
+            "Price, quantity and payment options will appear after selection.",
+
+        millionPrice: "Price per Million",
+        selectedPlatform: "Based on selected platform",
+        sar: "SAR",
+
+        withdrawDuration: "Withdrawal Time",
+        transferDuration: "Transfer Time",
+        safeMethod: "Transfer Method",
+
+        coinQuantity: "Coin Quantity",
+        enterQuantity: "Enter Quantity",
+        quantity: "Quantity",
+        coins: "Coins",
+        quantityQuickSelect: "Quick Quantity Selection",
+        minimum: "Minimum",
+        maximum: "Maximum",
+
+        totalDue: "Total Amount Due",
+        totalCalculation: "Calculated according to quantity and platform",
+
+        receiveMoney: "Receive Payment",
+        choosePayment: "Choose Payment Method",
+        localPayment: "Local Payment",
+        internationalPayment: "International Payment",
+        paymentHint: "Choose a payment category to see available methods.",
+
+        startSelling: "Start Selling Coins",
+        secureData: "Your data is protected and handled securely.",
+
+        stepTwo: "Step Two",
+        customerDetails: "Customer & Contact Details",
+        customerName: "Customer Name",
+        whatsappNumber: "WhatsApp Number",
+        accountData: "Account Details",
+        eaAccount: "EA Account",
+        eaEmail: "EA Account Email",
+        eaPassword: "EA Account Password",
+        encryptedData: "Account data is encrypted for protection.",
+        security: "Security",
+        backupCodes: "Backup Codes",
+        howToGetCodes: "How to get them?",
+        backupCodesNote:
+            "Enter 3 different backup codes from your EA account.",
+        receivingData: "Payment Details",
+        paymentDetails: "Payment Information",
+
+        termsTitle: "Terms & Conditions",
+        termsSubtitle: "Please read the terms before submitting your order.",
+        termsAgreement: "I agree to the",
+        termsLink: "Terms & Conditions",
+
+        previous: "Previous",
+        reviewOrder: "Review Order",
+
+        finalStep: "Final Step",
+        reviewAndConfirm: "Review & Confirm",
+        reviewDescription: "Review all information before creating the order.",
+        orderDetails: "Order Details",
+        edit: "Edit",
+        platform: "Platform",
+        totalAmount: "Total Amount",
+        changePlatform: "Change Platform",
+        psShort: "PS",
+        editCoinQuantity: "Edit Coin Quantity",
+
+        eaDataAndCodes: "EA Account & Backup Codes",
+        email: "Email",
+        password: "Password",
+        customerInformation: "Customer Information",
+        transferAndPayout: "Payment & Receiving Information",
+        saveChanges: "Save Changes",
+        back: "Back",
+        createOrder: "Create Order",
+        finalSecurityNote:
+            "When the order is created, your data will be secured and processed according to our protection system.",
+
+        orderCreated: "Order Created",
+        successTitle: "Your order was received successfully",
+        successText: "Keep your reference number to track your order.",
+        referenceCopyHint: "Tap the reference number to copy it",
+        invoiceDetails: "Invoice & Order Details",
+        requestedQuantity: "Requested Quantity",
+        trackYourOrder: "Track Your Order",
+        sendViaWhatsapp: "Send Order Details via WhatsApp",
+        newOrder: "Create New Order",
+        successSupportNote:
+            "If you have any questions, contact technical support.",
+
+        footerBrandText: "Sell coins easily and securely",
+        support: "Support",
+        privacy: "Privacy",
+        terms: "Terms",
+        orderInquiry: "Order Inquiry",
+        allRightsReserved: "All rights reserved"
+    }
+};
+
+
+// ==========================================================================
+// 3. اللغة
+// ==========================================================================
+
+function applyLanguage() {
+    const dictionary = translations[currentLanguage] || translations.ar;
+
+    document.documentElement.lang =
+        currentLanguage === "ar" ? "ar" : "en";
+
+    document.documentElement.dir =
+        currentLanguage === "ar" ? "rtl" : "ltr";
+
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.dataset.i18n;
+
+        if (dictionary[key] !== undefined) {
+            el.textContent = dictionary[key];
+        }
+    });
+
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        const key = el.dataset.i18nPlaceholder;
+
+        if (dictionary[key] !== undefined) {
+            el.placeholder = dictionary[key];
+        }
+    });
+
+    const label = $("languageToggleLabel");
+
+    if (label) {
+        label.textContent =
+            currentLanguage === "ar"
+                ? "EN"
+                : "AR";
+    }
+
+    const languageButton = $("languageToggleBtn");
+
+    if (languageButton) {
+        languageButton.title =
+            currentLanguage === "ar"
+                ? "English"
+                : "العربية";
+    }
+
+    updateProgressUI(getCurrentStepNumber());
+}
+
+function toggleLanguage() {
+    currentLanguage =
+        currentLanguage === "ar"
+            ? "en"
+            : "ar";
+
+    localStorage.setItem(
+        "samiCoinsLanguage",
+        currentLanguage
+    );
+
+    applyLanguage();
+}
+
+
+// ==========================================================================
+// 4. الثيم
+// ==========================================================================
+
+function applyTheme(theme) {
+    const selectedTheme =
+        theme === "light"
+            ? "light"
+            : "dark";
+
+    document.documentElement.dataset.theme =
+        selectedTheme;
+
+    localStorage.setItem(
+        "samiCoinsTheme",
+        selectedTheme
+    );
+
+    const icon = $("themeToggleIcon");
+
+    if (icon) {
+        icon.className =
+            selectedTheme === "dark"
+                ? "fa-solid fa-moon"
+                : "fa-solid fa-sun";
+    }
+
+    const meta = $("themeColorMeta");
+
+    if (meta) {
+        meta.setAttribute(
+            "content",
+            selectedTheme === "dark"
+                ? "#05080f"
+                : "#f5f7fb"
+        );
+    }
+}
+
+function toggleTheme() {
+    const current =
+        document.documentElement.dataset.theme === "light"
+            ? "light"
+            : "dark";
+
+    applyTheme(
+        current === "dark"
+            ? "light"
+            : "dark"
+    );
+}
+
+
+// ==========================================================================
+// 5. أرقام عربية
+// ==========================================================================
+
+function convertArabicNumbersToEnglish(inputElement) {
+    if (!inputElement) return;
+
+    inputElement.value =
+        String(inputElement.value || "")
+            .replace(/[٠-٩]/g, (digit) =>
+                String("٠١٢٣٤٥٦٧٨٩".indexOf(digit))
+            )
+            .replace(/[^0-9]/g, "");
+}
+
+
+// ==========================================================================
+// 6. الدفع
 // ==========================================================================
 
 function normalizePaymentMethodCode(method) {
-    const value = String(method || "").trim().toLowerCase();
+    const value =
+        String(method || "")
+            .trim()
+            .toLowerCase();
 
     if (
         value.includes("بنك") ||
-        value.includes("تحويل")
+        value.includes("تحويل") ||
+        value.includes("bank")
     ) {
         return "bank";
     }
@@ -58,11 +511,11 @@ function normalizePaymentMethodCode(method) {
         return "wallet";
     }
 
-    if (value === "usdt" || value.includes("usdt")) {
+    if (value.includes("usdt")) {
         return "usdt";
     }
 
-    if (value === "paypal" || value.includes("paypal")) {
+    if (value.includes("paypal")) {
         return "paypal";
     }
 
@@ -77,7 +530,8 @@ function normalizePaymentMethodCode(method) {
 }
 
 function getPaymentMethodsForCategory(category) {
-    const paymentMethods = storeSettings.paymentMethods || {};
+    const paymentMethods =
+        storeSettings.paymentMethods || {};
 
     if (Array.isArray(paymentMethods)) {
         return paymentMethods;
@@ -87,7 +541,8 @@ function getPaymentMethodsForCategory(category) {
         paymentMethods &&
         typeof paymentMethods === "object"
     ) {
-        const methods = paymentMethods[category];
+        const methods =
+            paymentMethods[category];
 
         return Array.isArray(methods)
             ? methods
@@ -104,124 +559,31 @@ function getSelectedPaymentCode() {
 }
 
 function getSupportWhatsappNumber() {
-    const configured =
+    return String(
         storeSettings.supportWhatsapp ||
         storeSettings.supportWhatsappNumber ||
-        "";
-
-    return String(configured)
-        .replace(/[^\d]/g, "");
-}
-
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-function getCurrentDisplayedTotal() {
-    return (
-        document.getElementById("totalAmountText")
-            ?.innerText ||
         ""
-    );
-}
-
-function getCurrentPayoutDataFromForm() {
-    const method = getSelectedPaymentCode();
-
-    switch (method) {
-        case "bank":
-            return {
-                payoutType: "local",
-                method: "bank",
-                bankName:
-                    document.getElementById("bankNameSelect")
-                        ?.value
-                        ?.trim() || "",
-                fullName:
-                    document.getElementById("accountName")
-                        ?.value
-                        ?.trim() || "",
-                iban:
-                    document.getElementById("iban")
-                        ?.value
-                        ?.trim() || ""
-            };
-
-        case "wallet":
-            return {
-                payoutType: "local",
-                method: "wallet",
-                walletName:
-                    document.getElementById("walletTypeSelect")
-                        ?.value
-                        ?.trim() || "",
-                phone:
-                    document.getElementById("walletNumber")
-                        ?.value
-                        ?.trim() || ""
-            };
-
-        case "usdt":
-            return {
-                payoutType: "international",
-                method: "usdt",
-                wallet:
-                    document.getElementById("usdtWalletType")
-                        ?.value
-                        ?.trim() || ""
-            };
-
-        case "paypal":
-            return {
-                payoutType: "international",
-                method: "paypal",
-                email:
-                    document.getElementById("paypalEmail")
-                        ?.value
-                        ?.trim() || ""
-            };
-
-        case "western":
-            return {
-                payoutType: "international",
-                method: "western",
-                fullNameEnglish:
-                    document.getElementById("wuName")
-                        ?.value
-                        ?.trim() || "",
-                country:
-                    document.getElementById("wuCountry")
-                        ?.value
-                        ?.trim() || ""
-            };
-
-        default:
-            return {
-                payoutType: "",
-                method: ""
-            };
-    }
+    ).replace(/[^\d]/g, "");
 }
 
 
 // ==========================================================================
-// 2. جلب إعدادات النظام
+// 7. الإعدادات
 // ==========================================================================
 
 async function loadSettings() {
     try {
         const response =
-            await fetch("/api/orders/settings", {
-                method: "GET",
-                headers: {
-                    "Accept": "application/json"
+            await fetch(
+                "/api/orders/settings",
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json"
+                    },
+                    cache: "no-store"
                 }
-            });
+            );
 
         const data =
             await response.json();
@@ -240,243 +602,207 @@ async function loadSettings() {
 
         applySettingsToUI();
 
-    } catch (err) {
+    } catch (error) {
         console.error(
             "Settings Error:",
-            err
+            error
         );
 
+        showStoreClosedState(false);
+
         alert(
-            "تعذر تحميل إعدادات المتجر. حاول تحديث الصفحة."
+            currentLanguage === "ar"
+                ? "تعذر تحميل إعدادات المتجر. حاول تحديث الصفحة."
+                : "Unable to load store settings. Please refresh the page."
         );
     }
 }
 
 
 // ==========================================================================
-// 3. تطبيق الإعدادات على الواجهة
+// 8. حالة المتجر
+// ==========================================================================
+
+function showStoreClosedState(isClosed) {
+    const closedScreen =
+        $("storeClosedScreen");
+
+    const orderApplication =
+        $("orderApplication");
+
+    if (isClosed) {
+        closedScreen?.classList.remove("hidden");
+        orderApplication?.classList.add("hidden");
+    } else {
+        closedScreen?.classList.add("hidden");
+        orderApplication?.classList.remove("hidden");
+    }
+}
+
+function contactClosedStoreWhatsapp() {
+    const number =
+        getSupportWhatsappNumber();
+
+    if (!number) {
+        alert(
+            currentLanguage === "ar"
+                ? "رقم الدعم غير متوفر حاليًا."
+                : "Support number is currently unavailable."
+        );
+        return;
+    }
+
+    window.open(
+        `https://wa.me/${number}`,
+        "_blank",
+        "noopener,noreferrer"
+    );
+}
+
+
+// ==========================================================================
+// 9. تطبيق الإعدادات على HTML
 // ==========================================================================
 
 function applySettingsToUI() {
 
-    // ------------------------------------------------------
     // الأسعار
-    // ------------------------------------------------------
+    const rates =
+        storeSettings.rates || {};
 
-    if (storeSettings.rates) {
-        const psSub =
-            document.getElementById("psSubPrice");
-
-        const xboxSub =
-            document.getElementById("xboxSubPrice");
-
-        const pcSub =
-            document.getElementById("pcSubPrice");
-
-        if (
-            psSub &&
-            storeSettings.rates.PlayStation !== undefined
-        ) {
-            psSub.innerText =
-                `${storeSettings.rates.PlayStation} ر.س`;
-        }
-
-        if (
-            xboxSub &&
-            storeSettings.rates.Xbox !== undefined
-        ) {
-            xboxSub.innerText =
-                `${storeSettings.rates.Xbox} ر.س`;
-        }
-
-        if (
-            pcSub &&
-            storeSettings.rates.PC !== undefined
-        ) {
-            pcSub.innerText =
-                `${storeSettings.rates.PC} ر.س`;
-        }
+    if (rates.PlayStation !== undefined) {
+        setText(
+            "psSubPrice",
+            `${rates.PlayStation} ر.س`
+        );
     }
 
-    // ------------------------------------------------------
-    // المدد وطريقة السحب
-    // ------------------------------------------------------
-
-    const withdrawEl =
-        document.getElementById("withdrawText");
-
-    const transferEl =
-        document.getElementById("transferText");
-
-    const safeEl =
-        document.getElementById("safeMethodText");
-
-    const revWithdrawEl =
-        document.getElementById("revWithdrawText");
-
-    const revTransferEl =
-        document.getElementById("revTransferText");
-
-    const revSafeEl =
-        document.getElementById("revSafeMethodText");
-
-    if (withdrawEl) {
-        withdrawEl.innerText =
-            storeSettings.withdrawDays || "--";
+    if (rates.Xbox !== undefined) {
+        setText(
+            "xboxSubPrice",
+            `${rates.Xbox} ر.س`
+        );
     }
 
-    if (transferEl) {
-        transferEl.innerText =
-            storeSettings.transferHours || "--";
+    if (rates.PC !== undefined) {
+        setText(
+            "pcSubPrice",
+            `${rates.PC} ر.س`
+        );
     }
 
-    if (safeEl) {
-        safeEl.innerText =
-            storeSettings.safeMethod || "--";
-    }
+    // المدد
+    setText(
+        "withdrawText",
+        storeSettings.withdrawDays || "--"
+    );
 
-    if (revWithdrawEl) {
-        revWithdrawEl.innerText =
-            storeSettings.withdrawDays || "--";
-    }
+    setText(
+        "transferText",
+        storeSettings.transferHours || "--"
+    );
 
-    if (revTransferEl) {
-        revTransferEl.innerText =
-            storeSettings.transferHours || "--";
-    }
+    setText(
+        "safeMethodText",
+        storeSettings.safeMethod || "--"
+    );
 
-    if (revSafeEl) {
-        revSafeEl.innerText =
-            storeSettings.safeMethod || "--";
-    }
+    setText(
+        "revWithdrawText",
+        storeSettings.withdrawDays || "--"
+    );
 
-    // ------------------------------------------------------
+    setText(
+        "revTransferText",
+        storeSettings.transferHours || "--"
+    );
+
+    setText(
+        "revSafeMethodText",
+        storeSettings.safeMethod || "--"
+    );
+
+    setText(
+        "successWithdrawText",
+        storeSettings.withdrawDays || "--"
+    );
+
+    setText(
+        "successTransferText",
+        storeSettings.transferHours || "--"
+    );
+
+    setText(
+        "successSafeMethodText",
+        storeSettings.safeMethod || "--"
+    );
+
     // الشروط
-    // ------------------------------------------------------
-
     const termsContainer =
-        document.getElementById("termsContainer");
+        $("termsContainer");
 
     if (termsContainer) {
         termsContainer.style.display =
-            storeSettings.termsEnabled
-                ? "flex"
-                : "none";
+            storeSettings.termsEnabled === false
+                ? "none"
+                : "";
     }
 
-    // ------------------------------------------------------
-    // المتجر مغلق
-    // ------------------------------------------------------
-
-    const form =
-        document.getElementById("orderForm");
-
-    if (
-        form &&
+    // المتجر
+    showStoreClosedState(
         storeSettings.storeOpen === false
-    ) {
-        form.style.opacity = "0.65";
-    }
+    );
 
-    // ------------------------------------------------------
-    // إعادة حساب المنصة المختارة
-    // ------------------------------------------------------
-
+    // إعادة اختيار المنصة إن كانت موجودة
     if (selectedPlatform) {
         selectPlatform(
-            selectedPlatform
+            selectedPlatform,
+            true
         );
     }
 }
 
 
 // ==========================================================================
-// 4. تحويل الأرقام العربية إلى إنجليزية
+// 10. اختيار المنصة
 // ==========================================================================
 
-function convertArabicNumbersToEnglish(
-    inputElement
+function selectPlatform(
+    platform,
+    silent = false
 ) {
-    if (!inputElement) return;
-
-    const arabicNumbers = [
-        /٠/g,
-        /١/g,
-        /٢/g,
-        /٣/g,
-        /٤/g,
-        /٥/g,
-        /٦/g,
-        /٧/g,
-        /٨/g,
-        /٩/g
+    const validPlatforms = [
+        "PlayStation",
+        "Xbox",
+        "PC"
     ];
 
-    let val =
-        inputElement.value;
-
-    for (
-        let i = 0;
-        i < 10;
-        i++
-    ) {
-        val =
-            val.replace(
-                arabicNumbers[i],
-                i
-            );
+    if (!validPlatforms.includes(platform)) {
+        return;
     }
-
-    inputElement.value =
-        val.replace(
-            /[^0-9]/g,
-            ""
-        );
-}
-
-
-// ==========================================================================
-// 5. اختيار المنصة
-// ==========================================================================
-
-function selectPlatform(platform) {
 
     selectedPlatform =
         platform;
 
     document
         .querySelectorAll(".platform-btn")
-        .forEach((btn) => {
-            btn.classList.remove(
-                "active"
-            );
+        .forEach((button) => {
+            button.classList.remove("active");
         });
 
-    if (
-        platform === "PlayStation"
-    ) {
-        document
-            .querySelectorAll(".ps-btn")
-            .forEach((b) =>
-                b.classList.add("active")
-            );
-    } else if (
-        platform === "Xbox"
-    ) {
-        document
-            .querySelectorAll(".xbox-btn")
-            .forEach((b) =>
-                b.classList.add("active")
-            );
-    } else if (
-        platform === "PC"
-    ) {
-        document
-            .querySelectorAll(".pc-btn")
-            .forEach((b) =>
-                b.classList.add("active")
-            );
-    }
+    const classMap = {
+        PlayStation: ".ps-btn",
+        Xbox: ".xbox-btn",
+        PC: ".pc-btn"
+    };
+
+    document
+        .querySelectorAll(
+            classMap[platform]
+        )
+        .forEach((button) => {
+            button.classList.add("active");
+        });
 
     const rates =
         storeSettings.rates || {};
@@ -484,396 +810,292 @@ function selectPlatform(platform) {
     const limits =
         storeSettings.limits || {};
 
-    if (
-        platform === "PC"
-    ) {
+    if (platform === "PC") {
+
         currentRate =
-            Number(
-                rates.PC ?? 0
-            );
+            Number(rates.PC ?? 0);
 
         minLimit =
-            Number(
-                limits.pcMin ?? 0
-            );
+            Number(limits.pcMin ?? 0);
 
         maxLimit =
-            Number(
-                limits.pcMax ?? 0
-            );
-
-    } else if (
-        platform === "Xbox"
-    ) {
-        currentRate =
-            Number(
-                rates.Xbox ?? 0
-            );
-
-        minLimit =
-            Number(
-                limits.psMin ?? 0
-            );
-
-        maxLimit =
-            Number(
-                limits.psMax ?? 0
-            );
+            Number(limits.pcMax ?? 0);
 
     } else {
+
         currentRate =
             Number(
-                rates.PlayStation ?? 0
+                platform === "Xbox"
+                    ? rates.Xbox ?? 0
+                    : rates.PlayStation ?? 0
             );
 
         minLimit =
-            Number(
-                limits.psMin ?? 0
-            );
+            Number(limits.psMin ?? 0);
 
         maxLimit =
-            Number(
-                limits.psMax ?? 0
-            );
+            Number(limits.psMax ?? 0);
     }
 
-    document
-        .getElementById(
-            "platformPromptBox"
-        )
-        ?.classList.add("hidden");
+    hideElement("platformPromptBox");
+    showElement("singlePlatformRateCard");
+    showElement("durationInfoCardsStep1");
+    showElement("qtyCardContainer");
+    showElement("totalAmountBoxCard");
+    showElement("paymentCategoryCard");
+    showElement("payoutCardContainer");
 
-    document
-        .getElementById(
-            "singlePlatformRateCard"
-        )
-        ?.classList.remove("hidden");
+    setText(
+        "minLimitText",
+        minLimit.toLocaleString("en-US")
+    );
 
-    document
-        .getElementById(
-            "durationInfoCardsStep1"
-        )
-        ?.classList.remove("hidden");
-
-    document
-        .getElementById(
-            "qtyCardContainer"
-        )
-        ?.classList.remove("hidden");
-
-    document
-        .getElementById(
-            "totalAmountBoxCard"
-        )
-        ?.classList.remove("hidden");
-
-    document
-        .getElementById(
-            "paymentCategoryCard"
-        )
-        ?.classList.remove("hidden");
-
-    document
-        .getElementById(
-            "payoutCardContainer"
-        )
-        ?.classList.remove("hidden");
-
-    const minTextEl =
-        document.getElementById(
-            "minLimitText"
-        );
-
-    const maxTextEl =
-        document.getElementById(
-            "maxLimitText"
-        );
-
-    if (minTextEl) {
-        minTextEl.innerText =
-            minLimit.toLocaleString(
-                "en-US"
-            );
-    }
-
-    if (maxTextEl) {
-        maxTextEl.innerText =
-            maxLimit.toLocaleString(
-                "en-US"
-            );
-    }
+    setText(
+        "maxLimitText",
+        maxLimit.toLocaleString("en-US")
+    );
 
     const range =
-        document.getElementById(
-            "qtyRange"
-        );
+        $("qtyRange");
 
     if (range) {
-        range.min = 0;
+        range.min = "0";
         range.max =
-            maxLimit;
+            String(maxLimit || 5000000);
+        range.step = "100000";
+
+        if (
+            currentQty >
+            Number(range.max)
+        ) {
+            currentQty =
+                Number(range.max);
+        }
+
         range.value =
-            currentQty;
+            String(currentQty);
     }
 
     const qtyInput =
-        document.getElementById(
-            "quantityInput"
-        );
+        $("quantityInput");
 
     if (qtyInput) {
         qtyInput.value =
             currentQty > 0
-                ? currentQty.toLocaleString(
-                    "en-US"
-                )
+                ? currentQty.toLocaleString("en-US")
                 : "";
     }
 
     updateRateCardsUI();
     calculateTotal();
+
+    if (!silent) {
+        updateProgressUI(
+            getCurrentStepNumber()
+        );
+    }
 }
 
 
 // ==========================================================================
-// 6. عرض السعر
+// 11. عرض سعر المنصة
 // ==========================================================================
 
 function updateRateCardsUI() {
+    if (!selectedPlatform) return;
 
-    if (!selectedPlatform) {
-        return;
+    setText(
+        "displaySelectedRate",
+        Number(currentRate || 0).toLocaleString("en-US")
+    );
+
+    const icon =
+        $("selectedPlatformIcon");
+
+    if (!icon) return;
+
+    if (selectedPlatform === "PlayStation") {
+        icon.className =
+            "fa-brands fa-playstation";
     }
 
-    const rateValEl =
-        document.getElementById(
-            "displaySelectedRate"
-        );
-
-    const platIconEl =
-        document.getElementById(
-            "selectedPlatformIcon"
-        );
-
-    if (rateValEl) {
-        rateValEl.innerText =
-            currentRate;
+    if (selectedPlatform === "Xbox") {
+        icon.className =
+            "fa-brands fa-xbox";
     }
 
-    if (platIconEl) {
-        if (
-            selectedPlatform ===
-            "PlayStation"
-        ) {
-            platIconEl.className =
-                "fa-brands fa-playstation";
-
-        } else if (
-            selectedPlatform ===
-            "Xbox"
-        ) {
-            platIconEl.className =
-                "fa-brands fa-xbox";
-
-        } else if (
-            selectedPlatform ===
-            "PC"
-        ) {
-            platIconEl.className =
-                "fa-solid fa-desktop";
-        }
+    if (selectedPlatform === "PC") {
+        icon.className =
+            "fa-solid fa-desktop";
     }
 }
 
 
 // ==========================================================================
-// 7. اختيار فئة الدفع
+// 12. فئة الدفع
 // ==========================================================================
 
-function switchPaymentCategory(
-    category
-) {
+function switchPaymentCategory(category) {
+
+    if (
+        category !== "local" &&
+        category !== "international"
+    ) {
+        return;
+    }
+
     currentPaymentCategory =
         category;
 
-    const tabLocal =
-        document.getElementById(
-            "tabLocal"
-        );
+    $("tabLocal")?.classList.toggle(
+        "active",
+        category === "local"
+    );
 
-    const tabIntl =
-        document.getElementById(
-            "tabIntl"
-        );
+    $("tabIntl")?.classList.toggle(
+        "active",
+        category === "international"
+    );
 
-    if (tabLocal) {
-        tabLocal.classList.toggle(
-            "active",
-            category === "local"
-        );
-
-        tabLocal.style.borderColor =
-            "var(--border-color)";
-    }
-
-    if (tabIntl) {
-        tabIntl.classList.toggle(
-            "active",
-            category ===
-                "international"
-        );
-
-        tabIntl.style.borderColor =
-            "var(--border-color)";
-    }
-
-    const availableMethods =
+    const methods =
         getPaymentMethodsForCategory(
             category
         );
 
     selectedPaymentMethod =
-        availableMethods.length > 0
-            ? availableMethods[0]
+        methods.length > 0
+            ? methods[0]
             : "";
 
-    const payGridContainer =
-        document.getElementById(
-            "dynamicPaymentMethodsGrid"
-        );
-
-    payGridContainer
-        ?.classList.remove(
-            "hidden"
-        );
+    showElement(
+        "dynamicPaymentMethodsGrid"
+    );
 
     updateDynamicUI();
 
-    if (
-        selectedPaymentMethod
-    ) {
+    if (selectedPaymentMethod) {
         selectPaymentMethod(
             selectedPaymentMethod
         );
+    } else {
+        renderStep2PaymentFields();
     }
+
+    calculateTotal();
 }
 
 
 // ==========================================================================
-// 8. بناء طرق الدفع ديناميكياً
+// 13. بناء طرق الدفع
 // ==========================================================================
 
 function updateDynamicUI() {
 
-    const payGridContainer =
-        document.getElementById(
+    const container =
+        $("dynamicPaymentMethodsGrid");
+
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (!currentPaymentCategory) {
+        hideElement(
             "dynamicPaymentMethodsGrid"
         );
-
-    if (!payGridContainer) {
         return;
     }
 
-    payGridContainer.innerHTML =
-        "";
-
-    const availableMethods =
+    const methods =
         getPaymentMethodsForCategory(
             currentPaymentCategory
         );
 
-    availableMethods.forEach(
-        (method) => {
+    if (!methods.length) {
+        container.innerHTML = `
+            <div class="payment-category-hint">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>
+                    ${
+                        currentLanguage === "ar"
+                            ? "لا توجد طرق دفع متاحة حاليًا."
+                            : "No payment methods are currently available."
+                    }
+                </span>
+            </div>
+        `;
+        return;
+    }
 
-            const btn =
-                document.createElement(
-                    "button"
-                );
+    methods.forEach((method) => {
 
-            btn.type =
-                "button";
+        const button =
+            document.createElement("button");
 
-            btn.className =
-                `pay-btn-compact ${
-                    selectedPaymentMethod ===
-                    method
-                        ? "active"
-                        : ""
-                }`;
+        button.type = "button";
 
-            btn.onclick = () =>
-                selectPaymentMethod(
-                    method
-                );
+        button.className =
+            "pay-btn-compact" +
+            (
+                selectedPaymentMethod === method
+                    ? " active"
+                    : ""
+            );
 
-            let iconClass =
-                "fa-solid fa-wallet";
+        button.addEventListener(
+            "click",
+            () =>
+                selectPaymentMethod(method)
+        );
 
-            if (
-                method ===
-                    "تحويل بنكي" ||
-                String(method).includes(
-                    "بنك"
-                )
-            ) {
-                iconClass =
-                    "fa-solid fa-building-columns";
+        const code =
+            normalizePaymentMethodCode(
+                method
+            );
 
-            } else if (
-                method ===
-                    "المحافظ الرقمية" ||
-                String(method).includes(
-                    "محفظ"
-                )
-            ) {
-                iconClass =
-                    "fa-solid fa-mobile-screen-button";
+        let icon =
+            "fa-solid fa-wallet";
 
-            } else if (
-                String(method)
-                    .toUpperCase()
-                    .includes("USDT")
-            ) {
-                iconClass =
-                    "fa-solid fa-coins";
-
-            } else if (
-                String(method)
-                    .toLowerCase()
-                    .includes("paypal")
-            ) {
-                iconClass =
-                    "fa-brands fa-paypal";
-
-            } else if (
-                String(method)
-                    .toLowerCase()
-                    .includes("western") ||
-                String(method).includes(
-                    "ويسترن"
-                )
-            ) {
-                iconClass =
-                    "fa-solid fa-globe";
-            }
-
-            btn.innerHTML =
-                `<i class="${iconClass}"></i> ${escapeHtml(method)}`;
-
-            payGridContainer
-                .appendChild(btn);
+        if (code === "bank") {
+            icon =
+                "fa-solid fa-building-columns";
         }
-    );
+
+        if (code === "wallet") {
+            icon =
+                "fa-solid fa-mobile-screen-button";
+        }
+
+        if (code === "usdt") {
+            icon =
+                "fa-solid fa-coins";
+        }
+
+        if (code === "paypal") {
+            icon =
+                "fa-brands fa-paypal";
+        }
+
+        if (code === "western") {
+            icon =
+                "fa-solid fa-globe";
+        }
+
+        button.innerHTML = `
+            <i class="${icon}"></i>
+            ${escapeHtml(method)}
+        `;
+
+        container.appendChild(button);
+    });
 }
 
 
 // ==========================================================================
-// 9. اختيار طريقة الدفع
+// 14. اختيار طريقة الدفع
 // ==========================================================================
 
-function selectPaymentMethod(
-    method
-) {
+function selectPaymentMethod(method) {
+
     selectedPaymentMethod =
         method;
 
@@ -886,150 +1108,123 @@ function selectPaymentMethod(
 
 
 // ==========================================================================
-// 10. حساب الكمية
+// 15. الكمية
 // ==========================================================================
+
+function clampQuantity(value) {
+
+    let quantity =
+        Number(value) || 0;
+
+    if (quantity < 0) {
+        quantity = 0;
+    }
+
+    if (
+        maxLimit > 0 &&
+        quantity > maxLimit
+    ) {
+        quantity = maxLimit;
+    }
+
+    return quantity;
+}
+
+function syncQuantityUI() {
+
+    currentQty =
+        clampQuantity(currentQty);
+
+    const input =
+        $("quantityInput");
+
+    if (input) {
+        input.value =
+            currentQty > 0
+                ? currentQty.toLocaleString("en-US")
+                : "";
+    }
+
+    const range =
+        $("qtyRange");
+
+    if (range) {
+        range.value =
+            String(currentQty);
+    }
+
+    const inline =
+        $("inlineQtyInput");
+
+    if (inline) {
+        inline.value =
+            currentQty > 0
+                ? currentQty.toLocaleString("en-US")
+                : "";
+    }
+}
 
 function adjustQty(amount) {
 
     if (!selectedPlatform) {
-        selectPlatform(
-            "PlayStation"
-        );
+        selectPlatform("PlayStation");
     }
 
-    currentQty +=
-        Number(amount || 0);
-
-    if (currentQty < 0) {
-        currentQty = 0;
-    }
-
-    const qtyInput =
-        document.getElementById(
-            "quantityInput"
+    currentQty =
+        clampQuantity(
+            currentQty +
+            Number(amount || 0)
         );
 
-    if (qtyInput) {
-        qtyInput.value =
-            currentQty > 0
-                ? currentQty.toLocaleString(
-                    "en-US"
-                )
-                : "";
-
-        qtyInput.style.borderColor =
-            "var(--border-color)";
-    }
-
-    const range =
-        document.getElementById(
-            "qtyRange"
-        );
-
-    if (range) {
-        range.value =
-            currentQty;
-    }
-
+    syncQuantityUI();
     calculateTotal();
 }
 
-
-// ==========================================================================
-// 11. إدخال الكمية
-// ==========================================================================
-
-function formatAndCalculate(
-    input
-) {
+function formatAndCalculate(input) {
 
     if (!selectedPlatform) {
-        selectPlatform(
-            "PlayStation"
-        );
+        selectPlatform("PlayStation");
     }
 
-    let val =
-        input.value.replace(
-            /[^0-9]/g,
-            ""
-        );
-
-    currentQty =
-        val === ""
-            ? 0
-            : parseInt(
-                val,
-                10
-            );
-
-    input.value =
-        currentQty > 0
-            ? currentQty.toLocaleString(
-                "en-US"
+    const raw =
+        String(input?.value || "")
+            .replace(/[٠-٩]/g, (d) =>
+                String("٠١٢٣٤٥٦٧٨٩".indexOf(d))
             )
-            : "";
+            .replace(/[^0-9]/g, "");
 
-    input.style.borderColor =
-        "var(--border-color)";
-
-    const range =
-        document.getElementById(
-            "qtyRange"
+    currentQty =
+        clampQuantity(
+            raw === ""
+                ? 0
+                : parseInt(raw, 10)
         );
 
-    if (range) {
-        range.value =
-            currentQty;
-    }
-
+    syncQuantityUI();
     calculateTotal();
 }
 
-
-// ==========================================================================
-// 12. Slider
-// ==========================================================================
-
-function sliderChanged(
-    slider
-) {
+function sliderChanged(slider) {
 
     if (!selectedPlatform) {
-        selectPlatform(
-            "PlayStation"
-        );
+        selectPlatform("PlayStation");
     }
 
     currentQty =
-        parseInt(
-            slider.value,
-            10
-        ) || 0;
-
-    const qtyInput =
-        document.getElementById(
-            "quantityInput"
+        clampQuantity(
+            parseInt(
+                slider?.value || "0",
+                10
+            )
         );
 
-    if (qtyInput) {
-        qtyInput.value =
-            currentQty > 0
-                ? currentQty.toLocaleString(
-                    "en-US"
-                )
-                : "";
-
-        qtyInput.style.borderColor =
-            "var(--border-color)";
-    }
-
+    syncQuantityUI();
     calculateTotal();
 }
 
 
 // ==========================================================================
-// 13. حساب السعر
+// 16. الحساب
 // ==========================================================================
 
 function calculateTotal() {
@@ -1039,118 +1234,136 @@ function calculateTotal() {
     }
 
     const totalEl =
-        document.getElementById(
-            "totalAmountText"
-        );
+        $("totalAmountText");
 
-    if (!totalEl) {
-        return;
-    }
+    if (!totalEl) return;
 
     const millions =
         currentQty / 1000000;
 
     const totalSar =
-        millions * Number(
-            currentRate || 0
-        );
+        millions *
+        Number(currentRate || 0);
 
-    const isDollar =
+    if (
         currentPaymentCategory ===
-        "international";
-
-    if (isDollar) {
+        "international"
+    ) {
 
         const totalUsd =
             totalSar / 3.75;
 
-        totalEl.innerHTML =
+        totalEl.textContent =
             `$${totalUsd.toFixed(2)}`;
 
     } else {
 
-        totalEl.innerHTML =
+        totalEl.textContent =
             `${totalSar.toFixed(2)} ر.س`;
+    }
+
+    const reviewTotal =
+        $("revTotal");
+
+    if (reviewTotal) {
+        reviewTotal.textContent =
+            totalEl.textContent;
     }
 }
 
 
 // ==========================================================================
-// 14. حقول الدفع
+// 17. حقول الدفع
 // ==========================================================================
 
 function renderStep2PaymentFields() {
 
     const container =
-        document.getElementById(
-            "step2PaymentFieldsContainer"
-        );
+        $("step2PaymentFieldsContainer");
 
-    if (!container) {
-        return;
-    }
+    if (!container) return;
 
     const method =
         getSelectedPaymentCode();
 
-    // ------------------------------------------------------
-    // Bank
-    // ------------------------------------------------------
+    if (!method) {
+        container.innerHTML = "";
+        return;
+    }
 
     if (method === "bank") {
 
-        const banksList =
-            Array.isArray(
-                storeSettings.banks
-            )
+        const banks =
+            Array.isArray(storeSettings.banks)
                 ? storeSettings.banks
                 : [];
 
-        const optionsHtml =
-            banksList
-                .map(
+        const options =
+            banks.length
+                ? banks.map(
                     (bank) =>
                         `<option value="${escapeHtml(bank)}">${escapeHtml(bank)}</option>`
-                )
-                .join("");
+                ).join("")
+                : `
+                    <option value="">
+                        ${
+                            currentLanguage === "ar"
+                                ? "اختر البنك"
+                                : "Select bank"
+                        }
+                    </option>
+                `;
 
         container.innerHTML = `
             <label class="field-label">
-                اسم البنك المحول إليه
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "اسم البنك المحول إليه"
+                        : "Bank Name"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <select id="bankNameSelect" required>
-                    ${optionsHtml}
+                    ${options}
                 </select>
             </div>
 
             <label class="field-label">
-                الاسم الكامل للحساب البنكي
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "الاسم الكامل للحساب البنكي"
+                        : "Full Account Name"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <input
                     type="text"
                     id="accountName"
-                    placeholder="الاسم كما في الحساب البنكي"
                     required
+                    placeholder="${
+                        currentLanguage === "ar"
+                            ? "الاسم كما في الحساب البنكي"
+                            : "Name as shown on bank account"
+                    }"
                 >
             </div>
 
             <label class="field-label">
-                رقم الإيبان (IBAN)
-                <span style="color:#ef4444">*</span>:
+                IBAN
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <input
                     type="text"
                     id="iban"
-                    placeholder="SA0000000000000000000000"
                     required
+                    placeholder="SA0000000000000000000000"
+                    autocomplete="off"
                 >
             </div>
         `;
@@ -1158,42 +1371,42 @@ function renderStep2PaymentFields() {
         return;
     }
 
-    // ------------------------------------------------------
-    // Wallet
-    // ------------------------------------------------------
-
     if (method === "wallet") {
 
-        const walletsList =
-            Array.isArray(
-                storeSettings.wallets
-            )
+        const wallets =
+            Array.isArray(storeSettings.wallets)
                 ? storeSettings.wallets
                 : [];
 
-        const optionsHtml =
-            walletsList
-                .map(
-                    (wallet) =>
-                        `<option value="${escapeHtml(wallet)}">${escapeHtml(wallet)}</option>`
-                )
-                .join("");
+        const options =
+            wallets.map(
+                (wallet) =>
+                    `<option value="${escapeHtml(wallet)}">${escapeHtml(wallet)}</option>`
+            ).join("");
 
         container.innerHTML = `
             <label class="field-label">
-                اسم المحفظة الرقمية
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "اسم المحفظة الرقمية"
+                        : "Digital Wallet"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <select id="walletTypeSelect" required>
-                    ${optionsHtml}
+                    ${options}
                 </select>
             </div>
 
             <label class="field-label">
-                رقم الجوال المرتبط بالمحفظة
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "رقم الجوال المرتبط بالمحفظة"
+                        : "Wallet Phone Number"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
@@ -1201,6 +1414,7 @@ function renderStep2PaymentFields() {
                     type="tel"
                     id="walletNumber"
                     placeholder="9665xxxxxxxx"
+                    inputmode="numeric"
                     oninput="convertArabicNumbersToEnglish(this)"
                     required
                 >
@@ -1210,23 +1424,24 @@ function renderStep2PaymentFields() {
         return;
     }
 
-    // ------------------------------------------------------
-    // USDT
-    // ------------------------------------------------------
-
     if (method === "usdt") {
 
         container.innerHTML = `
             <label class="field-label">
-                عنوان المحفظة (USDT TRC20)
-                <span style="color:#ef4444">*</span>:
+                USDT TRC20
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <input
                     type="text"
                     id="usdtWalletType"
-                    placeholder="أدخل عنوان محفظة USDT الخاص بك"
+                    placeholder="${
+                        currentLanguage === "ar"
+                            ? "أدخل عنوان محفظة USDT"
+                            : "Enter your USDT wallet address"
+                    }"
+                    autocomplete="off"
                     required
                 >
             </div>
@@ -1235,16 +1450,12 @@ function renderStep2PaymentFields() {
         return;
     }
 
-    // ------------------------------------------------------
-    // PayPal
-    // ------------------------------------------------------
-
     if (method === "paypal") {
 
         container.innerHTML = `
             <label class="field-label">
-                بريد PayPal الإلكتروني
-                <span style="color:#ef4444">*</span>:
+                PayPal
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
@@ -1260,16 +1471,16 @@ function renderStep2PaymentFields() {
         return;
     }
 
-    // ------------------------------------------------------
-    // Western Union
-    // ------------------------------------------------------
-
     if (method === "western") {
 
         container.innerHTML = `
             <label class="field-label">
-                الاسم الكامل بالإنجليزية حسب الهوية
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "الاسم الكامل بالإنجليزية"
+                        : "Full Name in English"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
@@ -1282,15 +1493,23 @@ function renderStep2PaymentFields() {
             </div>
 
             <label class="field-label">
-                الدولة
-                <span style="color:#ef4444">*</span>:
+                ${
+                    currentLanguage === "ar"
+                        ? "الدولة"
+                        : "Country"
+                }
+                <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <input
                     type="text"
                     id="wuCountry"
-                    placeholder="مثال: Saudi Arabia"
+                    placeholder="${
+                        currentLanguage === "ar"
+                            ? "مثال: Saudi Arabia"
+                            : "Example: Saudi Arabia"
+                    }"
                     required
                 >
             </div>
@@ -1304,33 +1523,177 @@ function renderStep2PaymentFields() {
 
 
 // ==========================================================================
-// 15. التنقل
+// 18. بيانات الدفع
 // ==========================================================================
 
-function showScreen(
-    screenId
-) {
+function getCurrentPayoutDataFromForm() {
+
+    const method =
+        getSelectedPaymentCode();
+
+    switch (method) {
+
+        case "bank":
+            return {
+                payoutType: "local",
+                method: "bank",
+                bankName:
+                    $("bankNameSelect")?.value?.trim() || "",
+                fullName:
+                    $("accountName")?.value?.trim() || "",
+                iban:
+                    $("iban")?.value?.trim() || ""
+            };
+
+        case "wallet":
+            return {
+                payoutType: "local",
+                method: "wallet",
+                walletName:
+                    $("walletTypeSelect")?.value?.trim() || "",
+                phone:
+                    $("walletNumber")?.value?.trim() || ""
+            };
+
+        case "usdt":
+            return {
+                payoutType: "international",
+                method: "usdt",
+                wallet:
+                    $("usdtWalletType")?.value?.trim() || ""
+            };
+
+        case "paypal":
+            return {
+                payoutType: "international",
+                method: "paypal",
+                email:
+                    $("paypalEmail")?.value?.trim() || ""
+            };
+
+        case "western":
+            return {
+                payoutType: "international",
+                method: "western",
+                fullNameEnglish:
+                    $("wuName")?.value?.trim() || "",
+                country:
+                    $("wuCountry")?.value?.trim() || ""
+            };
+
+        default:
+            return {
+                payoutType: "",
+                method: ""
+            };
+    }
+}
+
+function getPayoutDetailsObject() {
+    return getCurrentPayoutDataFromForm();
+}
+
+
+// ==========================================================================
+// 19. شاشة الخطوة
+// ==========================================================================
+
+function getCurrentStepNumber() {
+
+    if (!$("step1Screen")?.classList.contains("hidden")) {
+        return 1;
+    }
+
+    if (!$("step2Screen")?.classList.contains("hidden")) {
+        return 2;
+    }
+
+    if (!$("step3ReviewScreen")?.classList.contains("hidden")) {
+        return 3;
+    }
+
+    if (!$("step4SuccessScreen")?.classList.contains("hidden")) {
+        return 4;
+    }
+
+    return 1;
+}
+
+function updateProgressUI(step) {
+
+    const titles = {
+        1: "step1Title",
+        2: "step2Title",
+        3: "step3Title",
+        4: "step4Title"
+    };
+
+    const titleKey =
+        titles[step] || titles[1];
+
+    const dictionary =
+        translations[currentLanguage];
+
+    setText(
+        "currentStepTitle",
+        dictionary[titleKey]
+    );
+
+    setText(
+        "currentStepCount",
+        `${step} / 4`
+    );
+
+    const fill =
+        $("orderProgressFill");
+
+    if (fill) {
+        fill.style.width =
+            `${((step - 1) / 3) * 100}%`;
+    }
+
+    document
+        .querySelectorAll(".progress-step")
+        .forEach((item) => {
+
+            const itemStep =
+                Number(item.dataset.step);
+
+            item.classList.toggle(
+                "active",
+                itemStep <= step
+            );
+        });
+}
+
+function showScreen(screenId) {
 
     [
         "step1Screen",
         "step2Screen",
         "step3ReviewScreen",
         "step4SuccessScreen"
-    ].forEach(
-        (id) => {
-            document
-                .getElementById(id)
-                ?.classList.add(
-                    "hidden"
-                );
-        }
-    );
+    ].forEach((id) => {
+        $(id)?.classList.add("hidden");
+    });
 
-    document
-        .getElementById(screenId)
-        ?.classList.remove(
-            "hidden"
-        );
+    $(screenId)?.classList.remove("hidden");
+
+    let step = 1;
+
+    if (screenId === "step2Screen") {
+        step = 2;
+    }
+
+    if (screenId === "step3ReviewScreen") {
+        step = 3;
+    }
+
+    if (screenId === "step4SuccessScreen") {
+        step = 4;
+    }
+
+    updateProgressUI(step);
 
     window.scrollTo({
         top: 0,
@@ -1340,37 +1703,64 @@ function showScreen(
 
 
 // ==========================================================================
-// 16. الانتقال للخطوة الثانية
+// 20. الانتقال للخطوة الثانية
 // ==========================================================================
+
+function markInvalid(element) {
+
+    if (!element) return;
+
+    element.style.borderColor =
+        "#ef4444";
+
+    element.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+}
+
+function clearInvalidFields() {
+
+    document
+        .querySelectorAll(
+            "#step2Screen input, #step2Screen select"
+        )
+        .forEach((field) => {
+            field.style.borderColor =
+                "var(--border-color)";
+        });
+}
 
 function goToStep2() {
 
     if (!selectedPlatform) {
 
-        document
-            .querySelector(
+        const platform =
+            document.querySelector(
                 ".platforms-flex"
-            )
-            ?.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
+            );
+
+        platform?.scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
 
         return;
     }
 
-    if (!currentPaymentCategory) {
+    if (
+        !currentPaymentCategory ||
+        !selectedPaymentMethod
+    ) {
 
-        const payBox =
-            document.getElementById(
-                "paymentCategoryCard"
-            );
+        const paymentBox =
+            $("paymentCategoryCard");
 
-        if (payBox) {
-            payBox.style.borderColor =
+        if (paymentBox) {
+            paymentBox.style.borderColor =
                 "#ef4444";
 
-            payBox.scrollIntoView({
+            paymentBox.scrollIntoView({
                 behavior: "smooth",
                 block: "center"
             });
@@ -1380,29 +1770,16 @@ function goToStep2() {
     }
 
     if (
-        currentQty <
-            minLimit ||
+        currentQty < minLimit ||
         (
             maxLimit > 0 &&
-            currentQty >
-                maxLimit
+            currentQty > maxLimit
         )
     ) {
 
-        const qtyWrap =
-            document.getElementById(
-                "quantityInput"
-            );
-
-        if (qtyWrap) {
-            qtyWrap.style.borderColor =
-                "#ef4444";
-
-            qtyWrap.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
+        markInvalid(
+            $("quantityInput")
+        );
 
         return;
     }
@@ -1416,7 +1793,162 @@ function goToStep2() {
 
 
 // ==========================================================================
-// 17. عرض تفاصيل الدفع في المراجعة
+// 21. التحقق من الخطوة الثانية
+// ==========================================================================
+
+function validateStep2() {
+
+    clearInvalidFields();
+
+    const name =
+        $("customerName");
+
+    const phone =
+        $("customerPhone");
+
+    const email =
+        $("eaEmail");
+
+    const password =
+        $("eaPass");
+
+    const code1 =
+        $("code1");
+
+    const code2 =
+        $("code2");
+
+    const code3 =
+        $("code3");
+
+    const fields = [
+        name,
+        phone,
+        email,
+        password,
+        code1,
+        code2,
+        code3
+    ];
+
+    for (const field of fields) {
+
+        if (
+            !field ||
+            !String(field.value || "").trim()
+        ) {
+            markInvalid(field);
+            return false;
+        }
+    }
+
+    const phoneValue =
+        phone.value
+            .replace(/\s/g, "")
+            .replace(/^0/, "");
+
+    if (
+        !/^5\d{8}$/.test(phoneValue) &&
+        !/^9665\d{8}$/.test(phoneValue)
+    ) {
+        markInvalid(phone);
+        return false;
+    }
+
+    if (!String(password.value).trim()) {
+        markInvalid(password);
+        return false;
+    }
+
+    if (
+        !/[A-Z]/.test(password.value)
+    ) {
+        markInvalid(password);
+        return false;
+    }
+
+    const codes = [
+        code1.value.trim(),
+        code2.value.trim(),
+        code3.value.trim()
+    ];
+
+    if (
+        codes.some(
+            (code) =>
+                code.length < 6 ||
+                code.length > 11
+        )
+    ) {
+        const invalid =
+            [
+                code1,
+                code2,
+                code3
+            ].find(
+                (field) =>
+                    field.value.trim().length < 6 ||
+                    field.value.trim().length > 11
+            );
+
+        markInvalid(invalid);
+        return false;
+    }
+
+    if (
+        new Set(codes).size !== 3
+    ) {
+        markInvalid(code3);
+        return false;
+    }
+
+    if (
+        storeSettings.termsEnabled !== false
+    ) {
+
+        const terms =
+            $("termsCheck");
+
+        if (
+            !terms ||
+            !terms.checked
+        ) {
+
+            if (terms?.parentElement) {
+                terms.parentElement.style.color =
+                    "#ef4444";
+            }
+
+            terms?.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+            return false;
+        }
+    }
+
+    const paymentFields =
+        document.querySelectorAll(
+            "#step2PaymentFieldsContainer input, #step2PaymentFieldsContainer select"
+        );
+
+    for (const field of paymentFields) {
+
+        if (
+            !String(field.value || "").trim()
+        ) {
+            markInvalid(field);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+// ==========================================================================
+// 22. تفاصيل الدفع في المراجعة
 // ==========================================================================
 
 function buildPaymentDetailsHTML() {
@@ -1424,28 +1956,18 @@ function buildPaymentDetailsHTML() {
     const method =
         getSelectedPaymentCode();
 
-    let html = "";
-
     if (method === "bank") {
 
         const bank =
-            document.getElementById(
-                "bankNameSelect"
-            )?.value || "";
+            $("bankNameSelect")?.value || "";
 
         const name =
-            document.getElementById(
-                "accountName"
-            )?.value
-                ?.trim() || "";
+            $("accountName")?.value?.trim() || "";
 
         const iban =
-            document.getElementById(
-                "iban"
-            )?.value
-                ?.trim() || "";
+            $("iban")?.value?.trim() || "";
 
-        html = `
+        return `
             <div class="field-label">
                 طريقة التحويل:
             </div>
@@ -1476,23 +1998,17 @@ function buildPaymentDetailsHTML() {
                 </span>
             </div>
         `;
+    }
 
-    } else if (
-        method === "wallet"
-    ) {
+    if (method === "wallet") {
 
         const wallet =
-            document.getElementById(
-                "walletTypeSelect"
-            )?.value || "";
+            $("walletTypeSelect")?.value || "";
 
         const phone =
-            document.getElementById(
-                "walletNumber"
-            )?.value
-                ?.trim() || "";
+            $("walletNumber")?.value?.trim() || "";
 
-        html = `
+        return `
             <div class="field-label">
                 طريقة التحويل:
             </div>
@@ -1504,40 +2020,32 @@ function buildPaymentDetailsHTML() {
                 </span>
             </div>
         `;
+    }
 
-    } else if (
-        method === "usdt"
-    ) {
+    if (method === "usdt") {
 
-        const addr =
-            document.getElementById(
-                "usdtWalletType"
-            )?.value
-                ?.trim() || "";
+        const wallet =
+            $("usdtWalletType")?.value?.trim() || "";
 
-        html = `
+        return `
             <div class="field-label">
                 طريقة التحويل:
             </div>
 
             <div class="review-value-box">
                 <span>
-                    USDT: ${escapeHtml(addr)}
+                    USDT: ${escapeHtml(wallet)}
                 </span>
             </div>
         `;
+    }
 
-    } else if (
-        method === "paypal"
-    ) {
+    if (method === "paypal") {
 
         const email =
-            document.getElementById(
-                "paypalEmail"
-            )?.value
-                ?.trim() || "";
+            $("paypalEmail")?.value?.trim() || "";
 
-        html = `
+        return `
             <div class="field-label">
                 طريقة التحويل:
             </div>
@@ -1548,24 +2056,17 @@ function buildPaymentDetailsHTML() {
                 </span>
             </div>
         `;
+    }
 
-    } else if (
-        method === "western"
-    ) {
+    if (method === "western") {
 
         const name =
-            document.getElementById(
-                "wuName"
-            )?.value
-                ?.trim() || "";
+            $("wuName")?.value?.trim() || "";
 
         const country =
-            document.getElementById(
-                "wuCountry"
-            )?.value
-                ?.trim() || "";
+            $("wuCountry")?.value?.trim() || "";
 
-        html = `
+        return `
             <div class="field-label">
                 طريقة التحويل:
             </div>
@@ -1573,749 +2074,194 @@ function buildPaymentDetailsHTML() {
             <div class="review-value-box">
                 <span>
                     Western Union
-                    (${escapeHtml(name)}
-                    - ${escapeHtml(country)})
+                    (${escapeHtml(name)} -
+                    ${escapeHtml(country)})
                 </span>
             </div>
         `;
     }
 
-    return html;
+    return "";
 }
 
 
 // ==========================================================================
-// 18. بيانات الدفع الموحدة
+// 23. تحديث منصة المراجعة
 // ==========================================================================
 
-function getPayoutDetailsObject() {
-    return getCurrentPayoutDataFromForm();
+function updateReviewPlatformUI() {
+
+    const box =
+        $("revPlatformBoxTheme");
+
+    const icon =
+        $("revPlatformIcon");
+
+    const name =
+        $("revPlatformName");
+
+    if (!box || !icon) {
+        return;
+    }
+
+    box.className =
+        "review-summary-item platform-summary";
+
+    if (selectedPlatform === "PlayStation") {
+
+        box.classList.add("ps-theme");
+
+        icon.className =
+            "fa-brands fa-playstation";
+    }
+
+    if (selectedPlatform === "Xbox") {
+
+        box.classList.add("xbox-theme");
+
+        icon.className =
+            "fa-brands fa-xbox";
+    }
+
+    if (selectedPlatform === "PC") {
+
+        box.classList.add("pc-theme");
+
+        icon.className =
+            "fa-solid fa-desktop";
+    }
+
+    if (name) {
+        name.textContent =
+            selectedPlatform || "--";
+    }
 }
 
 
 // ==========================================================================
-// 19. مراجعة الطلب
+// 24. المراجعة
 // ==========================================================================
 
 function goToReview() {
 
-    const nameInput =
-        document.getElementById(
-            "customerName"
-        );
-
-    const phoneInput =
-        document.getElementById(
-            "customerPhone"
-        );
-
-    const emailInput =
-        document.getElementById(
-            "eaEmail"
-        );
-
-    const passInput =
-        document.getElementById(
-            "eaPass"
-        );
-
-    const c1Input =
-        document.getElementById(
-            "code1"
-        );
-
-    const c2Input =
-        document.getElementById(
-            "code2"
-        );
-
-    const c3Input =
-        document.getElementById(
-            "code3"
-        );
-
-    const termsCheck =
-        document.getElementById(
-            "termsCheck"
-        );
-
-    [
-        nameInput,
-        phoneInput,
-        emailInput,
-        passInput,
-        c1Input,
-        c2Input,
-        c3Input
-    ].forEach(
-        (el) => {
-            if (el) {
-                el.style.borderColor =
-                    "var(--border-color)";
-            }
-        }
-    );
-
-    if (
-        !nameInput ||
-        !nameInput.value.trim()
-    ) {
-        if (nameInput) {
-            nameInput.style.borderColor =
-                "#ef4444";
-
-            nameInput.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
+    if (!validateStep2()) {
+        return false;
     }
-
-    if (
-        !phoneInput ||
-        !phoneInput.value.trim()
-    ) {
-        if (phoneInput) {
-            phoneInput.style.borderColor =
-                "#ef4444";
-
-            phoneInput.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    if (
-        !emailInput ||
-        !emailInput.value.trim()
-    ) {
-        if (emailInput) {
-            emailInput.style.borderColor =
-                "#ef4444";
-
-            emailInput.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    const pass =
-        passInput
-            ? passInput.value.trim()
-            : "";
-
-    const hasUpperCase =
-        /[A-Z]/.test(pass);
-
-    if (!hasUpperCase) {
-        if (passInput) {
-            passInput.style.borderColor =
-                "#ef4444";
-
-            passInput.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    if (
-        !c1Input ||
-        !c1Input.value.trim()
-    ) {
-        if (c1Input) {
-            c1Input.style.borderColor =
-                "#ef4444";
-
-            c1Input.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    if (
-        !c2Input ||
-        !c2Input.value.trim()
-    ) {
-        if (c2Input) {
-            c2Input.style.borderColor =
-                "#ef4444";
-
-            c2Input.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    if (
-        !c3Input ||
-        !c3Input.value.trim()
-    ) {
-        if (c3Input) {
-            c3Input.style.borderColor =
-                "#ef4444";
-
-            c3Input.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    // ------------------------------------------------------
-    // الشروط
-    // ------------------------------------------------------
-
-    if (
-        storeSettings.termsEnabled &&
-        termsCheck &&
-        !termsCheck.checked
-    ) {
-
-        if (termsCheck.parentElement) {
-            termsCheck.parentElement.style.color =
-                "#ef4444";
-        }
-
-        termsCheck.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
-
-        return;
-
-    } else if (termsCheck) {
-
-        if (termsCheck.parentElement) {
-            termsCheck.parentElement.style.color =
-                "inherit";
-        }
-    }
-
-    // ------------------------------------------------------
-    // حقول الدفع
-    // ------------------------------------------------------
-
-    const dynamicFields =
-        document.querySelectorAll(
-            "#step2PaymentFieldsContainer input, #step2PaymentFieldsContainer select"
-        );
-
-    for (
-        const field of dynamicFields
-    ) {
-
-        if (!String(field.value).trim()) {
-
-            field.style.borderColor =
-                "#ef4444";
-
-            field.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-
-            return;
-        }
-    }
-
-    // ------------------------------------------------------
-    // البيانات
-    // ------------------------------------------------------
 
     const name =
-        nameInput.value.trim();
+        $("customerName").value.trim();
 
-    const phoneVal =
-        phoneInput.value.trim();
+    const phone =
+        $("customerPhone").value.trim();
 
     const email =
-        emailInput.value.trim();
+        $("eaEmail").value.trim();
 
-    const c1 =
-        c1Input.value.trim();
+    const password =
+        $("eaPass").value.trim();
 
-    const c2 =
-        c2Input.value.trim();
+    const codes = [
+        $("code1").value.trim(),
+        $("code2").value.trim(),
+        $("code3").value.trim()
+    ];
 
-    const c3 =
-        c3Input.value.trim();
+    updateReviewPlatformUI();
 
-    // ------------------------------------------------------
-    // منصة المراجعة
-    // ------------------------------------------------------
+    setText(
+        "revQty",
+        currentQty.toLocaleString("en-US")
+    );
 
-    const platBox =
-        document.getElementById(
-            "revPlatformBoxTheme"
-        );
+    setText(
+        "revTotal",
+        $("totalAmountText")?.textContent ||
+        "0.00 ر.س"
+    );
 
-    const revIcon =
-        document.getElementById(
-            "revPlatformIcon"
-        );
+    setText(
+        "revEmail",
+        email
+    );
 
-    if (
-        platBox &&
-        revIcon
-    ) {
+    setText(
+        "revPass",
+        password
+    );
 
-        platBox.className =
-            "review-styled-box";
+    setText(
+        "revClientName",
+        name
+    );
 
-        if (
-            selectedPlatform ===
-            "PlayStation"
-        ) {
+    setText(
+        "revClientPhone",
+        phone
+    );
 
-            platBox.classList.add(
-                "ps-theme"
-            );
+    const codesEl =
+        $("revCodes");
 
-            revIcon.className =
-                "fa-brands fa-playstation";
+    if (codesEl) {
 
-        } else if (
-            selectedPlatform ===
-            "Xbox"
-        ) {
-
-            platBox.classList.add(
-                "xbox-theme"
-            );
-
-            revIcon.className =
-                "fa-brands fa-xbox";
-
-        } else if (
-            selectedPlatform ===
-            "PC"
-        ) {
-
-            platBox.classList.add(
-                "pc-theme"
-            );
-
-            revIcon.className =
-                "fa-solid fa-desktop";
-        }
-    }
-
-    // ------------------------------------------------------
-    // عناصر المراجعة
-    // ------------------------------------------------------
-
-    const revQtyEl =
-        document.getElementById(
-            "revQty"
-        );
-
-    const revTotalEl =
-        document.getElementById(
-            "revTotal"
-        );
-
-    const revEmailEl =
-        document.getElementById(
-            "revEmail"
-        );
-
-    const revPassEl =
-        document.getElementById(
-            "revPass"
-        );
-
-    const revCodesEl =
-        document.getElementById(
-            "revCodes"
-        );
-
-    const revClientNameEl =
-        document.getElementById(
-            "revClientName"
-        );
-
-    const revClientPhoneEl =
-        document.getElementById(
-            "revClientPhone"
-        );
-
-    if (revQtyEl) {
-        revQtyEl.innerText =
-            currentQty.toLocaleString(
-                "en-US"
-            );
-    }
-
-    if (revTotalEl) {
-        revTotalEl.innerText =
-            getCurrentDisplayedTotal();
-    }
-
-    if (revEmailEl) {
-        revEmailEl.innerText =
-            email;
-    }
-
-    if (revPassEl) {
-        revPassEl.innerText =
-            pass;
-    }
-
-    if (revCodesEl) {
-
-        revCodesEl.innerHTML = `
+        codesEl.innerHTML = `
             <div class="backup-codes-stack">
+
                 <div class="code-display-row">
                     <span class="code-number-tag">#1</span>
-                    <span>${escapeHtml(c1)}</span>
+                    <span>${escapeHtml(codes[0])}</span>
                 </div>
 
                 <div class="code-display-row">
                     <span class="code-number-tag">#2</span>
-                    <span>${escapeHtml(c2)}</span>
+                    <span>${escapeHtml(codes[1])}</span>
                 </div>
 
                 <div class="code-display-row">
                     <span class="code-number-tag">#3</span>
-                    <span>${escapeHtml(c3)}</span>
+                    <span>${escapeHtml(codes[2])}</span>
                 </div>
+
             </div>
         `;
     }
 
-    if (revClientNameEl) {
-        revClientNameEl.innerText =
-            name;
-    }
+    const details =
+        $("revSpecificDetailsContainer");
 
-    if (revClientPhoneEl) {
-        revClientPhoneEl.innerText =
-            phoneVal;
-    }
-
-    const revSpecDetails =
-        document.getElementById(
-            "revSpecificDetailsContainer"
-        );
-
-    if (revSpecDetails) {
-        revSpecDetails.innerHTML =
+    if (details) {
+        details.innerHTML =
             buildPaymentDetailsHTML();
     }
 
-    // ------------------------------------------------------
-    // تعبئة حقول التعديل
-    // ------------------------------------------------------
+    // بيانات التعديل
+    $("editEaEmail").value =
+        email;
 
-    const editEaEmailEl =
-        document.getElementById(
-            "editEaEmail"
-        );
+    $("editEaPass").value =
+        password;
 
-    const editEaPassEl =
-        document.getElementById(
-            "editEaPass"
-        );
+    $("editCode1").value =
+        codes[0];
 
-    const editCode1El =
-        document.getElementById(
-            "editCode1"
-        );
+    $("editCode2").value =
+        codes[1];
 
-    const editCode2El =
-        document.getElementById(
-            "editCode2"
-        );
+    $("editCode3").value =
+        codes[2];
 
-    const editCode3El =
-        document.getElementById(
-            "editCode3"
-        );
+    $("editClientName").value =
+        name;
 
-    const editClientNameEl =
-        document.getElementById(
-            "editClientName"
-        );
+    $("editClientPhone").value =
+        phone;
 
-    const editClientPhoneEl =
-        document.getElementById(
-            "editClientPhone"
-        );
+    $("inlineQtyInput").value =
+        currentQty.toLocaleString("en-US");
 
-    const inlineQtyInputEl =
-        document.getElementById(
-            "inlineQtyInput"
-        );
+    renderInlinePayoutEdit();
 
-    if (editEaEmailEl) {
-        editEaEmailEl.value =
-            email;
-    }
-
-    if (editEaPassEl) {
-        editEaPassEl.value =
-            pass;
-    }
-
-    if (editCode1El) {
-        editCode1El.value =
-            c1;
-    }
-
-    if (editCode2El) {
-        editCode2El.value =
-            c2;
-    }
-
-    if (editCode3El) {
-        editCode3El.value =
-            c3;
-    }
-
-    if (editClientNameEl) {
-        editClientNameEl.value =
-            name;
-    }
-
-    if (editClientPhoneEl) {
-        editClientPhoneEl.value =
-            phoneVal;
-    }
-
-    if (inlineQtyInputEl) {
-        inlineQtyInputEl.value =
-            currentQty.toLocaleString(
-                "en-US"
-            );
-    }
-
-    // ------------------------------------------------------
-    // تعديل الدفع
-    // ------------------------------------------------------
-
-    const payoutWrap =
-        document.getElementById(
-            "inlinePayoutEditWrap"
-        );
-
-    if (payoutWrap) {
-
-        const method =
-            getSelectedPaymentCode();
-
-        if (method === "bank") {
-
-            payoutWrap.innerHTML = `
-                <label class="field-label">
-                    اسم البنك:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editBankName"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "bankNameSelect"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-
-                <label class="field-label">
-                    الاسم:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editAccountName"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "accountName"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-
-                <label class="field-label">
-                    الإيبان:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editIban"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "iban"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-            `;
-
-        } else if (
-            method === "wallet"
-        ) {
-
-            payoutWrap.innerHTML = `
-                <label class="field-label">
-                    اسم المحفظة:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editWalletName"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "walletTypeSelect"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-
-                <label class="field-label">
-                    رقم الجوال للمحفظة:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="tel"
-                        id="editWalletNumber"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "walletNumber"
-                            )?.value || ""
-                        )}"
-                        oninput="convertArabicNumbersToEnglish(this)"
-                    >
-                </div>
-            `;
-
-        } else if (
-            method === "usdt"
-        ) {
-
-            payoutWrap.innerHTML = `
-                <label class="field-label">
-                    عنوان USDT:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editUsdtWalletType"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "usdtWalletType"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-            `;
-
-        } else if (
-            method === "paypal"
-        ) {
-
-            payoutWrap.innerHTML = `
-                <label class="field-label">
-                    بريد PayPal:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="email"
-                        id="editPaypalEmail"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "paypalEmail"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-            `;
-
-        } else if (
-            method === "western"
-        ) {
-
-            payoutWrap.innerHTML = `
-                <label class="field-label">
-                    الاسم بالإنجليزية:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editWuName"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "wuName"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-
-                <label class="field-label">
-                    الدولة:
-                </label>
-
-                <div class="input-box-wrap">
-                    <input
-                        type="text"
-                        id="editWuCountry"
-                        value="${escapeHtml(
-                            document.getElementById(
-                                "wuCountry"
-                            )?.value || ""
-                        )}"
-                    >
-                </div>
-            `;
-        }
-    }
-
-    showScreen(
-        "step3ReviewScreen"
-    );
-}
-
-
-// ==========================================================================
-// 20. تعديل الكل
-// ==========================================================================
-
-function toggleEditMode() {
-
-    isEditingAll =
-        !isEditingAll;
-
-    const btn =
-        document.getElementById(
-            "editToggleBtn"
-        );
+    isEditingAll = false;
 
     [
         "editPlatformQtyPanel",
@@ -2323,569 +2269,580 @@ function toggleEditMode() {
         "clientEditMode",
         "payoutEditMode",
         "saveEditsButtonWrap"
-    ].forEach(
-        (id) => {
-            document
-                .getElementById(id)
-                ?.classList.toggle(
-                    "hidden",
-                    !isEditingAll
-                );
-        }
-    );
+    ].forEach(hideElement);
 
     [
         "eaViewMode",
         "clientViewMode",
         "payoutViewMode"
-    ].forEach(
-        (id) => {
-            document
-                .getElementById(id)
-                ?.classList.toggle(
-                    "hidden",
-                    isEditingAll
-                );
-        }
+    ].forEach(showElement);
+
+    resetEditButton();
+
+    showScreen(
+        "step3ReviewScreen"
     );
 
-    if (isEditingAll) {
+    return false;
+}
 
-        if (btn) {
 
-            btn.innerHTML =
-                `<i class="fa-solid fa-xmark"></i> إغلاق التعديل`;
+// ==========================================================================
+// 25. وضع التعديل
+// ==========================================================================
 
-            btn.style.background =
-                "rgba(239, 68, 68, 0.15)";
+function resetEditButton() {
 
-            btn.style.borderColor =
-                "var(--pc-color)";
+    const button =
+        $("editToggleBtn");
 
-            btn.style.color =
-                "var(--pc-color)";
-        }
+    if (!button) return;
 
-        return;
-    }
+    button.innerHTML = `
+        <i class="fa-solid fa-pen-to-square"></i>
+        <span data-i18n="edit">
+            ${translations[currentLanguage].edit}
+        </span>
+    `;
 
-    // ------------------------------------------------------
-    // حفظ التعديلات في الصفحة
-    // ------------------------------------------------------
+    button.style.background =
+        "";
 
-    const newEmail =
-        document.getElementById(
-            "editEaEmail"
-        )?.value || "";
+    button.style.borderColor =
+        "";
 
-    const newPass =
-        document.getElementById(
-            "editEaPass"
-        )?.value || "";
+    button.style.color =
+        "";
+}
 
-    const newC1 =
-        document.getElementById(
-            "editCode1"
-        )?.value || "";
+function renderInlinePayoutEdit() {
 
-    const newC2 =
-        document.getElementById(
-            "editCode2"
-        )?.value || "";
+    const wrap =
+        $("inlinePayoutEditWrap");
 
-    const newC3 =
-        document.getElementById(
-            "editCode3"
-        )?.value || "";
-
-    const newName =
-        document.getElementById(
-            "editClientName"
-        )?.value || "";
-
-    const newPhone =
-        document.getElementById(
-            "editClientPhone"
-        )?.value || "";
-
-    if (
-        document.getElementById(
-            "eaEmail"
-        )
-    ) {
-        document.getElementById(
-            "eaEmail"
-        ).value =
-            newEmail;
-    }
-
-    if (
-        document.getElementById(
-            "eaPass"
-        )
-    ) {
-        document.getElementById(
-            "eaPass"
-        ).value =
-            newPass;
-    }
-
-    if (
-        document.getElementById(
-            "customerName"
-        )
-    ) {
-        document.getElementById(
-            "customerName"
-        ).value =
-            newName;
-    }
-
-    if (
-        document.getElementById(
-            "customerPhone"
-        )
-    ) {
-        document.getElementById(
-            "customerPhone"
-        ).value =
-            newPhone;
-    }
-
-    const revEmailEl =
-        document.getElementById(
-            "revEmail"
-        );
-
-    const revPassEl =
-        document.getElementById(
-            "revPass"
-        );
-
-    const revCodesEl =
-        document.getElementById(
-            "revCodes"
-        );
-
-    const revClientNameEl =
-        document.getElementById(
-            "revClientName"
-        );
-
-    const revClientPhoneEl =
-        document.getElementById(
-            "revClientPhone"
-        );
-
-    if (revEmailEl) {
-        revEmailEl.innerText =
-            newEmail;
-    }
-
-    if (revPassEl) {
-        revPassEl.innerText =
-            newPass;
-    }
-
-    if (revCodesEl) {
-
-        revCodesEl.innerHTML = `
-            <div class="backup-codes-stack">
-                <div class="code-display-row">
-                    <span class="code-number-tag">#1</span>
-                    <span>${escapeHtml(newC1)}</span>
-                </div>
-
-                <div class="code-display-row">
-                    <span class="code-number-tag">#2</span>
-                    <span>${escapeHtml(newC2)}</span>
-                </div>
-
-                <div class="code-display-row">
-                    <span class="code-number-tag">#3</span>
-                    <span>${escapeHtml(newC3)}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    if (revClientNameEl) {
-        revClientNameEl.innerText =
-            newName;
-    }
-
-    if (revClientPhoneEl) {
-        revClientPhoneEl.innerText =
-            newPhone;
-    }
+    if (!wrap) return;
 
     const method =
         getSelectedPaymentCode();
 
     if (method === "bank") {
 
-        const bankName =
-            document.getElementById(
-                "editBankName"
-            )?.value || "";
+        wrap.innerHTML = `
+            <label class="field-label">اسم البنك:</label>
 
-        const accountName =
-            document.getElementById(
-                "editAccountName"
-            )?.value || "";
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editBankName"
+                    value="${escapeHtml(
+                        $("bankNameSelect")?.value || ""
+                    )}"
+                >
+            </div>
+
+            <label class="field-label">الاسم:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editAccountName"
+                    value="${escapeHtml(
+                        $("accountName")?.value || ""
+                    )}"
+                >
+            </div>
+
+            <label class="field-label">الإيبان:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editIban"
+                    value="${escapeHtml(
+                        $("iban")?.value || ""
+                    )}"
+                >
+            </div>
+        `;
+
+        return;
+    }
+
+    if (method === "wallet") {
+
+        wrap.innerHTML = `
+            <label class="field-label">اسم المحفظة:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editWalletName"
+                    value="${escapeHtml(
+                        $("walletTypeSelect")?.value || ""
+                    )}"
+                >
+            </div>
+
+            <label class="field-label">رقم الجوال:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="tel"
+                    id="editWalletNumber"
+                    value="${escapeHtml(
+                        $("walletNumber")?.value || ""
+                    )}"
+                    oninput="convertArabicNumbersToEnglish(this)"
+                >
+            </div>
+        `;
+
+        return;
+    }
+
+    if (method === "usdt") {
+
+        wrap.innerHTML = `
+            <label class="field-label">عنوان USDT:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editUsdtWalletType"
+                    value="${escapeHtml(
+                        $("usdtWalletType")?.value || ""
+                    )}"
+                >
+            </div>
+        `;
+
+        return;
+    }
+
+    if (method === "paypal") {
+
+        wrap.innerHTML = `
+            <label class="field-label">بريد PayPal:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="email"
+                    id="editPaypalEmail"
+                    value="${escapeHtml(
+                        $("paypalEmail")?.value || ""
+                    )}"
+                >
+            </div>
+        `;
+
+        return;
+    }
+
+    if (method === "western") {
+
+        wrap.innerHTML = `
+            <label class="field-label">الاسم بالإنجليزية:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editWuName"
+                    value="${escapeHtml(
+                        $("wuName")?.value || ""
+                    )}"
+                >
+            </div>
+
+            <label class="field-label">الدولة:</label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="editWuCountry"
+                    value="${escapeHtml(
+                        $("wuCountry")?.value || ""
+                    )}"
+                >
+            </div>
+        `;
+
+        return;
+    }
+
+    wrap.innerHTML = "";
+}
+
+function toggleEditMode() {
+
+    isEditingAll =
+        !isEditingAll;
+
+    const button =
+        $("editToggleBtn");
+
+    if (isEditingAll) {
+
+        [
+            "editPlatformQtyPanel",
+            "eaEditMode",
+            "clientEditMode",
+            "payoutEditMode",
+            "saveEditsButtonWrap"
+        ].forEach(showElement);
+
+        [
+            "eaViewMode",
+            "clientViewMode",
+            "payoutViewMode"
+        ].forEach(hideElement);
+
+        renderInlinePayoutEdit();
+
+        if (button) {
+
+            button.innerHTML = `
+                <i class="fa-solid fa-xmark"></i>
+                <span>
+                    ${
+                        currentLanguage === "ar"
+                            ? "إغلاق التعديل"
+                            : "Close Editing"
+                    }
+                </span>
+            `;
+
+            button.style.background =
+                "rgba(239,68,68,0.15)";
+
+            button.style.borderColor =
+                "var(--pc-color)";
+
+            button.style.color =
+                "var(--pc-color)";
+        }
+
+        return;
+    }
+
+    saveAllEdits();
+
+    [
+        "editPlatformQtyPanel",
+        "eaEditMode",
+        "clientEditMode",
+        "payoutEditMode",
+        "saveEditsButtonWrap"
+    ].forEach(hideElement);
+
+    [
+        "eaViewMode",
+        "clientViewMode",
+        "payoutViewMode"
+    ].forEach(showElement);
+
+    resetEditButton();
+}
+
+function saveAllEdits() {
+
+    const newEmail =
+        $("editEaEmail")?.value.trim() || "";
+
+    const newPass =
+        $("editEaPass")?.value.trim() || "";
+
+    const codes = [
+        $("editCode1")?.value.trim() || "",
+        $("editCode2")?.value.trim() || "",
+        $("editCode3")?.value.trim() || ""
+    ];
+
+    const newName =
+        $("editClientName")?.value.trim() || "";
+
+    const newPhone =
+        $("editClientPhone")?.value.trim() || "";
+
+    if (
+        !newEmail ||
+        !newPass ||
+        codes.some((code) => !code) ||
+        !newName ||
+        !newPhone
+    ) {
+        alert(
+            currentLanguage === "ar"
+                ? "يرجى تعبئة جميع بيانات التعديل."
+                : "Please complete all edited fields."
+        );
+
+        isEditingAll = true;
+        return;
+    }
+
+    $("eaEmail").value =
+        newEmail;
+
+    $("eaPass").value =
+        newPass;
+
+    $("code1").value =
+        codes[0];
+
+    $("code2").value =
+        codes[1];
+
+    $("code3").value =
+        codes[2];
+
+    $("customerName").value =
+        newName;
+
+    $("customerPhone").value =
+        newPhone;
+
+    // الدفع
+    const method =
+        getSelectedPaymentCode();
+
+    if (method === "bank") {
+
+        const bank =
+            $("editBankName")?.value || "";
+
+        const account =
+            $("editAccountName")?.value || "";
 
         const iban =
-            document.getElementById(
-                "editIban"
-            )?.value || "";
+            $("editIban")?.value || "";
 
-        if (
-            document.getElementById(
-                "bankNameSelect"
-            )
-        ) {
-            document.getElementById(
-                "bankNameSelect"
-            ).value =
-                bankName;
+        if ($("bankNameSelect")) {
+            $("bankNameSelect").value =
+                bank;
         }
 
-        if (
-            document.getElementById(
-                "accountName"
-            )
-        ) {
-            document.getElementById(
-                "accountName"
-            ).value =
-                accountName;
+        if ($("accountName")) {
+            $("accountName").value =
+                account;
         }
 
-        if (
-            document.getElementById(
-                "iban"
-            )
-        ) {
-            document.getElementById(
-                "iban"
-            ).value =
+        if ($("iban")) {
+            $("iban").value =
                 iban;
         }
+    }
 
-    } else if (
-        method === "wallet"
-    ) {
-
-        const walletName =
-            document.getElementById(
-                "editWalletName"
-            )?.value || "";
-
-        const walletNumber =
-            document.getElementById(
-                "editWalletNumber"
-            )?.value || "";
-
-        if (
-            document.getElementById(
-                "walletTypeSelect"
-            )
-        ) {
-            document.getElementById(
-                "walletTypeSelect"
-            ).value =
-                walletName;
-        }
-
-        if (
-            document.getElementById(
-                "walletNumber"
-            )
-        ) {
-            document.getElementById(
-                "walletNumber"
-            ).value =
-                walletNumber;
-        }
-
-    } else if (
-        method === "usdt"
-    ) {
+    if (method === "wallet") {
 
         const wallet =
-            document.getElementById(
-                "editUsdtWalletType"
-            )?.value || "";
+            $("editWalletName")?.value || "";
 
-        if (
-            document.getElementById(
-                "usdtWalletType"
-            )
-        ) {
-            document.getElementById(
-                "usdtWalletType"
-            ).value =
+        const phone =
+            $("editWalletNumber")?.value || "";
+
+        if ($("walletTypeSelect")) {
+            $("walletTypeSelect").value =
                 wallet;
         }
 
-    } else if (
-        method === "paypal"
-    ) {
-
-        const email =
-            document.getElementById(
-                "editPaypalEmail"
-            )?.value || "";
-
-        if (
-            document.getElementById(
-                "paypalEmail"
-            )
-        ) {
-            document.getElementById(
-                "paypalEmail"
-            ).value =
-                email;
-        }
-
-    } else if (
-        method === "western"
-    ) {
-
-        const name =
-            document.getElementById(
-                "editWuName"
-            )?.value || "";
-
-        const country =
-            document.getElementById(
-                "editWuCountry"
-            )?.value || "";
-
-        if (
-            document.getElementById(
-                "wuName"
-            )
-        ) {
-            document.getElementById(
-                "wuName"
-            ).value =
-                name;
-        }
-
-        if (
-            document.getElementById(
-                "wuCountry"
-            )
-        ) {
-            document.getElementById(
-                "wuCountry"
-            ).value =
-                country;
+        if ($("walletNumber")) {
+            $("walletNumber").value =
+                phone;
         }
     }
 
-    const revSpecDetails =
-        document.getElementById(
-            "revSpecificDetailsContainer"
-        );
+    if (method === "usdt") {
 
-    if (revSpecDetails) {
-        revSpecDetails.innerHTML =
-            buildPaymentDetailsHTML();
+        if ($("usdtWalletType")) {
+            $("usdtWalletType").value =
+                $("editUsdtWalletType")?.value || "";
+        }
     }
 
-    if (btn) {
+    if (method === "paypal") {
 
-        btn.innerHTML =
-            `<i class="fa-solid fa-pen-to-square"></i> تعديل الكل`;
-
-        btn.style.background =
-            "rgba(0,210,255,0.12)";
-
-        btn.style.borderColor =
-            "var(--accent-color)";
-
-        btn.style.color =
-            "var(--accent-color)";
+        if ($("paypalEmail")) {
+            $("paypalEmail").value =
+                $("editPaypalEmail")?.value || "";
+        }
     }
+
+    if (method === "western") {
+
+        if ($("wuName")) {
+            $("wuName").value =
+                $("editWuName")?.value || "";
+        }
+
+        if ($("wuCountry")) {
+            $("wuCountry").value =
+                $("editWuCountry")?.value || "";
+        }
+    }
+
+    updateReviewAfterEdit();
+}
+
+function updateReviewAfterEdit() {
+
+    updateReviewPlatformUI();
+
+    setText(
+        "revQty",
+        currentQty.toLocaleString("en-US")
+    );
+
+    setText(
+        "revTotal",
+        $("totalAmountText")?.textContent ||
+        "0.00 ر.س"
+    );
+
+    setText(
+        "revEmail",
+        $("eaEmail")?.value || ""
+    );
+
+    setText(
+        "revPass",
+        $("eaPass")?.value || ""
+    );
+
+    setText(
+        "revClientName",
+        $("customerName")?.value || ""
+    );
+
+    setText(
+        "revClientPhone",
+        $("customerPhone")?.value || ""
+    );
+
+    const codes = [
+        $("code1")?.value || "",
+        $("code2")?.value || "",
+        $("code3")?.value || ""
+    ];
+
+    $("revCodes").innerHTML = `
+        <div class="backup-codes-stack">
+
+            <div class="code-display-row">
+                <span class="code-number-tag">#1</span>
+                <span>${escapeHtml(codes[0])}</span>
+            </div>
+
+            <div class="code-display-row">
+                <span class="code-number-tag">#2</span>
+                <span>${escapeHtml(codes[1])}</span>
+            </div>
+
+            <div class="code-display-row">
+                <span class="code-number-tag">#3</span>
+                <span>${escapeHtml(codes[2])}</span>
+            </div>
+
+        </div>
+    `;
+
+    $("revSpecificDetailsContainer").innerHTML =
+        buildPaymentDetailsHTML();
 }
 
 
 // ==========================================================================
-// 21. تعديل المنصة داخل المراجعة
+// 26. تعديل المنصة من المراجعة
 // ==========================================================================
 
-function selectPlatformInline(
-    platform
-) {
+function selectPlatformInline(platform) {
 
     selectPlatform(
-        platform
+        platform,
+        true
     );
 
-    const platBox =
-        document.getElementById(
-            "revPlatformBoxTheme"
-        );
+    updateReviewPlatformUI();
 
-    const revIcon =
-        document.getElementById(
-            "revPlatformIcon"
-        );
+    setText(
+        "revQty",
+        currentQty.toLocaleString("en-US")
+    );
 
-    if (
-        platBox &&
-        revIcon
-    ) {
+    setText(
+        "revTotal",
+        $("totalAmountText")?.textContent ||
+        "0.00 ر.س"
+    );
 
-        platBox.className =
-            "review-styled-box";
+    const inline =
+        $("inlineQtyInput");
 
-        if (
-            platform ===
-            "PlayStation"
-        ) {
-
-            platBox.classList.add(
-                "ps-theme"
-            );
-
-            revIcon.className =
-                "fa-brands fa-playstation";
-
-        } else if (
-            platform ===
-            "Xbox"
-        ) {
-
-            platBox.classList.add(
-                "xbox-theme"
-            );
-
-            revIcon.className =
-                "fa-brands fa-xbox";
-
-        } else if (
-            platform ===
-            "PC"
-        ) {
-
-            platBox.classList.add(
-                "pc-theme"
-            );
-
-            revIcon.className =
-                "fa-solid fa-desktop";
-        }
-    }
-
-    const revTotalEl =
-        document.getElementById(
-            "revTotal"
-        );
-
-    if (revTotalEl) {
-        revTotalEl.innerText =
-            getCurrentDisplayedTotal();
+    if (inline) {
+        inline.value =
+            currentQty.toLocaleString("en-US");
     }
 }
 
 
 // ==========================================================================
-// 22. تعديل الكمية داخل المراجعة
+// 27. تعديل الكمية من المراجعة
 // ==========================================================================
 
-function adjustQtyInline(
-    amount
-) {
+function adjustQtyInline(amount) {
 
-    adjustQty(
-        amount
+    adjustQty(amount);
+
+    setText(
+        "revQty",
+        currentQty.toLocaleString("en-US")
     );
 
-    const inlineQtyInputEl =
-        document.getElementById(
-            "inlineQtyInput"
-        );
+    setText(
+        "revTotal",
+        $("totalAmountText")?.textContent ||
+        "0.00 ر.س"
+    );
 
-    const revQtyEl =
-        document.getElementById(
-            "revQty"
-        );
-
-    const revTotalEl =
-        document.getElementById(
-            "revTotal"
-        );
-
-    if (inlineQtyInputEl) {
-        inlineQtyInputEl.value =
-            currentQty > 0
-                ? currentQty.toLocaleString(
-                    "en-US"
-                )
-                : "";
+    if ($("inlineQtyInput")) {
+        $("inlineQtyInput").value =
+            currentQty.toLocaleString("en-US");
     }
+}
 
-    if (revQtyEl) {
-        revQtyEl.innerText =
-            currentQty.toLocaleString(
-                "en-US"
-            );
-    }
+function formatAndCalculateInline(input) {
 
-    if (revTotalEl) {
-        revTotalEl.innerText =
-            getCurrentDisplayedTotal();
-    }
+    formatAndCalculate(input);
+
+    setText(
+        "revQty",
+        currentQty.toLocaleString("en-US")
+    );
+
+    setText(
+        "revTotal",
+        $("totalAmountText")?.textContent ||
+        "0.00 ر.س"
+    );
 }
 
 
 // ==========================================================================
-// 23. إدخال الكمية داخل المراجعة
-// ==========================================================================
-
-function formatAndCalculateInline(
-    input
-) {
-
-    formatAndCalculate(
-        input
-    );
-
-    const revQtyEl =
-        document.getElementById(
-            "revQty"
-        );
-
-    const revTotalEl =
-        document.getElementById(
-            "revTotal"
-        );
-
-    if (revQtyEl) {
-        revQtyEl.innerText =
-            currentQty.toLocaleString(
-                "en-US"
-            );
-    }
-
-    if (revTotalEl) {
-        revTotalEl.innerText =
-            getCurrentDisplayedTotal();
-    }
-}
-
-
-// ==========================================================================
-// 24. إنشاء الطلب
+// 28. إنشاء الطلب
 // ==========================================================================
 
 async function submitOrderFinal() {
 
     if (isEditingAll) {
         toggleEditMode();
+
+        if (isEditingAll) {
+            return;
+        }
+    }
+
+    if (!validateStep2()) {
+        showScreen("step2Screen");
+        return;
     }
 
     const payoutDetails =
@@ -2893,48 +2850,25 @@ async function submitOrderFinal() {
 
     const accountData = {
         eaEmail:
-            document.getElementById(
-                "eaEmail"
-            )?.value
-                ?.trim() || "",
+            $("eaEmail")?.value.trim() || "",
 
         eaPassword:
-            document.getElementById(
-                "eaPass"
-            )?.value
-                ?.trim() || "",
+            $("eaPass")?.value.trim() || "",
 
         backupCodes: [
-            document.getElementById(
-                "code1"
-            )?.value
-                ?.trim() || "",
-
-            document.getElementById(
-                "code2"
-            )?.value
-                ?.trim() || "",
-
-            document.getElementById(
-                "code3"
-            )?.value
-                ?.trim() || ""
+            $("code1")?.value.trim() || "",
+            $("code2")?.value.trim() || "",
+            $("code3")?.value.trim() || ""
         ]
     };
 
     const orderData = {
 
         customerName:
-            document.getElementById(
-                "customerName"
-            )?.value
-                ?.trim() || "",
+            $("customerName")?.value.trim() || "",
 
         phone:
-            document.getElementById(
-                "customerPhone"
-            )?.value
-                ?.trim() || "",
+            $("customerPhone")?.value.trim() || "",
 
         platform:
             selectedPlatform,
@@ -2942,65 +2876,63 @@ async function submitOrderFinal() {
         quantity:
             currentQty,
 
-        /*
-         * Kept for compatibility/display.
-         * Backend remains authoritative.
-         */
         totalPrice:
-            getCurrentDisplayedTotal(),
+            $("totalAmountText")?.textContent || "",
 
-        /*
-         * Legacy display field.
-         */
         paymentMethod:
             selectedPaymentMethod,
 
-        /*
-         * Backend compatibility.
-         */
         paymentMethodType:
             payoutDetails.method,
 
-        /*
-         * Canonical schema.
-         */
         payoutDetails,
 
-        /*
-         * EA data.
-         * Backend encrypts immediately.
-         */
         accountData
     };
 
+    const submitButton =
+        document.querySelector(
+            ".create-order-final-btn"
+        );
+
+    const originalButtonHTML =
+        submitButton?.innerHTML;
+
     try {
 
-        const res =
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                ${
+                    currentLanguage === "ar"
+                        ? "جاري إنشاء الطلب..."
+                        : "Creating order..."
+                }
+            `;
+        }
+
+        const response =
             await fetch(
                 "/api/orders/create",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json",
-
-                        "Accept":
+                        Accept:
                             "application/json"
                     },
-
                     body:
-                        JSON.stringify(
-                            orderData
-                        )
+                        JSON.stringify(orderData)
                 }
             );
 
         const data =
-            await res.json();
+            await response.json();
 
         if (
-            !res.ok ||
+            !response.ok ||
             !data.success
         ) {
             throw new Error(
@@ -3009,10 +2941,6 @@ async function submitOrderFinal() {
             );
         }
 
-        /*
-         * The customer-facing tracking number
-         * is referenceNumber.
-         */
         generatedReferenceNumber =
             data.referenceNumber || "";
 
@@ -3022,53 +2950,66 @@ async function submitOrderFinal() {
         generatedDocumentId =
             data.documentId || "";
 
-        /*
-         * Keep the existing UI using the reference
-         * as the main number shown to the customer.
-         */
-        document.getElementById(
-            "finalOrderId"
-        ).innerText =
-            generatedReferenceNumber;
+        setText(
+            "finalOrderId",
+            generatedReferenceNumber || "--"
+        );
 
-        document.getElementById(
-            "billClientName"
-        ).innerText =
-            orderData.customerName;
+        setText(
+            "billClientName",
+            orderData.customerName
+        );
 
-        document.getElementById(
-            "billClientPhone"
-        ).innerText =
-            orderData.phone;
+        setText(
+            "billClientPhone",
+            orderData.phone
+        );
 
-        document.getElementById(
-            "billPlatform"
-        ).innerText =
-            selectedPlatform;
+        setText(
+            "billPlatform",
+            selectedPlatform
+        );
 
-        document.getElementById(
-            "billQty"
-        ).innerText =
-            currentQty.toLocaleString(
-                "en-US"
-            ) + " كوينز";
+        setText(
+            "billQty",
+            `${currentQty.toLocaleString("en-US")} كوينز`
+        );
 
-        document.getElementById(
-            "billTotal"
-        ).innerText =
-            getCurrentDisplayedTotal();
+        setText(
+            "billTotal",
+            $("totalAmountText")?.textContent || ""
+        );
 
-        const billPaymentCardEl =
-            document.getElementById(
-                "billPaymentCard"
-            );
+        setText(
+            "successWithdrawText",
+            storeSettings.withdrawDays || "--"
+        );
 
-        if (billPaymentCardEl) {
+        setText(
+            "successTransferText",
+            storeSettings.transferHours || "--"
+        );
 
-            billPaymentCardEl.innerHTML = `
+        setText(
+            "successSafeMethodText",
+            storeSettings.safeMethod || "--"
+        );
+
+        const paymentCard =
+            $("billPaymentCard");
+
+        if (paymentCard) {
+
+            paymentCard.innerHTML = `
                 <div class="box-card-title">
-                    <i class="fa-solid fa-wallet"></i>
-                    تفاصيل التحويل والاستلام
+                    <span>
+                        <i class="fa-solid fa-wallet"></i>
+                        ${
+                            currentLanguage === "ar"
+                                ? "تفاصيل التحويل والاستلام"
+                                : "Payment & Receiving Details"
+                        }
+                    </span>
                 </div>
 
                 ${buildPaymentDetailsHTML()}
@@ -3079,96 +3020,139 @@ async function submitOrderFinal() {
             "step4SuccessScreen"
         );
 
-    } catch (err) {
-
-        alert(
-            "فشل إنشاء الطلب: " +
-            (
-                err?.message ||
-                "خطأ غير معروف"
-            )
-        );
+    } catch (error) {
 
         console.error(
             "Create Order Error:",
-            err
+            error
         );
+
+        alert(
+            currentLanguage === "ar"
+                ? `فشل إنشاء الطلب: ${
+                    error?.message ||
+                    "خطأ غير معروف"
+                }`
+                : `Failed to create order: ${
+                    error?.message ||
+                    "Unknown error"
+                }`
+        );
+
+    } finally {
+
+        if (submitButton) {
+            submitButton.disabled = false;
+
+            submitButton.innerHTML =
+                originalButtonHTML ||
+                `
+                    <span>
+                        ${translations[currentLanguage].createOrder}
+                    </span>
+                    <i class="fa-solid fa-check"></i>
+                `;
+        }
     }
 }
 
 
 // ==========================================================================
-// 25. النوافذ المنبثقة
+// 29. النوافذ المنبثقة
 // ==========================================================================
 
-function openModal(
-    title,
-    content
-) {
+function openModal(title, content) {
 
-    const modalTitleEl =
-        document.getElementById(
-            "modalTitle"
-        );
+    setText(
+        "modalTitle",
+        title
+    );
 
-    const modalBodyContentEl =
-        document.getElementById(
-            "modalBodyContent"
-        );
+    const body =
+        $("modalBodyContent");
 
-    const customModalEl =
-        document.getElementById(
-            "customModal"
-        );
-
-    if (modalTitleEl) {
-        modalTitleEl.innerText =
-            title;
-    }
-
-    if (modalBodyContentEl) {
-        modalBodyContentEl.innerHTML =
+    if (body) {
+        body.innerHTML =
             content;
     }
 
-    if (customModalEl) {
-        customModalEl.classList.add(
-            "active"
+    const modal =
+        $("customModal");
+
+    if (modal) {
+        modal.classList.add("active");
+        modal.setAttribute(
+            "aria-hidden",
+            "false"
         );
     }
 }
 
 function closeModal() {
 
-    document
-        .getElementById(
-            "customModal"
-        )
-        ?.classList.remove(
-            "active"
+    const modal =
+        $("customModal");
+
+    if (modal) {
+        modal.classList.remove("active");
+        modal.setAttribute(
+            "aria-hidden",
+            "true"
         );
+    }
 }
 
 
 // ==========================================================================
-// 26. دليل Backup Codes
+// 30. Backup Codes
 // ==========================================================================
 
 function openBackupGuideModal() {
 
     openModal(
-        "طريقة استخراج الأكواد الاحتياطية",
+        currentLanguage === "ar"
+            ? "طريقة استخراج الأكواد الاحتياطية"
+            : "How to Get Backup Codes",
+
         `
-        <div style="text-align:right;">
+        <div style="text-align:right;line-height:2;">
+
             <p>
-                1. قم بتسجيل الدخول إلى حسابك في موقع EA عبر الرابط الرسمي.
-                <br>
-                2. اذهب إلى إعدادات الحساب (Account Settings).
-                <br>
-                3. اختر تبويب الأمان (Security).
-                <br>
-                4. ابحث عن خيار Backup Codes وانقر على View لاستخراج الأكواد.
+                ${
+                    currentLanguage === "ar"
+                        ? `
+                            1. قم بتسجيل الدخول إلى حساب EA الخاص بك.
+                            <br>
+                            2. افتح إعدادات الحساب.
+                            <br>
+                            3. انتقل إلى Security & Privacy.
+                            <br>
+                            4. افتح Two-factor Authentication.
+                            <br>
+                            5. اختر Show backup codes.
+                            <br>
+                            6. سيظهر لك 6 أكواد احتياطية.
+                            <br>
+                            7. نحتاج إلى 3 أكواد مختلفة منها.
+                        `
+                        : `
+                            1. Sign in to your EA account.
+                            <br>
+                            2. Open Account Settings.
+                            <br>
+                            3. Go to Security & Privacy.
+                            <br>
+                            4. Open Two-factor Authentication.
+                            <br>
+                            5. Select Show backup codes.
+                            <br>
+                            6. You will see 6 backup codes.
+                            <br>
+                            7. We need 3 different codes.
+                        `
+                }
             </p>
+
         </div>
         `
     );
@@ -3176,33 +3160,40 @@ function openBackupGuideModal() {
 
 
 // ==========================================================================
-// 27. الدعم الفني
+// 31. الدعم
 // ==========================================================================
 
 function showSupportModal() {
 
-    const supportNumber =
+    const number =
         getSupportWhatsappNumber();
 
-    const whatsappLink =
-        supportNumber
-            ? `https://wa.me/${supportNumber}`
+    const link =
+        number
+            ? `https://wa.me/${number}`
             : "#";
 
     openModal(
-        "الدعم الفني والخدمة",
+        currentLanguage === "ar"
+            ? "الدعم الفني والخدمة"
+            : "Technical Support",
+
         `
         <div style="text-align:center;">
 
-            <p style="margin-bottom:10px;">
-                نحن هنا لخدمتك على مدار الساعة طوال أيام الأسبوع.
+            <p>
+                ${
+                    currentLanguage === "ar"
+                        ? "نحن هنا لخدمتك."
+                        : "We are here to help."
+                }
             </p>
 
             ${
-                supportNumber
+                number
                     ? `
                         <a
-                            href="${whatsappLink}"
+                            href="${link}"
                             target="_blank"
                             rel="noopener noreferrer"
                             style="
@@ -3216,12 +3207,20 @@ function showSupportModal() {
                             "
                         >
                             <i class="fa-brands fa-whatsapp"></i>
-                            التواصل المباشر عبر واتساب
+                            ${
+                                currentLanguage === "ar"
+                                    ? "التواصل عبر واتساب"
+                                    : "Contact via WhatsApp"
+                            }
                         </a>
                     `
                     : `
                         <p style="color:#ef4444;">
-                            رقم الدعم غير متوفر حاليًا.
+                            ${
+                                currentLanguage === "ar"
+                                    ? "رقم الدعم غير متوفر حاليًا."
+                                    : "Support number is unavailable."
+                            }
                         </p>
                     `
             }
@@ -3233,19 +3232,24 @@ function showSupportModal() {
 
 
 // ==========================================================================
-// 28. الخصوصية
+// 32. الخصوصية
 // ==========================================================================
 
 function showPrivacyModal() {
 
     openModal(
-        "سياسة الخصوصية والأمان",
+        currentLanguage === "ar"
+            ? "سياسة الخصوصية والأمان"
+            : "Privacy & Security",
+
         `
-        <div style="text-align:right;">
+        <div style="text-align:right;line-height:2;">
             <p>
-                نحن نضمن حماية كافة بياناتك وحساباتك
-                بأعلى معايير التشفير والأمان المعتمدة
-                دون مشاركتها مع أي طرف ثالث.
+                ${
+                    currentLanguage === "ar"
+                        ? "نحن نعمل على حماية بياناتك والتعامل معها بسرية وأمان."
+                        : "We work to protect your data and handle it securely and confidentially."
+                }
             </p>
         </div>
         `
@@ -3254,20 +3258,24 @@ function showPrivacyModal() {
 
 
 // ==========================================================================
-// 29. الشروط
+// 33. الشروط
 // ==========================================================================
 
 function showTermsModal() {
 
     openModal(
-        "شروط وقواعد الخدمة",
+        currentLanguage === "ar"
+            ? "شروط وقواعد الخدمة"
+            : "Terms & Conditions",
+
         `
-        <div style="text-align:right;">
+        <div style="text-align:right;line-height:2;">
             <p>
-                يجب التأكد من صحة بيانات الحساب والأكواد
-                الاحتياطية، وأن يكون سوق الانتقالات مفتوحاً
-                في تطبيق الويب لضمان سرعة إنجاز الطلب
-                في المواعيد المحددة.
+                ${
+                    currentLanguage === "ar"
+                        ? "يجب التأكد من صحة بيانات الحساب والأكواد الاحتياطية، وأن يكون سوق الانتقالات متاحًا لضمان إمكانية تنفيذ الطلب."
+                        : "Please make sure your account details and backup codes are correct and that the transfer market is available."
+                }
             </p>
         </div>
         `
@@ -3276,40 +3284,87 @@ function showTermsModal() {
 
 
 // ==========================================================================
-// 30. نسخ رقم التتبع
+// 34. نسخ المرجع
 // ==========================================================================
 
-function copyOrderId() {
+async function copyOrderId() {
 
-    if (
-        generatedReferenceNumber
-    ) {
+    const reference =
+        generatedReferenceNumber ||
+        $("finalOrderId")?.textContent?.trim() ||
+        "";
 
-        navigator.clipboard
-            ?.writeText(
-                generatedReferenceNumber
-            )
-            .catch(
-                () => {}
+    if (!reference) {
+        return;
+    }
+
+    try {
+
+        if (
+            navigator.clipboard &&
+            window.isSecureContext
+        ) {
+            await navigator.clipboard.writeText(
+                reference
             );
+        } else {
+
+            const textarea =
+                document.createElement("textarea");
+
+            textarea.value =
+                reference;
+
+            textarea.style.position =
+                "fixed";
+
+            textarea.style.opacity =
+                "0";
+
+            document.body.appendChild(
+                textarea
+            );
+
+            textarea.select();
+
+            document.execCommand(
+                "copy"
+            );
+
+            textarea.remove();
+        }
+
+        alert(
+            currentLanguage === "ar"
+                ? "تم نسخ رقم المرجع."
+                : "Reference number copied."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Copy Error:",
+            error
+        );
     }
 }
 
 
 // ==========================================================================
-// 31. صفحة التتبع
+// 35. الاستعلام
 // ==========================================================================
 
 function openInquiryPage() {
 
     const ref =
-        generatedReferenceNumber;
+        generatedReferenceNumber ||
+        $("finalOrderId")?.textContent?.trim() ||
+        "";
 
-    if (ref) {
+    if (ref && ref !== "--") {
+
         window.location.href =
-            `/tracking/?ref=${encodeURIComponent(
-                ref
-            )}`;
+            `/tracking/?ref=${encodeURIComponent(ref)}`;
 
         return;
     }
@@ -3320,190 +3375,99 @@ function openInquiryPage() {
 
 
 // ==========================================================================
-// 32. إرسال الطلب عبر WhatsApp
+// 36. واتساب
 // ==========================================================================
 
 function sendOrderViaWhatsapp() {
 
-    const supportNumber =
+    const number =
         getSupportWhatsappNumber();
 
-    if (!supportNumber) {
+    if (!number) {
 
         alert(
-            "رقم الدعم غير متوفر حاليًا."
+            currentLanguage === "ar"
+                ? "رقم الدعم غير متوفر حاليًا."
+                : "Support number is unavailable."
         );
 
         return;
     }
 
     const clientName =
-        document.getElementById(
-            "customerName"
-        )?.value
-            ?.trim() || "--";
+        $("customerName")?.value.trim() || "--";
 
     const clientPhone =
-        document.getElementById(
-            "customerPhone"
-        )?.value
-            ?.trim() || "--";
+        $("customerPhone")?.value.trim() || "--";
 
-    const emailVal =
-        document.getElementById(
-            "eaEmail"
-        )?.value
-            ?.trim() || "--";
+    const email =
+        $("eaEmail")?.value.trim() || "--";
 
-    const passVal =
-        document.getElementById(
-            "eaPass"
-        )?.value
-            ?.trim() || "--";
+    const password =
+        $("eaPass")?.value.trim() || "--";
 
-    const c1 =
-        document.getElementById(
-            "code1"
-        )?.value
-            ?.trim() || "--";
+    const code1 =
+        $("code1")?.value.trim() || "--";
 
-    const c2 =
-        document.getElementById(
-            "code2"
-        )?.value
-            ?.trim() || "--";
+    const code2 =
+        $("code2")?.value.trim() || "--";
 
-    const c3 =
-        document.getElementById(
-            "code3"
-        )?.value
-            ?.trim() || "--";
+    const code3 =
+        $("code3")?.value.trim() || "--";
 
-    const totalVal =
-        getCurrentDisplayedTotal() ||
-        "--";
+    const total =
+        $("totalAmountText")?.textContent || "--";
 
     const reference =
-        generatedReferenceNumber ||
-        "--";
-
-    const businessOrderId =
-        generatedOrderId ||
-        "--";
-
-    let paymentDetailsText =
-        "";
+        generatedReferenceNumber || "--";
 
     const method =
         getSelectedPaymentCode();
 
+    let paymentText = "";
+
     if (method === "bank") {
 
-        const bank =
-            document.getElementById(
-                "bankNameSelect"
-            )?.value || "";
-
-        const name =
-            document.getElementById(
-                "accountName"
-            )?.value
-                ?.trim() || "";
-
-        const iban =
-            document.getElementById(
-                "iban"
-            )?.value
-                ?.trim() || "";
-
-        paymentDetailsText = `
-🏦 طريقة الدفع:
+        paymentText = `
+طريقة الدفع:
 تحويل بنكي
-
-• البنك: ${bank}
-• اسم الحساب: ${name}
-• IBAN: ${iban}
+البنك: ${$("bankNameSelect")?.value || "--"}
+اسم الحساب: ${$("accountName")?.value || "--"}
+IBAN: ${$("iban")?.value || "--"}
 `;
 
-    } else if (
-        method === "wallet"
-    ) {
+    } else if (method === "wallet") {
 
-        const wallet =
-            document.getElementById(
-                "walletTypeSelect"
-            )?.value || "";
-
-        const phone =
-            document.getElementById(
-                "walletNumber"
-            )?.value
-                ?.trim() || "";
-
-        paymentDetailsText = `
-📱 طريقة الدفع:
+        paymentText = `
+طريقة الدفع:
 محفظة رقمية
-
-• المحفظة: ${wallet}
-• رقم الجوال: ${phone}
+المحفظة: ${$("walletTypeSelect")?.value || "--"}
+رقم الجوال: ${$("walletNumber")?.value || "--"}
 `;
 
-    } else if (
-        method === "usdt"
-    ) {
+    } else if (method === "usdt") {
 
-        const wallet =
-            document.getElementById(
-                "usdtWalletType"
-            )?.value
-                ?.trim() || "";
-
-        paymentDetailsText = `
-🪙 طريقة الدفع:
+        paymentText = `
+طريقة الدفع:
 USDT
-
-• عنوان المحفظة: ${wallet}
+عنوان المحفظة: ${$("usdtWalletType")?.value || "--"}
 `;
 
-    } else if (
-        method === "paypal"
-    ) {
+    } else if (method === "paypal") {
 
-        const email =
-            document.getElementById(
-                "paypalEmail"
-            )?.value
-                ?.trim() || "";
-
-        paymentDetailsText = `
-🅿️ طريقة الدفع:
+        paymentText = `
+طريقة الدفع:
 PayPal
-
-• البريد: ${email}
+البريد: ${$("paypalEmail")?.value || "--"}
 `;
 
-    } else if (
-        method === "western"
-    ) {
+    } else if (method === "western") {
 
-        const name =
-            document.getElementById(
-                "wuName"
-            )?.value
-                ?.trim() || "";
-
-        const country =
-            document.getElementById(
-                "wuCountry"
-            )?.value
-                ?.trim() || "";
-
-        paymentDetailsText = `
-🌍 طريقة الدفع:
+        paymentText = `
+طريقة الدفع:
 Western Union
-
-• الاسم بالإنجليزية: ${name}
-• الدولة: ${country}
+الاسم: ${$("wuName")?.value || "--"}
+الدولة: ${$("wuCountry")?.value || "--"}
 `;
     }
 
@@ -3511,38 +3475,33 @@ Western Union
 طلب بيع جديد
 ━━━━━━━━━━━━━━━━━━
 
-📋 بيانات الطلب
-• رقم التتبع: ${reference}
-• رقم الطلب: ${businessOrderId}
-
-👤 بيانات العميل
-• الاسم: ${clientName}
-• رقم الجوال: ${clientPhone}
-
-🎮 بيانات الكوينز
+بيانات الطلب
+• رقم المرجع: ${reference}
 • المنصة: ${selectedPlatform || "--"}
 • الكمية: ${currentQty.toLocaleString("en-US")} كوينز
-• إجمالي المبلغ: ${totalVal}
+• المبلغ: ${total}
 
-${paymentDetailsText}
+بيانات العميل
+• الاسم: ${clientName}
+• الجوال: ${clientPhone}
 
-🔐 بيانات حساب EA
-• البريد: ${emailVal}
-• كلمة المرور: ${passVal}
+${paymentText}
 
-🔑 الأكواد الاحتياطية
-• #1: ${c1}
-• #2: ${c2}
-• #3: ${c3}
+بيانات حساب EA
+• البريد: ${email}
+• كلمة المرور: ${password}
+
+الأكواد الاحتياطية
+• #1: ${code1}
+• #2: ${code2}
+• #3: ${code3}
 
 ━━━━━━━━━━━━━━━━━━
 SAMI COINS
 `;
 
     const url =
-        `https://wa.me/${supportNumber}?text=${encodeURIComponent(
-            message
-        )}`;
+        `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 
     window.open(
         url,
@@ -3553,58 +3512,77 @@ SAMI COINS
 
 
 // ==========================================================================
-// 33. تهيئة الصفحة
+// 37. إغلاق المودال عند الضغط خارج النافذة
+// ==========================================================================
+
+function setupModalEvents() {
+
+    const modal =
+        $("customModal");
+
+    if (!modal) return;
+
+    modal.addEventListener(
+        "click",
+        (event) => {
+
+            if (
+                event.target === modal
+            ) {
+                closeModal();
+            }
+        }
+    );
+}
+
+
+// ==========================================================================
+// 38. تهيئة الصفحة
 // ==========================================================================
 
 window.addEventListener(
     "DOMContentLoaded",
     () => {
 
+        const savedLanguage =
+            localStorage.getItem(
+                "samiCoinsLanguage"
+            );
+
+        const savedTheme =
+            localStorage.getItem(
+                "samiCoinsTheme"
+            );
+
+        if (
+            savedLanguage === "ar" ||
+            savedLanguage === "en"
+        ) {
+            currentLanguage =
+                savedLanguage;
+        }
+
+        applyTheme(
+            savedTheme === "light"
+                ? "light"
+                : "dark"
+        );
+
+        applyLanguage();
+
         showScreen(
             "step1Screen"
         );
 
+        setupModalEvents();
+
         loadSettings();
-
-        const range =
-            document.getElementById(
-                "qtyRange"
-            );
-
-        if (range) {
-
-            range.addEventListener(
-                "input",
-                () =>
-                    sliderChanged(
-                        range
-                    )
-            );
-        }
-
-        const form =
-            document.getElementById(
-                "orderForm"
-            );
-
-        if (form) {
-
-            form.addEventListener(
-                "submit",
-                (e) => {
-
-                    e.preventDefault();
-
-                    goToReview();
-                }
-            );
-        }
     }
 );
 
 
 // ==========================================================================
-// 34. ربط الدوال مع window
+// 39. ربط الدوال مع window
 // ==========================================================================
 
 window.loadSettings =
@@ -3612,6 +3590,15 @@ window.loadSettings =
 
 window.applySettingsToUI =
     applySettingsToUI;
+
+window.toggleLanguage =
+    toggleLanguage;
+
+window.toggleTheme =
+    toggleTheme;
+
+window.contactClosedStoreWhatsapp =
+    contactClosedStoreWhatsapp;
 
 window.convertArabicNumbersToEnglish =
     convertArabicNumbersToEnglish;
@@ -3652,14 +3639,14 @@ window.showScreen =
 window.goToStep2 =
     goToStep2;
 
+window.goToReview =
+    goToReview;
+
 window.buildPaymentDetailsHTML =
     buildPaymentDetailsHTML;
 
 window.getPayoutDetailsObject =
     getPayoutDetailsObject;
-
-window.goToReview =
-    goToReview;
 
 window.toggleEditMode =
     toggleEditMode;
