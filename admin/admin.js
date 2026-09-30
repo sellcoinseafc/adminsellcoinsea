@@ -5593,7 +5593,7 @@ window.confirmPurgeDataFinal =
      */
     if (
       !confirm(
-        "تأكيد نهائي: سيتم حذف بريد EA وكلمة المرور والأكواد الاحتياطية نهائياً ولا يمكن استعادتها. بيانات الدفع ستبقى محفوظة ومشفرة. هل تريد المتابعة؟"
+        "تأكيد نهائي: سيتم حذف بيانات EA وبيانات الدفع الحساسة نهائياً ولا يمكن استعادتها. هل تريد المتابعة؟"
       )
     ) {
       return;
@@ -5602,7 +5602,7 @@ window.confirmPurgeDataFinal =
     try {
       const response =
         await adminFetch(
-          "/api/orders/purge-sensitive",
+          "/api/admin/destroy-sensitive-data",
           {
             method:
               "POST",
@@ -5741,8 +5741,8 @@ window.promptEditOrder =
           "اكتب كود المشكلة أو اتركه فارغاً لإزالة المشكلة:\n\n" +
             "wrong_credentials\n" +
             "wrong_backup_codes\n" +
+            "logged_in_platform\n" +
             "market_closed\n" +
-            "no_player\n" +
             "wrong_platform\n" +
             "other_issue",
           issue || ""
