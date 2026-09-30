@@ -1,0 +1,51 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active != false;
+    }
+
+    // Public order form reads only the published settings document.
+    match /system/settings {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Numbering/reservation is server-only. Firebase client SDKs never write it.
+    match /system/orderNumbering {
+      allow read, write: if false;
+    }
+
+    match /orderReferences/{referenceNumber} {
+      allow read, write: if false;
+    }
+
+    // Customer order creation, updates and deletion are server-side only.
+    // Admin actions use protected server routes.
+    match /orders/{orderId} {
+      allow read, write: if false;
+    }
+
+    // Admin identity documents are never publicly readable.
+    match /admins/{uid} {
+      allow read, write: if isAdmin() && request.auth.uid == uid;
+    }
+
+    // Audit data is server-managed.
+    match /audit_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    match /whatsappLogs/{logId} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
