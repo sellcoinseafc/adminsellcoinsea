@@ -47,6 +47,37 @@ const ALLOWED_EMAILS = [
   "psnsa7@gmail.com"
 ];
 
+const STATUS_VALUES = [
+  "new",
+  "review",
+  "progress",
+  "finished",
+  "transferred",
+  "completed",
+  "archived"
+];
+
+const ISSUE_VALUES = [
+  "wrong_credentials",
+  "wrong_backup_codes",
+  "market_closed",
+  "no_player",
+  "wrong_platform",
+  "other_issue"
+];
+
+const DEFAULT_ISSUE_MESSAGES = {
+  wrong_credentials: "بيانات الدخول غير صحيحة",
+  wrong_backup_codes: "رموز النسخ الاحتياطية غير صحيحة",
+  market_closed: "سوق الانتقالات مغلق",
+  no_player: "لا يوجد لاعب مطابق",
+  wrong_platform: "المنصة المحددة غير صحيحة",
+  other_issue: "توجد مشكلة في الطلب"
+};
+
+const DECRYPT_WINDOW_MS = 90_000;
+const PURGE_DELAY_MS = 5 * 24 * 60 * 60 * 1000;
+
 let currentAdmin = {
   uid: null,
   name: "مشرف النظام",
@@ -64,7 +95,7 @@ let activeSearchQuery = "";
 let activeReviewSearchQuery = "";
 
 let decryptTimer = null;
-let decryptSeconds = 90;
+let decryptExpiresAt = null;
 
 let unsubscribeOrders = null;
 let unsubscribeReviews = null;
@@ -174,7 +205,8 @@ function initAuthGuard() {
     });
 
   onAuthStateChanged(auth, async (user) => {
-    const loginOverlay = document.getElementById("loginOverlay");
+    const loginOverlay =
+      document.getElementById("loginOverlay");
 
     if (!user) {
       if (loginOverlay) {
@@ -184,15 +216,24 @@ function initAuthGuard() {
       return;
     }
 
-    const userEmail = String(user.email || "").toLowerCase();
+    const userEmail =
+      String(user.email || "")
+        .trim()
+        .toLowerCase();
 
+    /*
+     * هذا الحارس في الواجهة فقط.
+     * الحماية الحقيقية دائماً من requireAdmin في backend.
+     */
     if (
       ALLOWED_EMAILS.length > 0 &&
       !ALLOWED_EMAILS.includes(userEmail)
     ) {
       await signOut(auth);
 
-      alert("غير مصرح لك بدخول لوحة التحكم.");
+      alert(
+        "غير مصرح لك بدخول لوحة التحكم."
+      );
 
       if (loginOverlay) {
         loginOverlay.classList.add("active");
@@ -202,11 +243,17 @@ function initAuthGuard() {
     }
 
     try {
-      const adminRef = doc(db, "admins", user.uid);
-      const adminSnap = await getDoc(adminRef);
+      const adminRef =
+        doc(db, "admins", user.uid);
+
+      const adminSnap =
+        await getDoc(adminRef);
 
       if (!adminSnap.exists()) {
-        alert("الحساب غير مصرح له بدخول لوحة الإدارة.");
+        alert(
+          "الحساب غير مصرح له بدخول لوحة الإدارة."
+        );
+
         await signOut(auth);
 
         if (loginOverlay) {
@@ -216,10 +263,12 @@ function initAuthGuard() {
         return;
       }
 
-      const adminData = adminSnap.data() || {};
+      const adminData =
+        adminSnap.data() || {};
 
       if (adminData.active === false) {
         alert("حساب الإدارة غير مفعل.");
+
         await signOut(auth);
 
         if (loginOverlay) {
@@ -231,14 +280,20 @@ function initAuthGuard() {
 
       currentAdmin = {
         uid: user.uid,
-        email: user.email || adminData.email || "",
-        name: adminData.name || "مشرف النظام",
-        role: adminData.role || "admin"
+        email:
+          user.email ||
+          adminData.email ||
+          "",
+        name:
+          adminData.name ||
+          "مشرف النظام",
+        role: "admin"
       };
 
       try {
         await updateDoc(adminRef, {
-          lastLogin: serverTimestamp()
+          lastLogin:
+            serverTimestamp()
         });
       } catch (error) {
         console.warn(
@@ -279,7 +334,10 @@ function initAuthGuard() {
 }
 
 function showLoginError(message) {
-  const alertEl = document.getElementById("loginErrorAlert");
+  const alertEl =
+    document.getElementById(
+      "loginErrorAlert"
+    );
 
   if (!alertEl) return;
 
@@ -287,109 +345,147 @@ function showLoginError(message) {
   alertEl.style.display = "block";
 }
 
-window.handleEmailLogin = async function (event) {
-  event.preventDefault();
+window.handleEmailLogin =
+  async function (event) {
+    event.preventDefault();
 
-  const email =
-    document.getElementById("loginEmail")?.value
-      .trim()
-      .toLowerCase();
+    const email =
+      document.getElementById(
+        "loginEmail"
+      )?.value
+        .trim()
+        .toLowerCase();
 
-  const password =
-    document.getElementById("loginPassword")?.value || "";
+    const password =
+      document.getElementById(
+        "loginPassword"
+      )?.value || "";
 
-  try {
-    const alertEl = document.getElementById("loginErrorAlert");
+    try {
+      const alertEl =
+        document.getElementById(
+          "loginErrorAlert"
+        );
 
-    if (alertEl) {
-      alertEl.style.display = "none";
+      if (alertEl) {
+        alertEl.style.display = "none";
+      }
+
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+    } catch {
+      showLoginError(
+        "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة."
+      );
     }
+  };
 
-    await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    );
-  } catch {
-    showLoginError(
-      "❌ البريد الإلكتروني أو كلمة المرور غير صحيحة."
-    );
-  }
-};
+window.handleGoogleLogin =
+  async function () {
+    const alertEl =
+      document.getElementById(
+        "loginErrorAlert"
+      );
 
-window.handleGoogleLogin = async function () {
-  const alertEl =
-    document.getElementById("loginErrorAlert");
+    try {
+      if (alertEl) {
+        alertEl.style.display = "none";
+      }
 
-  try {
-    if (alertEl) {
-      alertEl.style.display = "none";
+      const provider =
+        new GoogleAuthProvider();
+
+      if (
+        /Android|iPhone|iPad/i.test(
+          navigator.userAgent
+        )
+      ) {
+        await signInWithRedirect(
+          auth,
+          provider
+        );
+
+        return;
+      }
+
+      await signInWithPopup(
+        auth,
+        provider
+      );
+    } catch {
+      showLoginError(
+        "❌ تعذر تسجيل الدخول عبر Google."
+      );
     }
-
-    const provider = new GoogleAuthProvider();
-
-    if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-
-    await signInWithPopup(auth, provider);
-  } catch {
-    showLoginError("❌ تعذر تسجيل الدخول عبر Google.");
-  }
-};
+  };
 
 function updateSidebarAdminUI() {
   const nameEl =
-    document.getElementById("sidebarUserName");
+    document.getElementById(
+      "sidebarUserName"
+    );
 
   const roleEl =
-    document.getElementById("sidebarUserRole");
+    document.getElementById(
+      "sidebarUserRole"
+    );
 
   const avatarEl =
-    document.getElementById("userAvatarText");
+    document.getElementById(
+      "userAvatarText"
+    );
 
   if (nameEl) {
     nameEl.innerText =
-      currentAdmin.name || "مشرف النظام";
+      currentAdmin.name ||
+      "مشرف النظام";
   }
 
   if (roleEl) {
     roleEl.innerText =
-      currentAdmin.role === "owner"
-        ? "Owner (مالك)"
-        : "Admin (مشرف)";
+      "Admin (مشرف)";
   }
 
   if (avatarEl) {
     avatarEl.innerText =
-      (currentAdmin.name || "م").charAt(0);
+      (
+        currentAdmin.name ||
+        "م"
+      ).charAt(0);
   }
 }
 
-window.handleLogout = async function () {
-  if (!confirm("هل ترغب بتسجيل الخروج؟")) {
-    return;
-  }
+window.handleLogout =
+  async function () {
+    if (
+      !confirm(
+        "هل ترغب بتسجيل الخروج؟"
+      )
+    ) {
+      return;
+    }
 
-  try {
-    await logAuditEvent(
-      "تسجيل خروج",
-      "النظام",
-      `تم خروج: ${currentAdmin.email}`
-    );
-  } catch {
-    // لا نمنع تسجيل الخروج بسبب فشل السجل.
-  }
+    try {
+      await logAuditEvent(
+        "تسجيل خروج",
+        "النظام",
+        `تم خروج: ${currentAdmin.email}`
+      );
+    } catch {
+      // لا نمنع تسجيل الخروج بسبب فشل السجل.
+    }
 
-  clearDecryptState();
+    clearDecryptState();
 
-  if (auth) {
-    await signOut(auth);
-  }
+    if (auth) {
+      await signOut(auth);
+    }
 
-  window.location.reload();
-};
+    window.location.reload();
+  };
 
 // ==========================================================================
 // 3) الساعة والإشعارات والسجل
@@ -397,21 +493,28 @@ window.handleLogout = async function () {
 
 function startLiveClock() {
   const clockEl =
-    document.getElementById("liveDatetime");
+    document.getElementById(
+      "liveDatetime"
+    );
 
   if (!clockEl) return;
 
   setInterval(() => {
     const now = new Date();
 
-    clockEl.innerText = now.toLocaleString("ar-SA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
+    clockEl.innerText =
+      now.toLocaleString(
+        "ar-SA",
+        {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZone: "Asia/Riyadh"
+        }
+      );
   }, 1000);
 }
 
@@ -468,16 +571,40 @@ async function logAuditEvent(
   details = ""
 ) {
   try {
-    await addDoc(collection(db, "audit_logs"), {
-      timestamp: serverTimestamp(),
-      timeString: new Date().toLocaleString("ar-SA"),
-      user: currentAdmin.name || "مشرف",
-      userId: currentAdmin.uid || "system",
-      action,
-      targetOrder,
-      details,
-      userAgent: navigator.userAgent.substring(0, 80)
-    });
+    await addDoc(
+      collection(db, "audit_logs"),
+      {
+        timestamp:
+          serverTimestamp(),
+
+        timeString:
+          new Date().toLocaleString(
+            "ar-SA",
+            {
+              timeZone:
+                "Asia/Riyadh"
+            }
+          ),
+
+        user:
+          currentAdmin.name ||
+          "مشرف",
+
+        userId:
+          currentAdmin.uid ||
+          "system",
+
+        action,
+        targetOrder,
+        details,
+
+        userAgent:
+          navigator.userAgent.substring(
+            0,
+            80
+          )
+      }
+    );
   } catch (error) {
     console.error(
       "Audit Logging Error:",
@@ -487,21 +614,26 @@ async function logAuditEvent(
 }
 
 function initAuditLogsListener() {
-  const q = query(
-    collection(db, "audit_logs"),
-    orderBy("timestamp", "desc"),
-    limit(100)
-  );
+  const q =
+    query(
+      collection(db, "audit_logs"),
+      orderBy(
+        "timestamp",
+        "desc"
+      ),
+      limit(100)
+    );
 
   return onSnapshot(
     q,
     (snapshot) => {
-      auditLogsData = snapshot.docs.map(
-        (docSnap) => ({
-          id: docSnap.id,
-          ...docSnap.data()
-        })
-      );
+      auditLogsData =
+        snapshot.docs.map(
+          (docSnap) => ({
+            id: docSnap.id,
+            ...docSnap.data()
+          })
+        );
 
       renderAuditLogsTable();
     },
@@ -522,7 +654,9 @@ function renderAuditLogsTable() {
 
   if (!tbody) return;
 
-  if (auditLogsData.length === 0) {
+  if (
+    auditLogsData.length === 0
+  ) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5"
@@ -535,59 +669,72 @@ function renderAuditLogsTable() {
     return;
   }
 
-  tbody.innerHTML = auditLogsData
-    .map((log) => {
-      const refCode =
-        log.targetOrder || "عام";
+  tbody.innerHTML =
+    auditLogsData
+      .map((log) => {
+        const refCode =
+          log.targetOrder ||
+          "عام";
 
-      return `
-        <tr>
-          <td>
-            <span style="font-size:0.78rem;color:var(--text-muted);">
-              ${log.timeString || "---"}
-            </span>
-          </td>
+        return `
+          <tr>
+            <td>
+              <span style="font-size:0.78rem;color:var(--text-muted);">
+                ${escapeHtml(
+                  log.timeString || "---"
+                )}
+              </span>
+            </td>
 
-          <td>
-            <b>${log.user || "مشرف"}</b>
-          </td>
+            <td>
+              <b>
+                ${escapeHtml(
+                  log.user || "مشرف"
+                )}
+              </b>
+            </td>
 
-          <td>
-            <span class="badge badge-review">
-              ${log.action || "---"}
-            </span>
-          </td>
+            <td>
+              <span class="badge badge-review">
+                ${escapeHtml(
+                  log.action || "---"
+                )}
+              </span>
+            </td>
 
-          <td>
-            <code
-              class="copyable-box"
-              style="cursor:pointer;"
-              onclick="copyTrackingLink('${escapeAttribute(refCode)}')">
-              #${escapeHtml(refCode)}
-            </code>
-          </td>
+            <td>
+              <code
+                class="copyable-box"
+                style="cursor:pointer;"
+                onclick="copyTrackingLink('${escapeAttribute(refCode)}')">
+                #${escapeHtml(refCode)}
+              </code>
+            </td>
 
-          <td>
-            <span style="font-size:0.75rem;color:var(--text-muted);">
-              ${log.details || "---"}
-            </span>
-          </td>
-        </tr>
-      `;
-    })
-    .join("");
+            <td>
+              <span style="font-size:0.75rem;color:var(--text-muted);">
+                ${escapeHtml(
+                  log.details || "---"
+                )}
+              </span>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
 }
 
 function initAdminsListener() {
   return onSnapshot(
     collection(db, "admins"),
     (snapshot) => {
-      adminsData = snapshot.docs.map(
-        (docSnap) => ({
-          uid: docSnap.id,
-          ...docSnap.data()
-        })
-      );
+      adminsData =
+        snapshot.docs.map(
+          (docSnap) => ({
+            uid: docSnap.id,
+            ...docSnap.data()
+          })
+        );
     },
     (error) => {
       console.error(
@@ -598,33 +745,41 @@ function initAdminsListener() {
   );
 }
 
-window.copyTrackingLink = async function (refCode) {
-  if (
-    !refCode ||
-    refCode === "---" ||
-    refCode === "عام"
-  ) {
-    return;
-  }
+window.copyTrackingLink =
+  async function (refCode) {
+    if (
+      !refCode ||
+      refCode === "---" ||
+      refCode === "عام"
+    ) {
+      return;
+    }
 
-  const url =
-    `${window.location.origin}/tracking/?ref=` +
-    encodeURIComponent(refCode);
+    /*
+     * لا يوجد IP ثابت هنا.
+     * عند التشغيل على الدومين سيصبح:
+     * https://domain.com/tracking/?ref=...
+     */
+    const url =
+      `${window.location.origin}/tracking/?ref=` +
+      encodeURIComponent(refCode);
 
-  try {
-    await navigator.clipboard.writeText(url);
+    try {
+      await navigator.clipboard.writeText(
+        url
+      );
 
-    alert(
-      "✅ تم نسخ رابط التتبع بنجاح:\n" +
-      url
-    );
-  } catch {
-    prompt(
-      "نسخ رابط التتبع المباشر:",
-      url
-    );
-  }
-};
+      alert(
+        "✅ تم نسخ رابط التتبع بنجاح:\n" +
+        url
+      );
+    } catch {
+      prompt(
+        "نسخ رابط التتبع المباشر:",
+        url
+      );
+    }
+  };
 
 // ==========================================================================
 // 4) أدوات عامة
@@ -632,17 +787,38 @@ window.copyTrackingLink = async function (refCode) {
 
 function escapeHtml(value) {
   return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 }
 
 function escapeAttribute(value) {
   return String(value ?? "")
-    .replaceAll("\\", "\\\\")
-    .replaceAll("'", "\\'");
+    .replaceAll(
+      "\\",
+      "\\\\"
+    )
+    .replaceAll(
+      "'",
+      "\\'"
+    );
 }
 
 function formatCoinsNumber(value) {
@@ -655,7 +831,8 @@ function formatCoinsNumber(value) {
     return "0";
   }
 
-  return Number(value).toLocaleString("en-US");
+  return Number(value)
+    .toLocaleString("en-US");
 }
 
 function parseFirestoreDate(value) {
@@ -665,7 +842,9 @@ function parseFirestoreDate(value) {
     typeof value === "object" &&
     typeof value.seconds === "number"
   ) {
-    return new Date(value.seconds * 1000);
+    return new Date(
+      value.seconds * 1000
+    );
   }
 
   if (
@@ -675,15 +854,65 @@ function parseFirestoreDate(value) {
     return value.toDate();
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  return isNaN(date.getTime())
+  return isNaN(
+    date.getTime()
+  )
     ? null
     : date;
 }
 
-function calculateTransferCountdown(createdAt) {
-  if (!createdAt) {
+function getPurgeDueDate(order) {
+  const dueDate =
+    parseFirestoreDate(
+      order.purgeDueAt
+    );
+
+  if (dueDate) {
+    return dueDate;
+  }
+
+  const completedDate =
+    parseFirestoreDate(
+      order.completedAt
+    );
+
+  if (!completedDate) {
+    return null;
+  }
+
+  return new Date(
+    completedDate.getTime() +
+      PURGE_DELAY_MS
+  );
+}
+
+function isPurgeDue(order) {
+  if (
+    !order ||
+    order.status !== "completed" ||
+    order.sensitivePurged === true
+  ) {
+    return false;
+  }
+
+  const dueDate =
+    getPurgeDueDate(order);
+
+  if (!dueDate) {
+    return false;
+  }
+
+  return (
+    Date.now() >=
+    dueDate.getTime()
+  );
+}
+
+function calculatePurgeCountdown(order) {
+  if (!order) {
     return `
       <span style="color:var(--text-muted);">
         ---
@@ -691,59 +920,77 @@ function calculateTransferCountdown(createdAt) {
     `;
   }
 
-  const createdDate =
-    parseFirestoreDate(createdAt);
-
-  if (!createdDate) {
+  if (
+    order.sensitivePurged === true
+  ) {
     return `
-      <span style="color:var(--text-muted);">
-        ---
+      <span style="color:var(--success);font-weight:900;">
+        <i class="fa-solid fa-circle-check"></i>
+        تم الإتلاف
       </span>
     `;
   }
 
-  const maxHours = 120;
-  const now = new Date();
-
-  const diffMs =
-    now.getTime() -
-    createdDate.getTime();
-
-  const passedHours =
-    diffMs / (1000 * 60 * 60);
-
-  const remainingHours =
-    Math.max(0, maxHours - passedHours);
-
-  if (remainingHours <= 0) {
+  if (
+    order.status !== "completed"
+  ) {
     return `
-      <span style="color:var(--danger);font-weight:900;">
+      <span style="color:var(--text-muted);">
+        يبدأ بعد اكتمال الطلب
+      </span>
+    `;
+  }
+
+  const dueDate =
+    getPurgeDueDate(order);
+
+  if (!dueDate) {
+    return `
+      <span style="color:var(--text-muted);">
+        بانتظار تاريخ الإتلاف
+      </span>
+    `;
+  }
+
+  const remaining =
+    dueDate.getTime() -
+    Date.now();
+
+  if (remaining <= 0) {
+    return `
+      <span style="color:#ef4444;font-weight:900;">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        منتهي
+        مستحق للإتلاف
       </span>
     `;
   }
+
+  const totalHours =
+    Math.floor(
+      remaining /
+        (1000 * 60 * 60)
+    );
 
   const daysLeft =
-    Math.floor(remainingHours / 24);
+    Math.floor(
+      totalHours / 24
+    );
 
   const hoursLeft =
-    Math.floor(remainingHours % 24);
+    totalHours % 24;
 
-  let colorStyle =
-    "color:var(--success);font-weight:800;";
+  let color =
+    "var(--success)";
 
   if (daysLeft <= 1) {
-    colorStyle =
-      "color:var(--danger);font-weight:900;";
+    color = "#ef4444";
   } else if (daysLeft <= 3) {
-    colorStyle =
-      "color:#f59e0b;font-weight:800;";
+    color = "#f59e0b";
   }
 
   return `
-    <span style="${colorStyle}font-size:0.8rem;">
-      <i class="fa-solid fa-stopwatch"></i>
+    <span style="color:${color};font-weight:900;font-size:0.8rem;">
+      <i class="fa-solid fa-clock"></i>
       متبقي ${daysLeft} يوم و ${hoursLeft} ساعة
     </span>
   `;
@@ -756,18 +1003,20 @@ function calculateTransferCountdown(createdAt) {
 function initOrdersListener() {
   loadOrders();
 
-  // الطلبات تأتي من backend.
-  // نستخدم دالة إلغاء حتى لا يتغير شكل نظام listeners الحالي.
   return () => {};
 }
 
 async function loadOrders() {
   try {
     const response =
-      await adminFetch("/api/orders/list");
+      await adminFetch(
+        "/api/orders/list"
+      );
 
     const data =
-      await readJsonResponse(response);
+      await readJsonResponse(
+        response
+      );
 
     if (!data.success) {
       if (
@@ -783,101 +1032,120 @@ async function loadOrders() {
       return;
     }
 
-    ordersData = (data.orders || []).map(
-      (order) => ({
-        id: order.id,
+    ordersData =
+      (data.orders || [])
+        .map((order) => ({
+          id:
+            order.id,
 
-        orderId:
-          order.orderId ||
-          order.businessOrderId ||
-          "",
+          orderId:
+            order.orderId ||
+            order.businessOrderId ||
+            "",
 
-        referenceNumber:
-          order.referenceNumber ||
-          order.reference ||
-          "",
+          referenceNumber:
+            order.referenceNumber ||
+            order.reference ||
+            "",
 
-        name:
-          order.customerName ||
-          order.name ||
-          "",
+          name:
+            order.customerName ||
+            order.name ||
+            "",
 
-        phone:
-          order.phone || "",
+          phone:
+            order.phone ||
+            "",
 
-        platform:
-          order.platform || "",
+          platform:
+            order.platform ||
+            "",
 
-        totalQty: Number(
-          order.quantity ??
-          order.totalQty ??
-          order.withdrawnQuantity ??
-          order.drawnCoins ??
-          0
-        ),
+          totalQty:
+            Number(
+              order.quantity ??
+              order.totalQty ??
+              order.withdrawnQuantity ??
+              order.drawnCoins ??
+              0
+            ),
 
-        totalPrice:
-          order.totalPrice ??
-          order.total ??
-          "0 ر.س",
+          totalPrice:
+            order.totalPrice ??
+            order.displayTotalPrice ??
+            order.total ??
+            "0 ر.س",
 
-        status:
-          order.status ||
-          order.orderStatus ||
-          "new",
+          priceCurrency:
+            order.priceCurrency ||
+            "SAR",
 
-        issue:
-          order.issue || null,
+          status:
+            order.status ||
+            order.orderStatus ||
+            "new",
 
-        issueMessage:
-          order.issueMessage || "",
+          issue:
+            order.issue ||
+            null,
 
-        paymentMethod:
-          order.payoutDetails?.method ||
-          order.paymentMethodType ||
-          order.paymentMethod ||
-          "",
+          issueMessage:
+            order.issueMessage ||
+            "",
 
-        paymentType:
-          order.payoutDetails?.payoutType ||
-          order.paymentMethodType ||
-          "",
+          paymentMethod:
+            order.payoutDetails?.method ||
+            order.paymentMethodType ||
+            order.paymentMethod ||
+            "",
 
-        bankName:
-          order.payoutDetails?.bankName ||
-          order.paymentInfoData?.bankName ||
-          order.bankName ||
-          "",
+          paymentType:
+            order.payoutDetails?.payoutType ||
+            order.paymentMethodType ||
+            "",
 
-        accountIban:
-          order.accountIban ||
-          "",
+          bankName:
+            order.payoutDetails?.bankName ||
+            order.paymentInfoData?.bankName ||
+            order.bankName ||
+            "",
 
-        drawnCoins: Number(
-          order.drawnCoins ??
-          order.withdrawnQuantity ??
-          0
-        ),
+          accountIban:
+            order.accountIban ||
+            "",
 
-        transferData:
-          order.transferData ||
-          null,
+          drawnCoins:
+            Number(
+              order.drawnCoins ??
+              order.withdrawnQuantity ??
+              0
+            ),
 
-        completedAt:
-          order.completedAt || null,
+          transferData:
+            order.transferData ||
+            null,
 
-        purgeDueAt:
-          order.purgeDueAt || null,
+          completedAt:
+            order.completedAt ||
+            null,
 
-        sensitivePurged:
-          order.sensitivePurged === true,
+          purgeDueAt:
+            order.purgeDueAt ||
+            null,
 
-        createdAt:
-          parseFirestoreDate(
-            order.createdAt
-          )
-      })
-    );
+          sensitivePurged:
+            order.sensitivePurged === true,
+
+          createdAt:
+            parseFirestoreDate(
+              order.createdAt
+            ),
+
+          updatedAt:
+            parseFirestoreDate(
+              order.updatedAt
+            )
+        }));
 
     sortOrdersByPriority();
 
@@ -887,7 +1155,10 @@ async function loadOrders() {
     renderWithdrawOrdersTable();
     renderRecentOrdersTable();
     renderTransferAlertsTable();
-    renderClientsTable(activeSearchQuery);
+    renderPurgeOrdersTable();
+    renderClientsTable(
+      activeSearchQuery
+    );
   } catch (error) {
     console.error(
       "Load Orders Error:",
@@ -908,29 +1179,33 @@ function sortOrdersByPriority() {
     archived: 7
   };
 
-  ordersData.sort((a, b) => {
-    const pA =
-      priorityMap[a.status] || 8;
+  ordersData.sort(
+    (a, b) => {
+      const pA =
+        priorityMap[a.status] ||
+        8;
 
-    const pB =
-      priorityMap[b.status] || 8;
+      const pB =
+        priorityMap[b.status] ||
+        8;
 
-    if (pA !== pB) {
-      return pA - pB;
+      if (pA !== pB) {
+        return pA - pB;
+      }
+
+      const timeA =
+        a.createdAt
+          ? a.createdAt.getTime()
+          : 0;
+
+      const timeB =
+        b.createdAt
+          ? b.createdAt.getTime()
+          : 0;
+
+      return timeB - timeA;
     }
-
-    const timeA =
-      a.createdAt
-        ? a.createdAt.getTime()
-        : 0;
-
-    const timeB =
-      b.createdAt
-        ? b.createdAt.getTime()
-        : 0;
-
-    return timeB - timeA;
-  });
+  );
 }
 
 function renderDashboardQuickStats() {
@@ -943,7 +1218,8 @@ function renderDashboardQuickStats() {
 
   const countProgress =
     ordersData.filter(
-      (o) => o.status === "progress"
+      (o) =>
+        o.status === "progress"
     ).length;
 
   const countFinished =
@@ -956,24 +1232,52 @@ function renderDashboardQuickStats() {
 
   const countTransferPending =
     ordersData.filter(
-      (o) => o.status === "finished"
+      (o) =>
+        o.status === "finished"
     ).length;
 
-  const setText = (id, value) => {
-    const element =
-      document.getElementById(id);
+  const purgeCount =
+    ordersData.filter(
+      (o) =>
+        isPurgeDue(o)
+    ).length;
 
-    if (element) {
-      element.innerText = value;
-    }
-  };
+  const setText =
+    (id, value) => {
+      const element =
+        document.getElementById(
+          id
+        );
 
-  setText("dashStatNew", countNew);
-  setText("dashStatProgress", countProgress);
-  setText("dashStatCompleted", countFinished);
+      if (element) {
+        element.innerText =
+          value;
+      }
+    };
+
+  setText(
+    "dashStatNew",
+    countNew
+  );
+
+  setText(
+    "dashStatProgress",
+    countProgress
+  );
+
+  setText(
+    "dashStatCompleted",
+    countFinished
+  );
+
   setText(
     "dashStatPendingTransfer",
     countTransferPending
+  );
+
+  setText(
+    "dashStatPurge",
+    purgeCount
   );
 
   const badge =
@@ -982,7 +1286,9 @@ function renderDashboardQuickStats() {
     );
 
   if (badge) {
-    badge.innerText = countNew;
+    badge.innerText =
+      countNew;
+
     badge.style.display =
       countNew > 0
         ? "inline-block"
@@ -992,82 +1298,117 @@ function renderDashboardQuickStats() {
   setText(
     "dashStockPS",
     formatCoinsNumber(
-      currentSettingsData.psStock || 0
-    ) + " كوينز"
+      currentSettingsData.psStock ||
+      0
+    ) +
+      " كوينز"
   );
 
   setText(
     "dashStockPC",
     formatCoinsNumber(
-      currentSettingsData.pcStock || 0
-    ) + " كوينز"
+      currentSettingsData.pcStock ||
+      0
+    ) +
+      " كوينز"
   );
 }
 
 function renderStatisticsPage() {
-  const now = new Date();
+  const now =
+    new Date();
 
   const todayStr =
-    now.toLocaleDateString("en-CA", {
-      timeZone: "Asia/Riyadh"
-    });
+    now.toLocaleDateString(
+      "en-CA",
+      {
+        timeZone:
+          "Asia/Riyadh"
+      }
+    );
 
   let totalCoins = 0;
   let totalMoney = 0;
   let todayCoins = 0;
   let todayMoney = 0;
 
-  const clientsSet = new Set();
+  const clientsSet =
+    new Set();
 
-  ordersData.forEach((order) => {
-    if (order.phone) {
-      clientsSet.add(order.phone);
-    }
-
-    const price =
-      parseFloat(
-        String(order.totalPrice)
-          .replace(/[^0-9.]/g, "")
-      ) || 0;
-
-    if (
-      order.status === "completed" ||
-      order.status === "finished" ||
-      order.status === "transferred"
-    ) {
-      totalCoins += order.totalQty;
-      totalMoney += price;
-
-      const orderDate =
-        parseFirestoreDate(
-          order.createdAt
+  ordersData.forEach(
+    (order) => {
+      if (order.phone) {
+        clientsSet.add(
+          order.phone
         );
+      }
 
-      const orderDateStr =
-        orderDate
-          ? orderDate.toLocaleDateString(
-              "en-CA",
-              {
-                timeZone: "Asia/Riyadh"
-              }
-            )
-          : "";
+      const price =
+        parseFloat(
+          String(
+            order.totalPrice
+          ).replace(
+            /[^0-9.]/g,
+            ""
+          )
+        ) || 0;
 
-      if (orderDateStr === todayStr) {
-        todayCoins += order.totalQty;
-        todayMoney += price;
+      if (
+        order.status ===
+          "completed" ||
+        order.status ===
+          "finished" ||
+        order.status ===
+          "transferred"
+      ) {
+        totalCoins +=
+          order.totalQty;
+
+        totalMoney +=
+          price;
+
+        const orderDate =
+          parseFirestoreDate(
+            order.createdAt
+          );
+
+        const orderDateStr =
+          orderDate
+            ? orderDate.toLocaleDateString(
+                "en-CA",
+                {
+                  timeZone:
+                    "Asia/Riyadh"
+                }
+              )
+            : "";
+
+        if (
+          orderDateStr ===
+          todayStr
+        ) {
+          todayCoins +=
+            order.totalQty;
+
+          todayMoney +=
+            price;
+        }
       }
     }
-  });
+  );
 
-  const setText = (id, value) => {
-    const element =
-      document.getElementById(id);
+  const setText =
+    (id, value) => {
+      const element =
+        document.getElementById(
+          id
+        );
 
-    if (element) {
-      element.innerText = value;
-    }
-  };
+      if (element) {
+        element.innerText =
+          value;
+      }
+    };
 
   setText(
     "statTotalOrders",
@@ -1081,41 +1422,52 @@ function renderStatisticsPage() {
 
   setText(
     "statTotalCoins",
-    formatCoinsNumber(totalCoins)
+    formatCoinsNumber(
+      totalCoins
+    )
   );
 
   setText(
     "statTotalMoney",
-    totalMoney.toLocaleString() + " ريال"
+    totalMoney.toLocaleString() +
+      " ريال"
   );
 
   setText(
     "statTodayCoins",
-    formatCoinsNumber(todayCoins)
+    formatCoinsNumber(
+      todayCoins
+    )
   );
 
   setText(
     "statTodayMoney",
-    todayMoney.toLocaleString() + " ريال"
+    todayMoney.toLocaleString() +
+      " ريال"
   );
 }
 
-window.handleGlobalSearch = function (value) {
-  activeSearchQuery =
-    String(value || "")
-      .trim()
-      .toLowerCase();
+window.handleGlobalSearch =
+  function (value) {
+    activeSearchQuery =
+      String(value || "")
+        .trim()
+        .toLowerCase();
 
-  renderOrdersTables();
-  renderWithdrawOrdersTable();
-  renderClientsTable(activeSearchQuery);
-};
+    renderOrdersTables();
+    renderWithdrawOrdersTable();
+    renderClientsTable(
+      activeSearchQuery
+    );
+  };
 
 // ==========================================================================
 // 6) جداول الطلبات
 // ==========================================================================
 
-function buildActionButtonsHTML(order) {
+function buildActionButtonsHTML(
+  order
+) {
   const refNum =
     order.referenceNumber ||
     order.orderId ||
@@ -1165,7 +1517,9 @@ function buildActionButtonsHTML(order) {
   `;
 }
 
-function getStatusBadge(status) {
+function getStatusBadge(
+  status
+) {
   const badges = {
     progress:
       '<span class="badge badge-progress">جاري سحب الكوينز من حسابك</span>',
@@ -1194,127 +1548,210 @@ function getStatusBadge(status) {
 
   return (
     badges[status] ||
-    `<span class="badge">${escapeHtml(status || "---")}</span>`
+    `<span class="badge">${escapeHtml(
+      status || "---"
+    )}</span>`
   );
 }
 
-window.renderOrdersTables = function () {
-  const tbody =
-    document.getElementById(
-      "fullOrdersTableBody"
-    );
+function getIssueLabel(
+  issue
+) {
+  return (
+    DEFAULT_ISSUE_MESSAGES[
+      issue
+    ] ||
+    "توجد مشكلة في الطلب"
+  );
+}
 
-  if (!tbody) return;
+function getIssueBadge(
+  issue
+) {
+  if (!issue) {
+    return "";
+  }
 
-  const filter =
-    document.getElementById(
-      "orderStatusFilter"
-    )?.value || "all";
+  return `
+    <span
+      class="badge"
+      style="
+        background:rgba(239,68,68,0.12);
+        color:#ef4444;
+        border:1px solid rgba(239,68,68,0.3);
+      ">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      ${escapeHtml(
+        getIssueLabel(issue)
+      )}
+    </span>
+  `;
+}
 
-  let filteredData = ordersData;
-
-  if (filter !== "all") {
-    filteredData =
-      ordersData.filter(
-        (order) =>
-          order.status === filter
+window.renderOrdersTables =
+  function () {
+    const tbody =
+      document.getElementById(
+        "fullOrdersTableBody"
       );
-  }
 
-  if (activeSearchQuery) {
-    filteredData =
-      filteredData.filter((order) => {
-        const ref =
-          String(
-            order.referenceNumber || ""
-          ).toLowerCase();
+    if (!tbody) return;
 
-        const name =
-          String(
-            order.name || ""
-          ).toLowerCase();
+    const filter =
+      document.getElementById(
+        "orderStatusFilter"
+      )?.value ||
+      "all";
 
-        const phone =
-          String(
-            order.phone || ""
-          ).toLowerCase();
+    let filteredData =
+      ordersData;
 
-        return (
-          ref.includes(activeSearchQuery) ||
-          name.includes(activeSearchQuery) ||
-          phone.includes(activeSearchQuery)
+    if (
+      filter !== "all"
+    ) {
+      filteredData =
+        ordersData.filter(
+          (order) =>
+            order.status ===
+            filter
         );
-      });
-  }
+    }
 
-  if (filteredData.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8"
-            style="text-align:center;padding:20px;color:var(--text-muted);">
-          لا توجد طلبات مسجلة مطابقة.
-        </td>
-      </tr>
-    `;
+    if (activeSearchQuery) {
+      filteredData =
+        filteredData.filter(
+          (order) => {
+            const ref =
+              String(
+                order.referenceNumber ||
+                  ""
+              ).toLowerCase();
 
-    return;
-  }
+            const name =
+              String(
+                order.name || ""
+              ).toLowerCase();
 
-  tbody.innerHTML =
-    filteredData.map((order) => {
-      const ref =
-        order.referenceNumber || "";
+            const phone =
+              String(
+                order.phone || ""
+              ).toLowerCase();
 
-      return `
+            return (
+              ref.includes(
+                activeSearchQuery
+              ) ||
+              name.includes(
+                activeSearchQuery
+              ) ||
+              phone.includes(
+                activeSearchQuery
+              )
+            );
+          }
+        );
+    }
+
+    if (
+      filteredData.length ===
+      0
+    ) {
+      tbody.innerHTML = `
         <tr>
-
-          <td>
-            <b
-              style="color:var(--primary);font-family:monospace;cursor:pointer;"
-              onclick="copyTrackingLink('${escapeAttribute(ref)}')">
-              ${escapeHtml(ref || "---")}
-              <i class="fa-solid fa-copy"></i>
-            </b>
+          <td colspan="8"
+              style="text-align:center;padding:20px;color:var(--text-muted);">
+            لا توجد طلبات مسجلة مطابقة.
           </td>
-
-          <td>
-            <span style="font-family:monospace;font-size:0.8rem;color:var(--text-muted);">
-              ${escapeHtml(order.orderId || order.id || "---")}
-            </span>
-          </td>
-
-          <td>
-            ${escapeHtml(order.name || "---")}
-          </td>
-
-          <td>
-            <span class="badge badge-new">
-              ${escapeHtml(order.platform || "---")}
-            </span>
-          </td>
-
-          <td>
-            ${formatCoinsNumber(order.totalQty)}
-          </td>
-
-          <td>
-            <b style="color:var(--primary);">
-              ${escapeHtml(order.totalPrice || "0 ر.س")}
-            </b>
-          </td>
-
-          <td>
-            ${getStatusBadge(order.status)}
-          </td>
-
-          <td>
-            ${buildActionButtonsHTML(order)}
-          </td>
-
         </tr>
       `;
-    }).join("");
-};
+
+      return;
+    }
+
+    tbody.innerHTML =
+      filteredData
+        .map(
+          (order) => {
+            const ref =
+              order.referenceNumber ||
+              "";
+
+            return `
+              <tr>
+
+                <td>
+                  <b
+                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
+                    onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                    ${escapeHtml(
+                      ref || "---"
+                    )}
+                    <i class="fa-solid fa-copy"></i>
+                  </b>
+                </td>
+
+                <td>
+                  <span style="font-family:monospace;font-size:0.8rem;color:var(--text-muted);">
+                    ${escapeHtml(
+                      order.orderId ||
+                      order.id ||
+                      "---"
+                    )}
+                  </span>
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    order.name ||
+                    "---"
+                  )}
+                </td>
+
+                <td>
+                  <span class="badge badge-new">
+                    ${escapeHtml(
+                      order.platform ||
+                      "---"
+                    )}
+                  </span>
+                </td>
+
+                <td>
+                  ${formatCoinsNumber(
+                    order.totalQty
+                  )}
+                </td>
+
+                <td>
+                  <b style="color:var(--primary);">
+                    ${escapeHtml(
+                      order.totalPrice ||
+                      "0 ر.س"
+                    )}
+                  </b>
+                </td>
+
+                <td>
+                  ${getStatusBadge(
+                    order.status
+                  )}
+                  ${getIssueBadge(
+                    order.issue
+                  )}
+                </td>
+
+                <td>
+                  ${buildActionButtonsHTML(
+                    order
+                  )}
+                </td>
+
+              </tr>
+            `;
+          }
+        )
+        .join("");
+  };
 
 window.renderRecentOrdersTable =
   function () {
@@ -1329,12 +1766,24 @@ window.renderRecentOrdersTable =
       [...ordersData]
         .sort(
           (a, b) =>
-            (b.createdAt?.getTime() || 0) -
-            (a.createdAt?.getTime() || 0)
+            (
+              b.createdAt?.getTime() ||
+              0
+            ) -
+            (
+              a.createdAt?.getTime() ||
+              0
+            )
         )
-        .slice(0, 5);
+        .slice(
+          0,
+          5
+        );
 
-    if (recentOrders.length === 0) {
+    if (
+      recentOrders.length ===
+      0
+    ) {
       tbody.innerHTML = `
         <tr>
           <td colspan="8"
@@ -1348,56 +1797,82 @@ window.renderRecentOrdersTable =
     }
 
     tbody.innerHTML =
-      recentOrders.map((order) => {
-        const ref =
-          order.referenceNumber || "";
+      recentOrders
+        .map(
+          (order) => {
+            const ref =
+              order.referenceNumber ||
+              "";
 
-        return `
-          <tr>
+            return `
+              <tr>
 
-            <td>
-              <b
-                style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                onclick="copyTrackingLink('${escapeAttribute(ref)}')">
-                ${escapeHtml(ref || "---")}
-              </b>
-            </td>
+                <td>
+                  <b
+                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
+                    onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                    ${escapeHtml(
+                      ref || "---"
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              ${escapeHtml(order.orderId || order.id || "---")}
-            </td>
+                <td>
+                  ${escapeHtml(
+                    order.orderId ||
+                    order.id ||
+                    "---"
+                  )}
+                </td>
 
-            <td>
-              ${escapeHtml(order.name || "---")}
-            </td>
+                <td>
+                  ${escapeHtml(
+                    order.name ||
+                    "---"
+                  )}
+                </td>
 
-            <td>
-              <span class="badge badge-new">
-                ${escapeHtml(order.platform || "---")}
-              </span>
-            </td>
+                <td>
+                  <span class="badge badge-new">
+                    ${escapeHtml(
+                      order.platform ||
+                      "---"
+                    )}
+                  </span>
+                </td>
 
-            <td>
-              ${formatCoinsNumber(order.totalQty)}
-            </td>
+                <td>
+                  ${formatCoinsNumber(
+                    order.totalQty
+                  )}
+                </td>
 
-            <td>
-              <b style="color:var(--primary);">
-                ${escapeHtml(order.totalPrice || "0 ر.س")}
-              </b>
-            </td>
+                <td>
+                  <b style="color:var(--primary);">
+                    ${escapeHtml(
+                      order.totalPrice ||
+                      "0 ر.س"
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              ${getStatusBadge(order.status)}
-            </td>
+                <td>
+                  ${getStatusBadge(
+                    order.status
+                  )}
+                </td>
 
-            <td>
-              ${buildActionButtonsHTML(order)}
-            </td>
+                <td>
+                  ${buildActionButtonsHTML(
+                    order
+                  )}
+                </td>
 
-          </tr>
-        `;
-      }).join("");
+              </tr>
+            `;
+          }
+        )
+        .join("");
   };
 
 window.renderWithdrawOrdersTable =
@@ -1412,31 +1887,40 @@ window.renderWithdrawOrdersTable =
     let withdrawOrders =
       ordersData.filter(
         (order) =>
-          order.status === "new" ||
-          order.status === "pending" ||
-          order.status === "review"
+          order.status ===
+            "new" ||
+          order.status ===
+            "pending" ||
+          order.status ===
+            "review"
       );
 
     const under500k =
       withdrawOrders.filter(
         (order) =>
-          order.totalQty < 500000
+          order.totalQty <
+          500000
       );
 
     const over500k =
       withdrawOrders.filter(
         (order) =>
-          order.totalQty >= 500000
+          order.totalQty >=
+          500000
       );
 
-    const setText = (id, value) => {
-      const element =
-        document.getElementById(id);
+    const setText =
+      (id, value) => {
+        const element =
+          document.getElementById(
+            id
+          );
 
-      if (element) {
-        element.innerText = value;
-      }
-    };
+        if (element) {
+          element.innerText =
+            value;
+        }
+      };
 
     setText(
       "countUnder500k",
@@ -1461,15 +1945,27 @@ window.renderWithdrawOrdersTable =
     const filter =
       document.getElementById(
         "withdrawFilter"
-      )?.value || "all";
+      )?.value ||
+      "all";
 
-    if (filter === "under") {
-      withdrawOrders = under500k;
-    } else if (filter === "over") {
-      withdrawOrders = over500k;
+    if (
+      filter ===
+      "under"
+    ) {
+      withdrawOrders =
+        under500k;
+    } else if (
+      filter ===
+      "over"
+    ) {
+      withdrawOrders =
+        over500k;
     }
 
-    if (withdrawOrders.length === 0) {
+    if (
+      withdrawOrders.length ===
+      0
+    ) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7"
@@ -1483,61 +1979,84 @@ window.renderWithdrawOrdersTable =
     }
 
     tbody.innerHTML =
-      withdrawOrders.map((order) => {
-        const total =
-          order.totalQty || 0;
+      withdrawOrders
+        .map(
+          (order) => {
+            const total =
+              order.totalQty ||
+              0;
 
-        const isUnder =
-          total < 500000;
+            const isUnder =
+              total <
+              500000;
 
-        const categoryBadge =
-          isUnder
-            ? '<span class="badge">أقل من 500K</span>'
-            : '<span class="badge">500K فأكثر</span>';
+            const categoryBadge =
+              isUnder
+                ? '<span class="badge">أقل من 500K</span>'
+                : '<span class="badge">500K فأكثر</span>';
 
-        const ref =
-          order.referenceNumber || "";
+            const ref =
+              order.referenceNumber ||
+              "";
 
-        return `
-          <tr>
+            return `
+              <tr>
 
-            <td>
-              <b
-                style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                onclick="copyTrackingLink('${escapeAttribute(ref)}')">
-                ${escapeHtml(ref || "---")}
-              </b>
-            </td>
+                <td>
+                  <b
+                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
+                    onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                    ${escapeHtml(
+                      ref || "---"
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              ${escapeHtml(order.name || "---")}
-            </td>
+                <td>
+                  ${escapeHtml(
+                    order.name ||
+                    "---"
+                  )}
+                </td>
 
-            <td>
-              <span class="badge badge-new">
-                ${escapeHtml(order.platform || "---")}
-              </span>
-            </td>
+                <td>
+                  <span class="badge badge-new">
+                    ${escapeHtml(
+                      order.platform ||
+                      "---"
+                    )}
+                  </span>
+                </td>
 
-            <td>
-              <b>${formatCoinsNumber(total)}</b>
-            </td>
+                <td>
+                  <b>
+                    ${formatCoinsNumber(
+                      total
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              ${getStatusBadge(order.status)}
-            </td>
+                <td>
+                  ${getStatusBadge(
+                    order.status
+                  )}
+                </td>
 
-            <td>
-              ${categoryBadge}
-            </td>
+                <td>
+                  ${categoryBadge}
+                </td>
 
-            <td>
-              ${buildActionButtonsHTML(order)}
-            </td>
+                <td>
+                  ${buildActionButtonsHTML(
+                    order
+                  )}
+                </td>
 
-          </tr>
-        `;
-      }).join("");
+              </tr>
+            `;
+          }
+        )
+        .join("");
   };
 
 window.renderTransferAlertsTable =
@@ -1560,40 +2079,41 @@ window.renderTransferAlertsTable =
     const transferOrders =
       ordersData.filter(
         (order) =>
-          order.status === "finished"
+          order.status ===
+          "finished"
       );
 
-    if (
+    const badgeCount =
       document.getElementById(
         "transferBadgeCount"
-      )
-    ) {
-      document.getElementById(
-        "transferBadgeCount"
-      ).innerText =
+      );
+
+    if (badgeCount) {
+      badgeCount.innerText =
         transferOrders.length;
     }
 
-    if (
+    const headerBadge =
       document.getElementById(
         "transferHeaderBadge"
-      )
-    ) {
-      document.getElementById(
-        "transferHeaderBadge"
-      ).innerText =
+      );
+
+    if (headerBadge) {
+      headerBadge.innerText =
         `${transferOrders.length} طلبات بحاجة للتحويل`;
     }
 
     if (banner) {
       banner.style.display =
-        transferOrders.length > 0
+        transferOrders.length >
+        0
           ? "flex"
           : "none";
 
       if (
         bannerText &&
-        transferOrders.length > 0
+        transferOrders.length >
+          0
       ) {
         bannerText.innerText =
           `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
@@ -1602,7 +2122,10 @@ window.renderTransferAlertsTable =
 
     if (!tbody) return;
 
-    if (transferOrders.length === 0) {
+    if (
+      transferOrders.length ===
+      0
+    ) {
       tbody.innerHTML = `
         <tr>
           <td colspan="7"
@@ -1616,119 +2139,363 @@ window.renderTransferAlertsTable =
     }
 
     tbody.innerHTML =
-      transferOrders.map((order) => {
-        const ref =
-          order.referenceNumber || "";
+      transferOrders
+        .map(
+          (order) => {
+            const ref =
+              order.referenceNumber ||
+              "";
 
-        return `
-          <tr>
+            return `
+              <tr>
 
-            <td>
-              <b
-                style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                onclick="copyTrackingLink('${escapeAttribute(ref)}')">
-                ${escapeHtml(ref || "---")}
-              </b>
-            </td>
+                <td>
+                  <b
+                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
+                    onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                    ${escapeHtml(
+                      ref || "---"
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              ${escapeHtml(order.name || "---")}
-            </td>
+                <td>
+                  ${escapeHtml(
+                    order.name ||
+                    "---"
+                  )}
+                </td>
 
-            <td>
-              <span style="font-family:monospace;">
-                ${escapeHtml(order.phone || "---")}
-              </span>
-            </td>
+                <td>
+                  <span style="font-family:monospace;">
+                    ${escapeHtml(
+                      order.phone ||
+                      "---"
+                    )}
+                  </span>
+                </td>
 
-            <td>
-              <b style="color:#f59e0b;">
-                ${escapeHtml(order.totalPrice || "0 ر.س")}
-              </b>
-            </td>
+                <td>
+                  <b style="color:#f59e0b;">
+                    ${escapeHtml(
+                      order.totalPrice ||
+                      "0 ر.س"
+                    )}
+                  </b>
+                </td>
 
-            <td>
-              <span class="badge badge-review">
-                ${escapeHtml(order.paymentMethod || "---")}
-                ${order.bankName ? " - " + escapeHtml(order.bankName) : ""}
-              </span>
-            </td>
+                <td>
+                  <span class="badge badge-review">
+                    ${escapeHtml(
+                      order.paymentMethod ||
+                      "---"
+                    )}
+                    ${
+                      order.bankName
+                        ? " - " +
+                          escapeHtml(
+                            order.bankName
+                          )
+                        : ""
+                    }
+                  </span>
+                </td>
 
-            <td>
-              ${calculateTransferCountdown(order.createdAt)}
-            </td>
+                <td>
+                  ${escapeHtml(
+                    order.completedAt
+                      ? new Date(
+                          parseFirestoreDate(
+                            order.completedAt
+                          ) ||
+                          order.completedAt
+                        ).toLocaleString(
+                          "ar-SA",
+                          {
+                            timeZone:
+                              "Asia/Riyadh"
+                          }
+                        )
+                      : "---"
+                  )}
+                </td>
 
-            <td>
-              <button
-                class="btn-custom"
-                style="background:#f59e0b;color:#fff;font-size:0.75rem;padding:6px 12px;"
-                onclick="openOrderModal('${escapeAttribute(order.id)}')">
-                معاينة وإتمام التحويل
-              </button>
-            </td>
+                <td>
+                  <button
+                    class="btn-custom"
+                    style="background:#f59e0b;color:#fff;font-size:0.75rem;padding:6px 12px;"
+                    onclick="openOrderModal('${escapeAttribute(order.id)}')">
+                    معاينة وإتمام التحويل
+                  </button>
+                </td>
 
-          </tr>
-        `;
-      }).join("");
+              </tr>
+            `;
+          }
+        )
+        .join("");
   };
 
 // ==========================================================================
-// 7) التقييمات
+// 7) قسم الإتلاف — بعد 5 أيام من completedAt
+// ==========================================================================
+
+window.renderPurgeOrdersTable =
+  function () {
+    const tbody =
+      document.getElementById(
+        "purgeOrdersTableBody"
+      );
+
+    const badge =
+      document.getElementById(
+        "purgeBadgeCount"
+      );
+
+    const headerBadge =
+      document.getElementById(
+        "purgeHeaderBadge"
+      );
+
+    /*
+     * نعرض هنا الطلبات المكتملة التي لم يتم إتلاف
+     * بيانات EA الخاصة بها.
+     *
+     * الطلبات غير المستحقة تبقى ظاهرة مع العد التنازلي.
+     * المستحق منها يظهر بشكل واضح للمراجعة.
+     */
+    const purgeOrders =
+      ordersData.filter(
+        (order) =>
+          order.status ===
+            "completed" &&
+          order.sensitivePurged !==
+            true
+      );
+
+    const dueCount =
+      purgeOrders.filter(
+        (order) =>
+          isPurgeDue(order)
+      ).length;
+
+    if (badge) {
+      badge.innerText =
+        dueCount;
+    }
+
+    if (headerBadge) {
+      headerBadge.innerText =
+        `${dueCount} طلبات مستحقة للإتلاف`;
+    }
+
+    if (!tbody) return;
+
+    if (
+      purgeOrders.length ===
+      0
+    ) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7"
+              style="text-align:center;padding:20px;color:var(--text-muted);">
+            لا توجد بيانات حساسة بانتظار الإتلاف.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML =
+      purgeOrders
+        .map(
+          (order) => {
+            const ref =
+              order.referenceNumber ||
+              order.orderId ||
+              order.id;
+
+            const due =
+              isPurgeDue(order);
+
+            return `
+              <tr
+                style="${
+                  due
+                    ? "background:rgba(239,68,68,0.06);"
+                    : ""
+                }">
+
+                <td>
+                  <b
+                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
+                    onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                    ${escapeHtml(ref)}
+                  </b>
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    order.name ||
+                    "---"
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    order.platform ||
+                    "---"
+                  )}
+                </td>
+
+                <td>
+                  ${escapeHtml(
+                    order.completedAt
+                      ? new Date(
+                          parseFirestoreDate(
+                            order.completedAt
+                          ) ||
+                          order.completedAt
+                        ).toLocaleString(
+                          "ar-SA",
+                          {
+                            timeZone:
+                              "Asia/Riyadh"
+                          }
+                        )
+                      : "---"
+                  )}
+                </td>
+
+                <td>
+                  ${calculatePurgeCountdown(
+                    order
+                  )}
+                </td>
+
+                <td>
+                  ${
+                    due
+                      ? `
+                        <span
+                          class="badge"
+                          style="
+                            background:rgba(239,68,68,0.12);
+                            color:#ef4444;
+                            border:1px solid rgba(239,68,68,0.3);
+                          ">
+                          مستحق للمراجعة
+                        </span>
+                      `
+                      : `
+                        <span
+                          class="badge badge-review">
+                          بانتظار الموعد
+                        </span>
+                      `
+                  }
+                </td>
+
+                <td>
+                  <button
+                    class="btn-custom"
+                    style="
+                      background:${
+                        due
+                          ? "#ef4444"
+                          : "#64748b"
+                      };
+                      color:#fff;
+                      font-size:0.75rem;
+                      padding:6px 12px;
+                    "
+                    onclick="openPurgeModal('${escapeAttribute(order.id)}')">
+                    <i class="fa-solid fa-skull-crossbones"></i>
+                    ${
+                      due
+                        ? "مراجعة وإتلاف"
+                        : "عرض الموعد"
+                    }
+                  </button>
+                </td>
+
+              </tr>
+            `;
+          }
+        )
+        .join("");
+  };
+
+// ==========================================================================
+// 8) التقييمات
 // ==========================================================================
 
 function initReviewsListener() {
   const q =
-    query(collection(db, "reviews"));
+    query(
+      collection(db, "reviews")
+    );
 
   return onSnapshot(
     q,
     (snapshot) => {
       reviewsData =
-        snapshot.docs.map((docSnap) => {
-          const data =
-            docSnap.data();
+        snapshot.docs.map(
+          (docSnap) => {
+            const data =
+              docSnap.data();
 
-          return {
-            id: docSnap.id,
+            return {
+              id:
+                docSnap.id,
 
-            customerName:
-              data.customerName ||
-              data.name ||
-              "عميل",
+              customerName:
+                data.customerName ||
+                data.name ||
+                "عميل",
 
-            referenceNumber:
-              data.referenceNumber ||
-              data.orderId ||
-              "---",
+              referenceNumber:
+                data.referenceNumber ||
+                data.orderId ||
+                "---",
 
-            rating:
-              Number(data.rating || 5),
+              rating:
+                Number(
+                  data.rating || 5
+                ),
 
-            comment:
-              data.comment ||
-              data.text ||
-              "بدون تعليق",
+              comment:
+                data.comment ||
+                data.text ||
+                "بدون تعليق",
 
-            createdAt:
-              data.createdAt?.toDate
-                ? data.createdAt
-                    .toDate()
-                    .toLocaleDateString(
-                      "ar-SA"
-                    )
-                : data.createdAt ||
-                  "---",
+              createdAt:
+                data.createdAt?.toDate
+                  ? data.createdAt
+                      .toDate()
+                      .toLocaleDateString(
+                        "ar-SA",
+                        {
+                          timeZone:
+                            "Asia/Riyadh"
+                        }
+                      )
+                  : data.createdAt ||
+                    "---",
 
-            status:
-              data.status ||
-              "published",
+              status:
+                data.status ||
+                "published",
 
-            ...data
-          };
-        });
+              ...data
+            };
+          }
+        );
 
       if (
-        lastReviewsCount !== null &&
+        lastReviewsCount !==
+          null &&
         reviewsData.length >
           lastReviewsCount
       ) {
@@ -1784,7 +2551,8 @@ function renderReviewsTable() {
   const pendingCount =
     reviewsData.filter(
       (review) =>
-        review.status === "pending"
+        review.status ===
+        "pending"
     ).length;
 
   const avgRating =
@@ -1792,20 +2560,26 @@ function renderReviewsTable() {
       ? (
           reviewsData.reduce(
             (sum, review) =>
-              sum + review.rating,
+              sum +
+              review.rating,
             0
-          ) / totalReviews
+          ) /
+          totalReviews
         ).toFixed(1)
       : "0.0";
 
-  const setText = (id, value) => {
-    const element =
-      document.getElementById(id);
+  const setText =
+    (id, value) => {
+      const element =
+        document.getElementById(
+          id
+        );
 
-    if (element) {
-      element.innerText = value;
-    }
-  };
+      if (element) {
+        element.innerText =
+          value;
+      }
+    };
 
   setText(
     "statTotalReviews",
@@ -1850,45 +2624,60 @@ function renderReviewsTable() {
   const filterVal =
     document.getElementById(
       "reviewStatusFilter"
-    )?.value || "all";
+    )?.value ||
+    "all";
 
   let filtered =
     reviewsData;
 
-  if (filterVal !== "all") {
+  if (
+    filterVal !==
+    "all"
+  ) {
     filtered =
       filtered.filter(
         (review) =>
-          review.status === filterVal
+          review.status ===
+          filterVal
       );
   }
 
-  if (activeReviewSearchQuery) {
+  if (
+    activeReviewSearchQuery
+  ) {
     filtered =
-      filtered.filter((review) => {
-        const customerName =
-          String(
-            review.customerName || ""
-          ).toLowerCase();
+      filtered.filter(
+        (review) => {
+          const customerName =
+            String(
+              review.customerName ||
+                ""
+            ).toLowerCase();
 
-        const reference =
-          String(
-            review.referenceNumber || ""
-          ).toLowerCase();
+          const reference =
+            String(
+              review.referenceNumber ||
+                ""
+            ).toLowerCase();
 
-        return (
-          customerName.includes(
-            activeReviewSearchQuery
-          ) ||
-          reference.includes(
-            activeReviewSearchQuery
-          )
-        );
-      });
+          return (
+            customerName.includes(
+              activeReviewSearchQuery
+            ) ||
+            reference.includes(
+              activeReviewSearchQuery
+            )
+          );
+        }
+      );
   }
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = "";
+  if (
+    filtered.length ===
+    0
+  ) {
+    tbody.innerHTML =
+      "";
 
     if (emptyState) {
       emptyState.style.display =
@@ -1915,110 +2704,135 @@ function renderReviewsTable() {
   };
 
   tbody.innerHTML =
-    filtered.map((review) => {
-      const stars =
-        "⭐".repeat(
-          Math.max(
-            0,
-            Math.min(
-              5,
-              Number(review.rating || 0)
-            )
-          )
-        );
+    filtered
+      .map(
+        (review) => {
+          const stars =
+            "⭐".repeat(
+              Math.max(
+                0,
+                Math.min(
+                  5,
+                  Number(
+                    review.rating ||
+                      0
+                  )
+                )
+              )
+            );
 
-      return `
-        <tr>
+          return `
+            <tr>
 
-          <td>
-            <b>
-              ${escapeHtml(review.customerName)}
-            </b>
-          </td>
+              <td>
+                <b>
+                  ${escapeHtml(
+                    review.customerName
+                  )}
+                </b>
+              </td>
 
-          <td>
-            <code
-              class="copyable-box"
-              onclick="copyTrackingLink('${escapeAttribute(review.referenceNumber)}')">
-              ${escapeHtml(review.referenceNumber)}
-            </code>
-          </td>
+              <td>
+                <code
+                  class="copyable-box"
+                  onclick="copyTrackingLink('${escapeAttribute(review.referenceNumber)}')">
+                  ${escapeHtml(
+                    review.referenceNumber
+                  )}
+                </code>
+              </td>
 
-          <td>
-            <span style="color:#f59e0b;">
-              ${stars} (${review.rating})
-            </span>
-          </td>
+              <td>
+                <span style="color:#f59e0b;">
+                  ${stars}
+                  (${review.rating})
+                </span>
+              </td>
 
-          <td>
-            <span
-              style="font-size:0.85rem;max-width:250px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              ${escapeHtml(review.comment)}
-            </span>
-          </td>
+              <td>
+                <span
+                  style="font-size:0.85rem;max-width:250px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                  ${escapeHtml(
+                    review.comment
+                  )}
+                </span>
+              </td>
 
-          <td>
-            <span style="font-size:0.8rem;color:var(--text-muted);">
-              ${escapeHtml(review.createdAt)}
-            </span>
-          </td>
+              <td>
+                <span style="font-size:0.8rem;color:var(--text-muted);">
+                  ${escapeHtml(
+                    review.createdAt
+                  )}
+                </span>
+              </td>
 
-          <td>
-            ${statusBadgeMap[review.status] || escapeHtml(review.status)}
-          </td>
+              <td>
+                ${
+                  statusBadgeMap[
+                    review.status
+                  ] ||
+                  escapeHtml(
+                    review.status
+                  )
+                }
+              </td>
 
-          <td>
-            <div style="display:flex;gap:4px;">
+              <td>
+                <div style="display:flex;gap:4px;">
 
-              <button
-                class="btn-action"
-                title="معاينة التقييم"
-                onclick="openReviewModal('${escapeAttribute(review.id)}')">
-                <i class="fa-solid fa-eye"></i>
-              </button>
+                  <button
+                    class="btn-action"
+                    title="معاينة التقييم"
+                    onclick="openReviewModal('${escapeAttribute(review.id)}')">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
 
-              ${
-                review.status !== "published"
-                  ? `
-                    <button
-                      class="btn-action"
-                      style="color:var(--primary);"
-                      title="نشر التقييم"
-                      onclick="updateReviewStatus('${escapeAttribute(review.id)}','published')">
-                      <i class="fa-solid fa-check"></i>
-                    </button>
-                  `
-                  : ""
-              }
+                  ${
+                    review.status !==
+                    "published"
+                      ? `
+                        <button
+                          class="btn-action"
+                          style="color:var(--primary);"
+                          title="نشر التقييم"
+                          onclick="updateReviewStatus('${escapeAttribute(review.id)}','published')">
+                          <i class="fa-solid fa-check"></i>
+                        </button>
+                      `
+                      : ""
+                  }
 
-              ${
-                review.status !== "hidden"
-                  ? `
-                    <button
-                      class="btn-action"
-                      style="color:var(--warning);"
-                      title="إخفاء التقييم"
-                      onclick="updateReviewStatus('${escapeAttribute(review.id)}','hidden')">
-                      <i class="fa-solid fa-eye-slash"></i>
-                    </button>
-                  `
-                  : ""
-              }
+                  ${
+                    review.status !==
+                    "hidden"
+                      ? `
+                        <button
+                          class="btn-action"
+                          style="color:var(--warning);"
+                          title="إخفاء التقييم"
+                          onclick="updateReviewStatus('${escapeAttribute(review.id)}','hidden')">
+                          <i class="fa-solid fa-eye-slash"></i>
+                        </button>
+                      `
+                      : ""
+                  }
 
-              <button
-                class="btn-action"
-                style="color:var(--danger);"
-                title="حذف التقييم"
-                onclick="deleteReview('${escapeAttribute(review.id)}')">
-                <i class="fa-solid fa-trash"></i>
-              </button>
+                  <button
+                    class="btn-action"
+                    style="color:var(--danger);"
+                    title="حذف التقييم"
+                    onclick="deleteReview('${escapeAttribute(review.id)}')">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
 
-            </div>
-          </td>
+                </div>
+              </td>
 
-        </tr>
-      `;
-    }).join("");
+            </tr>
+          `;
+        }
+      )
+      .join("");
 }
 
 document.addEventListener(
@@ -2051,7 +2865,8 @@ document.addEventListener(
     if (reviewFilter) {
       reviewFilter.addEventListener(
         "change",
-        () => renderReviewsTable()
+        () =>
+          renderReviewsTable()
       );
     }
   }
@@ -2074,14 +2889,18 @@ window.openReviewModal =
         "reviewModalBody"
       );
 
-    if (!modal || !modalBody) {
+    if (
+      !modal ||
+      !modalBody
+    ) {
       return;
     }
 
     const review =
       reviewsData.find(
         (item) =>
-          item.id === reviewId
+          item.id ===
+          reviewId
       );
 
     if (!review) return;
@@ -2096,32 +2915,42 @@ window.openReviewModal =
 
         <p style="margin-bottom:8px;">
           <b>العميل:</b>
-          ${escapeHtml(review.customerName)}
+          ${escapeHtml(
+            review.customerName
+          )}
         </p>
 
         <p style="margin-bottom:8px;">
           <b>رقم المرجع:</b>
           <code style="color:var(--primary);">
-            ${escapeHtml(review.referenceNumber)}
+            ${escapeHtml(
+              review.referenceNumber
+            )}
           </code>
         </p>
 
         <p style="margin-bottom:8px;">
           <b>التقييم:</b>
           <span style="color:#f59e0b;">
-            ${"⭐".repeat(review.rating)}
+            ${"⭐".repeat(
+              review.rating
+            )}
             (${review.rating} من 5)
           </span>
         </p>
 
         <p style="margin-bottom:8px;">
           <b>التاريخ:</b>
-          ${escapeHtml(review.createdAt)}
+          ${escapeHtml(
+            review.createdAt
+          )}
         </p>
 
         <p style="margin-bottom:8px;">
           <b>الحالة:</b>
-          ${escapeHtml(review.status)}
+          ${escapeHtml(
+            review.status
+          )}
         </p>
 
       </div>
@@ -2134,7 +2963,9 @@ window.openReviewModal =
         </h4>
 
         <p style="font-size:0.95rem;line-height:1.8;color:var(--text-main);">
-          ${escapeHtml(review.comment)}
+          ${escapeHtml(
+            review.comment
+          )}
         </p>
 
       </div>
@@ -2172,7 +3003,9 @@ window.openReviewModal =
       </div>
     `;
 
-    modal.classList.add("active");
+    modal.classList.add(
+      "active"
+    );
   };
 
 window.closeReviewModal =
@@ -2183,7 +3016,9 @@ window.closeReviewModal =
       );
 
     if (modal) {
-      modal.classList.remove("active");
+      modal.classList.remove(
+        "active"
+      );
     }
   };
 
@@ -2194,9 +3029,14 @@ window.updateReviewStatus =
   ) {
     try {
       await updateDoc(
-        doc(db, "reviews", reviewId),
+        doc(
+          db,
+          "reviews",
+          reviewId
+        ),
         {
-          status: newStatus
+          status:
+            newStatus
         }
       );
 
@@ -2208,13 +3048,18 @@ window.updateReviewStatus =
     } catch (error) {
       alert(
         "❌ فشل تحديث حالة التقييم: " +
-        (error?.message || "")
+        (
+          error?.message ||
+          ""
+        )
       );
     }
   };
 
 window.deleteReview =
-  async function (reviewId) {
+  async function (
+    reviewId
+  ) {
     if (
       !confirm(
         "هل أنت متأكد من حذف هذا التقييم نهائياً؟"
@@ -2225,7 +3070,11 @@ window.deleteReview =
 
     try {
       await deleteDoc(
-        doc(db, "reviews", reviewId)
+        doc(
+          db,
+          "reviews",
+          reviewId
+        )
       );
 
       await logAuditEvent(
@@ -2236,17 +3085,22 @@ window.deleteReview =
     } catch (error) {
       alert(
         "❌ فشل حذف التقييم: " +
-        (error?.message || "")
+        (
+          error?.message ||
+          ""
+        )
       );
     }
   };
 
 // ==========================================================================
-// 8) العملاء
+// 9) العملاء
 // ==========================================================================
 
 window.renderClientsTable =
-  function (searchQuery = "") {
+  function (
+    searchQuery = ""
+  ) {
     const tbody =
       document.getElementById(
         "clientsTableBody"
@@ -2254,47 +3108,63 @@ window.renderClientsTable =
 
     if (!tbody) return;
 
-    const clientsMap = {};
+    const clientsMap =
+      {};
 
-    ordersData.forEach((order) => {
-      const key =
-        order.phone?.trim() ||
-        order.name?.trim() ||
-        "عميل غير معروف";
+    ordersData.forEach(
+      (order) => {
+        const key =
+          order.phone?.trim() ||
+          order.name?.trim() ||
+          "عميل غير معروف";
 
-      if (!clientsMap[key]) {
-        clientsMap[key] = {
-          phone:
-            order.phone ||
-            "بدون رقم",
+        if (!clientsMap[key]) {
+          clientsMap[key] = {
+            phone:
+              order.phone ||
+              "بدون رقم",
 
-          name:
-            order.name ||
-            "عميل",
+            name:
+              order.name ||
+              "عميل",
 
-          orderCount: 0,
-          totalCoins: 0,
-          totalMoney: 0
-        };
+            orderCount: 0,
+            totalCoins: 0,
+            totalMoney: 0
+          };
+        }
+
+        clientsMap[key]
+          .orderCount +=
+          1;
+
+        clientsMap[key]
+          .totalCoins +=
+          order.totalQty ||
+          0;
+
+        clientsMap[key]
+          .totalMoney +=
+          parseFloat(
+            String(
+              order.totalPrice
+            ).replace(
+              /[^0-9.]/g,
+              ""
+            )
+          ) || 0;
       }
-
-      clientsMap[key].orderCount += 1;
-
-      clientsMap[key].totalCoins +=
-        order.totalQty || 0;
-
-      clientsMap[key].totalMoney +=
-        parseFloat(
-          String(order.totalPrice)
-            .replace(/[^0-9.]/g, "")
-        ) || 0;
-    });
+    );
 
     let clientsList =
-      Object.values(clientsMap);
+      Object.values(
+        clientsMap
+      );
 
     const search =
-      String(searchQuery || "")
+      String(
+        searchQuery || ""
+      )
         .trim()
         .toLowerCase();
 
@@ -2311,7 +3181,10 @@ window.renderClientsTable =
         );
     }
 
-    if (clientsList.length === 0) {
+    if (
+      clientsList.length ===
+      0
+    ) {
       tbody.innerHTML = `
         <tr>
           <td colspan="6"
@@ -2325,58 +3198,74 @@ window.renderClientsTable =
     }
 
     tbody.innerHTML =
-      clientsList.map((client) => `
-        <tr>
+      clientsList
+        .map(
+          (client) => `
+            <tr>
 
-          <td>
-            <b>${escapeHtml(client.name)}</b>
-          </td>
+              <td>
+                <b>
+                  ${escapeHtml(
+                    client.name
+                  )}
+                </b>
+              </td>
 
-          <td>
-            <span style="font-family:monospace;color:var(--primary);">
-              ${escapeHtml(client.phone)}
-            </span>
-          </td>
+              <td>
+                <span style="font-family:monospace;color:var(--primary);">
+                  ${escapeHtml(
+                    client.phone
+                  )}
+                </span>
+              </td>
 
-          <td>
-            <span class="badge badge-new">
-              ${client.orderCount} طلبات
-            </span>
-          </td>
+              <td>
+                <span class="badge badge-new">
+                  ${client.orderCount} طلبات
+                </span>
+              </td>
 
-          <td>
-            <b>
-              ${formatCoinsNumber(client.totalCoins)}
-              كوينز
-            </b>
-          </td>
+              <td>
+                <b>
+                  ${formatCoinsNumber(
+                    client.totalCoins
+                  )}
+                  كوينز
+                </b>
+              </td>
 
-          <td>
-            <b style="color:var(--primary);">
-              ${client.totalMoney.toLocaleString()}
-              ريال
-            </b>
-          </td>
+              <td>
+                <b style="color:var(--primary);">
+                  ${client.totalMoney.toLocaleString()}
+                  ريال
+                </b>
+              </td>
 
-          <td>
-            <button
-              class="btn-action"
-              onclick="openClientModal('${encodeURIComponent(client.phone)}')">
-              سجل الطلبات
-            </button>
-          </td>
+              <td>
+                <button
+                  class="btn-action"
+                  onclick="openClientModal('${encodeURIComponent(client.phone)}')">
+                  سجل الطلبات
+                </button>
+              </td>
 
-        </tr>
-      `).join("");
+            </tr>
+          `
+        )
+        .join("");
   };
 
 window.filterClients =
   function (value) {
-    renderClientsTable(value);
+    renderClientsTable(
+      value
+    );
   };
 
 window.openClientModal =
-  function (encodedPhone) {
+  function (
+    encodedPhone
+  ) {
     const phone =
       decodeURIComponent(
         encodedPhone
@@ -2397,15 +3286,20 @@ window.openClientModal =
         "clientModalBody"
       );
 
-    if (!modal || !modalBody) {
+    if (
+      !modal ||
+      !modalBody
+    ) {
       return;
     }
 
     const clientOrders =
       ordersData.filter(
         (order) =>
-          order.phone === phone ||
-          order.name === phone
+          order.phone ===
+            phone ||
+          order.name ===
+            phone
       );
 
     if (modalTitle) {
@@ -2421,8 +3315,15 @@ window.openClientModal =
         <strong>إجمالي الكوينز:</strong>
         ${formatCoinsNumber(
           clientOrders.reduce(
-            (sum, order) =>
-              sum + (order.totalQty || 0),
+            (
+              sum,
+              order
+            ) =>
+              sum +
+              (
+                order.totalQty ||
+                0
+              ),
             0
           )
         )}
@@ -2443,55 +3344,80 @@ window.openClientModal =
           </thead>
 
           <tbody>
-            ${clientOrders.map((order) => {
-              const ref =
-                order.referenceNumber || "";
+            ${clientOrders
+              .map(
+                (order) => {
+                  const ref =
+                    order.referenceNumber ||
+                    "";
 
-              return `
-                <tr>
+                  return `
+                    <tr>
 
-                  <td>
-                    <b
-                      style="color:var(--primary);cursor:pointer;"
-                      onclick="copyTrackingLink('${escapeAttribute(ref)}')">
-                      ${escapeHtml(ref)}
-                    </b>
-                  </td>
+                      <td>
+                        <b
+                          style="color:var(--primary);cursor:pointer;"
+                          onclick="copyTrackingLink('${escapeAttribute(ref)}')">
+                          ${escapeHtml(
+                            ref
+                          )}
+                        </b>
+                      </td>
 
-                  <td>
-                    ${escapeHtml(order.platform)}
-                  </td>
+                      <td>
+                        ${escapeHtml(
+                          order.platform ||
+                          ""
+                        )}
+                      </td>
 
-                  <td>
-                    ${formatCoinsNumber(order.totalQty)}
-                  </td>
+                      <td>
+                        ${formatCoinsNumber(
+                          order.totalQty
+                        )}
+                      </td>
 
-                  <td>
-                    ${escapeHtml(order.totalPrice)}
-                  </td>
+                      <td>
+                        ${escapeHtml(
+                          order.totalPrice ||
+                          ""
+                        )}
+                      </td>
 
-                  <td>
-                    ${getStatusBadge(order.status)}
-                  </td>
+                      <td>
+                        ${getStatusBadge(
+                          order.status
+                        )}
+                      </td>
 
-                  <td>
-                    ${
-                      order.createdAt
-                        ? order.createdAt.toLocaleDateString("ar-SA")
-                        : "---"
-                    }
-                  </td>
+                      <td>
+                        ${
+                          order.createdAt
+                            ? order.createdAt.toLocaleDateString(
+                                "ar-SA",
+                                {
+                                  timeZone:
+                                    "Asia/Riyadh"
+                                }
+                              )
+                            : "---"
+                        }
+                      </td>
 
-                </tr>
-              `;
-            }).join("")}
+                    </tr>
+                  `;
+                }
+              )
+              .join("")}
           </tbody>
 
         </table>
       </div>
     `;
 
-    modal.classList.add("active");
+    modal.classList.add(
+      "active"
+    );
   };
 
 window.closeClientModal =
@@ -2502,18 +3428,26 @@ window.closeClientModal =
       );
 
     if (modal) {
-      modal.classList.remove("active");
+      modal.classList.remove(
+        "active"
+      );
     }
   };
 
 // ==========================================================================
-// 9) فك التشفير — 90 ثانية
+// 10) فك التشفير — 90 ثانية
 // ==========================================================================
 
 function clearDecryptState() {
-  clearInterval(decryptTimer);
-  decryptTimer = null;
-  decryptSeconds = 90;
+  clearInterval(
+    decryptTimer
+  );
+
+  decryptTimer =
+    null;
+
+  decryptExpiresAt =
+    null;
 
   [
     "securePhone",
@@ -2521,15 +3455,29 @@ function clearDecryptState() {
     "secureEaEmail",
     "secureEaPass",
     "secureCodes"
-  ].forEach((id) => {
-    const element =
-      document.getElementById(id);
+  ].forEach(
+    (id) => {
+      const element =
+        document.getElementById(
+          id
+        );
 
-    if (element) {
-      element.textContent =
-        "••••••••";
+      if (element) {
+        element.textContent =
+          "••••••••";
+      }
     }
-  });
+  );
+
+  const paymentDetailsEl =
+    document.getElementById(
+      "securePaymentDetails"
+    );
+
+  if (paymentDetailsEl) {
+    paymentDetailsEl.textContent =
+      "";
+  }
 
   const timerEl =
     document.getElementById(
@@ -2542,21 +3490,30 @@ function clearDecryptState() {
   }
 }
 
-async function decryptOrder(orderId) {
+async function decryptOrder(
+  orderId
+) {
   try {
+    /*
+     * نطلب كشفاً جديداً من الخادم.
+     * الخادم هو صاحب القرار في مدة الـ90 ثانية.
+     */
     const response =
       await adminFetch(
         "/api/admin/decrypt-order",
         {
           method: "POST",
-          body: JSON.stringify({
-            orderId
-          })
+          body:
+            JSON.stringify({
+              orderId
+            })
         }
       );
 
     const data =
-      await readJsonResponse(response);
+      await readJsonResponse(
+        response
+      );
 
     if (!data.success) {
       alert(
@@ -2571,10 +3528,12 @@ async function decryptOrder(orderId) {
       data.data || {};
 
     const account =
-      payload.account || {};
+      payload.account ||
+      {};
 
     const payment =
-      payload.payment || {};
+      payload.payment ||
+      {};
 
     const phoneEl =
       document.getElementById(
@@ -2603,33 +3562,40 @@ async function decryptOrder(orderId) {
 
     if (phoneEl) {
       phoneEl.textContent =
-        payload.phone || "-";
+        payload.phone ||
+        "-";
     }
 
     if (emailEl) {
       emailEl.textContent =
-        payload.customerEmail || "-";
+        payload.customerEmail ||
+        "-";
     }
 
     if (eaEmailEl) {
       eaEmailEl.textContent =
-        account.eaEmail || "-";
+        account.eaEmail ||
+        "-";
     }
 
     if (eaPassEl) {
       eaPassEl.textContent =
-        account.eaPassword || "-";
+        account.eaPassword ||
+        "-";
     }
 
     if (codesEl) {
       codesEl.textContent =
-        Array.isArray(account.backupCodes)
-          ? account.backupCodes.join(" | ")
-          : account.backupCodes || "-";
+        Array.isArray(
+          account.backupCodes
+        )
+          ? account.backupCodes.join(
+              " | "
+            )
+          : account.backupCodes ||
+            "-";
     }
 
-    // البيانات المالية الحساسة متاحة داخل الطلب عند فك التشفير.
-    // نخزنها مؤقتاً في DOM فقط عند الحاجة، ولا نسجلها في audit log.
     const paymentDetailsEl =
       document.getElementById(
         "securePaymentDetails"
@@ -2644,14 +3610,22 @@ async function decryptOrder(orderId) {
         );
     }
 
-    startDecryptTimer();
+    /*
+     * expiresAt صادر من الخادم.
+     * لا نبدأ 90 ثانية جديدة من الواجهة.
+     */
+    startDecryptTimer(
+      Number(
+        payload.expiresAt
+      )
+    );
 
     await logAuditEvent(
       "فك تشفير بيانات حساسة",
       payload.referenceNumber ||
         payload.orderId ||
         orderId,
-      "تم كشف بيانات حساسة لمدة 90 ثانية"
+      "تم كشف بيانات حساسة ضمن نافذة الخادم المحددة"
     );
   } catch (error) {
     console.error(
@@ -2668,42 +3642,72 @@ async function decryptOrder(orderId) {
 window.decryptOrder =
   decryptOrder;
 
-function startDecryptTimer() {
-  clearInterval(decryptTimer);
+function startDecryptTimer(
+  expiresAt
+) {
+  clearInterval(
+    decryptTimer
+  );
 
-  decryptSeconds = 90;
+  decryptExpiresAt =
+    Number(expiresAt);
 
   const timerEl =
     document.getElementById(
       "decryptTimer"
     );
 
-  if (timerEl) {
-    timerEl.textContent =
-      `${decryptSeconds} ثانية`;
+  if (!Number.isFinite(
+    decryptExpiresAt
+  )) {
+    if (timerEl) {
+      timerEl.textContent =
+        "مشفرة";
+    }
+
+    return;
   }
 
-  decryptTimer = setInterval(() => {
-    decryptSeconds--;
+  const updateTimer =
+    () => {
+      const remaining =
+        Math.max(
+          0,
+          decryptExpiresAt -
+            Date.now()
+        );
 
-    const timerLabel =
-      document.getElementById(
-        "decryptTimer"
-      );
+      const seconds =
+        Math.ceil(
+          remaining /
+            1000
+        );
 
-    if (timerLabel) {
-      timerLabel.textContent =
-        `${Math.max(0, decryptSeconds)} ثانية`;
-    }
+      if (timerEl) {
+        timerEl.textContent =
+          seconds > 0
+            ? `${seconds} ثانية`
+            : "انتهت نافذة الكشف";
+      }
 
-    if (decryptSeconds <= 0) {
-      clearDecryptState();
-    }
-  }, 1000);
+      if (
+        remaining <= 0
+      ) {
+        clearDecryptState();
+      }
+    };
+
+  updateTimer();
+
+  decryptTimer =
+    setInterval(
+      updateTimer,
+      250
+    );
 }
 
 // ==========================================================================
-// 10) تفاصيل الطلب
+// 11) تفاصيل الطلب
 // ==========================================================================
 
 window.openOrderModal =
@@ -2725,16 +3729,22 @@ window.openOrderModal =
         "modalOrderBody"
       );
 
-    if (!modal || !modalBody) {
+    if (
+      !modal ||
+      !modalBody
+    ) {
       return;
     }
 
     const order =
       ordersData.find(
         (item) =>
-          item.id === orderId ||
-          item.referenceNumber === orderId ||
-          item.orderId === orderId
+          item.id ===
+            orderId ||
+          item.referenceNumber ===
+            orderId ||
+          item.orderId ===
+            orderId
       );
 
     if (!order) {
@@ -2756,14 +3766,21 @@ window.openOrderModal =
     }
 
     const showTransferBtn =
-      order.status === "finished";
+      order.status ===
+      "finished";
 
     const isTransferred =
-      order.status === "transferred" ||
-      order.status === "completed";
+      order.status ===
+        "transferred" ||
+      order.status ===
+        "completed";
 
     const transferInfo =
-      order.transferData || {};
+      order.transferData ||
+      {};
+
+    const purgeDue =
+      isPurgeDue(order);
 
     const transferCardHTML =
       isTransferred
@@ -2792,7 +3809,11 @@ window.openOrderModal =
                         new Date(
                           transferInfo.transferredAt
                         ).toLocaleString(
-                          "ar-SA"
+                          "ar-SA",
+                          {
+                            timeZone:
+                              "Asia/Riyadh"
+                          }
                         )
                       )
                     : "---"
@@ -2825,8 +3846,123 @@ window.openOrderModal =
             <p>
               ${escapeHtml(
                 order.issueMessage ||
-                  order.issue
+                  getIssueLabel(
+                    order.issue
+                  )
               )}
+            </p>
+
+          </div>
+        `
+        : "";
+
+    const purgeCardHTML =
+      order.status ===
+        "completed" &&
+      order.sensitivePurged !==
+        true
+        ? `
+          <div
+            style="
+              background:${
+                purgeDue
+                  ? "rgba(239,68,68,0.08)"
+                  : "rgba(245,158,11,0.08)"
+              };
+              padding:16px;
+              border-radius:14px;
+              border:1px solid ${
+                purgeDue
+                  ? "rgba(239,68,68,0.3)"
+                  : "rgba(245,158,11,0.3)"
+              };
+              margin-bottom:20px;
+            ">
+
+            <h4
+              style="
+                color:${
+                  purgeDue
+                    ? "#ef4444"
+                    : "#f59e0b"
+                };
+                margin-bottom:8px;
+              ">
+              <i class="fa-solid fa-clock"></i>
+              دورة حياة البيانات الحساسة
+            </h4>
+
+            <p style="margin-bottom:8px;">
+              <b>تاريخ إكمال الطلب:</b>
+              ${
+                order.completedAt
+                  ? escapeHtml(
+                      new Date(
+                        parseFirestoreDate(
+                          order.completedAt
+                        ) ||
+                        order.completedAt
+                      ).toLocaleString(
+                        "ar-SA",
+                        {
+                          timeZone:
+                            "Asia/Riyadh"
+                        }
+                      )
+                    )
+                  : "---"
+              }
+            </p>
+
+            <p style="margin-bottom:8px;">
+              <b>موعد الإتلاف:</b>
+              ${
+                getPurgeDueDate(
+                  order
+                )
+                  ? escapeHtml(
+                      getPurgeDueDate(
+                        order
+                      ).toLocaleString(
+                        "ar-SA",
+                        {
+                          timeZone:
+                            "Asia/Riyadh"
+                        }
+                      )
+                    )
+                  : "---"
+              }
+            </p>
+
+            <p>
+              ${calculatePurgeCountdown(
+                order
+              )}
+            </p>
+
+          </div>
+        `
+        : order.sensitivePurged ===
+          true
+        ? `
+          <div
+            style="
+              background:rgba(16,185,129,0.08);
+              padding:16px;
+              border-radius:14px;
+              border:1px solid rgba(16,185,129,0.3);
+              margin-bottom:20px;
+            ">
+
+            <h4 style="color:var(--success);margin-bottom:8px;">
+              <i class="fa-solid fa-shield-halved"></i>
+              تم إتلاف بيانات الحساب الحساسة
+            </h4>
+
+            <p>
+              تم حذف بيانات EA الحساسة نهائياً.
+              بيانات الدفع محفوظة ومشفرة.
             </p>
 
           </div>
@@ -2855,7 +3991,10 @@ window.openOrderModal =
           </span>
 
           <h4 style="color:var(--text-main);margin-top:4px;">
-            ${escapeHtml(order.name || "---")}
+            ${escapeHtml(
+              order.name ||
+                "---"
+            )}
           </h4>
         </div>
 
@@ -2865,7 +4004,10 @@ window.openOrderModal =
           </span>
 
           <h4 style="color:var(--text-main);font-family:monospace;margin-top:4px;">
-            ${escapeHtml(order.phone || "---")}
+            ${escapeHtml(
+              order.phone ||
+                "---"
+            )}
           </h4>
         </div>
 
@@ -2875,9 +4017,14 @@ window.openOrderModal =
           </span>
 
           <h4 style="color:var(--primary);margin-top:4px;">
-            ${escapeHtml(order.platform || "---")}
+            ${escapeHtml(
+              order.platform ||
+                "---"
+            )}
             -
-            ${formatCoinsNumber(order.totalQty)}
+            ${formatCoinsNumber(
+              order.totalQty
+            )}
             كوينز
           </h4>
         </div>
@@ -2888,7 +4035,10 @@ window.openOrderModal =
           </span>
 
           <h4 style="color:#f59e0b;margin-top:4px;">
-            ${escapeHtml(order.totalPrice || "0 ر.س")}
+            ${escapeHtml(
+              order.totalPrice ||
+                "0 ر.س"
+            )}
           </h4>
         </div>
 
@@ -2898,7 +4048,9 @@ window.openOrderModal =
           </span>
 
           <div style="margin-top:4px;">
-            ${getStatusBadge(order.status)}
+            ${getStatusBadge(
+              order.status
+            )}
           </div>
         </div>
 
@@ -2907,6 +4059,8 @@ window.openOrderModal =
       ${issueHTML}
 
       ${transferCardHTML}
+
+      ${purgeCardHTML}
 
       <div style="background:var(--input-bg);padding:16px;border-radius:14px;border:1px solid var(--card-border);margin-bottom:20px;">
 
@@ -2917,26 +4071,43 @@ window.openOrderModal =
 
         <p style="margin-bottom:6px;">
           <b>وسيلة الدفع:</b>
-          ${escapeHtml(order.paymentMethod || "---")}
+          ${escapeHtml(
+            order.paymentMethod ||
+              "---"
+          )}
         </p>
 
         <p style="margin-bottom:6px;">
           <b>اسم البنك:</b>
-          ${escapeHtml(order.bankName || "---")}
+          ${escapeHtml(
+            order.bankName ||
+              "---"
+          )}
         </p>
 
         <p style="margin-bottom:6px;">
           <b>رقم الآيبان:</b>
           <span style="font-family:monospace;color:var(--primary);">
-            ${escapeHtml(order.accountIban || "---")}
+            ${
+              order.accountIban
+                ? escapeHtml(
+                    order.accountIban
+                  )
+                : "مشفر — فك التشفير لعرضه"
+            }
           </span>
         </p>
 
         <p style="margin-top:6px;">
           <b>الكوينز المسحوبة:</b>
-          ${formatCoinsNumber(order.drawnCoins || 0)}
+          ${formatCoinsNumber(
+            order.drawnCoins ||
+              0
+          )}
           /
-          ${formatCoinsNumber(order.totalQty)}
+          ${formatCoinsNumber(
+            order.totalQty
+          )}
         </p>
 
       </div>
@@ -2977,27 +4148,37 @@ window.openOrderModal =
 
           <div>
             الجوال:
-            <span id="securePhone">••••••••</span>
+            <span id="securePhone">
+              ••••••••
+            </span>
           </div>
 
           <div>
             البريد:
-            <span id="secureEmail">••••••••</span>
+            <span id="secureEmail">
+              ••••••••
+            </span>
           </div>
 
           <div>
             إيميل EA:
-            <span id="secureEaEmail">••••••••</span>
+            <span id="secureEaEmail">
+              ••••••••
+            </span>
           </div>
 
           <div>
             كلمة المرور:
-            <span id="secureEaPass">••••••••</span>
+            <span id="secureEaPass">
+              ••••••••
+            </span>
           </div>
 
           <div>
             الأكواد:
-            <span id="secureCodes">••••••••</span>
+            <span id="secureCodes">
+              ••••••••
+            </span>
           </div>
 
         </div>
@@ -3033,15 +4214,25 @@ window.openOrderModal =
           onclick="updateDrawnCoinsPrompt(
             '${escapeAttribute(order.id)}',
             '${escapeAttribute(refNum)}',
-            ${Number(order.drawnCoins || 0)},
-            ${Number(order.totalQty || 0)}
+            ${Number(
+              order.drawnCoins ||
+                0
+            )},
+            ${Number(
+              order.totalQty ||
+                0
+            )}
           )">
           <i class="fa-solid fa-pen"></i>
           تحديث الكوينز المسحوبة
         </button>
 
         ${
-          order.status === "completed"
+          order.status ===
+            "completed" &&
+          order.sensitivePurged !==
+            true &&
+          purgeDue
             ? `
               <button
                 class="btn-custom"
@@ -3064,7 +4255,9 @@ window.openOrderModal =
       </div>
     `;
 
-    modal.classList.add("active");
+    modal.classList.add(
+      "active"
+    );
   };
 
 window.closeOrderModal =
@@ -3077,30 +4270,75 @@ window.closeOrderModal =
       );
 
     if (modal) {
-      modal.classList.remove("active");
+      modal.classList.remove(
+        "active"
+      );
     }
   };
 
 // ==========================================================================
-// 11) الإتلاف اليدوي بعد مرور 5 أيام
+// 12) الإتلاف اليدوي بعد مرور 5 أيام
 // ==========================================================================
 
 window.openPurgeModal =
   function (orderId) {
     const order =
       ordersData.find(
-        (item) => item.id === orderId
+        (item) =>
+          item.id ===
+          orderId
       );
 
     if (!order) {
-      alert("الطلب غير موجود.");
+      alert(
+        "الطلب غير موجود."
+      );
+
       return;
     }
 
-    if (order.status !== "completed") {
+    if (
+      order.status !==
+      "completed"
+    ) {
       alert(
         "لا يمكن إتلاف البيانات إلا بعد اكتمال الطلب."
       );
+
+      return;
+    }
+
+    if (
+      order.sensitivePurged ===
+      true
+    ) {
+      alert(
+        "تم إتلاف البيانات الحساسة لهذا الطلب مسبقاً."
+      );
+
+      return;
+    }
+
+    if (
+      !isPurgeDue(order)
+    ) {
+      const dueDate =
+        getPurgeDueDate(
+          order
+        );
+
+      alert(
+        dueDate
+          ? `لم يحِن موعد الإتلاف بعد.\nالموعد: ${dueDate.toLocaleString(
+              "ar-SA",
+              {
+                timeZone:
+                  "Asia/Riyadh"
+              }
+            )}`
+          : "لم يتم تحديد موعد الإتلاف بعد."
+      );
+
       return;
     }
 
@@ -3115,11 +4353,14 @@ window.openPurgeModal =
       );
 
     if (input) {
-      input.value = orderId;
+      input.value =
+        orderId;
     }
 
     if (modal) {
-      modal.classList.add("active");
+      modal.classList.add(
+        "active"
+      );
     }
   };
 
@@ -3131,7 +4372,9 @@ window.closePurgeModal =
       );
 
     if (modal) {
-      modal.classList.remove("active");
+      modal.classList.remove(
+        "active"
+      );
     }
   };
 
@@ -3142,11 +4385,41 @@ window.confirmPurgeDataFinal =
         "purgeTargetOrderId"
       )?.value;
 
-    if (!orderId) return;
+    if (!orderId) {
+      return;
+    }
+
+    const order =
+      ordersData.find(
+        (item) =>
+          item.id ===
+          orderId
+      );
+
+    if (!order) {
+      alert(
+        "الطلب غير موجود."
+      );
+
+      return;
+    }
 
     if (
+      !isPurgeDue(order)
+    ) {
+      alert(
+        "لا يمكن الإتلاف قبل مرور 5 أيام من اكتمال الطلب."
+      );
+
+      return;
+    }
+
+    /*
+     * تأكيد ثانٍ صريح قبل العملية النهائية.
+     */
+    if (
       !confirm(
-        "تأكيد نهائي: سيتم حذف بريد EA وكلمة المرور والأكواد الاحتياطية نهائياً ولا يمكن استعادتها. هل تريد المتابعة؟"
+        "تأكيد نهائي: سيتم حذف بريد EA وكلمة المرور والأكواد الاحتياطية نهائياً ولا يمكن استعادتها. بيانات الدفع ستبقى محفوظة ومشفرة. هل تريد المتابعة؟"
       )
     ) {
       return;
@@ -3157,22 +4430,30 @@ window.confirmPurgeDataFinal =
         await adminFetch(
           "/api/orders/purge-sensitive",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId,
-              confirm: true
-            })
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                orderId,
+                confirm: true
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (data.success) {
+      if (
+        data.success
+      ) {
         await logAuditEvent(
           "إتلاف بيانات حساسة",
-          orderId,
-          "تم إتلاف بيانات EA الحساسة نهائياً بعد تأكيد المشرف"
+          order.referenceNumber ||
+            orderId,
+          "تم إتلاف بيانات EA الحساسة نهائياً بعد مرور 5 أيام وتأكيد المشرف"
         );
 
         alert(
@@ -3181,6 +4462,7 @@ window.confirmPurgeDataFinal =
 
         closePurgeModal();
         closeOrderModal();
+
         await loadOrders();
 
         return;
@@ -3188,8 +4470,10 @@ window.confirmPurgeDataFinal =
 
       alert(
         "❌ فشل الإتلاف: " +
-        (data.message ||
-          "حدث خطأ بالخادم")
+        (
+          data.message ||
+          "حدث خطأ بالخادم"
+        )
       );
     } catch (error) {
       alert(
@@ -3198,20 +4482,25 @@ window.confirmPurgeDataFinal =
 
       console.error(
         "Purge error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
 
 // ==========================================================================
-// 12) تغيير الحالة — يدوي فقط
+// 13) تغيير الحالة — يدوي فقط
 // ==========================================================================
 
 window.promptEditOrder =
-  async function (orderId) {
+  async function (
+    orderId
+  ) {
     const order =
       ordersData.find(
-        (item) => item.id === orderId
+        (item) =>
+          item.id ===
+          orderId
       );
 
     if (!order) return;
@@ -3229,23 +4518,17 @@ window.promptEditOrder =
         order.status
       );
 
-    if (!newStatus) return;
-
-    const allowedStatuses = [
-      "new",
-      "review",
-      "progress",
-      "finished",
-      "transferred",
-      "completed",
-      "archived"
-    ];
+    if (!newStatus) {
+      return;
+    }
 
     const normalizedStatus =
-      newStatus.trim().toLowerCase();
+      newStatus
+        .trim()
+        .toLowerCase();
 
     if (
-      !allowedStatuses.includes(
+      !STATUS_VALUES.includes(
         normalizedStatus
       )
     ) {
@@ -3256,27 +4539,120 @@ window.promptEditOrder =
       return;
     }
 
+    let issue =
+      order.issue ||
+      null;
+
+    let issueMessage =
+      order.issueMessage ||
+      "";
+
+    /*
+     * الحالة الأساسية مستقلة عن المشكلة.
+     *
+     * إذا أراد المشرف تسجيل مشكلة،
+     * يختارها بعد تعديل الحالة.
+     */
+    if (
+      confirm(
+        "هل تريد تحديث حالة المشكلة لهذا الطلب؟"
+      )
+    ) {
+      const issueInput =
+        prompt(
+          "اكتب كود المشكلة أو اتركه فارغاً لإزالة المشكلة:\n\n" +
+          "wrong_credentials\n" +
+          "wrong_backup_codes\n" +
+          "market_closed\n" +
+          "no_player\n" +
+          "wrong_platform\n" +
+          "other_issue",
+          issue || ""
+        );
+
+      if (
+        issueInput !==
+        null
+      ) {
+        const normalizedIssue =
+          issueInput
+            .trim()
+            .toLowerCase();
+
+        if (
+          normalizedIssue ===
+          ""
+        ) {
+          issue =
+            null;
+
+          issueMessage =
+            "";
+        } else if (
+          ISSUE_VALUES.includes(
+            normalizedIssue
+          )
+        ) {
+          issue =
+            normalizedIssue;
+
+          issueMessage =
+            prompt(
+              "رسالة المشكلة للعميل:\n\nاتركها فارغة لاستخدام الرسالة المحفوظة في إعدادات النظام.",
+              issueMessage ||
+                getIssueLabel(
+                  issue
+                )
+            ) || "";
+        } else {
+          alert(
+            "❌ كود المشكلة غير صحيح."
+          );
+
+          return;
+        }
+      }
+    }
+
     try {
       const response =
         await adminFetch(
           "/api/orders/update-status",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId: order.id,
-              status: normalizedStatus
-            })
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                orderId:
+                  order.id,
+
+                status:
+                  normalizedStatus,
+
+                issue,
+
+                issueMessage
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (data.success) {
+      if (
+        data.success
+      ) {
         await logAuditEvent(
           "تعديل حالة الطلب",
           order.referenceNumber,
-          `تعديل الحالة إلى: ${normalizedStatus}`
+          `تعديل الحالة إلى: ${normalizedStatus}${
+            issue
+              ? ` | المشكلة: ${issue}`
+              : " | لا توجد مشكلة"
+          }`
         );
 
         alert(
@@ -3287,7 +4663,10 @@ window.promptEditOrder =
       } else {
         alert(
           "❌ فشل التعديل: " +
-          (data.message || "")
+          (
+            data.message ||
+            ""
+          )
         );
       }
     } catch (error) {
@@ -3297,7 +4676,8 @@ window.promptEditOrder =
 
       console.error(
         "Status update error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
@@ -3320,18 +4700,26 @@ window.handleArchiveOrder =
         await adminFetch(
           "/api/orders/update-status",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId,
-              status: "archived"
-            })
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                orderId,
+                status:
+                  "archived"
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (data.success) {
+      if (
+        data.success
+      ) {
         await logAuditEvent(
           "أرشفة طلب",
           refNum,
@@ -3346,7 +4734,10 @@ window.handleArchiveOrder =
       } else {
         alert(
           "❌ فشل الأرشفة: " +
-          (data.message || "")
+          (
+            data.message ||
+            ""
+          )
         );
       }
     } catch (error) {
@@ -3356,7 +4747,8 @@ window.handleArchiveOrder =
 
       console.error(
         "Archive error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
@@ -3379,17 +4771,24 @@ window.handleDeleteOrder =
         await adminFetch(
           "/api/orders/delete",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId
-            })
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                orderId
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (data.success) {
+      if (
+        data.success
+      ) {
         await logAuditEvent(
           "حذف طلب",
           refNum,
@@ -3404,7 +4803,10 @@ window.handleDeleteOrder =
       } else {
         alert(
           "❌ فشل الحذف: " +
-          (data.message || "")
+          (
+            data.message ||
+            ""
+          )
         );
       }
     } catch (error) {
@@ -3414,7 +4816,8 @@ window.handleDeleteOrder =
 
       console.error(
         "Delete error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
@@ -3437,30 +4840,40 @@ window.handleMarkTransferred =
         await adminFetch(
           "/api/orders/update-status",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId,
-              status: "transferred",
+            method:
+              "POST",
 
-              transferData: {
-                transferredAt:
-                  new Date().toISOString(),
+            body:
+              JSON.stringify({
+                orderId,
 
-                transferredBy:
-                  currentAdmin.name ||
-                  "مشرف النظام",
+                status:
+                  "transferred",
 
-                transferredByEmail:
-                  currentAdmin.email || ""
-              }
-            })
+                transferData: {
+                  transferredAt:
+                    new Date().toISOString(),
+
+                  transferredBy:
+                    currentAdmin.name ||
+                    "مشرف النظام",
+
+                  transferredByEmail:
+                    currentAdmin.email ||
+                    ""
+                }
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (data.success) {
+      if (
+        data.success
+      ) {
         await logAuditEvent(
           "تحويل مالي",
           refNum,
@@ -3472,11 +4885,15 @@ window.handleMarkTransferred =
         );
 
         closeOrderModal();
+
         await loadOrders();
       } else {
         alert(
           "❌ فشل تغيير الحالة: " +
-          (data.message || "")
+          (
+            data.message ||
+            ""
+          )
         );
       }
     } catch (error) {
@@ -3486,13 +4903,14 @@ window.handleMarkTransferred =
 
       console.error(
         "Transfer error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
 
 // ==========================================================================
-// 13) تحديث الكوينز المسحوبة — بدون أي تغيير تلقائي للحالة
+// 14) تحديث الكوينز المسحوبة — بدون أي تغيير تلقائي للحالة
 // ==========================================================================
 
 window.updateDrawnCoinsPrompt =
@@ -3504,18 +4922,27 @@ window.updateDrawnCoinsPrompt =
   ) {
     const newDrawnStr =
       prompt(
-        `تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(totalQty)}`,
+        `تحديث الكوينز المسحوبة للطلب #${refNum}:\nالكمية المطلوبة الكلية: ${formatCoinsNumber(
+          totalQty
+        )}`,
         currentDrawn
       );
 
     if (
-      newDrawnStr === null ||
-      newDrawnStr.trim() === ""
+      newDrawnStr ===
+        null ||
+      newDrawnStr
+        .trim() ===
+        ""
     ) {
       return;
     }
 
-    if (isNaN(newDrawnStr)) {
+    if (
+      isNaN(
+        newDrawnStr
+      )
+    ) {
       alert(
         "❌ أدخل رقماً صحيحاً."
       );
@@ -3524,10 +4951,14 @@ window.updateDrawnCoinsPrompt =
     }
 
     const newDrawn =
-      Number(newDrawnStr);
+      Number(
+        newDrawnStr
+      );
 
     if (
-      !Number.isFinite(newDrawn) ||
+      !Number.isFinite(
+        newDrawn
+      ) ||
       newDrawn < 0
     ) {
       alert(
@@ -3537,7 +4968,12 @@ window.updateDrawnCoinsPrompt =
       return;
     }
 
-    if (newDrawn > Number(totalQty)) {
+    if (
+      newDrawn >
+      Number(
+        totalQty
+      )
+    ) {
       alert(
         "❌ الكمية المسحوبة لا يمكن أن تتجاوز الكمية المطلوبة."
       );
@@ -3550,21 +4986,32 @@ window.updateDrawnCoinsPrompt =
         await adminFetch(
           "/api/orders/update-drawn",
           {
-            method: "POST",
-            body: JSON.stringify({
-              orderId,
-              drawnCoins: newDrawn
-            })
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                orderId,
+                drawnCoins:
+                  newDrawn
+              })
           }
         );
 
       const data =
-        await readJsonResponse(response);
+        await readJsonResponse(
+          response
+        );
 
-      if (!data.success) {
+      if (
+        !data.success
+      ) {
         alert(
           "❌ فشل التحديث: " +
-          (data.message || "")
+          (
+            data.message ||
+            ""
+          )
         );
 
         return;
@@ -3573,19 +5020,23 @@ window.updateDrawnCoinsPrompt =
       await logAuditEvent(
         "تحديث سحب الكوينز",
         refNum,
-        `تم تحديث المسحوب إلى: ${formatCoinsNumber(newDrawn)} / ${formatCoinsNumber(totalQty)}`
+        `تم تحديث المسحوب إلى: ${formatCoinsNumber(
+          newDrawn
+        )} / ${formatCoinsNumber(
+          totalQty
+        )}`
       );
 
-      /**
+      /*
        * مهم:
-       * لا يتم تغيير الحالة تلقائياً عند اكتمال الكمية.
-       * تغيير status أصبح يدوياً فقط بواسطة المشرف.
+       * لا يتم تغيير status تلقائياً.
        */
       alert(
         "✅ تم تحديث الكمية المسحوبة بنجاح."
       );
 
       closeOrderModal();
+
       await loadOrders();
     } catch (error) {
       alert(
@@ -3594,16 +5045,19 @@ window.updateDrawnCoinsPrompt =
 
       console.error(
         "Drawn coins update error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
 
 // ==========================================================================
-// 14) إعدادات النظام والمخزون
+// 15) إعدادات النظام والمخزون
 // ==========================================================================
 
-function renderInventoryUI(settings) {
+function renderInventoryUI(
+  settings
+) {
   const psStock =
     document.getElementById(
       "invStockPS"
@@ -3622,14 +5076,16 @@ function renderInventoryUI(settings) {
   if (psStock) {
     psStock.innerText =
       formatCoinsNumber(
-        settings.psStock || 0
+        settings.psStock ||
+          0
       );
   }
 
   if (pcStock) {
     pcStock.innerText =
       formatCoinsNumber(
-        settings.pcStock || 0
+        settings.pcStock ||
+          0
       );
   }
 
@@ -3647,7 +5103,8 @@ function initSystemSettingsListener() {
         settings || {};
 
       updateStoreStatusUI(
-        settings.storeOpen !== false
+        settings.storeOpen !==
+          false
       );
 
       populatePricingUI(
@@ -3661,20 +5118,31 @@ function initSystemSettingsListener() {
       renderDashboardQuickStats();
 
       renderBanks(
-        settings.banks || []
+        settings.banks ||
+          []
       );
 
       renderWallets(
-        settings.wallets || []
+        settings.wallets ||
+          []
       );
 
       renderCustomPayments(
-        settings.paymentMethods || []
+        settings.paymentMethods ||
+          []
       );
 
       renderTerms(
-        settings.terms || []
+        settings.terms ||
+          []
       );
+
+      renderIssueMessages(
+        settings.issueMessages ||
+          {}
+      );
+
+      renderPurgeOrdersTable();
     }
   );
 }
@@ -3692,7 +5160,12 @@ function updateStoreStatusUI(
       "storeStatusText"
     );
 
-  if (!btn || !text) return;
+  if (
+    !btn ||
+    !text
+  ) {
+    return;
+  }
 
   btn.className =
     isOpen
@@ -3727,7 +5200,8 @@ window.toggleStoreStatus =
 
       console.error(
         "Toggle store error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
@@ -3735,35 +5209,41 @@ window.toggleStoreStatus =
 function populatePricingUI(
   config = {}
 ) {
-  const setValue = (
-    id,
-    value
-  ) => {
-    const element =
-      document.getElementById(id);
+  const setValue =
+    (
+      id,
+      value
+    ) => {
+      const element =
+        document.getElementById(
+          id
+        );
 
-    if (element) {
-      element.value =
-        value ?? "";
-    }
-  };
+      if (element) {
+        element.value =
+          value ?? "";
+      }
+    };
 
   setValue(
     "psRate",
-    config.psRate || 200
+    config.psRate ||
+      200
   );
 
   setValue(
     "psMin",
     formatCoinsNumber(
-      config.psMin || 100000
+      config.psMin ||
+        100000
     )
   );
 
   setValue(
     "psMax",
     formatCoinsNumber(
-      config.psMax || 5000000
+      config.psMax ||
+        5000000
     )
   );
 
@@ -3781,20 +5261,23 @@ function populatePricingUI(
 
   setValue(
     "pcRate",
-    config.pcRate || 150
+    config.pcRate ||
+      150
   );
 
   setValue(
     "pcMin",
     formatCoinsNumber(
-      config.pcMin || 100000
+      config.pcMin ||
+        100000
     )
   );
 
   setValue(
     "pcMax",
     formatCoinsNumber(
-      config.pcMax || 1000000
+      config.pcMax ||
+        1000000
     )
   );
 
@@ -3813,7 +5296,7 @@ function populatePricingUI(
   setValue(
     "storeNameInput",
     config.storeName ||
-      "SAMICOINS"
+      "SAMI COINS"
   );
 
   setValue(
@@ -3831,7 +5314,8 @@ function populatePricingUI(
 
   setValue(
     "promoText",
-    config.offerText || ""
+    config.offerText ||
+      ""
   );
 }
 
@@ -3841,12 +5325,14 @@ window.saveProductsConfig =
       storeName:
         document.getElementById(
           "storeNameInput"
-        )?.value || "",
+        )?.value ||
+        "",
 
       supportWhatsapp:
         document.getElementById(
           "supportWhatsappInput"
-        )?.value || "",
+        )?.value ||
+        "",
 
       psRate:
         Number(
@@ -3860,8 +5346,12 @@ window.saveProductsConfig =
           String(
             document.getElementById(
               "psMin"
-            )?.value || ""
-          ).replace(/,/g, "")
+            )?.value ||
+              ""
+          ).replace(
+            /,/g,
+            ""
+          )
         ),
 
       psMax:
@@ -3869,19 +5359,25 @@ window.saveProductsConfig =
           String(
             document.getElementById(
               "psMax"
-            )?.value || ""
-          ).replace(/,/g, "")
+            )?.value ||
+              ""
+          ).replace(
+            /,/g,
+            ""
+          )
         ),
 
       psWithdrawDuration:
         document.getElementById(
           "psWithdrawDuration"
-        )?.value || "",
+        )?.value ||
+        "",
 
       psTransferDuration:
         document.getElementById(
           "psTransferDuration"
-        )?.value || "",
+        )?.value ||
+        "",
 
       pcRate:
         Number(
@@ -3895,8 +5391,12 @@ window.saveProductsConfig =
           String(
             document.getElementById(
               "pcMin"
-            )?.value || ""
-          ).replace(/,/g, "")
+            )?.value ||
+              ""
+          ).replace(
+            /,/g,
+            ""
+          )
         ),
 
       pcMax:
@@ -3904,29 +5404,37 @@ window.saveProductsConfig =
           String(
             document.getElementById(
               "pcMax"
-            )?.value || ""
-          ).replace(/,/g, "")
+            )?.value ||
+              ""
+          ).replace(
+            /,/g,
+            ""
+          )
         ),
 
       pcWithdrawDuration:
         document.getElementById(
           "pcWithdrawDuration"
-        )?.value || "",
+        )?.value ||
+        "",
 
       pcTransferDuration:
         document.getElementById(
           "pcTransferDuration"
-        )?.value || "",
+        )?.value ||
+        "",
 
       offers:
         document.getElementById(
           "promoActiveSelect"
-        )?.value === "true",
+        )?.value ===
+        "true",
 
       offerText:
         document.getElementById(
           "promoText"
-        )?.value || ""
+        )?.value ||
+        ""
     };
 
     try {
@@ -3950,7 +5458,8 @@ window.saveProductsConfig =
 
       console.error(
         "Save pricing error:",
-        error?.message || error
+        error?.message ||
+          error
       );
     }
   };
@@ -3966,25 +5475,32 @@ function renderBanks(
   if (!container) return;
 
   container.innerHTML =
-    banksArray.map(
-      (bank, index) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
+    banksArray
+      .map(
+        (
+          bank,
+          index
+        ) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
 
-          <span style="font-size:0.88rem;font-weight:800;">
-            ${index + 1}.
-            ${escapeHtml(bank)}
-          </span>
+            <span style="font-size:0.88rem;font-weight:800;">
+              ${index + 1}.
+              ${escapeHtml(
+                bank
+              )}
+            </span>
 
-          <button
-            class="btn-action"
-            style="color:var(--danger);"
-            onclick="deleteBank(${index})">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+            <button
+              class="btn-action"
+              style="color:var(--danger);"
+              onclick="deleteBank(${index})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
 
-        </div>
-      `
-    ).join("");
+          </div>
+        `
+      )
+      .join("");
 }
 
 window.addBank =
@@ -4002,12 +5518,15 @@ window.addBank =
         input.value.trim()
       );
 
-      input.value = "";
+      input.value =
+        "";
     }
   };
 
 window.deleteBank =
-  async function (index) {
+  async function (
+    index
+  ) {
     await systemDeleteBank(
       index
     );
@@ -4024,25 +5543,32 @@ function renderWallets(
   if (!container) return;
 
   container.innerHTML =
-    walletsArray.map(
-      (wallet, index) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
+    walletsArray
+      .map(
+        (
+          wallet,
+          index
+        ) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
 
-          <span style="font-size:0.88rem;font-weight:800;">
-            ${index + 1}.
-            ${escapeHtml(wallet)}
-          </span>
+            <span style="font-size:0.88rem;font-weight:800;">
+              ${index + 1}.
+              ${escapeHtml(
+                wallet
+              )}
+            </span>
 
-          <button
-            class="btn-action"
-            style="color:var(--danger);"
-            onclick="deleteWallet(${index})">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+            <button
+              class="btn-action"
+              style="color:var(--danger);"
+              onclick="deleteWallet(${index})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
 
-        </div>
-      `
-    ).join("");
+          </div>
+        `
+      )
+      .join("");
 }
 
 window.addWallet =
@@ -4060,12 +5586,15 @@ window.addWallet =
         input.value.trim()
       );
 
-      input.value = "";
+      input.value =
+        "";
     }
   };
 
 window.deleteWallet =
-  async function (index) {
+  async function (
+    index
+  ) {
     await systemDeleteWallet(
       index
     );
@@ -4082,25 +5611,32 @@ function renderCustomPayments(
   if (!container) return;
 
   container.innerHTML =
-    methodsArray.map(
-      (method, index) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
+    methodsArray
+      .map(
+        (
+          method,
+          index
+        ) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);padding:8px 12px;border-radius:10px;">
 
-          <span style="font-size:0.88rem;font-weight:800;">
-            ${index + 1}.
-            ${escapeHtml(method)}
-          </span>
+            <span style="font-size:0.88rem;font-weight:800;">
+              ${index + 1}.
+              ${escapeHtml(
+                method
+              )}
+            </span>
 
-          <button
-            class="btn-action"
-            style="color:var(--danger);"
-            onclick="deleteCustomPayment(${index})">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+            <button
+              class="btn-action"
+              style="color:var(--danger);"
+              onclick="deleteCustomPayment(${index})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
 
-        </div>
-      `
-    ).join("");
+          </div>
+        `
+      )
+      .join("");
 }
 
 window.addCustomPaymentMethod =
@@ -4118,12 +5654,15 @@ window.addCustomPaymentMethod =
         input.value.trim()
       );
 
-      input.value = "";
+      input.value =
+        "";
     }
   };
 
 window.deleteCustomPayment =
-  async function (index) {
+  async function (
+    index
+  ) {
     await systemDeletePaymentMethod(
       index
     );
@@ -4140,25 +5679,32 @@ function renderTerms(
   if (!container) return;
 
   container.innerHTML =
-    termsArray.map(
-      (term, index) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--input-bg);border:1px solid var(--card-border);padding:10px;border-radius:10px;">
+    termsArray
+      .map(
+        (
+          term,
+          index
+        ) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--input-bg);border:1px solid var(--card-border);padding:10px;border-radius:10px;">
 
-          <span style="font-size:0.85rem;">
-            ${index + 1}.
-            ${escapeHtml(term)}
-          </span>
+            <span style="font-size:0.85rem;">
+              ${index + 1}.
+              ${escapeHtml(
+                term
+              )}
+            </span>
 
-          <button
-            class="btn-action"
-            style="color:var(--danger);"
-            onclick="deleteTerm(${index})">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+            <button
+              class="btn-action"
+              style="color:var(--danger);"
+              onclick="deleteTerm(${index})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
 
-        </div>
-      `
-    ).join("");
+          </div>
+        `
+      )
+      .join("");
 }
 
 window.addNewTerm =
@@ -4176,19 +5722,198 @@ window.addNewTerm =
         input.value.trim()
       );
 
-      input.value = "";
+      input.value =
+        "";
     }
   };
 
 window.deleteTerm =
-  async function (index) {
+  async function (
+    index
+  ) {
     await systemDeleteTerm(
       index
     );
   };
 
 // ==========================================================================
-// 15) التنقل
+// 16) رسائل المشاكل — قابلة للتعديل من الإعدادات
+// ==========================================================================
+
+function getIssueMessages() {
+  return {
+    ...DEFAULT_ISSUE_MESSAGES,
+    ...(currentSettingsData.issueMessages ||
+      {})
+  };
+}
+
+function renderIssueMessages(
+  issueMessages = {}
+) {
+  const merged = {
+    ...DEFAULT_ISSUE_MESSAGES,
+    ...issueMessages
+  };
+
+  /*
+   * إذا كانت واجهة HTML الحالية تحتوي على حقول بأسماء
+   * issueMessage_<code> نملؤها تلقائياً.
+   */
+  ISSUE_VALUES.forEach(
+    (issue) => {
+      const element =
+        document.getElementById(
+          `issueMessage_${issue}`
+        );
+
+      if (element) {
+        element.value =
+          merged[issue] ||
+          "";
+      }
+    }
+  );
+
+  /*
+   * دعم container اختياري إذا أضيف لاحقاً للوحة.
+   */
+  const container =
+    document.getElementById(
+      "issueMessagesContainer"
+    );
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML =
+    ISSUE_VALUES
+      .map(
+        (issue) => `
+          <div
+            style="
+              background:var(--input-bg);
+              border:1px solid var(--card-border);
+              border-radius:12px;
+              padding:12px;
+              margin-bottom:10px;
+            ">
+
+            <label
+              style="
+                display:block;
+                font-weight:800;
+                margin-bottom:7px;
+              ">
+              ${escapeHtml(
+                issue
+              )}
+            </label>
+
+            <input
+              id="issueMessage_${escapeAttribute(issue)}"
+              type="text"
+              value="${escapeAttribute(
+                merged[issue] ||
+                  ""
+              )}"
+              style="
+                width:100%;
+                padding:10px;
+                border-radius:8px;
+                border:1px solid var(--card-border);
+                background:var(--card-bg);
+                color:var(--text-main);
+              "
+            />
+
+          </div>
+        `
+      )
+      .join("");
+}
+
+window.saveIssueMessages =
+  async function () {
+    const messages = {};
+
+    ISSUE_VALUES.forEach(
+      (issue) => {
+        const element =
+          document.getElementById(
+            `issueMessage_${issue}`
+          );
+
+        if (element) {
+          messages[issue] =
+            element.value.trim();
+        }
+      }
+    );
+
+    if (
+      Object.keys(
+        messages
+      ).length === 0
+    ) {
+      alert(
+        "لم يتم العثور على حقول رسائل المشاكل في الصفحة."
+      );
+
+      return;
+    }
+
+    try {
+      /*
+       * نستخدم Firestore مباشرة هنا لأن system.js
+       * هو طبقة الإعدادات الحالية في الواجهة.
+       */
+      await updateDoc(
+        doc(
+          db,
+          "system",
+          "settings"
+        ),
+        {
+          issueMessages:
+            messages,
+
+          updatedAt:
+            serverTimestamp()
+        }
+      );
+
+      currentSettingsData = {
+        ...currentSettingsData,
+        issueMessages:
+          messages
+      };
+
+      await logAuditEvent(
+        "تحديث رسائل الحالات",
+        "الإعدادات",
+        "تم تحديث رسائل المشاكل الخاصة بالطلبات"
+      );
+
+      alert(
+        "✅ تم حفظ رسائل الحالات بنجاح."
+      );
+    } catch (error) {
+      console.error(
+        "Save issue messages error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر حفظ رسائل الحالات."
+      );
+    }
+  };
+
+// ==========================================================================
+// 17) التنقل
 // ==========================================================================
 
 window.switchTab =
@@ -4302,7 +6027,7 @@ window.toggleTheme =
   };
 
 // ==========================================================================
-// 16) التشغيل
+// 18) التشغيل
 // ==========================================================================
 
 initAuthGuard();
