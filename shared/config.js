@@ -122,9 +122,7 @@ export const FIRESTORE_COLLECTIONS = Object.freeze({
 export const SYSTEM_DOCUMENTS = Object.freeze({
     settings: "settings",
 
-    orderNumbering: "orderNumbering",
-
-    settings: "settings"
+    orderNumbering: "orderNumbering"
 });
 
 
@@ -720,7 +718,20 @@ export function isValidOrderStatus(status) {
 
 
 /**
- * التحقق من أن الحقل حساس.
+ * التحقق من أن المشكلة معتمدة.
+ *
+ * @param {string} issue
+ * @returns {boolean}
+ */
+export function isValidOrderIssue(issue) {
+    return ALL_ORDER_ISSUES.includes(
+        String(issue || "").trim()
+    );
+}
+
+
+/**
+ * التحقق من الحقل الحساس.
  *
  * @param {string} field
  * @returns {boolean}
@@ -806,6 +817,8 @@ export default {
     getPlatformInventoryGroup,
 
     isValidOrderStatus,
+
+    isValidOrderIssue,
 
     isSensitiveField
 };
