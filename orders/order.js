@@ -1166,6 +1166,8 @@ function selectPaymentMethod(method) {
     updateDynamicUI();
 
     renderStep2PaymentFields();
+    const note = $("selectedPaymentNote");
+    if (note) note.textContent = selectedPaymentMethod || "--";
 
     calculateTotal();
 }
@@ -3053,6 +3055,17 @@ async function submitOrderFinal() {
             generatedInternalReference || "--"
         );
 
+        const trackingUrl =
+            new URL(
+                "/tracking/?ref=" + encodeURIComponent(generatedReferenceNumber || ""),
+                window.location.origin
+            ).href;
+
+        setText(
+            "finalTrackingLink",
+            trackingUrl
+        );
+
         setText(
             "billClientName",
             orderData.customerName
@@ -3752,6 +3765,29 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(savedTheme === "light" ? "light" : "dark");
     applyLanguage();
     setupModalEvents();
-    loadSettings();
+    const passwordInput = $("eaPass");
+    const passwordEye = passwordInput?.parentElement?.querySelector("i");
+    if (passwordEye) {
+        passwordEye.addEventListener("click", () => {
+            const isPassword = passwordInput.type === "password";
+            passwordInput.type = isPassword ? "text" : "password";
+            passwordEye.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+        });
+    }
+    const editPasswordInput = $("editEaPass");
+    const editPasswordWrap = editPasswordInput?.parentElement;
+    if (editPasswordWrap && !editPasswordWrap.querySelector("i")) {
+        const eye = document.createElement("i");
+        eye.className = "fa-solid fa-eye";
+        eye.addEventListener("click", () => {
+            const isPassword = editPasswordInput.type === "password";
+            editPasswordInput.type = isPassword ? "text" : "password";
+            eye.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+        });
+        editPasswordWrap.appendChild(eye);
+    }
+    loadSettings().then(() => {
+        if (!currentPaymentCategory) switchPaymentCategory("local");
+    });
     updateAppBackButton("step1Screen");
 });
