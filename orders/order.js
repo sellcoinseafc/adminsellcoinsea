@@ -541,20 +541,45 @@ function getPaymentMethodsForCategory(category) {
     const paymentMethods =
         storeSettings.paymentMethods || {};
 
-    if (Array.isArray(paymentMethods)) {
-        return paymentMethods;
-    }
-
     if (
         paymentMethods &&
-        typeof paymentMethods === "object"
+        typeof paymentMethods === "object" &&
+        !Array.isArray(paymentMethods)
     ) {
-        const methods =
-            paymentMethods[category];
+        const methods = paymentMethods[category];
+        return Array.isArray(methods) ? methods : [];
+    }
 
-        return Array.isArray(methods)
-            ? methods
+    const configuredCategories =
+        storeSettings.paymentCategories || {};
+
+    const categoryCodes =
+        Array.isArray(configuredCategories[category])
+            ? configuredCategories[category]
             : [];
+
+    if (Array.isArray(paymentMethods) && paymentMethods.length) {
+        return paymentMethods.filter((method) => {
+            const code = normalizePaymentMethodCode(method);
+            if (!code) return false;
+
+            if (categoryCodes.length) {
+                return categoryCodes.some((configuredCode) => {
+                    const normalized = String(configuredCode || "").toLowerCase();
+                    return (
+                        (normalized === "bank_transfer" && code === "bank") ||
+                        (normalized === "digital_wallet" && code === "wallet") ||
+                        (normalized === "usdt" && code === "usdt") ||
+                        (normalized === "paypal" && code === "paypal") ||
+                        (normalized === "western_union" && code === "western")
+                    );
+                });
+            }
+
+            return category === "local"
+                ? code === "bank" || code === "wallet"
+                : code === "usdt" || code === "paypal" || code === "western";
+        });
     }
 
     return [];
