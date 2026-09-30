@@ -1,3 +1,4 @@
+/** Canonical customer-facing order-number service. */
 import crypto from "crypto";
 import admin, { db } from "./firebase.js";
 
