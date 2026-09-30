@@ -1743,6 +1743,8 @@ function showScreen(screenId) {
 
     $(screenId)?.classList.remove("hidden");
 
+    updateAppBackButton(screenId);
+
     let step = 1;
 
     if (screenId === "step2Screen") {
@@ -3558,6 +3560,25 @@ function setupModalEvents() {
 
 
 // ==========================================================================
+// UI helpers
+function showToast(message) {
+    const container = $("toastContainer");
+    if (!container) return;
+    const toast = document.createElement("div");
+    toast.className = "toast";
+    toast.textContent = String(message || "");
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+}
+
+function updateAppBackButton(screenId) {
+    const btn = $("appBackButton");
+    if (!btn) return;
+    btn.classList.toggle("hidden", screenId === "step1Screen" || screenId === "step4SuccessScreen");
+    if (screenId === "step2Screen") btn.onclick = () => showScreen("step1Screen");
+    if (screenId === "step3ReviewScreen") btn.onclick = () => showScreen("step2Screen");
+}
+
 // 38. تهيئة الصفحة
 // ==========================================================================
 
@@ -3721,3 +3742,16 @@ window.openInquiryPage =
 
 window.sendOrderViaWhatsapp =
     sendOrderViaWhatsapp;
+
+
+// Automatic application initialization
+document.addEventListener("DOMContentLoaded", () => {
+    const savedLanguage = localStorage.getItem("samiCoinsLanguage");
+    const savedTheme = localStorage.getItem("samiCoinsTheme");
+    if (savedLanguage === "ar" || savedLanguage === "en") currentLanguage = savedLanguage;
+    applyTheme(savedTheme === "light" ? "light" : "dark");
+    applyLanguage();
+    setupModalEvents();
+    loadSettings();
+    updateAppBackButton("step1Screen");
+});
