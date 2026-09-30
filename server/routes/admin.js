@@ -18,50 +18,74 @@ const router = express.Router();
  * - فك تشفير البيانات الحساسة للمشرف المصرح له فقط.
  * - دعم الطلبات القديمة والجديدة.
  * - توحيد payoutDetails مع paymentInfoData القديمة.
- * - فرض نافذة كشف حساسة لمدة 90 ثانية على الخادم.
+ * - إدارة نافذة كشف البيانات الحساسة لمدة 90 ثانية على الخادم.
  *
  * ملاحظات أمنية:
- * - لا يتم إرسال بيانات Firestore كاملة للواجهة.
+ * - لا يتم إرسال Firestore document كامل للواجهة.
  * - لا يتم تسجيل البيانات المفكوكة.
  * - لا يتم تخزين البيانات المفكوكة في Firestore.
- * - requireAdmin هو الحاجز الأساسي قبل الوصول للبيانات الحساسة.
+ * - requireAdmin هو الحاجز الأساسي.
  * - البيانات القديمة غير المشفرة تبقى قابلة للقراءة للتوافق.
- * - البيانات المشفرة لا يتم إرسال ciphertext الخاص بها للواجهة.
+ * - البيانات المشفرة لا يتم إرسال ciphertext الخاص بها.
+ * - بعد الإتلاف لا يمكن إعادة كشف بيانات EA.
+ * ============================================================================
+ */
+
+/**
+ * ============================================================================
+ * Constants
  * ============================================================================
  */
 
 const DECRYPT_WINDOW_MS = 90_000;
 
+const MAX_IDENTIFIER_LENGTH = 200;
+
 /**
  * ============================================================================
- * 1) نافذة الكشف على الخادم
+ * Server-side decrypt windows
  * ============================================================================
  *
  * المفتاح:
+ *
  *   admin UID + Firestore document ID
  *
  * القيمة:
- *   وقت بداية الكشف.
  *
- * إعادة طلب نفس الطلب خلال الـ90 ثانية:
- *   لا تمدد النافذة.
+ *   وقت بداية نافذة الكشف.
  *
- * بعد انتهاء النافذة:
- *   تبدأ نافذة كشف جديدة فقط عند طلب كشف جديد.
+ * السلوك:
  *
- * الذاكرة مؤقتة داخل عملية Node الحالية.
- * إعادة تشغيل PM2 تنظفها تلقائياً.
+ * - أول طلب كشف يبدأ نافذة 90 ثانية.
+ * - إعادة طلب نفس الطلب خلال النافذة لا تمددها.
+ * - بعد انتهاء النافذة، يبدأ طلب كشف جديد نافذة جديدة.
+ * - إعادة تشغيل Node/PM2 تنظف الذاكرة تلقائياً.
+ *
+ * ملاحظة:
+ * هذه النافذة تمنع تمديد الكشف عن طريق إعادة استدعاء API.
+ * أما البيانات التي سبق إرسالها للمتصفح فلا يمكن للسيرفر
+ * حذفها من ذاكرة المتصفح؛ لذلك الواجهة أيضاً تطبق مؤقت الـ90 ثانية.
  */
+
 const decryptWindows = new Map();
 
-function getDecryptWindowKey(uid, orderId) {
-  return `${String(uid)}:${String(orderId)}`;
+function getDecryptWindowKey(
+  uid,
+  orderDocumentId
+) {
+  return [
+    String(uid || ""),
+    String(orderDocumentId || "")
+  ].join(":");
 }
 
 function cleanupExpiredDecryptWindows() {
   const now = Date.now();
 
-  for (const [key, startedAt] of decryptWindows.entries()) {
+  for (
+    const [key, startedAt]
+    of decryptWindows.entries()
+  ) {
     if (
       !Number.isFinite(startedAt) ||
       now - startedAt >= DECRYPT_WINDOW_MS
@@ -71,55 +95,88 @@ function cleanupExpiredDecryptWindows() {
   }
 }
 
-function getOrCreateDecryptWindow(uid, orderId) {
+function getOrCreateDecryptWindow(
+  uid,
+  orderDocumentId
+) {
   cleanupExpiredDecryptWindows();
 
-  const key = getDecryptWindowKey(uid, orderId);
+  const key =
+    getDecryptWindowKey(
+      uid,
+      orderDocumentId
+    );
+
   const now = Date.now();
 
-  let startedAt = decryptWindows.get(key);
+  let startedAt =
+    decryptWindows.get(key);
 
+  /**
+   * لا نمدد النافذة الموجودة.
+   */
   if (
     !Number.isFinite(startedAt) ||
     now - startedAt >= DECRYPT_WINDOW_MS
   ) {
     startedAt = now;
-    decryptWindows.set(key, startedAt);
+
+    decryptWindows.set(
+      key,
+      startedAt
+    );
   }
 
-  const expiresAt = startedAt + DECRYPT_WINDOW_MS;
+  const expiresAt =
+    startedAt +
+    DECRYPT_WINDOW_MS;
 
   return {
     startedAt,
     expiresAt,
-    remainingMs: Math.max(0, expiresAt - now)
+    remainingMs:
+      Math.max(
+        0,
+        expiresAt - now
+      )
   };
 }
 
 /**
+ * تنظيف دوري للذاكرة.
+ *
+ * unref() حتى لا يمنع المؤقت عملية Node من الإغلاق.
+ */
+const decryptCleanupTimer =
+  setInterval(
+    cleanupExpiredDecryptWindows,
+    30_000
+  );
+
+if (
+  typeof decryptCleanupTimer.unref ===
+  "function"
+) {
+  decryptCleanupTimer.unref();
+}
+
+/**
  * ============================================================================
- * 2) فك تشفير آمن ومتوافق مع البيانات القديمة
+ * Safe decrypt
  * ============================================================================
  *
  * الحالات المدعومة:
  *
- * 1. قيمة مشفرة:
- *    يتم فكها.
+ * 1. encrypted value
+ * 2. legacy plaintext
+ * 3. empty value
+ * 4. array/object legacy values
  *
- * 2. قيمة قديمة غير مشفرة:
- *    يتم إرجاعها كما هي.
- *
- * 3. قيمة فارغة:
- *    ترجع "".
- *
- * 4. Array / Object:
- *    ترجع كما هي إذا لم تكن ciphertext.
- *
- * الهدف:
- * - دعم الطلبات القديمة.
- * - عدم عرض ciphertext.
- * - عدم تسجيل البيانات الحساسة.
+ * مهم:
+ * إذا كانت القيمة encrypted وفشل فكها،
+ * نرجع قيمة فارغة وليس ciphertext.
  */
+
 function safeDecrypt(value) {
   try {
     if (
@@ -130,6 +187,10 @@ function safeDecrypt(value) {
       return "";
     }
 
+    /**
+     * لا نحاول فك object/array هنا.
+     * التعامل معها يتم في helpers المتخصصة.
+     */
     if (
       Array.isArray(value) ||
       typeof value === "object"
@@ -137,90 +198,172 @@ function safeDecrypt(value) {
       return value;
     }
 
-    const stringValue = String(value);
+    const stringValue =
+      String(value).trim();
 
-    if (!stringValue.trim()) {
+    if (!stringValue) {
       return "";
     }
 
-    if (!isEncryptedValue(stringValue)) {
+    /**
+     * قيمة قديمة plaintext.
+     */
+    if (
+      !isEncryptedValue(
+        stringValue
+      )
+    ) {
       return stringValue;
     }
 
-    return decrypt(stringValue);
+    /**
+     * قيمة جديدة encrypted.
+     */
+    const decrypted =
+      decrypt(stringValue);
+
+    if (
+      decrypted === null ||
+      decrypted === undefined
+    ) {
+      return "";
+    }
+
+    return decrypted;
   } catch {
+    /**
+     * لا نعيد ciphertext عند الفشل.
+     */
     return "";
   }
 }
 
 /**
  * ============================================================================
- * 3) البحث عن الطلب
+ * Identifier validation
+ * ============================================================================
+ */
+
+function normalizeIdentifier(value) {
+  const identifier =
+    String(value || "")
+      .trim();
+
+  if (!identifier) {
+    return "";
+  }
+
+  if (
+    identifier.length >
+    MAX_IDENTIFIER_LENGTH
+  ) {
+    return "";
+  }
+
+  return identifier;
+}
+
+/**
+ * ============================================================================
+ * Find order
  * ============================================================================
  *
- * الترتيب:
+ * البحث بالترتيب:
  *
  * 1. Firestore document ID
  * 2. business orderId
  * 3. customer referenceNumber
  *
- * هذا يحافظ على الطلبات القديمة والجديدة.
+ * هذا يحافظ على:
+ * - الطلبات القديمة.
+ * - الطلبات الجديدة.
  */
-async function findOrder(identifier) {
-  const value = String(identifier || "").trim();
+
+async function findOrder(
+  identifier
+) {
+  const value =
+    normalizeIdentifier(
+      identifier
+    );
 
   if (!value) {
     return null;
   }
 
   /**
-   * أولاً: Firestore document ID.
+   * --------------------------------------------------------------------------
+   * 1. Firestore document ID
+   * --------------------------------------------------------------------------
    */
-  const directSnap = await db
-    .collection("orders")
-    .doc(value)
-    .get();
+
+  const directSnap =
+    await db
+      .collection("orders")
+      .doc(value)
+      .get();
 
   if (directSnap.exists) {
     return {
       id: directSnap.id,
-      data: directSnap.data() || {}
+      data:
+        directSnap.data() || {}
     };
   }
 
   /**
-   * ثانياً: business orderId.
+   * --------------------------------------------------------------------------
+   * 2. Business orderId
+   * --------------------------------------------------------------------------
    */
-  const orderIdSnap = await db
-    .collection("orders")
-    .where("orderId", "==", value)
-    .limit(1)
-    .get();
+
+  const orderIdSnap =
+    await db
+      .collection("orders")
+      .where(
+        "orderId",
+        "==",
+        value
+      )
+      .limit(1)
+      .get();
 
   if (!orderIdSnap.empty) {
-    const orderDoc = orderIdSnap.docs[0];
+    const orderDoc =
+      orderIdSnap.docs[0];
 
     return {
       id: orderDoc.id,
-      data: orderDoc.data() || {}
+      data:
+        orderDoc.data() || {}
     };
   }
 
   /**
-   * ثالثاً: referenceNumber.
+   * --------------------------------------------------------------------------
+   * 3. Customer referenceNumber
+   * --------------------------------------------------------------------------
    */
-  const referenceSnap = await db
-    .collection("orders")
-    .where("referenceNumber", "==", value)
-    .limit(1)
-    .get();
+
+  const referenceSnap =
+    await db
+      .collection("orders")
+      .where(
+        "referenceNumber",
+        "==",
+        value
+      )
+      .limit(1)
+      .get();
 
   if (!referenceSnap.empty) {
-    const orderDoc = referenceSnap.docs[0];
+    const orderDoc =
+      referenceSnap.docs[0];
 
     return {
       id: orderDoc.id,
-      data: orderDoc.data() || {}
+      data:
+        orderDoc.data() || {}
     };
   }
 
@@ -229,7 +372,7 @@ async function findOrder(identifier) {
 
 /**
  * ============================================================================
- * 4) توحيد بيانات الدفع
+ * Payment normalization
  * ============================================================================
  *
  * الجديد:
@@ -238,6 +381,7 @@ async function findOrder(identifier) {
  * القديم:
  *   paymentInfoData
  */
+
 function getPayoutDetails(order) {
   const payout =
     order.payoutDetails &&
@@ -247,20 +391,23 @@ function getPayoutDetails(order) {
       : null;
 
   if (payout) {
-    const method = String(
-      payout.method ||
-      order.paymentMethodType ||
-      order.paymentMethod ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
+    const method =
+      String(
+        payout.method ||
+        order.paymentMethodType ||
+        order.paymentMethod ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
 
-    let payoutType = String(
-      payout.payoutType || ""
-    )
-      .trim()
-      .toLowerCase();
+    let payoutType =
+      String(
+        payout.payoutType ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
 
     if (!payoutType) {
       payoutType =
@@ -277,6 +424,9 @@ function getPayoutDetails(order) {
     };
   }
 
+  /**
+   * Legacy paymentInfoData.
+   */
   const legacy =
     order.paymentInfoData &&
     typeof order.paymentInfoData === "object" &&
@@ -284,14 +434,15 @@ function getPayoutDetails(order) {
       ? order.paymentInfoData
       : {};
 
-  const method = String(
-    order.paymentMethodType ||
-    order.paymentMethod ||
-    legacy.method ||
-    ""
-  )
-    .trim()
-    .toLowerCase();
+  const method =
+    String(
+      order.paymentMethodType ||
+      order.paymentMethod ||
+      legacy.method ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
 
   return {
     ...legacy,
@@ -306,20 +457,10 @@ function getPayoutDetails(order) {
 
 /**
  * ============================================================================
- * 5) بيانات حساب EA
+ * EA account helpers
  * ============================================================================
- *
- * canonical:
- *   accountData.eaEmail
- *   accountData.eaPassword
- *   accountData.backupCodes
- *
- * backupCodes قد تكون:
- * - encrypted JSON array
- * - encrypted string
- * - array قديم غير مشفر
- * - string قديم غير مشفر
  */
+
 function getAccountData(order) {
   if (
     order.accountData &&
@@ -332,7 +473,9 @@ function getAccountData(order) {
   return {};
 }
 
-function normalizeBackupCodes(value) {
+function normalizeBackupCodes(
+  value
+) {
   if (
     value === null ||
     value === undefined ||
@@ -342,61 +485,84 @@ function normalizeBackupCodes(value) {
   }
 
   /**
-   * Array قديم أو جديد.
+   * Legacy/new array.
    */
   if (Array.isArray(value)) {
-    return value.map((code) => String(code ?? ""));
+    return value
+      .map((code) =>
+        String(code ?? "")
+      )
+      .filter(Boolean);
   }
 
-  const decrypted = safeDecrypt(value);
+  const decrypted =
+    safeDecrypt(value);
 
   if (
     Array.isArray(decrypted)
   ) {
-    return decrypted.map((code) =>
-      String(code ?? "")
-    );
+    return decrypted
+      .map((code) =>
+        String(code ?? "")
+      )
+      .filter(Boolean);
   }
 
-  const stringValue = String(
-    decrypted ?? ""
-  ).trim();
+  const stringValue =
+    String(
+      decrypted ?? ""
+    ).trim();
 
   if (!stringValue) {
     return [];
   }
 
   /**
-   * encrypted JSON array بعد فك التشفير.
+   * encrypted JSON array
+   * after decryption.
    */
   try {
-    const parsed = JSON.parse(stringValue);
-
-    if (Array.isArray(parsed)) {
-      return parsed.map((code) =>
-        String(code ?? "")
+    const parsed =
+      JSON.parse(
+        stringValue
       );
+
+    if (
+      Array.isArray(parsed)
+    ) {
+      return parsed
+        .map((code) =>
+          String(code ?? "")
+        )
+        .filter(Boolean);
     }
   } catch {
-    /**
-     * ليست JSON.
-     */
+    // fallback below
   }
 
   /**
-   * fallback للطلبات القديمة التي خزنت الأكواد كنص.
+   * Legacy strings.
    */
-  return [stringValue];
+  return stringValue
+    .split(/\r?\n|,|\s+/)
+    .map((code) =>
+      String(code ?? "")
+    )
+    .filter(Boolean);
 }
 
-function buildAccountResponse(order) {
-  const account = getAccountData(order);
-
+function buildAccountResponse(
+  order
+) {
   /**
    * بعد الإتلاف:
-   * لا نحاول إعادة فك البيانات الحساسة.
+   * لا نحاول فك البيانات مرة أخرى.
    */
-  if (order.sensitivePurged === true) {
+  if (
+    order.sensitivePurged === true ||
+    order.sensitiveDataPurged === true ||
+    order.purgedAt
+  ) {
     return {
       eaEmail: "",
       eaPassword: "",
@@ -404,38 +570,49 @@ function buildAccountResponse(order) {
     };
   }
 
+  const account =
+    getAccountData(order);
+
   return {
-    eaEmail: safeDecrypt(
-      account.eaEmail
-    ),
+    eaEmail:
+      safeDecrypt(
+        account.eaEmail
+      ),
 
-    eaPassword: safeDecrypt(
-      account.eaPassword
-    ),
+    eaPassword:
+      safeDecrypt(
+        account.eaPassword
+      ),
 
-    backupCodes: normalizeBackupCodes(
-      account.backupCodes
-    )
+    backupCodes:
+      normalizeBackupCodes(
+        account.backupCodes
+      )
   };
 }
 
 /**
  * ============================================================================
- * 6) بيانات الدفع المفكوكة
+ * Payment response
  * ============================================================================
  *
- * جميع طرق الدفع الجديدة يتم تشفير البيانات الحساسة منها عند الإنشاء.
+ * هنا فقط يتم فك بيانات الدفع للمشرف المصرح له.
  *
- * يتم فك البيانات هنا فقط للمشرف المصرح له.
+ * لا يتم حفظ النتيجة في Firestore.
  */
-function buildPaymentResponse(order) {
-  const payout = getPayoutDetails(order);
 
-  const method = String(
-    payout.method || ""
-  )
-    .trim()
-    .toLowerCase();
+function buildPaymentResponse(
+  order
+) {
+  const payout =
+    getPayoutDetails(order);
+
+  const method =
+    String(
+      payout.method || ""
+    )
+      .trim()
+      .toLowerCase();
 
   const response = {
     payoutType:
@@ -460,13 +637,18 @@ function buildPaymentResponse(order) {
   };
 
   switch (method) {
+    /**
+     * ------------------------------------------------------------------------
+     * Bank
+     * ------------------------------------------------------------------------
+     */
+
     case "bank": {
-      /**
-       * اسم البنك ليس بالضرورة حساساً.
-       */
-      response.bankName = String(
-        payout.bankName || ""
-      );
+      response.bankName =
+        String(
+          payout.bankName ||
+          ""
+        );
 
       response.fullName =
         safeDecrypt(
@@ -481,35 +663,58 @@ function buildPaymentResponse(order) {
       break;
     }
 
+    /**
+     * ------------------------------------------------------------------------
+     * Wallet
+     * ------------------------------------------------------------------------
+     */
+
     case "wallet": {
-      response.walletName = String(
-        payout.walletName ||
-        payout.name ||
-        ""
-      );
+      response.walletName =
+        String(
+          payout.walletName ||
+          payout.name ||
+          ""
+        );
 
       response.walletPhone =
         safeDecrypt(
           payout.phone ||
-          payout.walletPhone
+          payout.walletPhone ||
+          payout.walletNumber
         );
 
       break;
     }
+
+    /**
+     * ------------------------------------------------------------------------
+     * USDT
+     * ------------------------------------------------------------------------
+     */
 
     case "usdt": {
       response.walletAddress =
         safeDecrypt(
           payout.wallet ||
+          payout.usdtWallet ||
           payout.walletAddress
         );
 
-      response.network = String(
-        payout.network || ""
-      );
+      response.network =
+        String(
+          payout.network ||
+          ""
+        );
 
       break;
     }
+
+    /**
+     * ------------------------------------------------------------------------
+     * PayPal
+     * ------------------------------------------------------------------------
+     */
 
     case "paypal": {
       response.paypalEmail =
@@ -521,16 +726,24 @@ function buildPaymentResponse(order) {
       break;
     }
 
+    /**
+     * ------------------------------------------------------------------------
+     * Western Union
+     * ------------------------------------------------------------------------
+     */
+
     case "western": {
       response.fullNameEnglish =
         safeDecrypt(
           payout.fullNameEnglish ||
-          payout.fullName
+          payout.fullName ||
+          payout.westernName
         );
 
       response.country =
         safeDecrypt(
-          payout.country
+          payout.country ||
+          payout.westernCountry
         );
 
       break;
@@ -545,69 +758,93 @@ function buildPaymentResponse(order) {
 
 /**
  * ============================================================================
- * 7) API health
+ * Public admin API health
  * ============================================================================
  *
- * لا يعرض أي بيانات إدارية.
+ * هذا endpoint لا يحتاج بيانات حساسة.
  */
-router.get("/", (_, res) => {
-  res.json({
-    success: true,
-    message: "Admin API Ready"
-  });
-});
+
+router.get(
+  "/",
+  (_, res) => {
+    return res.json({
+      success: true,
+      message:
+        "Admin API Ready"
+    });
+  }
+);
 
 /**
  * ============================================================================
- * 8) فك تشفير بيانات الطلب
+ * POST /api/admin/decrypt-order
  * ============================================================================
  *
  * Protected:
  *   requireAdmin
  *
- * مدة الكشف:
- *   90 ثانية على الخادم.
+ * مدة نافذة الكشف:
+ *   90 ثانية.
  *
- * ملاحظة:
- * expiresAt مبني على نافذة محفوظة على الخادم.
- * الواجهة تستخدمه فقط لعرض العد التنازلي.
+ * مهم:
+ *
+ * expiresAt ليس مجرد قيمة للواجهة.
+ * يتم حسابه من نافذة محفوظة على الخادم.
+ *
+ * إعادة استدعاء نفس الطلب خلال الـ90 ثانية:
+ * لا تمدد النافذة.
  */
+
 router.post(
   "/decrypt-order",
   requireAdmin,
   async (req, res) => {
     try {
-      const orderIdentifier = String(
-        req.body?.orderId || ""
-      ).trim();
+      const orderIdentifier =
+        normalizeIdentifier(
+          req.body?.orderId
+        );
 
       if (!orderIdentifier) {
         return res.status(400).json({
           success: false,
-          message: "رقم الطلب مطلوب"
+          message:
+            "رقم الطلب مطلوب"
         });
       }
 
-      const found = await findOrder(
-        orderIdentifier
-      );
+      /**
+       * البحث عن الطلب.
+       */
+      const found =
+        await findOrder(
+          orderIdentifier
+        );
 
       if (!found) {
         return res.status(404).json({
           success: false,
-          message: "الطلب غير موجود"
+          message:
+            "الطلب غير موجود"
         });
       }
 
-      const order = found.data || {};
+      const order =
+        found.data || {};
 
       /**
-       * إذا تم إتلاف بيانات EA:
+       * ----------------------------------------------------------------------
+       * الإتلاف النهائي
+       * ----------------------------------------------------------------------
+       *
+       * إذا تم حذف بيانات EA:
        * لا يمكن إعادة كشفها.
        */
+
       if (
         order.sensitivePurged === true ||
-        order.sensitiveDataPurged === true
+        order.sensitiveDataPurged === true ||
+        order.purgedAt
       ) {
         return res.status(410).json({
           success: false,
@@ -617,72 +854,110 @@ router.post(
       }
 
       /**
-       * نبدأ أو نسترجع نافذة الكشف الخاصة:
-       *
-       * admin UID + order document ID
-       *
-       * إعادة الطلب خلال الـ90 ثانية
-       * لا تمدد النافذة.
+       * ----------------------------------------------------------------------
+       * Server-side decrypt window
+       * ----------------------------------------------------------------------
        */
+
       const decryptWindow =
         getOrCreateDecryptWindow(
           req.admin.uid,
           found.id
         );
 
+      /**
+       * ----------------------------------------------------------------------
+       * فك بيانات EA
+       * ----------------------------------------------------------------------
+       */
+
       const account =
-        buildAccountResponse(order);
-
-      const payment =
-        buildPaymentResponse(order);
-
-      const payout =
-        getPayoutDetails(order);
+        buildAccountResponse(
+          order
+        );
 
       /**
+       * ----------------------------------------------------------------------
+       * فك بيانات الدفع
+       * ----------------------------------------------------------------------
+       */
+
+      const payment =
+        buildPaymentResponse(
+          order
+        );
+
+      const payout =
+        getPayoutDetails(
+          order
+        );
+
+      /**
+       * ----------------------------------------------------------------------
+       * Build safe admin response
+       * ----------------------------------------------------------------------
+       *
        * لا نرسل order كامل.
        */
+
       const response = {
         orderId:
-          order.orderId ||
-          found.id,
+          String(
+            order.orderId ||
+            found.id
+          ),
 
         referenceNumber:
-          order.referenceNumber ||
-          "",
+          String(
+            order.referenceNumber ||
+            ""
+          ),
 
         customerName:
-          order.customerName ||
-          "",
+          String(
+            order.customerName ||
+            ""
+          ),
 
         phone:
-          order.phone ||
-          "",
+          String(
+            order.phone ||
+            ""
+          ),
 
         customerEmail:
-          order.customerEmail ||
-          "",
+          String(
+            order.customerEmail ||
+            ""
+          ),
 
         platform:
-          order.platform ||
-          "",
+          String(
+            order.platform ||
+            ""
+          ),
 
         paymentMethod:
-          payout.method ||
-          order.paymentMethodType ||
-          order.paymentMethod ||
-          "",
+          String(
+            payout.method ||
+            order.paymentMethodType ||
+            order.paymentMethod ||
+            ""
+          ),
 
         payoutType:
-          payout.payoutType ||
-          "",
+          String(
+            payout.payoutType ||
+            ""
+          ),
 
         account,
 
         payment,
 
         /**
-         * وقت انتهاء الكشف الحقيقي على الخادم.
+         * وقت انتهاء النافذة الحقيقي
+         * على الخادم.
          */
         expiresAt:
           decryptWindow.expiresAt
@@ -694,11 +969,14 @@ router.post(
       });
     } catch (error) {
       /**
-       * لا نسجل:
+       * ممنوع تسجيل:
        * - Authorization token
-       * - البيانات المفكوكة
-       * - بيانات الدفع
-       * - بيانات EA
+       * - EA credentials
+       * - backup codes
+       * - IBAN
+       * - wallet address
+       * - PayPal email
+       * - ciphertext
        */
       console.error(
         "Admin decrypt-order error:",
