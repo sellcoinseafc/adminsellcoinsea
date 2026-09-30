@@ -265,23 +265,10 @@ export async function requireAdmin(
     ===================================================== */
 
     /*
-     * verifyIdToken(..., true)
-     * يتحقق من إلغاء الـ token.
-     *
-     * نستخدم أيضًا disabled من Firebase User Record
-     * إذا كان متاحًا عبر decoded claims/الحساب.
-     *
-     * لا نعتمد على frontend في هذه النقطة.
+     * verifyIdToken(..., true) performs the server-side
+     * revoked-token check. Disabled Firebase users are
+     * rejected by Firebase Authentication itself.
      */
-
-    if (
-      decodedToken.disabled === true
-    ) {
-      return unauthorized(
-        res,
-        "حساب الإدارة غير صالح."
-      );
-    }
 
     /* =====================================================
        7. Safe Admin Identity
