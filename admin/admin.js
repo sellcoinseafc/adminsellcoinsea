@@ -6194,6 +6194,152 @@ function renderInventoryUI(
   }
 }
 
+/*
+ * يحول أي قيمة واردة من Firestore إلى قائمة آمنة.
+ *
+ * النظام الجديد يستخدم Array:
+ * [
+ *   "تحويل بنكي",
+ *   "المحافظ الرقمية",
+ *   ...
+ * ]
+ *
+ * وفي حال وجود بيانات قديمة بصيغة Object يتم استخراج
+ * القيم من جميع التصنيفات مؤقتاً حتى لا تختفي البيانات
+ * من لوحة الإدارة أثناء الانتقال للنظام الجديد.
+ */
+function normalizeSettingsList(
+  value
+) {
+  if (Array.isArray(value)) {
+    return value
+      .map(
+        (item) =>
+          String(
+            item ?? ""
+          ).trim()
+      )
+      .filter(Boolean);
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    const flattened = [];
+
+    Object.values(
+      value
+    ).forEach(
+      (categoryValue) => {
+        if (
+          Array.isArray(
+            categoryValue
+          )
+        ) {
+          categoryValue.forEach(
+            (item) => {
+              const text =
+                String(
+                  item ?? ""
+                ).trim();
+
+              if (text) {
+                flattened.push(
+                  text
+                );
+              }
+            }
+          );
+        }
+      }
+    );
+
+    return [
+      ...new Set(
+        flattened
+      )
+    ];
+  }
+
+  return [];
+}
+
+function renderTermsEnabledUI(
+  settings
+) {
+  const enabled =
+    settings?.termsEnabled !==
+    false;
+
+  /*
+   * دعم أكثر من اسم محتمل للعنصر بدون افتراض
+   * أن admin.html يحتوي على عنصر محدد.
+   */
+  const checkboxIds = [
+    "termsEnabled",
+    "termsEnabledCheckbox",
+    "termsToggle",
+    "termsEnabledToggle"
+  ];
+
+  let checkbox =
+    null;
+
+  for (
+    const id of checkboxIds
+  ) {
+    const element =
+      document.getElementById(
+        id
+      );
+
+    if (
+      element &&
+      (
+        element.type ===
+        "checkbox"
+      )
+    ) {
+      checkbox =
+        element;
+      break;
+    }
+  }
+
+  if (checkbox) {
+    checkbox.checked =
+      enabled;
+  }
+
+  const statusIds = [
+    "termsEnabledText",
+    "termsStatusText",
+    "termsToggleText"
+  ];
+
+  for (
+    const id of statusIds
+  ) {
+    const element =
+      document.getElementById(
+        id
+      );
+
+    if (element) {
+      element.innerText =
+        enabled
+          ? "الشروط والأحكام مفعلة"
+          : "الشروط والأحكام غير مفعلة";
+
+      element.dataset.enabled =
+        enabled
+          ? "true"
+          : "false";
+    }
+  }
+}
+
 function initSystemSettingsListener() {
   return subscribeToSettings(
     (settings) => {
@@ -6216,23 +6362,31 @@ function initSystemSettingsListener() {
       renderDashboardQuickStats();
 
       renderBanks(
-        settings.banks ||
-          []
+        normalizeSettingsList(
+          settings.banks
+        )
       );
 
       renderWallets(
-        settings.wallets ||
-          []
+        normalizeSettingsList(
+          settings.wallets
+        )
       );
 
       renderCustomPayments(
-        settings.paymentMethods ||
-          []
+        normalizeSettingsList(
+          settings.paymentMethods
+        )
       );
 
       renderTerms(
-        settings.terms ||
-          []
+        normalizeSettingsList(
+          settings.terms
+        )
+      );
+
+      renderTermsEnabledUI(
+        settings
       );
 
       renderIssueMessages(
@@ -6562,6 +6716,10 @@ window.saveProductsConfig =
     }
   };
 
+// ==========================================================================
+// 16-A) البنوك
+// ==========================================================================
+
 function renderBanks(
   banksArray = []
 ) {
@@ -6572,8 +6730,30 @@ function renderBanks(
 
   if (!container) return;
 
+  const banks =
+    normalizeSettingsList(
+      banksArray
+    );
+
+  if (banks.length === 0) {
+    container.innerHTML = `
+      <div
+        style="
+          padding:12px;
+          border:1px dashed var(--card-border);
+          border-radius:10px;
+          color:var(--text-muted);
+          text-align:center;
+        ">
+        لا توجد بنوك مضافة حالياً.
+      </div>
+    `;
+
+    return;
+  }
+
   container.innerHTML =
-    banksArray
+    banks
       .map(
         (
           bank,
@@ -6591,6 +6771,7 @@ function renderBanks(
             <button
               class="btn-action"
               style="color:var(--danger);"
+              title="حذف البنك"
               onclick="deleteBank(${index})">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -6608,16 +6789,40 @@ window.addBank =
         "newBankInput"
       );
 
-    if (
-      input &&
-      input.value.trim()
-    ) {
+    if (!input) {
+      return;
+    }
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      return;
+    }
+
+    try {
       await systemAddBank(
-        input.value.trim()
+        value
       );
 
       input.value =
         "";
+
+      await logAuditEvent(
+        "إضافة بنك",
+        "الإعدادات",
+        `تمت إضافة البنك: ${value}`
+      );
+    } catch (error) {
+      console.error(
+        "Add bank error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر إضافة البنك."
+      );
     }
   };
 
@@ -6625,10 +6830,55 @@ window.deleteBank =
   async function (
     index
   ) {
-    await systemDeleteBank(
-      index
-    );
+    try {
+      const banks =
+        normalizeSettingsList(
+          currentSettingsData.banks
+        );
+
+      const bankName =
+        banks[index] ||
+        "";
+
+      if (
+        !bankName
+      ) {
+        return;
+      }
+
+      if (
+        !confirm(
+          `هل أنت متأكد من حذف البنك:\n\n${bankName}`
+        )
+      ) {
+        return;
+      }
+
+      await systemDeleteBank(
+        index
+      );
+
+      await logAuditEvent(
+        "حذف بنك",
+        "الإعدادات",
+        `تم حذف البنك: ${bankName}`
+      );
+    } catch (error) {
+      console.error(
+        "Delete bank error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر حذف البنك."
+      );
+    }
   };
+
+// ==========================================================================
+// 16-B) المحافظ الرقمية
+// ==========================================================================
 
 function renderWallets(
   walletsArray = []
@@ -6640,8 +6890,30 @@ function renderWallets(
 
   if (!container) return;
 
+  const wallets =
+    normalizeSettingsList(
+      walletsArray
+    );
+
+  if (wallets.length === 0) {
+    container.innerHTML = `
+      <div
+        style="
+          padding:12px;
+          border:1px dashed var(--card-border);
+          border-radius:10px;
+          color:var(--text-muted);
+          text-align:center;
+        ">
+        لا توجد محافظ رقمية مضافة حالياً.
+      </div>
+    `;
+
+    return;
+  }
+
   container.innerHTML =
-    walletsArray
+    wallets
       .map(
         (
           wallet,
@@ -6659,6 +6931,7 @@ function renderWallets(
             <button
               class="btn-action"
               style="color:var(--danger);"
+              title="حذف المحفظة"
               onclick="deleteWallet(${index})">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -6676,16 +6949,40 @@ window.addWallet =
         "newWalletInput"
       );
 
-    if (
-      input &&
-      input.value.trim()
-    ) {
+    if (!input) {
+      return;
+    }
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      return;
+    }
+
+    try {
       await systemAddWallet(
-        input.value.trim()
+        value
       );
 
       input.value =
         "";
+
+      await logAuditEvent(
+        "إضافة محفظة رقمية",
+        "الإعدادات",
+        `تمت إضافة المحفظة: ${value}`
+      );
+    } catch (error) {
+      console.error(
+        "Add wallet error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر إضافة المحفظة."
+      );
     }
   };
 
@@ -6693,10 +6990,55 @@ window.deleteWallet =
   async function (
     index
   ) {
-    await systemDeleteWallet(
-      index
-    );
+    try {
+      const wallets =
+        normalizeSettingsList(
+          currentSettingsData.wallets
+        );
+
+      const walletName =
+        wallets[index] ||
+        "";
+
+      if (
+        !walletName
+      ) {
+        return;
+      }
+
+      if (
+        !confirm(
+          `هل أنت متأكد من حذف المحفظة:\n\n${walletName}`
+        )
+      ) {
+        return;
+      }
+
+      await systemDeleteWallet(
+        index
+      );
+
+      await logAuditEvent(
+        "حذف محفظة رقمية",
+        "الإعدادات",
+        `تم حذف المحفظة: ${walletName}`
+      );
+    } catch (error) {
+      console.error(
+        "Delete wallet error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر حذف المحفظة."
+      );
+    }
   };
+
+// ==========================================================================
+// 16-C) طرق الدفع
+// ==========================================================================
 
 function renderCustomPayments(
   methodsArray = []
@@ -6708,8 +7050,33 @@ function renderCustomPayments(
 
   if (!container) return;
 
+  const methods = [
+    ...new Set(
+      normalizeSettingsList(
+        methodsArray
+      )
+    )
+  ];
+
+  if (methods.length === 0) {
+    container.innerHTML = `
+      <div
+        style="
+          padding:12px;
+          border:1px dashed var(--card-border);
+          border-radius:10px;
+          color:var(--text-muted);
+          text-align:center;
+        ">
+        لا توجد طرق دفع مضافة حالياً.
+      </div>
+    `;
+
+    return;
+  }
+
   container.innerHTML =
-    methodsArray
+    methods
       .map(
         (
           method,
@@ -6727,6 +7094,7 @@ function renderCustomPayments(
             <button
               class="btn-action"
               style="color:var(--danger);"
+              title="حذف طريقة الدفع"
               onclick="deleteCustomPayment(${index})">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -6744,16 +7112,60 @@ window.addCustomPaymentMethod =
         "newCustomPaymentInput"
       );
 
-    if (
-      input &&
-      input.value.trim()
-    ) {
+    if (!input) {
+      return;
+    }
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      return;
+    }
+
+    try {
+      const existing =
+        normalizeSettingsList(
+          currentSettingsData.paymentMethods
+        );
+
+      const exists =
+        existing.some(
+          (method) =>
+            method.toLowerCase() ===
+            value.toLowerCase()
+        );
+
+      if (exists) {
+        alert(
+          "⚠️ طريقة الدفع موجودة بالفعل."
+        );
+
+        return;
+      }
+
       await systemAddPaymentMethod(
-        input.value.trim()
+        value
       );
 
       input.value =
         "";
+
+      await logAuditEvent(
+        "إضافة طريقة دفع",
+        "الإعدادات",
+        `تمت إضافة طريقة الدفع: ${value}`
+      );
+    } catch (error) {
+      console.error(
+        "Add payment method error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر إضافة طريقة الدفع."
+      );
     }
   };
 
@@ -6761,10 +7173,55 @@ window.deleteCustomPayment =
   async function (
     index
   ) {
-    await systemDeletePaymentMethod(
-      index
-    );
+    try {
+      const methods =
+        normalizeSettingsList(
+          currentSettingsData.paymentMethods
+        );
+
+      const methodName =
+        methods[index] ||
+        "";
+
+      if (
+        !methodName
+      ) {
+        return;
+      }
+
+      if (
+        !confirm(
+          `هل أنت متأكد من حذف طريقة الدفع:\n\n${methodName}`
+        )
+      ) {
+        return;
+      }
+
+      await systemDeletePaymentMethod(
+        index
+      );
+
+      await logAuditEvent(
+        "حذف طريقة دفع",
+        "الإعدادات",
+        `تم حذف طريقة الدفع: ${methodName}`
+      );
+    } catch (error) {
+      console.error(
+        "Delete payment method error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر حذف طريقة الدفع."
+      );
+    }
   };
+
+// ==========================================================================
+// 16-D) الشروط والأحكام
+// ==========================================================================
 
 function renderTerms(
   termsArray = []
@@ -6776,16 +7233,38 @@ function renderTerms(
 
   if (!container) return;
 
+  const terms =
+    normalizeSettingsList(
+      termsArray
+    );
+
+  if (terms.length === 0) {
+    container.innerHTML = `
+      <div
+        style="
+          padding:12px;
+          border:1px dashed var(--card-border);
+          border-radius:10px;
+          color:var(--text-muted);
+          text-align:center;
+        ">
+        لا توجد شروط وأحكام مضافة حالياً.
+      </div>
+    `;
+
+    return;
+  }
+
   container.innerHTML =
-    termsArray
+    terms
       .map(
         (
           term,
           index
         ) => `
-          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--input-bg);border:1px solid var(--card-border);padding:10px;border-radius:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;background:var(--input-bg);border:1px solid var(--card-border);padding:10px;border-radius:10px;gap:10px;">
 
-            <span style="font-size:0.85rem;">
+            <span style="font-size:0.85rem;line-height:1.7;flex:1;">
               ${index + 1}.
               ${escapeHtml(
                 term
@@ -6794,7 +7273,8 @@ function renderTerms(
 
             <button
               class="btn-action"
-              style="color:var(--danger);"
+              style="color:var(--danger);flex-shrink:0;"
+              title="حذف الشرط"
               onclick="deleteTerm(${index})">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -6812,16 +7292,60 @@ window.addNewTerm =
         "newTermInput"
       );
 
-    if (
-      input &&
-      input.value.trim()
-    ) {
+    if (!input) {
+      return;
+    }
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+      return;
+    }
+
+    try {
+      const existingTerms =
+        normalizeSettingsList(
+          currentSettingsData.terms
+        );
+
+      const exists =
+        existingTerms.some(
+          (term) =>
+            term.toLowerCase() ===
+            value.toLowerCase()
+        );
+
+      if (exists) {
+        alert(
+          "⚠️ هذا الشرط موجود بالفعل."
+        );
+
+        return;
+      }
+
       await systemAddTerm(
-        input.value.trim()
+        value
       );
 
       input.value =
         "";
+
+      await logAuditEvent(
+        "إضافة شرط وأحكام",
+        "الإعدادات",
+        `تمت إضافة شرط: ${value}`
+      );
+    } catch (error) {
+      console.error(
+        "Add term error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر إضافة الشرط."
+      );
     }
   };
 
@@ -6829,9 +7353,116 @@ window.deleteTerm =
   async function (
     index
   ) {
-    await systemDeleteTerm(
-      index
-    );
+    try {
+      const terms =
+        normalizeSettingsList(
+          currentSettingsData.terms
+        );
+
+      const termText =
+        terms[index] ||
+        "";
+
+      if (
+        !termText
+      ) {
+        return;
+      }
+
+      if (
+        !confirm(
+          `هل أنت متأكد من حذف هذا الشرط؟\n\n${termText}`
+        )
+      ) {
+        return;
+      }
+
+      await systemDeleteTerm(
+        index
+      );
+
+      await logAuditEvent(
+        "حذف شرط وأحكام",
+        "الإعدادات",
+        `تم حذف الشرط: ${termText}`
+      );
+    } catch (error) {
+      console.error(
+        "Delete term error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر حذف الشرط."
+      );
+    }
+  };
+
+/*
+ * تفعيل / تعطيل ظهور الشروط والأحكام في صفحة العميل.
+ *
+ * هذه الدالة لا تفترض وجود عنصر معين في admin.html.
+ * إذا كان لدينا checkbox بأحد الأسماء المدعومة، يمكن
+ * للواجهة استدعاؤها مباشرة.
+ */
+window.toggleTermsEnabled =
+  async function (
+    enabled
+  ) {
+    const normalized =
+      Boolean(enabled);
+
+    try {
+      await updateDoc(
+        doc(
+          db,
+          "system",
+          "settings"
+        ),
+        {
+          termsEnabled:
+            normalized,
+
+          updatedAt:
+            serverTimestamp()
+        }
+      );
+
+      currentSettingsData = {
+        ...currentSettingsData,
+        termsEnabled:
+          normalized
+      };
+
+      renderTermsEnabledUI(
+        currentSettingsData
+      );
+
+      await logAuditEvent(
+        normalized
+          ? "تفعيل الشروط والأحكام"
+          : "تعطيل الشروط والأحكام",
+        "الإعدادات",
+        normalized
+          ? "تم تفعيل ظهور الشروط والأحكام للعملاء"
+          : "تم تعطيل ظهور الشروط والأحكام للعملاء"
+      );
+    } catch (error) {
+      console.error(
+        "Toggle terms enabled error:",
+        error?.message ||
+          error
+      );
+
+      alert(
+        "❌ تعذر تحديث حالة الشروط والأحكام."
+      );
+
+      renderTermsEnabledUI(
+        currentSettingsData
+      );
+    }
   };
 
 // ==========================================================================
