@@ -256,7 +256,12 @@ export const defaultSettings = {
      * ------------------------------------------------------------------------
      */
 
-    paymentMethods: [
+    paymentCategories: {
+            local: ["bank_transfer", "digital_wallet"],
+            international: ["usdt", "paypal", "western_union"]
+        },
+
+        paymentMethods: [
         "تحويل بنكي",
         "المحافظ الرقمية",
         "USDT",
