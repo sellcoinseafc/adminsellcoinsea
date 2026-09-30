@@ -63,9 +63,6 @@ const PAYOUT_METHODS = new Set([
 const PURGE_DELAY_MS =
   5 * 24 * 60 * 60 * 1000;
 
-const USD_RATE =
-  3.75;
-
 const DEFAULT_ISSUE_MESSAGES = {
   wrong_credentials:
     "يرجى إرسال الإيميل والباسورد الصحيح عبر الواتساب",
@@ -373,9 +370,12 @@ function calculateServerPrice(
     payoutType ===
     "international";
 
+  const usdSarRate =
+    toNumber(settings.usdSarRate, 3.75);
+
   const totalUsd =
     totalSar /
-    USD_RATE;
+    usdSarRate;
 
   return {
     rate,
@@ -1372,6 +1372,14 @@ router.get(
           settings.psTransferDuration ||
           "",
 
+        pcWithdrawDays:
+          settings.pcWithdrawDuration ||
+          "",
+
+        pcTransferHours:
+          settings.pcTransferDuration ||
+          "",
+
         safeMethod:
           settings.safeMethod ||
           "سوق الانتقالات (Web App)",
@@ -1409,6 +1417,13 @@ router.get(
             settings.terms
           )
             ? settings.terms
+            : [],
+
+        termsEn:
+          Array.isArray(
+            settings.termsEn
+          )
+            ? settings.termsEn
             : [],
 
         issueMessages:
@@ -1995,6 +2010,7 @@ router.post(
       const {
         orderId,
         referenceNumber,
+        internalReference,
         dailyCode,
         serial
       } =
