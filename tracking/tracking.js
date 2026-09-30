@@ -1,26 +1,95 @@
- /**
+/**
  * SAMI COINS - tracking.js
- * إدارة العرض، وحفظ جلسة العميل، والتحديث الذكي (Smart Polling)
+ * Customer Tracking
+ *
+ * متوافق مع:
+ * - الطلبات الجديدة
+ * - الطلبات القديمة
+ * - referenceNumber
+ * - status / orderStatus
+ * - drawnCoins / withdrawnQuantity
+ * - issue كمشكلة مستقلة عن حالة الطلب
+ * - payoutDetails / paymentInfoData
+ * - نظام التقييم لمرة واحدة
+ * - Smart Polling
  */
 
 let activeRef = null;
 let pollingInterval = null;
+
 let cachedState = {
-    orderStatus: null,
-    withdrawnQuantity: null
+    status: null,
+    issue: null,
+    drawnCoins: null,
+    reviewSubmitted: null,
+    sensitivePurged: null
 };
 
-// عند فتح الصفحة
+/* ==========================================
+   إعدادات الحالات
+   ========================================== */
+
+const STATUS_CONFIG = {
+    new: {
+        text: "طلب جديد",
+        percentage: 15,
+        className: "new"
+    },
+
+    review: {
+        text: "انتظار المراجعة",
+        percentage: 35,
+        className: "review"
+    },
+
+    progress: {
+        text: "جاري سحب الكوينز من حسابك",
+        percentage: 65,
+        className: "executing"
+    },
+
+    finished: {
+        text: "تم الانتهاء من سحب الكوينز من حسابك",
+        percentage: 85,
+        className: "finished"
+    },
+
+    transferred: {
+        text: "تم تحويل المبلغ إلى حسابك",
+        percentage: 95,
+        className: "success"
+    },
+
+    completed: {
+        text: "مكتمل",
+        percentage: 100,
+        className: "success"
+    }
+};
+
+/**
+ * حالات قديمة للتوافق مع الطلبات القديمة
+ */
+const LEGACY_STATUS_MAP = {
+    pending: "new"
+};
+
+/* ==========================================
+   عند فتح الصفحة
+   ========================================== */
+
 document.addEventListener("DOMContentLoaded", () => {
     setupInputFormatting();
     initTrackingSession();
 });
 
-/**
- * تهيئة الجلسة ومصادر قراءة رقم الطلب
- */
+/* ==========================================
+   تهيئة جلسة التتبع
+   ========================================== */
+
 async function initTrackingSession() {
     const urlParams = new URLSearchParams(window.location.search);
+
     const refFromUrl = urlParams.get("ref");
     const refFromStorage = localStorage.getItem("sami_active_order");
 
@@ -34,21 +103,31 @@ async function initTrackingSession() {
 
     if (targetRef) {
         const orderInput = document.getElementById("orderInput");
-        if (orderInput) orderInput.value = targetRef;
+
+        if (orderInput) {
+            orderInput.value = targetRef;
+        }
+
         await fetchAndRenderOrder(targetRef);
     } else {
         showLookupView();
     }
 }
 
-/**
- * معالجة إرسال النموذج من واجهة الإدخال
- */
+/* ==========================================
+   البحث عن طلب
+   ========================================== */
+
 async function handleLookupSubmit(event) {
-    if (event) event.preventDefault();
+    if (event) {
+        event.preventDefault();
+    }
 
     const orderInput = document.getElementById("orderInput");
-    if (!orderInput) return;
+
+    if (!orderInput) {
+        return;
+    }
 
     const ref = sanitizeRef(orderInput.value);
 
@@ -58,95 +137,203 @@ async function handleLookupSubmit(event) {
     }
 
     hideLookupError();
+
     await fetchAndRenderOrder(ref);
 }
 
-/**
- * جلب واستعراض بيانات الطلب من الـ API
- */
+/* ==========================================
+   جلب الطلب
+   ========================================== */
+
 async function fetchAndRenderOrder(ref) {
     try {
-        const response = await fetch(`/api/tracking/${encodeURIComponent(ref)}`);
-        
+        const response = await fetch(
+            `/api/tracking/${encodeURIComponent(ref)}`,
+            {
+                method: "GET",
+                cache: "no-store"
+            }
+        );
+
         if (!response.ok) {
+            stopSmartPolling();
             showLookupView();
-            showLookupError("لم يتم العثور على طلب بهذا الرقم، يرجى التأكد وإعادة المحاولة.");
+
+            showLookupError(
+                "لم يتم العثور على طلب بهذا الرقم، يرجى التأكد وإعادة المحاولة."
+            );
+
             return;
         }
 
         const data = await response.json();
 
-        if (data && data.order) {
-            activeRef = ref;
-            
-            // تحديث رابط الصفحة بدون إعادة تحميل
-            const newUrl = `${window.location.pathname}?ref=${encodeURIComponent(ref)}`;
-            window.history.replaceState({ path: newUrl }, '', newUrl);
+        if (!data || !data.success || !data.order) {
+            showLookupView();
 
-            // حفظ رقم الطلب في الجلسة إذا لم يكن مكتملاً
-            if (data.order.orderStatus !== "completed") {
-                localStorage.setItem("sami_active_order", ref);
-            }
+            showLookupError(
+                data?.message ||
+                "تعذر تحميل بيانات الطلب، يرجى المحاولة لاحقاً."
+            );
 
-            // إظهار واجهة التتبع
-            showTrackingView();
-
-            // رسم البيانات الأولية
-            updateTrackingUI(data.order, data.statusMessage);
-            setupSecurityEvents();
-            setupReviewSystem(data.order, data.reviewSuggestions);
-
-            // حفظ الحالة الحالية للكاش
-            cachedState.orderStatus = data.order.orderStatus;
-            cachedState.withdrawnQuantity = data.order.withdrawnQuantity || 0;
-
-            // بدء التحديث الذكي (Smart Polling)
-            startSmartPolling();
+            return;
         }
+
+        activeRef = sanitizeRef(
+            data.order.referenceNumber ||
+            ref
+        );
+
+        /*
+         * تحديث الرابط بدون إعادة تحميل الصفحة
+         */
+        const newUrl =
+            `${window.location.pathname}?ref=${encodeURIComponent(activeRef)}`;
+
+        window.history.replaceState(
+            { path: newUrl },
+            "",
+            newUrl
+        );
+
+        /*
+         * نحفظ رقم الطلب أثناء متابعة الطلب.
+         * بعد completed يمكن إزالة الجلسة.
+         */
+        const normalizedStatus = normalizeStatus(
+            data.order.status ||
+            data.order.orderStatus
+        );
+
+        if (normalizedStatus !== "completed") {
+            localStorage.setItem(
+                "sami_active_order",
+                activeRef
+            );
+        }
+
+        showTrackingView();
+
+        updateTrackingUI(
+            data.order,
+            data.statusMessage,
+            data.issueMessage
+        );
+
+        setupSecurityEvents();
+
+        setupReviewSystem(
+            data.order,
+            data.reviewSuggestions
+        );
+
+        updateCachedState(data.order);
+
+        startSmartPolling();
+
     } catch (error) {
-        console.error("Error fetching order:", error);
+        console.error("Tracking fetch error:", error);
+
         showLookupView();
-        showLookupError("حدث خطأ في الاتصال بالخادم، يُرجى المحاولة لاحقاً.");
+
+        showLookupError(
+            "حدث خطأ في الاتصال بالخادم، يُرجى المحاولة لاحقاً."
+        );
     }
 }
 
-/**
- * التحديث الذكي: استدعاء الـ API كل 10 ثوانٍ وتحديث الـ DOM فقط في حال تغيير الحقول الأساسية
- */
+/* ==========================================
+   Smart Polling
+   ========================================== */
+
 function startSmartPolling() {
     stopSmartPolling();
 
     pollingInterval = setInterval(async () => {
-        if (!activeRef) return;
+        if (!activeRef) {
+            return;
+        }
 
         try {
-            const res = await fetch(`/api/tracking/${encodeURIComponent(activeRef)}`);
-            if (!res.ok) return;
-
-            const data = await res.json();
-            if (!data || !data.order) return;
-
-            const newStatus = data.order.orderStatus;
-            const newWithdrawn = data.order.withdrawnQuantity || 0;
-
-            // فحص التغيير الذكي: لا نعدل في الـ DOM إلا إذا تغيرت الحالة أو الكمية المسحوبة
-            if (newStatus !== cachedState.orderStatus || newWithdrawn !== cachedState.withdrawnQuantity) {
-                cachedState.orderStatus = newStatus;
-                cachedState.withdrawnQuantity = newWithdrawn;
-
-                // تحديث الواجهة
-                updateTrackingUI(data.order, data.statusMessage);
-
-                // عند اكتمال الطلب بالكامل: حذف الرقم من الجلسة وإيقاف المتابعة
-                if (newStatus === "completed") {
-                    localStorage.removeItem("sami_active_order");
-                    stopSmartPolling();
+            const response = await fetch(
+                `/api/tracking/${encodeURIComponent(activeRef)}`,
+                {
+                    method: "GET",
+                    cache: "no-store"
                 }
+            );
+
+            if (!response.ok) {
+                return;
             }
-        } catch (err) {
-            console.error("Polling error:", err);
+
+            const data = await response.json();
+
+            if (!data || !data.success || !data.order) {
+                return;
+            }
+
+            const order = data.order;
+
+            const newStatus = normalizeStatus(
+                order.status ||
+                order.orderStatus
+            );
+
+            const newIssue =
+                order.issue ||
+                null;
+
+            const newDrawnCoins =
+                getDrawnCoins(order);
+
+            const newReviewSubmitted =
+                Boolean(order.reviewSubmitted);
+
+            const newSensitivePurged =
+                Boolean(
+                    order.sensitivePurged ||
+                    order.purgedAt
+                );
+
+            const hasChanged =
+                newStatus !== cachedState.status ||
+                newIssue !== cachedState.issue ||
+                newDrawnCoins !== cachedState.drawnCoins ||
+                newReviewSubmitted !== cachedState.reviewSubmitted ||
+                newSensitivePurged !== cachedState.sensitivePurged;
+
+            if (hasChanged) {
+                updateTrackingUI(
+                    order,
+                    data.statusMessage,
+                    data.issueMessage
+                );
+
+                setupSecurityEvents();
+
+                setupReviewSystem(
+                    order,
+                    data.reviewSuggestions
+                );
+
+                updateCachedState(order);
+            }
+
+            /*
+             * لا نوقف polling عند completed بشكل مباشر.
+             *
+             * السبب:
+             * الطلب المكتمل قد يحتاج أن يعرض للعميل
+             * حالة الإتلاف/حذف البيانات الحساسة لاحقاً.
+             *
+             * لذلك نواصل التحديث طالما الصفحة مفتوحة.
+             */
+        } catch (error) {
+            console.error("Tracking polling error:", error);
         }
-    }, 10000); // 10 ثوانٍ
+
+    }, 10000);
 }
 
 function stopSmartPolling() {
@@ -156,440 +343,1768 @@ function stopSmartPolling() {
     }
 }
 
-/**
- * إعادة الصفحة لوضع الإدخال لطلب جديد
- */
+/* ==========================================
+   حفظ الحالة الحالية
+   ========================================== */
+
+function updateCachedState(order) {
+    if (!order) {
+        return;
+    }
+
+    cachedState.status = normalizeStatus(
+        order.status ||
+        order.orderStatus
+    );
+
+    cachedState.issue =
+        order.issue ||
+        null;
+
+    cachedState.drawnCoins =
+        getDrawnCoins(order);
+
+    cachedState.reviewSubmitted =
+        Boolean(order.reviewSubmitted);
+
+    cachedState.sensitivePurged =
+        Boolean(
+            order.sensitivePurged ||
+            order.purgedAt
+        );
+}
+
+/* ==========================================
+   إعادة الصفحة للبحث
+   ========================================== */
+
 function resetToLookup() {
     stopSmartPolling();
+
     activeRef = null;
-    localStorage.removeItem("sami_active_order");
-    
-    // تنظيف URL
-    window.history.replaceState({}, '', window.location.pathname);
-    
-    const orderInput = document.getElementById("orderInput");
-    if (orderInput) orderInput.value = "";
+
+    localStorage.removeItem(
+        "sami_active_order"
+    );
+
+    window.history.replaceState(
+        {},
+        "",
+        window.location.pathname
+    );
+
+    const orderInput =
+        document.getElementById("orderInput");
+
+    if (orderInput) {
+        orderInput.value = "";
+    }
+
     hideLookupError();
+
+    cachedState = {
+        status: null,
+        issue: null,
+        drawnCoins: null,
+        reviewSubmitted: null,
+        sensitivePurged: null
+    };
 
     showLookupView();
 }
 
-/**
- * دوال التبديل بين الواجهات (Views Switcher)
- */
+/* ==========================================
+   Views
+   ========================================== */
+
 function showLookupView() {
-    document.getElementById("lookupSection").style.display = "block";
-    document.getElementById("trackingContent").style.display = "none";
+    const lookupSection =
+        document.getElementById("lookupSection");
+
+    const trackingContent =
+        document.getElementById("trackingContent");
+
+    if (lookupSection) {
+        lookupSection.style.display = "block";
+    }
+
+    if (trackingContent) {
+        trackingContent.style.display = "none";
+    }
 }
 
 function showTrackingView() {
-    document.getElementById("lookupSection").style.display = "none";
-    document.getElementById("trackingContent").style.display = "flex";
-}
+    const lookupSection =
+        document.getElementById("lookupSection");
 
-/**
- * تنسيق حقل الإدخال تلقائياً
- */
-function setupInputFormatting() {
-    const orderInput = document.getElementById("orderInput");
-    if (orderInput) {
-        orderInput.addEventListener("input", (e) => {
-            e.target.value = sanitizeRef(e.target.value);
-            hideLookupError();
-        });
+    const trackingContent =
+        document.getElementById("trackingContent");
+
+    if (lookupSection) {
+        lookupSection.style.display = "none";
     }
-}
 
-function sanitizeRef(str) {
-    if (!str) return "";
-    return str.toString().replace(/\s+/g, "").toUpperCase().trim();
-}
-
-function showLookupError(msg) {
-    const errorElem = document.getElementById("inputError");
-    const inputElem = document.getElementById("orderInput");
-    if (inputElem) inputElem.classList.add("has-error");
-    if (errorElem) {
-        errorElem.innerText = msg;
-        errorElem.style.display = "block";
-    }
-}
-
-function hideLookupError() {
-    const errorElem = document.getElementById("inputError");
-    const inputElem = document.getElementById("orderInput");
-    if (inputElem) inputElem.classList.remove("has-error");
-    if (errorElem) {
-        errorElem.style.display = "none";
-        errorElem.innerText = "";
+    if (trackingContent) {
+        trackingContent.style.display = "flex";
     }
 }
 
 /* ==========================================
-   دوال تحديث واجهة التتبع الأصلية
+   تنسيق رقم الطلب
    ========================================== */
 
-function updateTrackingUI(order, statusMessage) {
-    if (!order) return;
+function setupInputFormatting() {
+    const orderInput =
+        document.getElementById("orderInput");
 
-    setElementText('welcomeCustomerName', order.customerName);
-    setElementText('customerName', order.customerName);
-    setElementText('referenceNumber', order.referenceNumber);
-    setElementText('phone', order.phone);
-    setElementText('customerEmail', order.customerEmail);
-    setElementText('platform', order.platform);
-    setElementText('platformDetail', order.platform);
-    setElementText('quantity', order.quantity);
-    setElementText('totalPrice', order.totalPrice);
-    setElementText('paymentMethod', order.paymentMethodName || order.paymentMethod);
+    if (!orderInput) {
+        return;
+    }
 
-    setElementText('orderDate', order.orderDate);
-    setElementText('orderTime', order.orderTime);
-    setElementText('lastUpdate', order.lastUpdate);
+    orderInput.addEventListener("input", (event) => {
+        event.target.value =
+            sanitizeRef(event.target.value);
 
-    setElementText('withdrawDuration', order.withdrawDuration);
-    setElementText('transferDuration', order.transferDuration);
-
-    renderPaymentInfo(order.paymentMethodType, order.paymentInfoData, order.totalPrice);
-    handleStatusState(order.orderStatus, statusMessage, order);
+        hideLookupError();
+    });
 }
+
+function sanitizeRef(value) {
+    if (!value) {
+        return "";
+    }
+
+    return value
+        .toString()
+        .replace(/\s+/g, "")
+        .toUpperCase()
+        .trim();
+}
+
+/* ==========================================
+   رسائل البحث
+   ========================================== */
+
+function showLookupError(message) {
+    const errorElement =
+        document.getElementById("inputError");
+
+    const inputElement =
+        document.getElementById("orderInput");
+
+    if (inputElement) {
+        inputElement.classList.add("has-error");
+    }
+
+    if (errorElement) {
+        errorElement.innerText = message;
+        errorElement.style.display = "block";
+    }
+}
+
+function hideLookupError() {
+    const errorElement =
+        document.getElementById("inputError");
+
+    const inputElement =
+        document.getElementById("orderInput");
+
+    if (inputElement) {
+        inputElement.classList.remove("has-error");
+    }
+
+    if (errorElement) {
+        errorElement.style.display = "none";
+        errorElement.innerText = "";
+    }
+}
+
+/* ==========================================
+   تحديث واجهة الطلب
+   ========================================== */
+
+function updateTrackingUI(
+    order,
+    statusMessage,
+    issueMessage
+) {
+    if (!order) {
+        return;
+    }
+
+    const status = normalizeStatus(
+        order.status ||
+        order.orderStatus
+    );
+
+    const issue =
+        order.issue ||
+        null;
+
+    setElementText(
+        "welcomeCustomerName",
+        order.customerName
+    );
+
+    setElementText(
+        "customerName",
+        order.customerName
+    );
+
+    setElementText(
+        "referenceNumber",
+        order.referenceNumber ||
+        order.orderId ||
+        ""
+    );
+
+    setElementText(
+        "phone",
+        order.phone
+    );
+
+    setElementText(
+        "customerEmail",
+        order.customerEmail
+    );
+
+    setElementText(
+        "platform",
+        order.platform
+    );
+
+    setElementText(
+        "platformDetail",
+        order.platform
+    );
+
+    setElementText(
+        "quantity",
+        formatNumber(order.quantity)
+    );
+
+    setElementText(
+        "totalPrice",
+        order.totalPrice ??
+        order.total ??
+        ""
+    );
+
+    /*
+     * طريقة الدفع يجب أن تبقى ظاهرة دائماً.
+     */
+    setElementText(
+        "paymentMethod",
+        getPaymentMethodDisplay(order)
+    );
+
+    setElementText(
+        "orderDate",
+        order.orderDate
+    );
+
+    setElementText(
+        "orderTime",
+        order.orderTime
+    );
+
+    setElementText(
+        "lastUpdate",
+        order.lastUpdate
+    );
+
+    setElementText(
+        "withdrawDuration",
+        order.withdrawDuration
+    );
+
+    setElementText(
+        "transferDuration",
+        order.transferDuration
+    );
+
+    /*
+     * عرض بيانات الدفع بشكل آمن.
+     */
+    renderPaymentInfo(order);
+
+    /*
+     * عرض بيانات الحساب بشكل آمن.
+     */
+    renderAccountInfo(order);
+
+    /*
+     * المشكلة مستقلة عن status.
+     */
+    renderIssueState(
+        issue,
+        issueMessage,
+        order
+    );
+
+    /*
+     * الحالة الأساسية.
+     */
+    handleStatusState(
+        status,
+        statusMessage,
+        order,
+        Boolean(issue)
+    );
+
+    /*
+     * حالة الإتلاف.
+     */
+    renderSensitiveDataLifecycle(order);
+}
+
+/* ==========================================
+   أدوات عامة
+   ========================================== */
 
 function setElementText(id, text) {
-    const elem = document.getElementById(id);
-    if (elem) elem.innerText = text || '';
+    const element =
+        document.getElementById(id);
+
+    if (!element) {
+        return;
+    }
+
+    element.innerText =
+        text === null ||
+        text === undefined
+            ? ""
+            : String(text);
 }
 
-function renderPaymentInfo(methodType, info, price) {
-    const paymentInfoElem = document.getElementById('paymentInfo');
-    if (!paymentInfoElem) return;
+function escapeHtml(value) {
+    if (value === null || value === undefined) {
+        return "";
+    }
 
-    let html = '';
-    info = info || {};
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
-    if (methodType === 'bank') {
+function formatNumber(value) {
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return value || "";
+    }
+
+    return number.toLocaleString("en-US");
+}
+
+function normalizeStatus(status) {
+    if (!status) {
+        return "new";
+    }
+
+    const normalized =
+        String(status).trim().toLowerCase();
+
+    return LEGACY_STATUS_MAP[normalized] ||
+        normalized;
+}
+
+function getDrawnCoins(order) {
+    if (!order) {
+        return 0;
+    }
+
+    const value =
+        order.drawnCoins ??
+        order.withdrawnQuantity ??
+        0;
+
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number
+        : 0;
+}
+
+/* ==========================================
+   طريقة الدفع
+   ========================================== */
+
+function getPaymentMethodCode(order) {
+    if (!order) {
+        return "";
+    }
+
+    const payout =
+        order.payoutDetails ||
+        order.paymentInfoData ||
+        {};
+
+    return (
+        payout.method ||
+        order.paymentMethodType ||
+        order.paymentMethodCode ||
+        ""
+    ).toString().toLowerCase();
+}
+
+function getPaymentMethodDisplay(order) {
+    if (!order) {
+        return "";
+    }
+
+    if (order.paymentMethodName) {
+        return order.paymentMethodName;
+    }
+
+    if (order.paymentMethod) {
+        return order.paymentMethod;
+    }
+
+    const method =
+        getPaymentMethodCode(order);
+
+    const labels = {
+        bank: "تحويل بنكي",
+        wallet: "محفظة إلكترونية",
+        usdt: "USDT",
+        paypal: "PayPal",
+        western: "Western Union"
+    };
+
+    return labels[method] || method;
+}
+
+/* ==========================================
+   بيانات الدفع
+   ========================================== */
+
+function renderPaymentInfo(order) {
+    const paymentInfoElement =
+        document.getElementById("paymentInfo");
+
+    if (!paymentInfoElement) {
+        return;
+    }
+
+    const method =
+        getPaymentMethodCode(order);
+
+    const payout =
+        order.payoutDetails ||
+        order.paymentInfoData ||
+        {};
+
+    const price =
+        order.totalPrice ??
+        order.total ??
+        "";
+
+    let html = "";
+
+    /*
+     * البنك
+     */
+    if (method === "bank") {
+        const bankName =
+            payout.bankName ||
+            "";
+
+        const ibanLast6 =
+            payout.ibanLast6 ||
+            extractLast6(payout.iban) ||
+            "";
+
         html = `
             <div class="grid-card">
                 <div class="grid-info">
                     <span class="grid-label">اسم البنك</span>
-                    <span class="grid-value">${info.bankName || ''}</span>
+                    <span class="grid-value">
+                        ${escapeHtml(bankName)}
+                    </span>
                 </div>
             </div>
+
             <div class="grid-card">
                 <div class="grid-info">
-                    <span class="grid-label">آخر 6 أرقام IBAN</span>
-                    <span class="grid-value">${info.ibanLast6 ? '******' + info.ibanLast6 : ''}</span>
+                    <span class="grid-label">آخر 6 أرقام من IBAN</span>
+                    <span class="grid-value">
+                        ${ibanLast6
+                            ? "******" + escapeHtml(ibanLast6)
+                            : "******"}
+                    </span>
                 </div>
             </div>
+
             <div class="grid-card">
                 <div class="grid-info">
-                    <span class="grid-label">المبلغ المحول</span>
-                    <span class="grid-value">${price || 0} ريال</span>
+                    <span class="grid-label">المبلغ</span>
+                    <span class="grid-value">
+                        ${escapeHtml(price)} ريال
+                    </span>
                 </div>
             </div>
         `;
-    } else if (methodType === 'paypal') {
+    }
+
+    /*
+     * المحفظة
+     */
+    else if (method === "wallet") {
+        const walletName =
+            payout.walletName ||
+            payout.walletType ||
+            "";
+
+        const phone =
+            payout.phone ||
+            payout.walletNumber ||
+            payout.walletPhone ||
+            "";
+
         html = `
             <div class="grid-card">
                 <div class="grid-info">
-                    <span class="grid-label">البريد المحجوب</span>
-                    <span class="grid-value">${info.paypalEmail || ''}</span>
+                    <span class="grid-label">المحفظة</span>
+                    <span class="grid-value">
+                        ${escapeHtml(walletName)}
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid-card">
+                <div class="grid-info">
+                    <span class="grid-label">رقم الجوال</span>
+                    <span class="grid-value">
+                        ${escapeHtml(maskPhone(phone))}
+                    </span>
+                </div>
+            </div>
+
+            <div class="grid-card">
+                <div class="grid-info">
+                    <span class="grid-label">المبلغ</span>
+                    <span class="grid-value">
+                        ${escapeHtml(price)} ريال
+                    </span>
                 </div>
             </div>
         `;
-    } else if (methodType === 'usdt') {
+    }
+
+    /*
+     * USDT
+     */
+    else if (method === "usdt") {
+        const wallet =
+            payout.wallet ||
+            payout.usdtWallet ||
+            payout.walletAddress ||
+            "";
+
         html = `
             <div class="grid-card">
                 <div class="grid-info">
-                    <span class="grid-label">عنوان المحفظة</span>
-                    <span class="grid-value">${info.usdtWallet || ''}</span>
+                    <span class="grid-label">محفظة USDT</span>
+                    <span class="grid-value">
+                        ${escapeHtml(maskWallet(wallet))}
+                    </span>
                 </div>
             </div>
         `;
-    } else if (methodType === 'western') {
+    }
+
+    /*
+     * PayPal
+     */
+    else if (method === "paypal") {
+        const email =
+            payout.email ||
+            payout.paypalEmail ||
+            "";
+
+        html = `
+            <div class="grid-card">
+                <div class="grid-info">
+                    <span class="grid-label">حساب PayPal</span>
+                    <span class="grid-value">
+                        ${escapeHtml(maskEmail(email))}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    /*
+     * Western Union
+     */
+    else if (method === "western") {
+        const fullName =
+            payout.fullNameEnglish ||
+            payout.fullName ||
+            payout.westernName ||
+            "";
+
+        const country =
+            payout.country ||
+            payout.westernCountry ||
+            "";
+
         html = `
             <div class="grid-card">
                 <div class="grid-info">
                     <span class="grid-label">الاسم</span>
-                    <span class="grid-value">${info.westernName || ''}</span>
+                    <span class="grid-value">
+                        ${escapeHtml(fullName)}
+                    </span>
                 </div>
             </div>
+
             <div class="grid-card">
                 <div class="grid-info">
                     <span class="grid-label">الدولة</span>
-                    <span class="grid-value">${info.westernCountry || ''}</span>
+                    <span class="grid-value">
+                        ${escapeHtml(country)}
+                    </span>
                 </div>
             </div>
         `;
     }
 
-    paymentInfoElem.innerHTML = html;
+    /*
+     * في حال لم نتعرف على النوع
+     */
+    else {
+        html = `
+            <div class="grid-card">
+                <div class="grid-info">
+                    <span class="grid-label">طريقة الدفع</span>
+                    <span class="grid-value">
+                        ${escapeHtml(
+                            getPaymentMethodDisplay(order)
+                        )}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    paymentInfoElement.innerHTML = html;
 }
 
-function handleStatusState(status, message, order) {
-    const statusMessageElem = document.getElementById('statusMessage');
-    const progressBarElem = document.getElementById('progressBar');
-    const progressTextElem = document.getElementById('progressText');
-    const orderStatusElem = document.getElementById('orderStatus');
-    const securityCardElem = document.getElementById('securityCard');
-    const timelineLineElem = document.getElementById('timelineLine');
-    const withdrawnSectionElem = document.getElementById('withdrawnSection');
-    const withdrawnQuantityElem = document.getElementById('withdrawnQuantity');
-    const totalQuantityDisplayElem = document.getElementById('totalQuantityDisplay');
-    const gradientProgressBarElem = document.getElementById('gradientProgressBar');
+/* ==========================================
+   بيانات الحساب الحساسة
+   ========================================== */
 
-    let percentage = (order && typeof order.progressPercentage === 'number') ? order.progressPercentage : 0;
-    let statusText = "";
+function renderAccountInfo(order) {
+    const accountElement =
+        document.getElementById("accountInfo");
+
+    /*
+     * إذا لم يوجد العنصر في HTML الحالي
+     * لا نوقف الصفحة.
+     */
+    if (!accountElement) {
+        return;
+    }
+
+    /*
+     * بعد الإتلاف لا نعرض أي بيانات حساسة.
+     */
+    const purged =
+        Boolean(
+            order.sensitivePurged ||
+            order.purgedAt
+        );
+
+    if (purged) {
+        accountElement.innerHTML = `
+            <div class="security-success-message">
+                تمت معالجة طلبك بنجاح، وتم حذف بيانات الحساب الحساسة حفاظًا على أمانك.
+            </div>
+        `;
+
+        return;
+    }
+
+    const account =
+        order.accountData ||
+        {};
+
+    const eaEmail =
+        account.eaEmail ||
+        order.eaEmail ||
+        "";
+
+    const eaPassword =
+        account.eaPassword ||
+        order.eaPassword ||
+        "";
+
+    const backupCodes =
+        account.backupCodes ||
+        order.backupCodes ||
+        [];
+
+    /*
+     * الـ Backend النهائي من المفترض أن يعيد
+     * بيانات مقنعة فقط للعميل.
+     *
+     * إذا وصلت بيانات مقنعة جاهزة نعرضها.
+     */
+    const emailDisplay =
+        order.eaEmailMasked ||
+        maskEmail(eaEmail);
+
+    const passwordDisplay =
+        order.eaPasswordMasked ||
+        maskPassword(eaPassword);
+
+    const codesDisplay =
+        order.backupCodesMasked ||
+        maskBackupCodes(backupCodes);
+
+    accountElement.innerHTML = `
+        <div class="grid-card">
+            <div class="grid-info">
+                <span class="grid-label">EA Email</span>
+                <span class="grid-value">
+                    ${escapeHtml(emailDisplay)}
+                </span>
+            </div>
+        </div>
+
+        <div class="grid-card">
+            <div class="grid-info">
+                <span class="grid-label">كلمة مرور EA</span>
+                <span class="grid-value">
+                    ${escapeHtml(passwordDisplay)}
+                </span>
+            </div>
+        </div>
+
+        <div class="grid-card">
+            <div class="grid-info">
+                <span class="grid-label">Backup Codes</span>
+                <span class="grid-value">
+                    ${escapeHtml(codesDisplay)}
+                </span>
+            </div>
+        </div>
+    `;
+}
+
+/* ==========================================
+   إخفاء البيانات
+   ========================================== */
+
+function maskEmail(email) {
+    if (!email) {
+        return "";
+    }
+
+    const value =
+        String(email).trim();
+
+    const atIndex =
+        value.indexOf("@");
+
+    if (atIndex <= 0) {
+        return maskText(value);
+    }
+
+    const local =
+        value.substring(0, atIndex);
+
+    const domain =
+        value.substring(atIndex);
+
+    if (local.length <= 2) {
+        return (
+            local.charAt(0) +
+            "****" +
+            domain
+        );
+    }
+
+    return (
+        local.substring(0, 2) +
+        "****" +
+        domain
+    );
+}
+
+function maskPassword(password) {
+    if (!password) {
+        return "";
+    }
+
+    return "••••••••";
+}
+
+function maskPhone(phone) {
+    if (!phone) {
+        return "";
+    }
+
+    const value =
+        String(phone).replace(/\s+/g, "");
+
+    if (value.length <= 4) {
+        return "****";
+    }
+
+    return (
+        "*".repeat(
+            Math.max(0, value.length - 4)
+        ) +
+        value.slice(-4)
+    );
+}
+
+function maskWallet(wallet) {
+    if (!wallet) {
+        return "";
+    }
+
+    const value =
+        String(wallet).trim();
+
+    if (value.length <= 10) {
+        return "********";
+    }
+
+    return (
+        value.substring(0, 4) +
+        "..." +
+        value.substring(value.length - 6)
+    );
+}
+
+function maskText(value) {
+    if (!value) {
+        return "";
+    }
+
+    const text =
+        String(value);
+
+    if (text.length <= 4) {
+        return "****";
+    }
+
+    return (
+        text.substring(0, 2) +
+        "****" +
+        text.substring(text.length - 2)
+    );
+}
+
+function maskBackupCodes(codes) {
+    if (!codes) {
+        return "";
+    }
+
+    let list = [];
+
+    if (Array.isArray(codes)) {
+        list = codes;
+    } else {
+        list = String(codes)
+            .split(/\r?\n|,|\s+/)
+            .filter(Boolean);
+    }
+
+    if (!list.length) {
+        return "";
+    }
+
+    return list
+        .slice(0, 3)
+        .map(() => "••••••")
+        .join("  |  ");
+}
+
+function extractLast6(value) {
+    if (!value) {
+        return "";
+    }
+
+    const text =
+        String(value)
+            .replace(/\s+/g, "");
+
+    if (text.length < 6) {
+        return "";
+    }
+
+    return text.slice(-6);
+}
+
+/* ==========================================
+   الحالة والمشكلة
+   ========================================== */
+
+function handleStatusState(
+    status,
+    message,
+    order,
+    hasIssue
+) {
+    const statusMessageElement =
+        document.getElementById(
+            "statusMessage"
+        );
+
+    const progressBarElement =
+        document.getElementById(
+            "progressBar"
+        );
+
+    const progressTextElement =
+        document.getElementById(
+            "progressText"
+        );
+
+    const orderStatusElement =
+        document.getElementById(
+            "orderStatus"
+        );
+
+    const securityCardElement =
+        document.getElementById(
+            "securityCard"
+        );
+
+    const timelineLineElement =
+        document.getElementById(
+            "timelineLine"
+        );
+
+    const withdrawnSectionElement =
+        document.getElementById(
+            "withdrawnSection"
+        );
+
+    const withdrawnQuantityElement =
+        document.getElementById(
+            "withdrawnQuantity"
+        );
+
+    const totalQuantityDisplayElement =
+        document.getElementById(
+            "totalQuantityDisplay"
+        );
+
+    const gradientProgressBarElement =
+        document.getElementById(
+            "gradientProgressBar"
+        );
+
+    const config =
+        STATUS_CONFIG[status] ||
+        STATUS_CONFIG.new;
+
+    let percentage =
+        order &&
+        typeof order.progressPercentage === "number"
+            ? order.progressPercentage
+            : config.percentage;
+
+    percentage =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                Number(percentage) || 0
+            )
+        );
+
     let showSecurity = false;
     let showWithdrawn = false;
 
-    switch (status) {
-        case 'new':
-            if (percentage === 0) percentage = 15;
-            statusText = "جديد";
-            showWithdrawn = false;
-            break;
-        case 'review':
-            if (percentage === 0) percentage = 35;
-            statusText = "قيد المراجعة";
-            showWithdrawn = false;
-            break;
-        case 'progress':
-            if (percentage === 0) percentage = 65;
-            statusText = "قيد التنفيذ";
-            showWithdrawn = true;
-            break;
-        case 'finished':
-            if (percentage === 0) percentage = 85;
-            statusText = "مكتمل السحب";
-            showSecurity = true;
-            showWithdrawn = true;
-            break;
-        case 'transferred':
-            if (percentage === 0) percentage = 95;
-            statusText = "تم التحويل";
-            showSecurity = true;
-            showWithdrawn = true;
-            break;
-        case 'completed':
-            if (percentage === 0) percentage = 100;
-            statusText = "مكتمل";
-            showSecurity = true;
-            showWithdrawn = true;
-            break;
-        default:
-            statusText = "معلق";
-            showWithdrawn = false;
+    /*
+     * لا نعرض بيانات السحب في المراحل الأولى.
+     */
+    if (
+        status === "progress" ||
+        status === "finished" ||
+        status === "transferred" ||
+        status === "completed"
+    ) {
+        showWithdrawn = true;
     }
 
+    if (
+        status === "finished" ||
+        status === "transferred" ||
+        status === "completed"
+    ) {
+        showSecurity = true;
+    }
+
+    /*
+     * تنسيق الحالة الأساسية.
+     *
+     * المشكلة لها واجهة منفصلة،
+     * لذلك status يبقى كما هو.
+     */
     updateTimelineSteps(status);
 
-    if (statusMessageElem && orderStatusElem) {
-        statusMessageElem.className = "status-message-main";
-        orderStatusElem.className = "status-badge";
+    if (
+        statusMessageElement &&
+        orderStatusElement
+    ) {
+        statusMessageElement.className =
+            "status-message-main";
 
-        if (status === "review") {
-            statusMessageElem.classList.add("review");
-            orderStatusElem.classList.add("review");
-        } else if (status === "progress") {
-            statusMessageElem.classList.add("executing");
-            orderStatusElem.classList.add("executing");
-        } else if (status === "finished") {
-            statusMessageElem.classList.add("finished");
-            orderStatusElem.classList.add("finished");
-        } else if (status === "transferred" || status === "completed") {
-            statusMessageElem.classList.add("success");
-            orderStatusElem.classList.add("success");
+        orderStatusElement.className =
+            "status-badge";
+
+        if (hasIssue) {
+            statusMessageElement.classList.add(
+                "issue"
+            );
+
+            orderStatusElement.classList.add(
+                "issue"
+            );
+        } else if (config.className) {
+            statusMessageElement.classList.add(
+                config.className
+            );
+
+            orderStatusElement.classList.add(
+                config.className
+            );
         }
     }
 
-    if (statusMessageElem) statusMessageElem.innerText = message || '';
-    if (progressTextElem) progressTextElem.innerText = percentage + "%";
-
-    if (orderStatusElem) {
-        const textSpan = orderStatusElem.querySelector('.status-text');
-        if (textSpan) textSpan.innerText = statusText;
+    /*
+     * رسالة الحالة الأساسية.
+     * إذا لم توجد رسالة من النظام،
+     * نستخدم نص الحالة.
+     */
+    if (statusMessageElement) {
+        statusMessageElement.innerText =
+            message ||
+            config.text ||
+            "";
     }
 
-    if (progressBarElem) {
-        const circumference = 314.15;
-        const offset = circumference - (percentage / 100) * circumference;
-        progressBarElem.style.strokeDashoffset = offset;
+    if (progressTextElement) {
+        progressTextElement.innerText =
+            `${percentage}%`;
     }
 
-    if (timelineLineElem) {
-        timelineLineElem.style.width = percentage + "%";
+    if (orderStatusElement) {
+        const textSpan =
+            orderStatusElement.querySelector(
+                ".status-text"
+            );
+
+        if (textSpan) {
+            textSpan.innerText =
+                config.text ||
+                "طلب";
+        }
     }
 
-    if (withdrawnSectionElem) {
+    /*
+     * الدائرة
+     */
+    if (progressBarElement) {
+        const circumference =
+            314.15;
+
+        const offset =
+            circumference -
+            (percentage / 100) *
+            circumference;
+
+        progressBarElement.style.strokeDashoffset =
+            offset;
+    }
+
+    /*
+     * خط التقدم
+     */
+    if (timelineLineElement) {
+        timelineLineElement.style.width =
+            `${percentage}%`;
+    }
+
+    /*
+     * الكمية المسحوبة
+     */
+    if (withdrawnSectionElement) {
         if (showWithdrawn) {
-            withdrawnSectionElem.style.display = 'flex';
+            withdrawnSectionElement.style.display =
+                "flex";
 
-            const totalQtyStr = (order && order.quantity) ? order.quantity.toString() : '0';
-            const numericTotal = parseInt(totalQtyStr.replace(/,/g, ''), 10) || 0;
+            const numericTotal =
+                Number(
+                    order?.quantity || 0
+                );
 
-            let currentWithdrawn = 0;
-            if (order && typeof order.withdrawnQuantity === 'number') {
-                currentWithdrawn = order.withdrawnQuantity;
-            } else {
-                currentWithdrawn = Math.round((numericTotal * percentage) / 100);
+            const currentWithdrawn =
+                getDrawnCoins(order);
+
+            if (withdrawnQuantityElement) {
+                withdrawnQuantityElement.innerText =
+                    currentWithdrawn.toLocaleString(
+                        "en-US"
+                    );
             }
 
-            if (withdrawnQuantityElem) withdrawnQuantityElem.innerText = currentWithdrawn.toLocaleString();
-            if (totalQuantityDisplayElem) totalQuantityDisplayElem.innerText = totalQtyStr;
+            if (totalQuantityDisplayElement) {
+                totalQuantityDisplayElement.innerText =
+                    numericTotal.toLocaleString(
+                        "en-US"
+                    );
+            }
 
-            if (gradientProgressBarElem) {
-                gradientProgressBarElem.style.width = percentage + "%";
+            if (gradientProgressBarElement) {
+                const withdrawalPercentage =
+                    numericTotal > 0
+                        ? Math.min(
+                            100,
+                            (
+                                currentWithdrawn /
+                                numericTotal
+                            ) * 100
+                        )
+                        : percentage;
+
+                gradientProgressBarElement.style.width =
+                    `${withdrawalPercentage}%`;
             }
         } else {
-            withdrawnSectionElem.style.display = 'none';
+            withdrawnSectionElement.style.display =
+                "none";
         }
     }
 
-    if (securityCardElem) {
-        securityCardElem.style.display = showSecurity ? 'block' : 'none';
+    /*
+     * كرت الأمان
+     */
+    if (securityCardElement) {
+        securityCardElement.style.display =
+            showSecurity
+                ? "block"
+                : "none";
     }
 }
+
+/* ==========================================
+   Timeline
+   ========================================== */
 
 function updateTimelineSteps(status) {
-    const steps = ['new', 'review', 'progress', 'finished', 'transferred'];
+    const steps = [
+        "new",
+        "review",
+        "progress",
+        "finished",
+        "transferred"
+    ];
+
     const statusMap = {
-        'new': 0,
-        'review': 1,
-        'progress': 2,
-        'finished': 3,
-        'transferred': 4,
-        'completed': 4
+        new: 0,
+        review: 1,
+        progress: 2,
+        finished: 3,
+        transferred: 4,
+        completed: 4
     };
 
-    const activeIndex = statusMap[status] !== undefined ? statusMap[status] : -1;
+    const activeIndex =
+        statusMap[status] !== undefined
+            ? statusMap[status]
+            : -1;
 
-    steps.forEach((stepKey, index) => {
-        const stepElem = document.getElementById(`step-${stepKey}`);
-        if (!stepElem) return;
+    steps.forEach(
+        (stepKey, index) => {
+            const element =
+                document.getElementById(
+                    `step-${stepKey}`
+                );
 
-        stepElem.classList.remove('step-completed', 'step-active', 'step-pending');
+            if (!element) {
+                return;
+            }
 
-        if (index < activeIndex) {
-            stepElem.classList.add('step-completed');
-        } else if (index === activeIndex) {
-            stepElem.classList.add('step-active');
-        } else {
-            stepElem.classList.add('step-pending');
+            element.classList.remove(
+                "step-completed",
+                "step-active",
+                "step-pending"
+            );
+
+            if (index < activeIndex) {
+                element.classList.add(
+                    "step-completed"
+                );
+            } else if (
+                index === activeIndex
+            ) {
+                element.classList.add(
+                    "step-active"
+                );
+            } else {
+                element.classList.add(
+                    "step-pending"
+                );
+            }
         }
-    });
+    );
 }
 
-function setupSecurityEvents() {
-    const confirmYesBtn = document.getElementById('confirmYes');
-    const confirmNoBtn = document.getElementById('confirmNo');
-    const changePasswordBtn = document.getElementById('changePasswordBtn');
-    const securityWarning = document.getElementById('securityWarning');
-    const securitySuccess = document.getElementById('securitySuccess');
-    const securityCard = document.getElementById('securityCard');
+/* ==========================================
+   عرض المشكلة
+   ========================================== */
 
-    if (confirmYesBtn) {
-        confirmYesBtn.onclick = () => {
-            if (securitySuccess) securitySuccess.style.display = 'flex';
-            if (securityWarning) securityWarning.style.display = 'none';
-            if (confirmYesBtn) confirmYesBtn.style.display = 'none';
-            if (confirmNoBtn) confirmNoBtn.style.display = 'none';
-            if (changePasswordBtn) changePasswordBtn.style.display = 'none';
+function renderIssueState(
+    issue,
+    issueMessage,
+    order
+) {
+    /*
+     * لا تظهر المشكلة إطلاقاً إذا لم يخترها الأدمن.
+     */
+    const issueElement =
+        document.getElementById(
+            "issueSection"
+        );
+
+    const issueMessageElement =
+        document.getElementById(
+            "issueMessage"
+        );
+
+    const issueTitleElement =
+        document.getElementById(
+            "issueTitle"
+        );
+
+    /*
+     * إذا لم يكن HTML يحتوي قسم المشكلة،
+     * ننشئه داخل منطقة statusMessage.
+     */
+    if (!issue) {
+        if (issueElement) {
+            issueElement.style.display =
+                "none";
+        }
+
+        return;
+    }
+
+    const labels = {
+        wrong_credentials:
+            "بيانات الدخول غير صحيحة",
+
+        wrong_backup_codes:
+            "رموز النسخ الاحتياطية غير صحيحة",
+
+        market_closed:
+            "سوق الانتقالات مغلق",
+
+        no_player:
+            "لا يوجد لاعب مطابق",
+
+        wrong_platform:
+            "المنصة المحددة غير صحيحة",
+
+        other_issue:
+            "توجد مشكلة في الطلب"
+    };
+
+    const title =
+        labels[issue] ||
+        "توجد مشكلة في الطلب";
+
+    /*
+     * إذا كان القسم موجوداً في HTML.
+     */
+    if (issueElement) {
+        issueElement.style.display =
+            "block";
+
+        issueElement.classList.remove(
+            "issue-warning",
+            "issue-error",
+            "issue-active"
+        );
+
+        issueElement.classList.add(
+            "issue-active"
+        );
+    }
+
+    if (issueTitleElement) {
+        issueTitleElement.innerText =
+            title;
+    }
+
+    if (issueMessageElement) {
+        issueMessageElement.innerText =
+            issueMessage ||
+            title;
+    }
+
+    /*
+     * fallback:
+     * إذا لم يوجد issueSection،
+     * نعرض المشكلة داخل statusMessage.
+     */
+    if (!issueElement) {
+        const statusMessageElement =
+            document.getElementById(
+                "statusMessage"
+            );
+
+        if (statusMessageElement) {
+            statusMessageElement.className =
+                "status-message-main issue";
+
+            statusMessageElement.innerText =
+                issueMessage ||
+                title;
+        }
+    }
+}
+
+/* ==========================================
+   دورة حياة البيانات الحساسة
+   ========================================== */
+
+function renderSensitiveDataLifecycle(order) {
+    const purged =
+        Boolean(
+            order?.sensitivePurged ||
+            order?.purgedAt
+        );
+
+    const purgeMessageElement =
+        document.getElementById(
+            "sensitivePurgeMessage"
+        );
+
+    const accountElement =
+        document.getElementById(
+            "accountInfo"
+        );
+
+    const exactMessage =
+        "تمت معالجة طلبك بنجاح، وتم حذف بيانات الحساب الحساسة حفاظًا على أمانك.";
+
+    if (purged) {
+        if (purgeMessageElement) {
+            purgeMessageElement.innerText =
+                exactMessage;
+
+            purgeMessageElement.style.display =
+                "block";
+        }
+
+        if (accountElement) {
+            accountElement.innerHTML = `
+                <div class="security-success-message">
+                    ${exactMessage}
+                </div>
+            `;
+        }
+
+        return;
+    }
+
+    if (purgeMessageElement) {
+        purgeMessageElement.style.display =
+            "none";
+    }
+}
+
+/* ==========================================
+   كرت الأمان
+   ========================================== */
+
+function setupSecurityEvents() {
+    const confirmYesButton =
+        document.getElementById(
+            "confirmYes"
+        );
+
+    const confirmNoButton =
+        document.getElementById(
+            "confirmNo"
+        );
+
+    const changePasswordButton =
+        document.getElementById(
+            "changePasswordBtn"
+        );
+
+    const securityWarning =
+        document.getElementById(
+            "securityWarning"
+        );
+
+    const securitySuccess =
+        document.getElementById(
+            "securitySuccess"
+        );
+
+    const securityCard =
+        document.getElementById(
+            "securityCard"
+        );
+
+    if (confirmYesButton) {
+        confirmYesButton.onclick = () => {
+            if (securitySuccess) {
+                securitySuccess.style.display =
+                    "flex";
+            }
+
+            if (securityWarning) {
+                securityWarning.style.display =
+                    "none";
+            }
+
+            confirmYesButton.style.display =
+                "none";
+
+            if (confirmNoButton) {
+                confirmNoButton.style.display =
+                    "none";
+            }
+
+            if (changePasswordButton) {
+                changePasswordButton.style.display =
+                    "none";
+            }
 
             setTimeout(() => {
-                if (securityCard) securityCard.remove();
+                if (securityCard) {
+                    securityCard.style.display =
+                        "none";
+                }
             }, 3000);
         };
     }
 
-    if (confirmNoBtn) {
-        confirmNoBtn.onclick = () => {
-            if (securityWarning) securityWarning.style.display = 'flex';
-            if (securitySuccess) securitySuccess.style.display = 'none';
+    if (confirmNoButton) {
+        confirmNoButton.onclick = () => {
+            if (securityWarning) {
+                securityWarning.style.display =
+                    "flex";
+            }
+
+            if (securitySuccess) {
+                securitySuccess.style.display =
+                    "none";
+            }
         };
     }
 }
 
-function setupReviewSystem(order, reviewSuggestions) {
-    const reviewSection = document.getElementById("reviewSection");
-    if (!reviewSection) return;
+/* ==========================================
+   نظام التقييم
+   ========================================== */
 
+function setupReviewSystem(
+    order,
+    reviewSuggestions
+) {
+    const reviewSection =
+        document.getElementById(
+            "reviewSection"
+        );
+
+    if (!reviewSection || !order) {
+        return;
+    }
+
+    const status =
+        normalizeStatus(
+            order.status ||
+            order.orderStatus
+        );
+
+    /*
+     * التقييم لا يظهر إلا بعد التحويل أو الاكتمال.
+     */
+    const eligible =
+        status === "transferred" ||
+        status === "completed";
+
+    /*
+     * إذا تم التقييم سابقاً،
+     * يختفي نهائياً من واجهة العميل.
+     */
     if (order.reviewSubmitted) {
         reviewSection.remove();
         return;
     }
 
-    if (order.orderStatus !== "transferred" && order.orderStatus !== "completed") {
-        reviewSection.style.display = "none";
+    if (!eligible) {
+        reviewSection.style.display =
+            "none";
+
         return;
     }
 
-    reviewSection.style.display = "block";
+    reviewSection.style.display =
+        "block";
 
-    const reviewTextarea = document.getElementById("reviewTextarea") || document.getElementById("reviewText");
-    const counter = document.getElementById("reviewCounter");
+    const reviewTextarea =
+        document.getElementById(
+            "reviewTextarea"
+        ) ||
+        document.getElementById(
+            "reviewText"
+        );
+
+    const counter =
+        document.getElementById(
+            "reviewCounter"
+        );
 
     if (reviewTextarea && counter) {
-        counter.innerText = `${reviewTextarea.value.length}/500`;
-        reviewTextarea.addEventListener("input", () => {
-            counter.innerText = `${reviewTextarea.value.length}/500`;
-        });
-    }
+        counter.innerText =
+            `${reviewTextarea.value.length}/500`;
 
-    const suggestionsContainer = document.getElementById("reviewSuggestions");
-    if (suggestionsContainer && reviewSuggestions && Array.isArray(reviewSuggestions)) {
-        suggestionsContainer.innerHTML = "";
-        reviewSuggestions.forEach(text => {
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "suggestion-btn";
-            btn.innerText = text;
-            btn.onclick = () => {
-                if (reviewTextarea) {
-                    reviewTextarea.value = text;
-                    if (counter) counter.innerText = `${reviewTextarea.value.length}/500`;
+        /*
+         * نمنع إضافة listener متكرر أثناء polling.
+         */
+        if (
+            !reviewTextarea.dataset
+                .trackingReviewBound
+        ) {
+            reviewTextarea.dataset
+                .trackingReviewBound = "1";
+
+            reviewTextarea.addEventListener(
+                "input",
+                () => {
+                    counter.innerText =
+                        `${reviewTextarea.value.length}/500`;
                 }
-            };
-            suggestionsContainer.appendChild(btn);
-        });
+            );
+        }
     }
 
-    const submitBtn = document.getElementById("submitReviewBtn");
-    if (submitBtn) {
-        submitBtn.onclick = async () => {
-            if (!reviewTextarea) return;
-            const text = reviewTextarea.value.trim();
+    /*
+     * الاقتراحات
+     */
+    const suggestionsContainer =
+        document.getElementById(
+            "reviewSuggestions"
+        );
+
+    if (
+        suggestionsContainer &&
+        Array.isArray(reviewSuggestions)
+    ) {
+        suggestionsContainer.innerHTML =
+            "";
+
+        reviewSuggestions.forEach(
+            (text) => {
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.type = "button";
+
+                button.className =
+                    "suggestion-btn";
+
+                button.innerText =
+                    text;
+
+                button.onclick = () => {
+                    if (!reviewTextarea) {
+                        return;
+                    }
+
+                    reviewTextarea.value =
+                        text;
+
+                    if (counter) {
+                        counter.innerText =
+                            `${reviewTextarea.value.length}/500`;
+                    }
+                };
+
+                suggestionsContainer.appendChild(
+                    button
+                );
+            }
+        );
+    }
+
+    const submitButton =
+        document.getElementById(
+            "submitReviewBtn"
+        );
+
+    if (!submitButton) {
+        return;
+    }
+
+    /*
+     * منع تكرار listener.
+     */
+    if (
+        submitButton.dataset
+            .trackingReviewBound
+    ) {
+        return;
+    }
+
+    submitButton.dataset
+        .trackingReviewBound = "1";
+
+    submitButton.onclick =
+        async () => {
+            if (!reviewTextarea) {
+                return;
+            }
+
+            const text =
+                reviewTextarea.value.trim();
 
             if (text.length < 150) {
-                return alert("الحد الأدنى 150 حرف");
+                alert(
+                    "الحد الأدنى للتقييم 150 حرف."
+                );
+
+                return;
             }
 
             if (text.length > 500) {
-                return alert("الحد الأقصى 500 حرف");
+                alert(
+                    "الحد الأقصى للتقييم 500 حرف."
+                );
+
+                return;
             }
+
+            /*
+             * منع الضغط المتكرر.
+             */
+            submitButton.disabled =
+                true;
 
             try {
-                const response = await fetch("/api/review/submit", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        referenceNumber: order.referenceNumber,
-                        reviewText: text
-                    })
-                });
+                const response =
+                    await fetch(
+                        "/api/review/submit",
+                        {
+                            method: "POST",
 
-                if (response.ok) {
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+                                referenceNumber:
+                                    order.referenceNumber,
+
+                                reviewText:
+                                    text
+                            })
+                        }
+                    );
+
+                const result =
+                    await response
+                        .json()
+                        .catch(() => ({}));
+
+                if (response.ok && result.success !== false) {
+                    /*
+                     * التقييم أصبح نهائياً.
+                     */
+                    order.reviewSubmitted =
+                        true;
+
+                    cachedState.reviewSubmitted =
+                        true;
+
                     reviewSection.remove();
-                    const reviewSuccessElem = document.getElementById("reviewSuccess");
-                    if (reviewSuccessElem) reviewSuccessElem.style.display = "block";
-                } else {
-                    alert("حدث خطأ أثناء إرسال التقييم، يرجى المحاولة لاحقاً.");
+
+                    const successElement =
+                        document.getElementById(
+                            "reviewSuccess"
+                        );
+
+                    if (successElement) {
+                        successElement.style.display =
+                            "block";
+                    }
+
+                    return;
                 }
+
+                /*
+                 * في حالة أن السيرفر رفض بسبب
+                 * وجود تقييم سابق مثلاً.
+                 */
+                if (
+                    response.status === 409 ||
+                    result.code ===
+                        "REVIEW_ALREADY_SUBMITTED"
+                ) {
+                    reviewSection.remove();
+
+                    const successElement =
+                        document.getElementById(
+                            "reviewSuccess"
+                        );
+
+                    if (successElement) {
+                        successElement.style.display =
+                            "block";
+                    }
+
+                    return;
+                }
+
+                alert(
+                    result.message ||
+                    "حدث خطأ أثناء إرسال التقييم، يرجى المحاولة لاحقاً."
+                );
+
             } catch (error) {
-                console.error("Error submitting review:", error);
-                alert("حدث خطأ في الاتصال بالشبكة.");
+                console.error(
+                    "Review submit error:",
+                    error
+                );
+
+                alert(
+                    "حدث خطأ في الاتصال بالشبكة."
+                );
+            } finally {
+                submitButton.disabled =
+                    false;
             }
         };
-    }
 }
 
+/* ==========================================
+   تنظيف عند مغادرة الصفحة
+   ========================================== */
 
+window.addEventListener(
+    "beforeunload",
+    () => {
+        stopSmartPolling();
+    }
+);
