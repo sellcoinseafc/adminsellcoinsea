@@ -31,8 +31,8 @@ const STATUS_VALUES = new Set([
 const ISSUE_VALUES = new Set([
   "wrong_credentials",
   "wrong_backup_codes",
+  "logged_in_platform",
   "market_closed",
-  "no_player",
   "wrong_platform",
   "other_issue"
 ]);
@@ -53,22 +53,22 @@ const USD_RATE =
 
 const DEFAULT_ISSUE_MESSAGES = {
   wrong_credentials:
-    "بيانات الدخول غير صحيحة، يرجى مراجعة البيانات وإعادة إرسالها.",
+    "يرجى إرسال الإيميل والباسورد الصحيح عبر الواتساب",
 
   wrong_backup_codes:
-    "رموز النسخ الاحتياطية غير صحيحة، يرجى مراجعتها.",
+    "يرجى إرسال أكواد احتياطية جديدة",
+
+  logged_in_platform:
+    "يرجى إعلامنا عبر الواتساب",
 
   market_closed:
-    "سوق الانتقالات مغلق حاليًا، وسيتم استكمال الطلب عند توفره.",
-
-  no_player:
-    "لم يتم العثور على اللاعب المطلوب، يرجى مراجعة بيانات اللاعب.",
+    "سوق الانتقالات مغلق في Web App، يرجى التواصل معنا عبر الواتساب",
 
   wrong_platform:
-    "المنصة المحددة لا تطابق بيانات الطلب، يرجى مراجعتها.",
+    "يرجى التواصل معنا عبر الواتساب",
 
   other_issue:
-    "توجد مشكلة في الطلب، يرجى التواصل مع الدعم."
+    "يرجى التواصل معنا عبر الواتساب بشكل عاجل"
 };
 
 /* ==========================================================================
@@ -2017,6 +2017,8 @@ router.post(
 
         referenceNumber,
 
+        internalReference,
+
         dailyCode,
 
         serial,
@@ -2091,6 +2093,9 @@ router.post(
         /*
          * Order lifecycle.
          */
+        withdrawnQuantity:
+          0,
+
         drawnCoins:
           0,
 
@@ -2158,7 +2163,16 @@ router.post(
           TS(),
 
         createdBy:
-          "customer"
+          "customer",
+
+        history: [
+          {
+            type: "created",
+            status: "new",
+            actor: "customer",
+            at: new Date()
+          }
+        ]
       };
 
       /*
@@ -2370,6 +2384,29 @@ router.post(
           "";
       }
 
+      const previousStatus =
+        normalizeStatus(current.status);
+
+      if (
+        previousStatus !== nextStatus &&
+        nextStatus === "new" &&
+        previousStatus !== "new"
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن إعادة الطلب إلى حالة طلب جديد."
+        });
+      }
+
+      updateData.history = admin.firestore.FieldValue.arrayUnion({
+        type: "status_change",
+        from: previousStatus,
+        to: nextStatus,
+        issue: updateData.issue ?? normalizeIssue(current.issue),
+        actor: req.admin?.email || req.admin?.name || req.admin?.uid || "admin",
+        at: new Date()
+      });
+
       await found.ref.update(
         updateData
       );
@@ -2414,7 +2451,8 @@ router.post(
     try {
       const {
         orderId,
-        drawnCoins
+        drawnCoins,
+        withdrawnQuantity
       } =
         req.body || {};
 
@@ -2444,7 +2482,8 @@ router.post(
           0,
           Math.floor(
             toNumber(
-              drawnCoins,
+              withdrawnQuantity ??
+                drawnCoins,
               0
             )
           )
@@ -2466,18 +2505,33 @@ router.post(
        * This endpoint NEVER changes status.
        */
       await found.ref.update({
+        withdrawnQuantity:
+          value,
+
         drawnCoins:
           value,
 
+        remainingQuantity:
+          Math.max(0, quantity - value),
+
         lastUpdate:
+          TS(),
+
+        withdrawnUpdatedAt:
           TS()
       });
 
       return res.json({
         success: true,
 
+        withdrawnQuantity:
+          value,
+
         drawnCoins:
-          value
+          value,
+
+        remainingQuantity:
+          Math.max(0, quantity - value)
       });
     } catch (error) {
       console.error(
