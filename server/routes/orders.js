@@ -43,6 +43,9 @@ const PAYOUT_METHODS = new Set([
 const PURGE_DELAY_MS =
   5 * 24 * 60 * 60 * 1000;
 
+const USD_RATE =
+  3.75;
+
 const DEFAULT_ISSUE_MESSAGES = {
   wrong_credentials:
     "بيانات الدخول غير صحيحة، يرجى مراجعة البيانات وإعادة إرسالها.",
@@ -96,7 +99,7 @@ function normalizeStatus(value) {
     cleanString(value).toLowerCase();
 
   /*
-   * Legacy status compatibility.
+   * Legacy compatibility.
    */
   if (status === "pending") {
     return "new";
@@ -166,9 +169,9 @@ function encryptBackupCodes(codes) {
 }
 
 /**
- * Encrypt only if the value is not already one of our encrypted values.
+ * Encrypt only if the value is not already encrypted.
  *
- * This is used for compatibility with older orders.
+ * Used for compatibility with old orders.
  */
 function encryptIfNeeded(value) {
   const normalized =
@@ -186,8 +189,9 @@ function encryptIfNeeded(value) {
       return normalized;
     } catch {
       /*
-       * Structurally similar but not valid
-       * ciphertext. Treat it as plaintext.
+       * Looks structurally similar to ciphertext
+       * but cannot actually be decrypted.
+       * Treat it as plaintext.
        */
     }
   }
@@ -196,11 +200,13 @@ function encryptIfNeeded(value) {
 }
 
 /**
- * Safely decrypt for compatibility/masking.
+ * Safely decrypt without exposing errors.
  */
 function safeDecrypt(value) {
   try {
-    if (!value) return "";
+    if (!value) {
+      return "";
+    }
 
     return decrypt(
       String(value)
@@ -208,6 +214,190 @@ function safeDecrypt(value) {
   } catch {
     return "";
   }
+}
+
+/* ==========================================================================
+   Pricing
+========================================================================== */
+
+/**
+ * Returns the canonical platform rate.
+ *
+ * Current business rule:
+ * - PlayStation -> psRate
+ * - Xbox        -> psRate
+ * - PC          -> pcRate
+ */
+function getPlatformRate(
+  platform,
+  settings
+) {
+  const normalized =
+    cleanString(
+      platform
+    ).toUpperCase();
+
+  if (
+    normalized === "PC"
+  ) {
+    return toNumber(
+      settings.pcRate,
+      0
+    );
+  }
+
+  if (
+    normalized === "XBOX" ||
+    normalized === "XB" ||
+    normalized === "PLAYSTATION" ||
+    normalized === "PS" ||
+    normalized === "PS5" ||
+    normalized === "PS4"
+  ) {
+    return toNumber(
+      settings.psRate,
+      0
+    );
+  }
+
+  /*
+   * The frontend currently sends:
+   * PlayStation / Xbox / PC.
+   *
+   * Unknown non-PC platforms are treated like
+   * PlayStation for compatibility with the existing
+   * pricing structure.
+   */
+  return toNumber(
+    settings.psRate,
+    0
+  );
+}
+
+/**
+ * Determine whether the payout is local or international.
+ */
+function getPayoutType(
+  payout
+) {
+  const explicit =
+    cleanString(
+      payout?.payoutType
+    ).toLowerCase();
+
+  if (
+    explicit === "local" ||
+    explicit === "international"
+  ) {
+    return explicit;
+  }
+
+  const method =
+    cleanString(
+      payout?.method
+    ).toLowerCase();
+
+  return (
+    method === "bank" ||
+    method === "wallet"
+  )
+    ? "local"
+    : "international";
+}
+
+/**
+ * Server-authoritative price calculation.
+ *
+ * Base:
+ * quantity / 1,000,000 × rate
+ *
+ * International:
+ * SAR / 3.75
+ */
+function calculateServerPrice(
+  quantity,
+  platform,
+  payout,
+  settings
+) {
+  const numericQuantity =
+    normalizeQuantity(
+      quantity
+    );
+
+  const rate =
+    getPlatformRate(
+      platform,
+      settings
+    );
+
+  if (
+    numericQuantity <= 0 ||
+    rate <= 0
+  ) {
+    return null;
+  }
+
+  const totalSar =
+    (
+      numericQuantity /
+      1000000
+    ) * rate;
+
+  const payoutType =
+    getPayoutType(
+      payout
+    );
+
+  const isInternational =
+    payoutType ===
+    "international";
+
+  const totalUsd =
+    totalSar /
+    USD_RATE;
+
+  return {
+    rate,
+    quantity:
+      numericQuantity,
+
+    payoutType,
+
+    currency:
+      isInternational
+        ? "USD"
+        : "SAR",
+
+    totalSar:
+      Number(
+        totalSar.toFixed(2)
+      ),
+
+    totalUsd:
+      Number(
+        totalUsd.toFixed(2)
+      ),
+
+    displayTotal:
+      isInternational
+        ? `$${totalUsd.toFixed(2)}`
+        : `${totalSar.toFixed(2)} ر.س`
+  };
+}
+
+/**
+ * Compare the customer-provided display amount only as a
+ * compatibility/reference value.
+ *
+ * It is NEVER used as the authoritative price.
+ */
+function getClientPrice(
+  body
+) {
+  return cleanString(
+    body?.totalPrice
+  );
 }
 
 /* ==========================================================================
@@ -241,9 +431,7 @@ function normalizeAccountData(body) {
 }
 
 /**
- * Normalize an old/new encrypted account object.
- *
- * This function does NOT expose plaintext.
+ * Normalize stored account data without decrypting.
  */
 function normalizeStoredAccountData(
   account
@@ -423,16 +611,22 @@ function normalizePayout(body) {
 }
 
 /**
- * Encrypt only sensitive payout fields.
+ * Encrypt sensitive payout fields immediately.
  *
- * Public/display metadata such as:
- * - method
+ * Readable metadata:
  * - payoutType
+ * - method
  * - bankName
  * - walletName
  * - network
  *
- * can remain readable.
+ * Sensitive values:
+ * - fullName
+ * - IBAN
+ * - wallet phone
+ * - USDT wallet
+ * - PayPal email
+ * - Western Union name/country
  */
 function encryptPayoutDetails(
   payout
@@ -549,7 +743,7 @@ function encryptPayoutDetails(
 }
 
 /* ==========================================================================
-   Legacy Compatibility
+   Legacy Payment Compatibility
 ========================================================================== */
 
 function buildLegacyPaymentInfo(
@@ -557,7 +751,9 @@ function buildLegacyPaymentInfo(
 ) {
   const payment = {};
 
-  switch (payout.method) {
+  switch (
+    payout.method
+  ) {
     case "bank":
       payment.bankName =
         payout.bankName || "";
@@ -636,7 +832,7 @@ function buildLegacyPaymentInfo(
 }
 
 /* ==========================================================================
-   Compatibility
+   Legacy Compatibility
 ========================================================================== */
 
 function getOrderStatus(data) {
@@ -658,6 +854,18 @@ function getOrderQuantity(data) {
 }
 
 function getOrderTotal(data) {
+  /*
+   * Prefer the new server-authoritative display amount.
+   */
+  if (
+    data.displayTotalPrice
+  ) {
+    return data.displayTotalPrice;
+  }
+
+  /*
+   * Legacy orders.
+   */
   return (
     data.totalPrice ??
     data.total ??
@@ -693,7 +901,8 @@ async function findOrder(
    * 1. Firestore document ID.
    */
   const directRef =
-    db.collection("orders")
+    db
+      .collection("orders")
       .doc(value);
 
   const directSnap =
@@ -812,137 +1021,8 @@ async function getIssueMessage(
 }
 
 /* ==========================================================================
-   Safe Payment Preview
+   Masking
 ========================================================================== */
-
-/**
- * These previews are safe for the normal admin order list.
- *
- * Full sensitive values are ONLY returned by:
- * /api/admin/decrypt-order
- */
-function buildPaymentPreview(
-  data
-) {
-  const payout =
-    data.payoutDetails &&
-    typeof data.payoutDetails === "object"
-      ? data.payoutDetails
-      : null;
-
-  const legacy =
-    data.paymentInfoData &&
-    typeof data.paymentInfoData === "object"
-      ? data.paymentInfoData
-      : {};
-
-  const method =
-    cleanString(
-      payout?.method ||
-      data.paymentMethodType ||
-      data.paymentMethod ||
-      ""
-    ).toLowerCase();
-
-  const preview = {
-    method,
-    payoutType:
-      payout?.payoutType ||
-      (
-        method === "bank" ||
-        method === "wallet"
-          ? "local"
-          : "international"
-      ),
-
-    bankName:
-      payout?.bankName ||
-      legacy.bankName ||
-      "",
-
-    walletName:
-      payout?.walletName ||
-      legacy.walletType ||
-      "",
-
-    network:
-      payout?.network ||
-      legacy.network ||
-      "",
-
-    ibanLast6: "",
-    phoneMasked: "",
-    walletMasked: "",
-    paypalEmailMasked: "",
-    westernCountry: ""
-  };
-
-  if (method === "bank") {
-    const iban =
-      safeDecrypt(
-        payout?.iban ||
-        legacy.iban
-      );
-
-    if (iban) {
-      preview.ibanLast6 =
-        iban.slice(-6);
-    }
-  }
-
-  if (method === "wallet") {
-    const phone =
-      safeDecrypt(
-        payout?.phone ||
-        legacy.walletNumber
-      );
-
-    if (phone) {
-      preview.phoneMasked =
-        maskPhone(phone);
-    }
-  }
-
-  if (method === "usdt") {
-    const wallet =
-      safeDecrypt(
-        payout?.wallet ||
-        legacy.walletAddress
-      );
-
-    if (wallet) {
-      preview.walletMasked =
-        maskMiddle(
-          wallet,
-          6,
-          6
-        );
-    }
-  }
-
-  if (method === "paypal") {
-    const email =
-      safeDecrypt(
-        payout?.email ||
-        legacy.paypalEmail
-      );
-
-    if (email) {
-      preview.paypalEmailMasked =
-        maskEmail(email);
-    }
-  }
-
-  if (method === "western") {
-    preview.westernCountry =
-      safeDecrypt(
-        payout?.country ||
-        legacy.country
-      );
-  }
-
-  return preview;
-}
 
 function maskPhone(
   value
@@ -1016,6 +1096,158 @@ function maskMiddle(
 }
 
 /* ==========================================================================
+   Safe Payment Preview
+========================================================================== */
+
+/**
+ * Safe preview for the normal admin order list.
+ *
+ * Full sensitive values are NEVER returned here.
+ */
+function buildPaymentPreview(
+  data
+) {
+  const payout =
+    data.payoutDetails &&
+    typeof data.payoutDetails === "object"
+      ? data.payoutDetails
+      : null;
+
+  const legacy =
+    data.paymentInfoData &&
+    typeof data.paymentInfoData === "object"
+      ? data.paymentInfoData
+      : {};
+
+  const method =
+    cleanString(
+      payout?.method ||
+      data.paymentMethodType ||
+      data.paymentMethod ||
+      ""
+    ).toLowerCase();
+
+  const preview = {
+    method,
+
+    payoutType:
+      payout?.payoutType ||
+      (
+        method === "bank" ||
+        method === "wallet"
+          ? "local"
+          : "international"
+      ),
+
+    bankName:
+      payout?.bankName ||
+      legacy.bankName ||
+      "",
+
+    walletName:
+      payout?.walletName ||
+      legacy.walletType ||
+      "",
+
+    network:
+      payout?.network ||
+      legacy.network ||
+      "",
+
+    ibanLast6:
+      "",
+
+    phoneMasked:
+      "",
+
+    walletMasked:
+      "",
+
+    paypalEmailMasked:
+      "",
+
+    westernCountry:
+      ""
+  };
+
+  if (
+    method === "bank"
+  ) {
+    const iban =
+      safeDecrypt(
+        payout?.iban ||
+        legacy.iban
+      );
+
+    if (iban) {
+      preview.ibanLast6 =
+        iban.slice(-6);
+    }
+  }
+
+  if (
+    method === "wallet"
+  ) {
+    const phone =
+      safeDecrypt(
+        payout?.phone ||
+        legacy.walletNumber
+      );
+
+    if (phone) {
+      preview.phoneMasked =
+        maskPhone(phone);
+    }
+  }
+
+  if (
+    method === "usdt"
+  ) {
+    const wallet =
+      safeDecrypt(
+        payout?.wallet ||
+        legacy.walletAddress
+      );
+
+    if (wallet) {
+      preview.walletMasked =
+        maskMiddle(
+          wallet,
+          6,
+          6
+        );
+    }
+  }
+
+  if (
+    method === "paypal"
+  ) {
+    const email =
+      safeDecrypt(
+        payout?.email ||
+        legacy.paypalEmail
+      );
+
+    if (email) {
+      preview.paypalEmailMasked =
+        maskEmail(email);
+    }
+  }
+
+  if (
+    method === "western"
+  ) {
+    preview.westernCountry =
+      safeDecrypt(
+        payout?.country ||
+        legacy.country
+      );
+  }
+
+  return preview;
+}
+
+/* ==========================================================================
    Settings
 ========================================================================== */
 
@@ -1037,34 +1269,57 @@ router.get(
 
         rates: {
           PlayStation:
-            settings.psRate,
+            toNumber(
+              settings.psRate,
+              0
+            ),
 
           Xbox:
-            settings.psRate,
+            toNumber(
+              settings.psRate,
+              0
+            ),
 
           PC:
-            settings.pcRate
+            toNumber(
+              settings.pcRate,
+              0
+            )
         },
 
         limits: {
           psMin:
-            settings.psMin,
+            toNumber(
+              settings.psMin,
+              0
+            ),
 
           psMax:
-            settings.psMax,
+            toNumber(
+              settings.psMax,
+              0
+            ),
 
           pcMin:
-            settings.pcMin,
+            toNumber(
+              settings.pcMin,
+              0
+            ),
 
           pcMax:
-            settings.pcMax
+            toNumber(
+              settings.pcMax,
+              0
+            )
         },
 
         withdrawDays:
-          settings.psWithdrawDuration,
+          settings.psWithdrawDuration ||
+          "",
 
         transferHours:
-          settings.psTransferDuration,
+          settings.psTransferDuration ||
+          "",
 
         safeMethod:
           settings.safeMethod ||
@@ -1089,7 +1344,10 @@ router.get(
             settings.paymentMethods
           )
             ? settings.paymentMethods
-            : [],
+            : settings.paymentMethods &&
+              typeof settings.paymentMethods === "object"
+              ? settings.paymentMethods
+              : [],
 
         termsEnabled:
           settings.termsEnabled ??
@@ -1146,7 +1404,8 @@ router.get(
   (_, res) => {
     return res.json({
       success: true,
-      message: "Orders API Ready"
+      message:
+        "Orders API Ready"
     });
   }
 );
@@ -1234,6 +1493,24 @@ router.get(
                   data
                 ),
 
+              totalPriceSar:
+                data.totalPriceSar ??
+                null,
+
+              totalPriceUsd:
+                data.totalPriceUsd ??
+                null,
+
+              priceCurrency:
+                data.priceCurrency ||
+                "",
+
+              displayTotalPrice:
+                data.displayTotalPrice ||
+                getOrderTotal(
+                  data
+                ),
+
               status,
 
               issue:
@@ -1266,10 +1543,6 @@ router.get(
 
               /*
                * Safe payment preview only.
-               *
-               * DO NOT return payoutDetails or
-               * paymentInfoData because they contain
-               * encrypted sensitive fields.
                */
               paymentPreview:
                 buildPaymentPreview(
@@ -1302,24 +1575,20 @@ router.get(
                 data.purgedAt ||
                 null,
 
-              /*
-               * Canonical lifecycle flag.
-               */
               sensitivePurged:
                 data.sensitivePurged ===
-                true ||
+                  true ||
                 data.sensitiveDataPurged ===
-                true,
+                  true,
 
               /*
-               * Keep old property name temporarily
-               * for compatibility.
+               * Temporary compatibility.
                */
               sensitiveDataPurged:
                 data.sensitivePurged ===
-                true ||
+                  true ||
                 data.sensitiveDataPurged ===
-                true,
+                  true,
 
               reviewSubmitted:
                 data.reviewSubmitted ===
@@ -1424,9 +1693,10 @@ router.post(
         });
       }
 
-      /*
-       * Server-side limits.
-       */
+      /* =====================================================
+         Settings
+      ===================================================== */
+
       const settingsSnap =
         await db
           .collection("system")
@@ -1436,8 +1706,19 @@ router.post(
       const settings =
         settingsSnap.data() || {};
 
+      if (
+        settings.storeOpen === false
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "المتجر مغلق حاليًا."
+        });
+      }
+
       const isPc =
-        platform.toUpperCase() ===
+        platform
+          .toUpperCase() ===
         "PC";
 
       const minLimit =
@@ -1484,19 +1765,10 @@ router.post(
         });
       }
 
-      if (
-        settings.storeOpen === false
-      ) {
-        return res.status(403).json({
-          success: false,
-          message:
-            "المتجر مغلق حاليًا."
-        });
-      }
+      /* =====================================================
+         Account
+      ===================================================== */
 
-      /*
-       * EA account.
-       */
       const account =
         normalizeAccountData(
           body
@@ -1529,11 +1801,14 @@ router.post(
         });
       }
 
-      /*
-       * Payout.
-       */
+      /* =====================================================
+         Payout
+      ===================================================== */
+
       const payout =
-        normalizePayout(body);
+        normalizePayout(
+          body
+        );
 
       if (
         !PAYOUT_METHODS.has(
@@ -1611,30 +1886,51 @@ router.post(
           break;
       }
 
-      /*
-       * IMPORTANT:
-       * Keep the client price for compatibility.
-       *
-       * A later pricing hardening step should calculate
-       * the authoritative amount exclusively on the server.
-       */
-      const clientTotalPrice =
-        cleanString(
-          body.totalPrice
+      /* =====================================================
+         SERVER-AUTHORITATIVE PRICE
+      ===================================================== */
+
+      const price =
+        calculateServerPrice(
+          quantity,
+          platform,
+          payout,
+          settings
         );
 
+      if (!price) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "تعذر حساب قيمة الطلب من إعدادات الأسعار الحالية."
+        });
+      }
+
       /*
-       * Server-side business numbering.
+       * Client price is retained only for diagnostics/
+       * compatibility. It is NOT authoritative.
        */
+      const clientTotalPrice =
+        getClientPrice(
+          body
+        );
+
+      /* =====================================================
+         Business Numbering
+      ===================================================== */
+
       const {
         orderId,
-        referenceNumber
+        referenceNumber,
+        dailyCode,
+        serial
       } =
         await generateOrderNumbers();
 
-      /*
-       * Encrypt EA immediately.
-       */
+      /* =====================================================
+         Encryption
+      ===================================================== */
+
       const encryptedAccountData = {
         eaEmail:
           encrypt(
@@ -1652,33 +1948,35 @@ router.post(
           )
       };
 
-      /*
-       * Encrypt payout immediately.
-       */
       const encryptedPayout =
         encryptPayoutDetails(
           payout
         );
 
-      /*
-       * Keep legacy payment structure encrypted.
-       */
       const legacyPaymentInfo =
         buildLegacyPaymentInfo(
           payout
         );
 
-      /*
-       * Canonical order.
-       *
-       * Firestore document ID is intentionally
-       * different from business orderId.
-       */
+      /* =====================================================
+         Canonical Order
+      ===================================================== */
+
       const orderData = {
+        /*
+         * Business identifiers.
+         */
         orderId,
 
         referenceNumber,
 
+        dailyCode,
+
+        serial,
+
+        /*
+         * Customer.
+         */
         customerName,
 
         phone,
@@ -1687,9 +1985,43 @@ router.post(
 
         quantity,
 
+        /*
+         * Server-authoritative pricing.
+         */
+        rate:
+          price.rate,
+
+        totalPriceSar:
+          price.totalSar,
+
+        totalPriceUsd:
+          price.totalUsd,
+
+        priceCurrency:
+          price.currency,
+
+        displayTotalPrice:
+          price.displayTotal,
+
+        /*
+         * Legacy field preserved.
+         *
+         * It is set to the server-calculated display amount,
+         * never the client-provided amount.
+         */
         totalPrice:
+          price.displayTotal,
+
+        /*
+         * Optional diagnostic compatibility field.
+         * This is not used for financial authority.
+         */
+        clientSubmittedTotalPrice:
           clientTotalPrice,
 
+        /*
+         * Payment.
+         */
         payoutDetails:
           encryptedPayout,
 
@@ -1703,10 +2035,17 @@ router.post(
         paymentInfoData:
           legacyPaymentInfo,
 
+        /*
+         * EA account.
+         */
         accountData:
           encryptedAccountData,
 
-        drawnCoins: 0,
+        /*
+         * Order lifecycle.
+         */
+        drawnCoins:
+          0,
 
         status:
           "new",
@@ -1717,12 +2056,18 @@ router.post(
         issueMessage:
           "",
 
+        /*
+         * Encryption state.
+         */
         encrypted:
           true,
 
         encryptedAt:
           TS(),
 
+        /*
+         * Sensitive-data lifecycle.
+         */
         completedAt:
           null,
 
@@ -1735,12 +2080,12 @@ router.post(
         sensitivePurged:
           false,
 
-        /*
-         * Temporary compatibility flag.
-         */
         sensitiveDataPurged:
           false,
 
+        /*
+         * Transfer.
+         */
         transferredAt:
           null,
 
@@ -1750,9 +2095,15 @@ router.post(
         transferCompleted:
           false,
 
+        /*
+         * Review.
+         */
         reviewSubmitted:
           false,
 
+        /*
+         * Timestamps.
+         */
         createdAt:
           TS(),
 
@@ -1763,6 +2114,10 @@ router.post(
           "customer"
       };
 
+      /*
+       * Firestore document ID is intentionally
+       * different from business orderId.
+       */
       const documentRef =
         db
           .collection("orders")
@@ -1780,7 +2135,29 @@ router.post(
         referenceNumber,
 
         documentId:
-          documentRef.id
+          documentRef.id,
+
+        /*
+         * Return the server-authoritative
+         * calculated amount so the frontend can
+         * display exactly what was stored.
+         */
+        pricing: {
+          rate:
+            price.rate,
+
+          totalSar:
+            price.totalSar,
+
+          totalUsd:
+            price.totalUsd,
+
+          currency:
+            price.currency,
+
+          displayTotal:
+            price.displayTotal
+        }
       });
     } catch (error) {
       console.error(
@@ -1871,10 +2248,6 @@ router.post(
             : "";
       }
 
-      /*
-       * If issue is selected without a custom message,
-       * use the current system settings message.
-       */
       if (
         updateData.issue &&
         !updateData.issueMessage
@@ -1886,7 +2259,8 @@ router.post(
       }
 
       /*
-       * Completed starts the 5-day lifecycle.
+       * completedAt is created only when the order
+       * first enters completed.
        *
        * No automatic purge.
        */
@@ -1912,7 +2286,7 @@ router.post(
       }
 
       /*
-       * Transfer is still a manual status change.
+       * Manual transfer status.
        */
       if (
         nextStatus ===
@@ -1935,7 +2309,7 @@ router.post(
       }
 
       /*
-       * Clearing the issue.
+       * Clearing issue.
        */
       if (
         issue !== undefined &&
@@ -2157,7 +2531,9 @@ router.post(
       } =
         req.body || {};
 
-      if (confirm !== true) {
+      if (
+        confirm !== true
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -2203,7 +2579,9 @@ router.post(
         data.sensitiveDataPurged ===
           true;
 
-      if (alreadyPurged) {
+      if (
+        alreadyPurged
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -2214,8 +2592,7 @@ router.post(
       /*
        * Resolve purgeDueAt.
        *
-       * Older completed orders may not have purgeDueAt,
-       * so derive it from completedAt.
+       * Older completed orders may not have purgeDueAt.
        */
       let purgeDueAt =
         null;
@@ -2288,8 +2665,9 @@ router.post(
       }
 
       /*
-       * Preserve the account object shape but
-       * permanently remove the sensitive values.
+       * Permanently remove EA-sensitive fields.
+       *
+       * Payment data remains untouched.
        */
       const account =
         normalizeStoredAccountData(
@@ -2300,9 +2678,6 @@ router.post(
       delete account.eaPassword;
       delete account.backupCodes;
 
-      /*
-       * Payment data remains untouched.
-       */
       await found.ref.update({
         accountData:
           account,
@@ -2310,9 +2685,6 @@ router.post(
         sensitivePurged:
           true,
 
-        /*
-         * Keep compatibility flag synchronized.
-         */
         sensitiveDataPurged:
           true,
 
