@@ -83,7 +83,7 @@ function escapeHtml(value) {
 
 const translations = {
     ar: {
-        brandSubtitle: "Sa4coins.com",
+        brandSubtitle: "SAMI COINS",
         trackOrder: "استعلام عن الطلب",
         storeClosedBadge: "البيع مغلق حاليًا",
         storeName: "متجر سامي كوينز",
@@ -219,7 +219,7 @@ const translations = {
     },
 
     en: {
-        brandSubtitle: "Sa4coins.com",
+        brandSubtitle: "SAMI COINS",
         trackOrder: "Track Order",
         storeClosedBadge: "Selling is currently closed",
         storeName: "SAMI COINS Store",
@@ -1770,29 +1770,53 @@ function showScreen(screenId) {
 // 20. الانتقال للخطوة الثانية
 // ==========================================================================
 
-function markInvalid(element) {
+function getFieldErrorAnchor(element) {
+    if (!element) return null;
+    if (element.classList?.contains("input-box-wrap")) return element;
+    return element.closest(".input-box-wrap") ||
+        element.closest(".phone-input-wrap") ||
+        element.closest(".code-input-row") ||
+        element.parentElement ||
+        element;
+}
 
+function clearFieldError(element) {
     if (!element) return;
+    element.classList?.remove("field-invalid");
+    element.removeAttribute?.("aria-invalid");
+    const anchor = getFieldErrorAnchor(element);
+    anchor?.classList?.remove("field-invalid-wrap");
+    anchor?.querySelector?.(":scope > .field-error")?.remove();
+}
 
-    element.style.borderColor =
-        "#ef4444";
-
-    element.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-    });
+function markInvalid(element, message = "") {
+    if (!element) return;
+    clearFieldError(element);
+    element.classList?.add("field-invalid");
+    element.setAttribute?.("aria-invalid", "true");
+    const anchor = getFieldErrorAnchor(element);
+    anchor?.classList?.add("field-invalid-wrap");
+    if (anchor) {
+        const error = document.createElement("div");
+        error.className = "field-error";
+        error.setAttribute("role", "alert");
+        error.textContent = message ||
+            (currentLanguage === "ar" ? "يرجى التحقق من هذه البيانات." : "Please check this field.");
+        anchor.appendChild(error);
+    }
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function clearInvalidFields() {
-
-    document
-        .querySelectorAll(
-            "#step2Screen input, #step2Screen select"
-        )
-        .forEach((field) => {
-            field.style.borderColor =
-                "var(--border-color)";
-        });
+    document.querySelectorAll(
+        "#step2Screen input, #step2Screen select, #step2Screen .field-invalid"
+    ).forEach((field) => clearFieldError(field));
+    document.querySelectorAll(
+        ".field-error"
+    ).forEach((error) => error.remove());
+    document.querySelectorAll(
+        ".validation-invalid"
+    ).forEach((el) => el.classList.remove("validation-invalid"));
 }
 
 function goToStep2() {
