@@ -15,17 +15,14 @@ const router = express.Router();
  * مسؤول عن:
  * - عرض الطلب للعميل باستخدام referenceNumber.
  * - عدم كشف Firestore document ID.
- * - عدم كشف البيانات الحساسة أو ciphertext.
- * - إظهار بيانات دفع مقنّعة فقط.
- * - إظهار بيانات EA مقنّعة فقط.
+ * - عدم كشف ciphertext أو البيانات الحساسة.
+ * - إظهار بيانات الدفع بصورة آمنة ومقنّعة.
+ * - إظهار بيانات EA بصورة مقنّعة فقط.
  * - إظهار رسالة الإتلاف بعد حذف بيانات EA.
  * - دعم issue مستقل عن status.
- * - قراءة رسائل المشاكل من system settings.
+ * - قراءة رسائل المشاكل من system/settings.
  *
- * مهم:
- * - لا يوجد requireAdmin هنا لأن هذه واجهة عامة.
- * - لا يتم إرسال order كامل للعميل.
- * - لا يتم إرسال password أو backup codes أو IBAN الكامل.
+ * لا يوجد requireAdmin هنا لأن هذه واجهة عامة.
  * ============================================================================
  */
 
@@ -80,13 +77,13 @@ const SYSTEM_SETTINGS_DOC = db
  */
 
 function normalizeStatus(status) {
-  if (!status) {
-    return "new";
-  }
-
-  const normalized = String(status)
+  const normalized = String(status || "")
     .trim()
     .toLowerCase();
+
+  if (!normalized) {
+    return "new";
+  }
 
   return (
     LEGACY_STATUS_MAP[normalized] ||
@@ -101,27 +98,33 @@ function toISOStringSafe(value) {
 
   try {
     if (typeof value.toDate === "function") {
-      return value.toDate().toISOString();
+      const date = value.toDate();
+
+      return Number.isNaN(date.getTime())
+        ? null
+        : date.toISOString();
     }
 
     if (value instanceof Date) {
-      return value.toISOString();
+      return Number.isNaN(value.getTime())
+        ? null
+        : value.toISOString();
     }
 
     if (typeof value === "string") {
       const date = new Date(value);
 
-      if (!Number.isNaN(date.getTime())) {
-        return date.toISOString();
-      }
+      return Number.isNaN(date.getTime())
+        ? null
+        : date.toISOString();
     }
 
     if (typeof value === "number") {
       const date = new Date(value);
 
-      if (!Number.isNaN(date.getTime())) {
-        return date.toISOString();
-      }
+      return Number.isNaN(date.getTime())
+        ? null
+        : date.toISOString();
     }
 
     return null;
@@ -178,11 +181,15 @@ function formatTime(value) {
  * Safe decrypt
  * ============================================================================
  *
- * الهدف:
- * - إذا كانت القيمة encrypted: نفكها.
- * - إذا كانت قيمة قديمة plaintext: نستخدمها داخلياً ثم نقنعها.
- * - إذا كانت القيمة غير صالحة: لا نرسل ciphertext.
+ * مهم:
+ * لا نعيد ciphertext للعميل.
+ *
+ * إذا كانت القيمة:
+ * - encrypted -> يتم فكها داخليًا.
+ * - plaintext قديم -> تستخدم داخليًا ثم يتم تقنيعها.
+ * - غير صالحة -> ترجع قيمة فارغة.
  */
+
 function safeDecrypt(value) {
   try {
     if (
@@ -193,6 +200,10 @@ function safeDecrypt(value) {
       return "";
     }
 
+    /**
+     * بعض الحقول القديمة قد تكون arrays/objects.
+     * لا نحاول تمرير object كامل إلى decrypt.
+     */
     if (
       Array.isArray(value) ||
       typeof value === "object"
@@ -200,9 +211,9 @@ function safeDecrypt(value) {
       return value;
     }
 
-    const text = String(value);
+    const text = String(value).trim();
 
-    if (!text.trim()) {
+    if (!text) {
       return "";
     }
 
@@ -210,8 +221,24 @@ function safeDecrypt(value) {
       return text;
     }
 
-    return decrypt(text);
+    const decrypted = decrypt(text);
+
+    /**
+     * حماية إضافية:
+     * decrypt قد يرجع قيمة غير نصية في schemas قديمة.
+     */
+    if (
+      decrypted === null ||
+      decrypted === undefined
+    ) {
+      return "";
+    }
+
+    return decrypted;
   } catch {
+    /**
+     * لا نعيد ciphertext بأي حال.
+     */
     return "";
   }
 }
@@ -252,21 +279,16 @@ function maskEmail(email) {
     return "";
   }
 
-  const value = String(email)
-    .trim();
+  const value = String(email).trim();
 
-  const atIndex =
-    value.indexOf("@");
+  const atIndex = value.indexOf("@");
 
   if (atIndex <= 0) {
     return "****";
   }
 
-  const local =
-    value.substring(0, atIndex);
-
-  const domain =
-    value.substring(atIndex);
+  const local = value.slice(0, atIndex);
+  const domain = value.slice(atIndex);
 
   if (local.length <= 2) {
     return (
@@ -277,7 +299,7 @@ function maskEmail(email) {
   }
 
   return (
-    local.substring(0, 2) +
+    local.slice(0, 2) +
     "****" +
     domain
   );
@@ -312,8 +334,7 @@ function maskBackupCodes(codes) {
     }
 
     try {
-      const parsed =
-        JSON.parse(value);
+      const parsed = JSON.parse(value);
 
       if (Array.isArray(parsed)) {
         list = parsed;
@@ -371,10 +392,49 @@ function maskWallet(wallet) {
   }
 
   return (
-    value.substring(0, 4) +
+    value.slice(0, 4) +
     "..." +
-    value.substring(value.length - 6)
+    value.slice(-6)
   );
+}
+
+function maskName(name) {
+  if (!name) {
+    return "";
+  }
+
+  const value = String(name)
+    .trim()
+    .replace(/\s+/g, " ");
+
+  if (!value) {
+    return "";
+  }
+
+  const parts = value.split(" ");
+
+  return parts
+    .map((part) => {
+      if (part.length <= 1) {
+        return "*";
+      }
+
+      if (part.length === 2) {
+        return (
+          part.charAt(0) +
+          "*"
+        );
+      }
+
+      return (
+        part.charAt(0) +
+        "*".repeat(
+          Math.max(1, part.length - 2)
+        ) +
+        part.charAt(part.length - 1)
+      );
+    })
+    .join(" ");
 }
 
 /**
@@ -410,8 +470,7 @@ function normalizeBackupCodes(value) {
     );
   }
 
-  const decrypted =
-    safeDecrypt(value);
+  const decrypted = safeDecrypt(value);
 
   if (Array.isArray(decrypted)) {
     return decrypted.map((item) =>
@@ -428,8 +487,7 @@ function normalizeBackupCodes(value) {
   }
 
   try {
-    const parsed =
-      JSON.parse(text);
+    const parsed = JSON.parse(text);
 
     if (Array.isArray(parsed)) {
       return parsed.map((item) =>
@@ -437,7 +495,7 @@ function normalizeBackupCodes(value) {
       );
     }
   } catch {
-    // fallback below
+    // fallback
   }
 
   return text
@@ -445,18 +503,18 @@ function normalizeBackupCodes(value) {
     .filter(Boolean);
 }
 
-/**
- * يبني فقط البيانات المقنّعة المسموح بها للعميل.
- */
 function buildAccountData(
   order,
   sensitivePurged
 ) {
+  /**
+   * بعد الإتلاف:
+   * لا نحاول قراءة أو إعادة بناء بيانات EA.
+   */
   if (sensitivePurged) {
     return {
       purged: true,
-      message:
-        PURGED_ACCOUNT_MESSAGE
+      message: PURGED_ACCOUNT_MESSAGE
     };
   }
 
@@ -464,14 +522,10 @@ function buildAccountData(
     getAccountData(order);
 
   const email =
-    safeDecrypt(
-      account.eaEmail
-    );
+    safeDecrypt(account.eaEmail);
 
   const password =
-    safeDecrypt(
-      account.eaPassword
-    );
+    safeDecrypt(account.eaPassword);
 
   const backupCodes =
     normalizeBackupCodes(
@@ -479,9 +533,8 @@ function buildAccountData(
     );
 
   /**
-   * إذا لم تكن البيانات الحساسة موجودة
-   * بسبب طلب قديم جداً أو schema مختلف،
-   * نستخدم القيم المقنّعة القديمة إن وجدت.
+   * Compatibility مع الطلبات القديمة
+   * التي قد تحتوي masking جاهز.
    */
   const emailMasked =
     email
@@ -503,9 +556,7 @@ function buildAccountData(
 
   const backupCodesMasked =
     backupCodes.length
-      ? maskBackupCodes(
-          backupCodes
-        )
+      ? maskBackupCodes(backupCodes)
       : String(
           order.backupCodesMasked ||
           account.backupCodesMasked ||
@@ -551,6 +602,9 @@ function getPayoutDetails(order) {
     };
   }
 
+  /**
+   * Compatibility مع schema القديم.
+   */
   const legacy =
     order.paymentInfoData &&
     typeof order.paymentInfoData === "object" &&
@@ -631,36 +685,49 @@ function buildPaymentData(order) {
   };
 
   /**
-   * البنك
+   * --------------------------------------------------------------------------
+   * Bank
+   * --------------------------------------------------------------------------
    */
+
   if (method === "bank") {
     payment.bankName =
-      payout.bankName ||
-      "";
+      String(
+        safeDecrypt(
+          payout.bankName
+        ) ||
+        ""
+      );
 
     const iban =
-      safeDecrypt(
-        payout.iban
-      );
+      safeDecrypt(payout.iban);
 
     payment.ibanLast6 =
       extractLast6(iban) ||
       String(
-        payout.ibanLast6 || ""
+        payout.ibanLast6 ||
+        ""
       );
 
     return payment;
   }
 
   /**
-   * المحفظة
+   * --------------------------------------------------------------------------
+   * Wallet
+   * --------------------------------------------------------------------------
    */
+
   if (method === "wallet") {
     payment.walletName =
-      payout.walletName ||
-      payout.walletType ||
-      payout.name ||
-      "";
+      String(
+        safeDecrypt(
+          payout.walletName ||
+          payout.walletType ||
+          payout.name
+        ) ||
+        ""
+      );
 
     const phone =
       safeDecrypt(
@@ -672,12 +739,27 @@ function buildPaymentData(order) {
     payment.phoneMasked =
       maskPhone(phone);
 
+    /**
+     * Compatibility مع بيانات قديمة
+     * كانت مخزنة مقنّعة مسبقاً.
+     */
+    if (!payment.phoneMasked) {
+      payment.phoneMasked =
+        String(
+          payout.phoneMasked ||
+          ""
+        );
+    }
+
     return payment;
   }
 
   /**
+   * --------------------------------------------------------------------------
    * USDT
+   * --------------------------------------------------------------------------
    */
+
   if (method === "usdt") {
     const wallet =
       safeDecrypt(
@@ -689,16 +771,31 @@ function buildPaymentData(order) {
     payment.walletMasked =
       maskWallet(wallet);
 
+    if (!payment.walletMasked) {
+      payment.walletMasked =
+        String(
+          payout.walletMasked ||
+          ""
+        );
+    }
+
     payment.network =
-      payout.network ||
-      "";
+      String(
+        safeDecrypt(
+          payout.network
+        ) ||
+        ""
+      );
 
     return payment;
   }
 
   /**
+   * --------------------------------------------------------------------------
    * PayPal
+   * --------------------------------------------------------------------------
    */
+
   if (method === "paypal") {
     const email =
       safeDecrypt(
@@ -709,12 +806,25 @@ function buildPaymentData(order) {
     payment.emailMasked =
       maskEmail(email);
 
+    if (!payment.emailMasked) {
+      payment.emailMasked =
+        String(
+          payout.emailMasked ||
+          ""
+        );
+    }
+
     return payment;
   }
 
   /**
+   * --------------------------------------------------------------------------
    * Western Union
+   * --------------------------------------------------------------------------
+   *
+   * لا نرسل الاسم الكامل للعميل.
    */
+
   if (method === "western") {
     const fullName =
       safeDecrypt(
@@ -729,15 +839,19 @@ function buildPaymentData(order) {
         payout.westernCountry
       );
 
-    payment.fullNameEnglish =
-      fullName
-        ? String(fullName)
-        : "";
+    payment.fullNameMasked =
+      maskName(fullName);
+
+    if (!payment.fullNameMasked) {
+      payment.fullNameMasked =
+        String(
+          payout.fullNameMasked ||
+          ""
+        );
+    }
 
     payment.country =
-      country
-        ? String(country)
-        : "";
+      String(country || "");
 
     return payment;
   }
@@ -749,19 +863,17 @@ function buildPaymentData(order) {
  * ============================================================================
  * Issue settings
  * ============================================================================
- *
- * رسائل المشاكل مصدرها:
- *   system/settings.issueMessages
- *
- * مع fallback آمن للرسائل الافتراضية.
  */
+
 async function getIssueMessages() {
   try {
     const snapshot =
       await SYSTEM_SETTINGS_DOC.get();
 
     if (!snapshot.exists) {
-      return DEFAULT_ISSUE_MESSAGES;
+      return {
+        ...DEFAULT_ISSUE_MESSAGES
+      };
     }
 
     const data =
@@ -775,32 +887,51 @@ async function getIssueMessages() {
       typeof configured !== "object" ||
       Array.isArray(configured)
     ) {
-      return DEFAULT_ISSUE_MESSAGES;
+      return {
+        ...DEFAULT_ISSUE_MESSAGES
+      };
     }
 
-    return {
-      ...DEFAULT_ISSUE_MESSAGES,
-      ...Object.fromEntries(
-        Object.entries(configured)
-          .filter(
-            ([key, value]) =>
-              Object.prototype.hasOwnProperty.call(
-                DEFAULT_ISSUE_MESSAGES,
-                key
-              ) &&
-              typeof value === "string" &&
-              value.trim()
-          )
-          .map(
-            ([key, value]) => [
-              key,
-              value.trim()
-            ]
-          )
-      )
+    const result = {
+      ...DEFAULT_ISSUE_MESSAGES
     };
-  } catch {
-    return DEFAULT_ISSUE_MESSAGES;
+
+    for (
+      const [key, value]
+      of Object.entries(configured)
+    ) {
+      if (
+        !Object.prototype.hasOwnProperty.call(
+          DEFAULT_ISSUE_MESSAGES,
+          key
+        )
+      ) {
+        continue;
+      }
+
+      if (
+        typeof value !== "string" ||
+        !value.trim()
+      ) {
+        continue;
+      }
+
+      result[key] =
+        value.trim();
+    }
+
+    return result;
+  } catch (error) {
+    console.error(
+      "Tracking issue settings error:",
+      error?.code ||
+        error?.message ||
+        "unknown_error"
+    );
+
+    return {
+      ...DEFAULT_ISSUE_MESSAGES
+    };
   }
 }
 
@@ -811,10 +942,12 @@ function buildIssueData(
   const issue =
     String(
       order.issue || ""
-    ).trim();
+    )
+      .trim()
+      .toLowerCase();
 
   /**
-   * null = لا توجد مشكلة.
+   * لا توجد مشكلة.
    */
   if (!issue) {
     return {
@@ -824,10 +957,29 @@ function buildIssueData(
   }
 
   /**
+   * لا نسمح بإظهار issue code
+   * غير معروف للعميل كحالة صالحة.
+   */
+  const isKnownIssue =
+    Object.prototype.hasOwnProperty.call(
+      DEFAULT_ISSUE_MESSAGES,
+      issue
+    );
+
+  if (!isKnownIssue) {
+    return {
+      issue: "other_issue",
+      issueMessage:
+        String(
+          issueMessages?.other_issue ||
+          DEFAULT_ISSUE_MESSAGES.other_issue
+        ).trim()
+    };
+  }
+
+  /**
    * الرسالة المحفوظة مع الطلب
-   * تستخدم فقط إذا كانت موجودة.
-   *
-   * وإلا نستخدم إعدادات النظام.
+   * تستخدم أولاً إذا كانت موجودة.
    */
   const orderMessage =
     String(
@@ -842,7 +994,7 @@ function buildIssueData(
       ""
     ).trim();
 
-  const defaultMessage =
+  const fallbackMessage =
     ISSUE_LABELS[issue] ||
     DEFAULT_ISSUE_MESSAGES.other_issue;
 
@@ -851,13 +1003,13 @@ function buildIssueData(
     issueMessage:
       orderMessage ||
       configuredMessage ||
-      defaultMessage
+      fallbackMessage
   };
 }
 
 /**
  * ============================================================================
- * Order calculations
+ * Order helpers
  * ============================================================================
  */
 
@@ -876,6 +1028,12 @@ function getDrawnCoins(order) {
 }
 
 function getQuantity(order) {
+  /**
+   * لا نستخدم withdrawnQuantity أو drawnCoins
+   * ككمية أصلية.
+   *
+   * drawnCoins كمية مسحوبة وليست كمية الطلب.
+   */
   const value =
     order.quantity ??
     order.totalQty ??
@@ -989,12 +1147,16 @@ function buildTrackingOrder(
 
   return {
     referenceNumber:
-      order.referenceNumber ||
-      "",
+      String(
+        order.referenceNumber ||
+        ""
+      ),
 
     customerName:
-      order.customerName ||
-      "",
+      String(
+        order.customerName ||
+        ""
+      ),
 
     phone:
       maskPhone(
@@ -1002,8 +1164,10 @@ function buildTrackingOrder(
       ),
 
     platform:
-      order.platform ||
-      "",
+      String(
+        order.platform ||
+        ""
+      ),
 
     quantity,
 
@@ -1027,6 +1191,9 @@ function buildTrackingOrder(
 
     progressPercentage,
 
+    /**
+     * طريقة الدفع تبقى ظاهرة دائماً.
+     */
     paymentMethod:
       getPaymentMethodName(order),
 
@@ -1039,9 +1206,9 @@ function buildTrackingOrder(
     payment: paymentData,
 
     /**
-     * Compatibility:
-     * يبقى paymentInfoData موجوداً لكن
-     * يحتوي فقط على DTO آمن.
+     * Compatibility مع tracking frontend القديم.
+     *
+     * هذا DTO آمن فقط.
      */
     paymentInfoData:
       paymentData,
@@ -1099,13 +1266,8 @@ function buildTrackingOrder(
  * ============================================================================
  * GET /api/tracking/:ref
  * ============================================================================
- *
- * العميل يستخدم:
- *   referenceNumber
- *
- * مثال:
- *   /api/tracking/FC-123-7
  */
+
 router.get(
   "/:ref",
   async (req, res) => {
@@ -1126,8 +1288,9 @@ router.get(
       }
 
       /**
-       * البحث باستخدام referenceNumber
-       * وليس Firestore document ID.
+       * البحث باستخدام referenceNumber.
+       *
+       * لا نستخدم Firestore document ID.
        */
       const snapshot =
         await db
@@ -1155,7 +1318,7 @@ router.get(
         document.data() || {};
 
       /**
-       * تحميل رسائل المشاكل من إعدادات النظام.
+       * رسائل المشاكل من system/settings.
        */
       const issueMessages =
         await getIssueMessages();
@@ -1179,13 +1342,17 @@ router.get(
        * statusMessage:
        *
        * الأولوية:
-       * 1. رسالة محفوظة للطلب.
-       * 2. رسالة النظام إن كانت موجودة.
+       * 1. الرسالة المحفوظة للطلب.
+       * 2. رسالة status مخصصة إن كانت محفوظة.
        * 3. الرسالة الافتراضية.
+       *
+       * ملاحظة:
+       * لا نرسل statusMessages كاملة للعميل.
        */
       const configuredStatusMessages =
         order.statusMessages &&
-        typeof order.statusMessages === "object"
+        typeof order.statusMessages === "object" &&
+        !Array.isArray(order.statusMessages)
           ? order.statusMessages
           : null;
 
@@ -1195,17 +1362,34 @@ router.get(
           configuredStatusMessages?.[status] ||
           STATUS_MESSAGES[status] ||
           ""
-        );
+        ).trim();
 
       const reviewSuggestions =
         Array.isArray(
           order.reviewSuggestions
         )
           ? order.reviewSuggestions
+              .slice(0, 10)
+              .map((item) =>
+                String(item ?? "").trim()
+              )
+              .filter(Boolean)
           : [];
 
       /**
-       * لا نرسل أي شيء من order مباشرة.
+       * مهم جداً:
+       *
+       * لا نرسل order الأصلي.
+       * لا نرسل:
+       * - Firestore document ID
+       * - EA password
+       * - backup codes
+       * - IBAN كامل
+       * - wallet address كامل
+       * - PayPal email كامل
+       * - Western Union name كامل
+       * - ciphertext
+       * - service account data
        */
       return res.json({
         success: true,
@@ -1224,11 +1408,7 @@ router.get(
       });
     } catch (error) {
       /**
-       * لا نسجل:
-       * - بيانات العميل.
-       * - payment details.
-       * - EA credentials.
-       * - ciphertext.
+       * لا نسجل أي بيانات حساسة.
        */
       console.error(
         "Tracking API Error:",
