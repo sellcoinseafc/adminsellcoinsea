@@ -1,9 +1,10 @@
 {
   "name": "adminsellcoinsea",
   "version": "1.0.0",
-  "main": "admin.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js",
+    "test": "node --check server.js && node --check server/server.js && node --check server/routes/orders.js && node --check server/routes/admin.js && node --check server/routes/tracking.js && node --check server/services/orderNumber.js && node --check server/utils/crypto.js"
   },
   "keywords": [],
   "author": "",
