@@ -919,6 +919,12 @@ router.post(
             ""
           ),
 
+        internalReference:
+          String(
+            order.internalReference ||
+            ""
+          ),
+
         customerName:
           String(
             order.customerName ||
@@ -1227,6 +1233,87 @@ router.post(
         success: false,
         message:
           "تعذر إتلاف البيانات الحساسة."
+      });
+    }
+  }
+);
+
+
+/**
+ * ============================================================================
+ * POST /api/admin/archive-order
+ * ============================================================================
+ *
+ * Archive is a lifecycle flag, not a customer-facing status message.
+ * The order remains queryable for audit/history.
+ */
+router.post(
+  "/archive-order",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const orderIdentifier =
+        normalizeIdentifier(req.body?.orderId);
+
+      if (!orderIdentifier) {
+        return res.status(400).json({
+          success: false,
+          message: "رقم الطلب مطلوب"
+        });
+      }
+
+      const found = await findOrder(orderIdentifier);
+
+      if (!found) {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود"
+        });
+      }
+
+      const order = found.data || {};
+
+      if (order.archived === true) {
+        return res.status(409).json({
+          success: false,
+          message: "الطلب مؤرشف مسبقًا."
+        });
+      }
+
+      if (String(order.status || "").toLowerCase() !== "completed") {
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن أرشفة الطلب قبل اكتماله."
+        });
+      }
+
+      await db.collection("orders").doc(found.id).update({
+        archived: true,
+        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+        archivedBy: String(req.admin.uid),
+        lastUpdate: admin.firestore.FieldValue.serverTimestamp(),
+        history: admin.firestore.FieldValue.arrayUnion({
+          type: "archived",
+          actor: req.admin.email || req.admin.name || req.admin.uid,
+          at: new Date()
+        })
+      });
+
+      return res.json({
+        success: true,
+        orderId: String(order.orderId || found.id),
+        referenceNumber: String(order.referenceNumber || ""),
+        archived: true
+      });
+    } catch (error) {
+      console.error(
+        "Admin archive-order error:",
+        error?.code || error?.message || "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر أرشفة الطلب."
       });
     }
   }
