@@ -37,7 +37,7 @@ const STATUS_CONFIG = {
     },
 
     review: {
-        text: "انتظار المراجعة",
+        text: "طلب بانتظار المراجعة",
         percentage: 35,
         className: "review"
     },
