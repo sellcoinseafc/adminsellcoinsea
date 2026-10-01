@@ -1688,7 +1688,7 @@ function getCurrentPayoutDataFromForm() {
         case "usd":
             return {
                 payoutType: "international",
-                method: "usdt",
+                method: "usd",
                 wallet:
                     $("usdDetails")?.value?.trim() || ""
             };
