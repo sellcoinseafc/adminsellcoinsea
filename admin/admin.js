@@ -1815,7 +1815,7 @@ async function loadOrders() {
           switchTab(
             "ordersTab",
             document.querySelector(
-              ".sidebar-menu li a"
+              ".sidebar-menu .sidebar-link"
             )
           )
       );
@@ -3243,7 +3243,7 @@ function initReviewsListener() {
             switchTab(
               "reviewsTab",
               document.querySelector(
-                ".sidebar-menu li:nth-child(5) a"
+                ".sidebar-menu .sidebar-link:nth-child(5)"
               )
             )
         );
