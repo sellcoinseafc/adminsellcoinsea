@@ -1026,3 +1026,29 @@ body{
     grid-column:2/-1;
   }
 }
+
+
+/* SAMICOINS order redesign */
+.brand-home-link{appearance:none;border:0;background:transparent;color:#fff;cursor:pointer;font-size:1.12rem;font-weight:900;letter-spacing:.02em;font-family:inherit;padding:0}
+.brand-home-link:hover{opacity:.9}
+.terms-bottom-link{margin-top:14px;background:transparent;border:0;color:#3b82f6;cursor:pointer;font-weight:800;display:inline-flex;align-items:center;gap:8px;padding:4px 0}
+.terms-bottom-link:hover{text-decoration:underline}
+.terms-empty{margin:0;opacity:.7}
+.section-edit-btn{margin-inline-start:auto;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:inherit;border-radius:999px;padding:7px 13px;font-weight:800;cursor:pointer}
+.review-platform{min-height:92px;padding:16px 20px;border-radius:999px}
+.success-hero-compact{padding-block:18px}
+.tracking-action-pill{display:flex;align-items:center;justify-content:center;gap:18px;width:100%;padding:12px 18px;min-height:58px;border-radius:999px;background:var(--platform-accent,#1f2937);color:#fff}
+.tracking-action-pill button{border:0;background:transparent;color:#fff;font:inherit;font-weight:900;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;flex:1}
+.tracking-action-divider{width:1px;height:28px;background:rgba(255,255,255,.35)}
+.tracking-link-hidden{display:none}
+.success-oval-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.success-oval{padding:18px 20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:999px;display:grid;gap:5px}
+.success-oval small,.success-total-status-oval small{opacity:.7;font-size:.76rem}
+.success-oval strong,.success-total-status-oval strong{font-size:1.05rem}
+.success-total-status-oval{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.success-phone-line{display:flex;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 18px;border-radius:999px;background:rgba(255,255,255,.035)}
+.success-platform-oval.ps-theme{background:linear-gradient(135deg,rgba(0,90,170,.55),rgba(20,35,70,.9));color:#fff}
+.success-platform-oval.xbox-theme{background:linear-gradient(135deg,rgba(16,124,16,.6),rgba(10,55,20,.9));color:#fff}
+.success-platform-oval.pc-theme{background:linear-gradient(135deg,rgba(201,166,76,.62),rgba(55,43,15,.92));color:#fff}
+.success-duration-grid .mini-card{min-height:90px}
+@media (max-width:720px){.success-oval-grid{grid-template-columns:1fr}.success-total-status-oval{grid-template-columns:1fr 1fr}.success-phone-line{border-radius:20px}.tracking-action-pill{min-height:56px}.review-platform{border-radius:28px}}
