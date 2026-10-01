@@ -132,16 +132,27 @@ function normalizeStatus(value) {
   const status =
     cleanString(value).toLowerCase();
 
-  /*
-   * Legacy compatibility.
-   */
+  return STATUS_VALUES.has(status)
+    ? status
+    : "";
+}
+
+/*
+ * Legacy order documents may still contain the historical "pending"
+ * status. Normalize that only when interpreting stored data.
+ *
+ * API mutation inputs must use the canonical status values above and
+ * must never silently convert an invalid client value.
+ */
+function normalizeStoredStatus(value) {
+  const status =
+    cleanString(value).toLowerCase();
+
   if (status === "pending") {
     return "new";
   }
 
-  return STATUS_VALUES.has(status)
-    ? status
-    : "";
+  return normalizeStatus(status);
 }
 
 function normalizeIssue(value) {
@@ -3129,7 +3140,7 @@ router.post(
       }
 
       const previousStatus =
-        normalizeStatus(current.status);
+        normalizeStoredStatus(current.status);
 
       const allowedNextStatuses =
         ALLOWED_STATUS_TRANSITIONS[previousStatus] ||
@@ -3163,7 +3174,7 @@ router.post(
 
         const freshData = freshSnap.data() || {};
         transactionPreviousStatus =
-          normalizeStatus(freshData.status);
+          normalizeStoredStatus(freshData.status);
 
         const freshAllowedNextStatuses =
           ALLOWED_STATUS_TRANSITIONS[transactionPreviousStatus] ||
