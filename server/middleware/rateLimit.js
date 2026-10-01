@@ -9,8 +9,9 @@
 const buckets = new Map();
 
 function defaultKey(req) {
-  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
-  return forwarded || req.ip || req.socket?.remoteAddress || "unknown";
+  // Never trust a client-supplied X-Forwarded-For value.
+  // Express req.ip already honors it only when trust proxy is configured.
+  return req.ip || req.socket?.remoteAddress || "unknown";
 }
 
 export function createRateLimiter({
