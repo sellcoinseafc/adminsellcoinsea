@@ -6548,6 +6548,19 @@ function initSystemSettingsListener() {
       currentSettingsData =
         settings || {};
 
+      if (
+        Array.isArray(settings?.banks) &&
+        settings.banks.length < 13 &&
+        !settings.banks.includes("بنك الخليج الدولي")
+      ) {
+        systemAddBank("بنك الخليج الدولي").catch((error) => {
+          console.error(
+            "Bank catalog migration error:",
+            error?.message || error
+          );
+        });
+      }
+
       updateStoreStatusUI(
         settings.storeOpen !==
           false
@@ -7901,6 +7914,15 @@ window.switchTab =
         "active"
       );
     }
+
+    document
+      .querySelectorAll(".mobile-app-nav-item")
+      .forEach((item) => {
+        item.classList.toggle(
+          "active",
+          item.dataset.tab === tabId
+        );
+      });
 
     const pageHeading =
       document.getElementById(
