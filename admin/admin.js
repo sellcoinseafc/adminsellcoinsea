@@ -527,22 +527,10 @@ function initAuthGuard() {
           role: "admin"
         };
 
-        try {
-          await updateDoc(
-            adminRef,
-            {
-              lastLogin:
-                serverTimestamp()
-            }
-          );
-        } catch (error) {
-          console.warn(
-            "Unable to update admin lastLogin:",
-            error?.message ||
-              error
-          );
-        }
-
+        /*
+         * Admin documents are intentionally read-only from the browser.
+         * Authentication/session activity is not written directly here.
+         */
         if (loginOverlay) {
           loginOverlay.classList.remove(
             "active"
