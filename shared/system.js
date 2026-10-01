@@ -192,7 +192,7 @@ export const defaultSettings = {
         "24 ساعة",
 
     safeMethod:
-        "آمنة 90%",
+        "آمنة 100%",
 
     /*
      * Legacy/manual value kept only for compatibility.
