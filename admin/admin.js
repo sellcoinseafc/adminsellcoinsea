@@ -5223,6 +5223,14 @@ window.openOrderModal =
         <button
           class="btn-custom"
           style="background:var(--primary);color:#000;"
+          onclick="editOrderData(''+escapeAttribute(order.id)+'')">
+          <i class="fa-solid fa-pen-to-square"></i>
+          تعديل بيانات الطلب
+        </button>
+
+        <button
+          class="btn-custom"
+          style="background:var(--primary);color:#000;"
           onclick="updateDrawnCoinsPrompt(
             '${escapeAttribute(
               order.id
@@ -5364,6 +5372,93 @@ window.closeOrderModal =
   };
 
 // ==========================================================================
+window.editOrderData = async function(orderId) {
+  const order = ordersData.find((item) => item.id === orderId);
+  if (!order) { showToast("❌ الطلب غير موجود."); return; }
+
+  const customerName = prompt("اسم العميل:", order.name || "");
+  if (customerName === null) return;
+  const phone = prompt("رقم الجوال:", order.phone || "");
+  if (phone === null) return;
+  const customerEmail = prompt("البريد الإلكتروني للعميل:", order.customerEmail || "");
+  if (customerEmail === null) return;
+  const platform = prompt("المنصة (PlayStation / Xbox / PC):", order.platform || "");
+  if (platform === null) return;
+  const quantityText = prompt("كمية الكوينز:", String(order.totalQty || ""));
+  if (quantityText === null) return;
+
+  const data = { customerName, phone, customerEmail, platform, quantity: Number(quantityText) };
+
+  if (confirm("هل تريد أيضًا تعديل بيانات EA أو بيانات الدفع الحساسة؟")) {
+    const account = {};
+    const eaEmail = prompt("بريد EA الجديد (فارغ = إبقاء الحالي):", "");
+    if (eaEmail === null) return;
+    if (eaEmail.trim()) account.eaEmail = eaEmail.trim();
+
+    const eaPassword = prompt("كلمة مرور EA الجديدة (فارغ = إبقاء الحالية):", "");
+    if (eaPassword === null) return;
+    if (eaPassword.trim()) account.eaPassword = eaPassword;
+
+    const backupCodes = prompt("3 أكواد احتياطية جديدة مفصولة بفاصلة (فارغ = إبقاء الحالية):", "");
+    if (backupCodes === null) return;
+    if (backupCodes.trim()) account.backupCodes = backupCodes.split(/[,\n]+/).map((value) => value.trim()).filter(Boolean);
+
+    if (Object.keys(account).length) data.account = account;
+
+    if (confirm("هل تريد تعديل بيانات الدفع أيضًا؟")) {
+      const method = prompt("طريقة الدفع: bank / wallet / usd / paypal / western", order.paymentMethod || "");
+      if (method === null) return;
+      const normalizedMethod = method.trim().toLowerCase();
+      const payout = { method: normalizedMethod };
+
+      if (normalizedMethod === "bank") {
+        const bankName = prompt("اسم البنك:", order.bankName || ""); if (bankName === null) return;
+        const fullName = prompt("الاسم الكامل لصاحب الحساب:", ""); if (fullName === null) return;
+        const iban = prompt("IBAN:", ""); if (iban === null) return;
+        Object.assign(payout, { bankName, fullName, iban });
+      } else if (normalizedMethod === "wallet") {
+        const walletName = prompt("اسم المحفظة:", ""); if (walletName === null) return;
+        const walletPhone = prompt("رقم المحفظة:", ""); if (walletPhone === null) return;
+        Object.assign(payout, { walletName, phone: walletPhone });
+      } else if (normalizedMethod === "usd") {
+        const wallet = prompt("عنوان محفظة USDT (TRC20):", ""); if (wallet === null) return;
+        Object.assign(payout, { wallet, network: "TRC20" });
+      } else if (normalizedMethod === "paypal") {
+        const email = prompt("بريد PayPal:", ""); if (email === null) return;
+        Object.assign(payout, { email });
+      } else if (normalizedMethod === "western") {
+        const fullNameEnglish = prompt("الاسم بالإنجليزية:", ""); if (fullNameEnglish === null) return;
+        const country = prompt("الدولة:", ""); if (country === null) return;
+        Object.assign(payout, { fullNameEnglish, country });
+      } else {
+        showToast("❌ طريقة الدفع غير صحيحة.");
+        return;
+      }
+
+      data.payout = payout;
+    }
+  }
+
+  try {
+    const response = await adminFetch("/api/orders/update", {
+      method: "POST",
+      body: JSON.stringify({ orderId, data })
+    });
+    const result = await readJsonResponse(response);
+    if (await handleAdminAuthFailure(response, result)) return;
+    if (!result.success) {
+      showToast("❌ " + (result.message || "تعذر تحديث الطلب."));
+      return;
+    }
+    showToast("✅ تم تحديث بيانات الطلب وتوثيق التعديل.");
+    await loadOrders();
+    openOrderModal(orderId);
+  } catch (error) {
+    console.error("Edit order error:", error);
+    showToast("❌ تعذر تحديث بيانات الطلب.");
+  }
+};
+
 // 12) المشكلة — مستقلة عن الحالة
 // ==========================================================================
 
