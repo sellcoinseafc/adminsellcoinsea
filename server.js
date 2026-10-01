@@ -157,13 +157,14 @@ const apiRateLimit = createRateLimiter({
  * be added later and do not yet have a route-local limiter.
  *
  * Existing stricter route-local limiters (for example decrypt/update)
- * remain in place and therefore still take precedence for those flows.
+ * remain in place and therefore provide the tighter per-admin control
+ * after authentication.
  */
 const adminWriteRateLimit = createRateLimiter({
   windowMs: 60_000,
   max: 60,
   keyGenerator: (req) =>
-    `admin-write:${String(req.admin?.uid || req.ip || "unknown")}`,
+    `admin-write-ip:${String(req.ip || "unknown")}`,
   message: "عدد عمليات الإدارة مرتفع جدًا. حاول مرة أخرى بعد قليل."
 });
 
