@@ -582,6 +582,12 @@ function normalizePayout(body) {
           cleanString(
             payout.iban ??
             body.iban
+          ),
+
+        recipientName:
+          cleanString(
+            payout.recipientName ??
+            body.recipientName
           )
       };
 
@@ -608,9 +614,10 @@ function normalizePayout(body) {
       };
 
     case "usdt":
+    case "usd":
       return {
         payoutType: "international",
-        method: "usdt",
+        method: "usd",
 
         wallet:
           cleanString(
@@ -719,6 +726,13 @@ function encryptPayoutDetails(
             ? encryptIfNeeded(
                 payout.iban
               )
+            : "",
+
+        recipientName:
+          payout.recipientName
+            ? encryptIfNeeded(
+                payout.recipientName
+              )
             : ""
       };
 
@@ -742,12 +756,13 @@ function encryptPayoutDetails(
       };
 
     case "usdt":
+    case "usd":
       return {
         payoutType:
           "international",
 
         method:
-          "usdt",
+          "usd",
 
         wallet:
           payout.wallet
@@ -852,6 +867,7 @@ function buildLegacyPaymentInfo(
       break;
 
     case "usdt":
+    case "usd":
       payment.walletAddress =
         payout.wallet
           ? encryptIfNeeded(
@@ -1775,7 +1791,8 @@ switch (
           if (
             !payout.bankName ||
             !payout.fullName ||
-            !payout.iban
+            !payout.iban ||
+            !payout.recipientName
           ) {
             return res.status(400).json({
               success: false,
@@ -1824,12 +1841,12 @@ switch (
 
           break;
 
-        case "usdt":
+        case "usd":
           if (!payout.wallet) {
             return res.status(400).json({
               success: false,
               message:
-                "عنوان محفظة USDT مطلوب."
+                "تفاصيل استلام USD مطلوبة."
             });
           }
           break;
