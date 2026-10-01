@@ -597,6 +597,8 @@ function buildPaymentData(order) {
         String(preview.payoutType || ""),
       bankName:
         String(preview.bankName || ""),
+      recipientName:
+        String(preview.recipientName || ""),
       walletName:
         String(preview.walletName || ""),
       network:
@@ -1034,6 +1036,11 @@ function buildTrackingOrder(
         ""
       ),
 
+    customerEmail:
+      maskEmail(
+        order.customerEmail || ""
+      ),
+
     phone:
       maskPhone(
         order.phone || ""
@@ -1144,7 +1151,45 @@ function buildTrackingOrder(
     issueState:
       order.issue
         ? String(order.issueState || "needs_customer_action")
-        : "resolved"
+        : "resolved",
+
+    transferStatusKey:
+      order.transferCompleted === true
+        ? "completed"
+        : order.transferredAt
+          ? "transferred"
+          : ["transferred","completed"].includes(status)
+            ? "processing"
+            : "pending",
+
+    transferredAt:
+      toISOStringSafe(order.transferredAt),
+
+    statusHistory:
+      Array.isArray(order.history)
+        ? order.history
+            .slice(-50)
+            .map((item) => ({
+              statusLabel: String(
+                item?.statusLabel ||
+                item?.label ||
+                item?.status ||
+                "تحديث الطلب"
+              ),
+              message: String(
+                item?.message ||
+                item?.statusMessage ||
+                ""
+              ),
+              timestamp:
+                toISOStringSafe(
+                  item?.timestamp ||
+                  item?.at ||
+                  item?.createdAt
+                )
+            }))
+            .filter((item) => item.timestamp || item.message)
+        : []
   };
 }
 
