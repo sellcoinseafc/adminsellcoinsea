@@ -1677,3 +1677,33 @@ html[data-theme="light"] #step4SuccessScreen .invoice-card .payment-invoice{
     min-height:86px;
   }
 }
+
+/* FINAL APPROVED ORDER-PAGE OVERRIDES */
+.brand-logo-lockup{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;gap:6px}
+.brand-logo-mark{display:block;color:#fff;font-size:28px;line-height:1}
+.brand-logo-copy{display:flex;align-items:center;justify-content:center}
+.brand-logo-en{color:#fff!important;font-size:16px;font-weight:900;letter-spacing:.2px;text-transform:none;direction:ltr}
+html[data-theme="light"] .brand-logo-lockup{border:0;background:transparent;box-shadow:none}
+html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-en{color:#fff!important;text-shadow:0 1px 4px rgba(0,0,0,.25)}
+.platform-btn small{display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.05}
+.platform-btn .per-million-label{color:var(--text);font-size:12px;font-weight:900;margin-top:2px}
+#durationInfoCardsStep1 .mini-card,.review-card .mini-card,.success-duration-grid .mini-card{padding:8px 6px;min-height:64px;justify-content:center}
+#durationInfoCardsStep1 .mini-card span,.review-card .mini-card span,.success-duration-grid .mini-card span{color:#fff!important;font-size:8px!important;font-weight:700}
+#durationInfoCardsStep1 .mini-card strong,.review-card .mini-card strong,.success-duration-grid .mini-card strong{color:#fff!important;font-size:10px!important;font-weight:800}
+.success-reference{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:58px;padding:10px 16px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:var(--platform-accent,#1f2937);color:#fff}
+.success-reference>span{color:#fff!important;font-size:11px!important;font-weight:900}
+.success-reference .reference-number{margin:0;gap:7px}
+.success-reference .reference-number strong{color:#fff;font-size:16px;letter-spacing:1px}
+.success-reference .reference-number button{padding:5px 7px;border-color:rgba(255,255,255,.25);background:rgba(0,0,0,.16);color:#fff}
+.success-oval-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.success-oval{min-height:64px;padding:12px 15px;justify-content:center;gap:3px}
+.success-oval small{font-size:8px!important;color:#fff!important;opacity:.72}
+.success-oval strong{font-size:11px!important;color:#fff!important}
+.success-platform-oval{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:116px}
+.platform-oval-main{display:flex;align-items:center;justify-content:center;gap:8px;direction:ltr}
+.platform-oval-main i{font-size:24px;color:#fff}
+.platform-oval-main strong{font-size:12px!important;color:#fff!important}
+.platform-oval-quantity{display:flex;align-items:center;gap:5px;direction:rtl}
+.platform-oval-quantity strong{font-size:12px!important}
+.success-order-oval{min-height:64px}.success-total-status-oval{min-height:64px}
+@media(max-width:720px){.success-oval-grid{grid-template-columns:1fr}.success-platform-oval{min-height:108px}}
