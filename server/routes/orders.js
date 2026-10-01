@@ -1194,6 +1194,14 @@ function maskMiddle(
  *
  * Full sensitive values are NEVER returned here.
  */
+function readSensitivePreviewValue(value) {
+  const text = cleanString(value);
+  if (!text) return "";
+
+  const decrypted = safeDecrypt(text);
+  return decrypted || text;
+}
+
 function buildPaymentPreview(
   data
 ) {
@@ -1264,10 +1272,8 @@ function buildPaymentPreview(
     method === "bank"
   ) {
     const iban =
-      safeDecrypt(
-        payout?.iban ||
-        legacy.iban
-      );
+      readSensitivePreviewValue(payout?.iban ||
+        legacy.iban);
 
     if (iban) {
       preview.ibanLast6 =
@@ -1279,10 +1285,8 @@ function buildPaymentPreview(
     method === "wallet"
   ) {
     const phone =
-      safeDecrypt(
-        payout?.phone ||
-        legacy.walletNumber
-      );
+      readSensitivePreviewValue(payout?.phone ||
+        legacy.walletNumber);
 
     if (phone) {
       preview.phoneMasked =
@@ -1294,10 +1298,8 @@ function buildPaymentPreview(
     (method === "usd" || method === "usdt")
   ) {
     const wallet =
-      safeDecrypt(
-        payout?.wallet ||
-        legacy.walletAddress
-      );
+      readSensitivePreviewValue(payout?.wallet ||
+        legacy.walletAddress);
 
     if (wallet) {
       preview.walletMasked =
@@ -1313,10 +1315,8 @@ function buildPaymentPreview(
     method === "paypal"
   ) {
     const email =
-      safeDecrypt(
-        payout?.email ||
-        legacy.paypalEmail
-      );
+      readSensitivePreviewValue(payout?.email ||
+        legacy.paypalEmail);
 
     if (email) {
       preview.paypalEmailMasked =
@@ -1328,10 +1328,8 @@ function buildPaymentPreview(
     method === "western"
   ) {
     preview.westernCountry =
-      safeDecrypt(
-        payout?.country ||
-        legacy.country
-      );
+      readSensitivePreviewValue(payout?.country ||
+        legacy.country);
   }
 
   return preview;
