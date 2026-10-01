@@ -2692,7 +2692,7 @@ async function submitOrderFinal() {
 
         setText(
             "successSafeMethodText",
-            storeSettings.safeMethod || "--"
+            "آمنة 90%"
         );
 
         const paymentCard =
