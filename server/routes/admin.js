@@ -1509,6 +1509,288 @@ router.post(
 
 /**
  * ============================================================================
+ * POST /api/admin/settings
+ * ============================================================================
+ *
+ * جميع كتابات إعدادات النظام تمر من هنا.
+ * لا يسمح للمتصفح بالكتابة المباشرة إلى system/settings.
+ */
+
+const SETTINGS_ACTIONS = new Set([
+  "update_pricing",
+  "add_bank",
+  "delete_bank",
+  "add_wallet",
+  "delete_wallet",
+  "add_payment_method",
+  "delete_payment_method",
+  "add_term",
+  "delete_term",
+  "toggle_terms_enabled",
+  "update_issue_messages",
+  "toggle_store"
+]);
+
+const SETTINGS_STRING_FIELDS = new Set([
+  "storeName","arabicStoreName","gameName","storeLogo","supportWhatsapp",
+  "supportEmail","siteUrl","announcementText","announcementBgColor",
+  "announcementTextColor","psWithdrawDuration","psTransferDuration",
+  "pcWithdrawDuration","pcTransferDuration","offerText","promoExpiry"
+]);
+
+const SETTINGS_NUMBER_FIELDS = new Set([
+  "gameVersion","usdSarRate","psRate","psMin","psMax",
+  "pcRate","pcMin","pcMax","promoRate"
+]);
+
+function cleanSettingString(value, fallback = "") {
+  const valueText = String(value ?? "").trim();
+  return valueText || fallback;
+}
+
+function cleanSettingNumber(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function normalizeSettingArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item ?? "").trim()).filter(Boolean);
+}
+
+function normalizeSettingIndex(value, length) {
+  const index = Number(value);
+  if (!Number.isInteger(index) || index < 0 || index >= length) return -1;
+  return index;
+}
+
+function normalizeIssueMessageMap(value, current = {}) {
+  const allowed = [
+    "wrong_credentials",
+    "wrong_backup_codes",
+    "logged_in_platform",
+    "market_closed",
+    "wrong_platform",
+    "other_issue"
+  ];
+  const result = { ...current };
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return result;
+  }
+
+  for (const key of allowed) {
+    if (typeof value[key] === "string" && value[key].trim()) {
+      result[key] = value[key].trim();
+    }
+  }
+
+  return result;
+}
+
+router.post(
+  "/settings",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const action = String(req.body?.action || "").trim();
+
+      if (!SETTINGS_ACTIONS.has(action)) {
+        return res.status(400).json({
+          success: false,
+          message: "عملية إعدادات غير صالحة."
+        });
+      }
+
+      const settingsRef = db.collection("system").doc("settings");
+      const snapshot = await settingsRef.get();
+      const current = snapshot.exists ? snapshot.data() || {} : {};
+      let patch = {};
+      let result = null;
+
+      switch (action) {
+        case "update_pricing": {
+          const input =
+            req.body?.data &&
+            typeof req.body.data === "object" &&
+            !Array.isArray(req.body.data)
+              ? req.body.data
+              : {};
+
+          for (const field of SETTINGS_STRING_FIELDS) {
+            if (Object.prototype.hasOwnProperty.call(input, field)) {
+              patch[field] = cleanSettingString(input[field], String(current[field] ?? ""));
+            }
+          }
+
+          for (const field of SETTINGS_NUMBER_FIELDS) {
+            if (Object.prototype.hasOwnProperty.call(input, field)) {
+              const currentValue = Number(current[field]);
+              patch[field] = cleanSettingNumber(
+                input[field],
+                Number.isFinite(currentValue) ? currentValue : 0
+              );
+            }
+          }
+
+          if (Object.prototype.hasOwnProperty.call(input, "offers")) {
+            patch.offers = Boolean(input.offers);
+          }
+          if (Object.prototype.hasOwnProperty.call(input, "announcementActive")) {
+            patch.announcementActive = Boolean(input.announcementActive);
+          }
+          if (Object.prototype.hasOwnProperty.call(input, "storeOpen")) {
+            patch.storeOpen = Boolean(input.storeOpen);
+          }
+          if (
+            input.paymentCategories &&
+            typeof input.paymentCategories === "object" &&
+            !Array.isArray(input.paymentCategories)
+          ) {
+            patch.paymentCategories = input.paymentCategories;
+          }
+          if (input.issueMessages) {
+            patch.issueMessages = normalizeIssueMessageMap(
+              input.issueMessages,
+              current.issueMessages || {}
+            );
+          }
+          break;
+        }
+
+        case "add_bank": {
+          const value = cleanSettingString(req.body?.value);
+          const banks = normalizeSettingArray(current.banks);
+          if (!value) return res.status(400).json({success:false,message:"اسم البنك مطلوب."});
+          if (!banks.some((item) => item.toLowerCase() === value.toLowerCase())) banks.push(value);
+          patch.banks = banks;
+          result = banks;
+          break;
+        }
+
+        case "delete_bank": {
+          const banks = normalizeSettingArray(current.banks);
+          const index = normalizeSettingIndex(req.body?.index, banks.length);
+          if (index < 0) return res.status(400).json({success:false,message:"رقم البنك غير صالح."});
+          banks.splice(index, 1);
+          patch.banks = banks;
+          result = banks;
+          break;
+        }
+
+        case "add_wallet": {
+          const value = cleanSettingString(req.body?.value);
+          const wallets = normalizeSettingArray(current.wallets);
+          if (!value) return res.status(400).json({success:false,message:"اسم المحفظة مطلوب."});
+          if (!wallets.some((item) => item.toLowerCase() === value.toLowerCase())) wallets.push(value);
+          patch.wallets = wallets;
+          result = wallets;
+          break;
+        }
+
+        case "delete_wallet": {
+          const wallets = normalizeSettingArray(current.wallets);
+          const index = normalizeSettingIndex(req.body?.index, wallets.length);
+          if (index < 0) return res.status(400).json({success:false,message:"رقم المحفظة غير صالح."});
+          wallets.splice(index, 1);
+          patch.wallets = wallets;
+          result = wallets;
+          break;
+        }
+
+        case "add_payment_method": {
+          const value = cleanSettingString(req.body?.value);
+          const methods = normalizeSettingArray(current.paymentMethods);
+          if (!value) return res.status(400).json({success:false,message:"طريقة الدفع مطلوبة."});
+          if (!methods.some((item) => item.toLowerCase() === value.toLowerCase())) methods.push(value);
+          patch.paymentMethods = methods;
+          result = methods;
+          break;
+        }
+
+        case "delete_payment_method": {
+          const methods = normalizeSettingArray(current.paymentMethods);
+          const index = normalizeSettingIndex(req.body?.index, methods.length);
+          if (index < 0) return res.status(400).json({success:false,message:"رقم طريقة الدفع غير صالح."});
+          methods.splice(index, 1);
+          patch.paymentMethods = methods;
+          result = methods;
+          break;
+        }
+
+        case "add_term": {
+          const value = cleanSettingString(req.body?.value);
+          const terms = normalizeSettingArray(current.terms);
+          if (!value) return res.status(400).json({success:false,message:"نص الشرط مطلوب."});
+          if (!terms.some((item) => item.toLowerCase() === value.toLowerCase())) terms.push(value);
+          patch.terms = terms;
+          result = terms;
+          break;
+        }
+
+        case "delete_term": {
+          const terms = normalizeSettingArray(current.terms);
+          const index = normalizeSettingIndex(req.body?.index, terms.length);
+          if (index < 0) return res.status(400).json({success:false,message:"رقم الشرط غير صالح."});
+          terms.splice(index, 1);
+          patch.terms = terms;
+          result = terms;
+          break;
+        }
+
+        case "toggle_terms_enabled":
+          patch.termsEnabled = Boolean(req.body?.enabled);
+          result = patch.termsEnabled;
+          break;
+
+        case "update_issue_messages":
+          patch.issueMessages = normalizeIssueMessageMap(
+            req.body?.messages,
+            current.issueMessages || {}
+          );
+          result = patch.issueMessages;
+          break;
+
+        case "toggle_store":
+          result =
+            typeof req.body?.enabled === "boolean"
+              ? req.body.enabled
+              : !Boolean(current.storeOpen);
+          patch.storeOpen = result;
+          break;
+
+        default:
+          break;
+      }
+
+      if (!Object.keys(patch).length) {
+        return res.status(400).json({
+          success: false,
+          message: "لا توجد تغييرات صالحة للحفظ."
+        });
+      }
+
+      patch.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+      await settingsRef.set(patch, { merge: true });
+
+      return res.json({
+        success: true,
+        action,
+        result,
+        updatedFields: Object.keys(patch).filter((field) => field !== "updatedAt")
+      });
+    } catch (error) {
+      console.error("Admin settings error:", error?.message || error);
+      return res.status(500).json({
+        success: false,
+        message: "تعذر تحديث إعدادات النظام."
+      });
+    }
+  }
+);
+
+/**
+ * ============================================================================
  * Review management
  * ============================================================================
  *

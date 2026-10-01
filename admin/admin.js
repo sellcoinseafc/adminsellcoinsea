@@ -6,8 +6,6 @@ import {
   collection,
   doc,
   getDoc,
-  updateDoc,
-  deleteDoc,
   onSnapshot,
   query,
   orderBy,
@@ -25,17 +23,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
 import {
-  subscribeToSettings,
-  savePricing,
-  addBank as systemAddBank,
-  deleteBank as systemDeleteBank,
-  addWallet as systemAddWallet,
-  deleteWallet as systemDeleteWallet,
-  addPaymentMethod as systemAddPaymentMethod,
-  deletePaymentMethod as systemDeletePaymentMethod,
-  addTerm as systemAddTerm,
-  deleteTerm as systemDeleteTerm,
-  toggleStore
+  subscribeToSettings
 } from "../shared/system.js";
 
 // ==========================================================================
@@ -266,6 +254,25 @@ async function handleAdminAuthFailure(
 }
 
 // ==========================================================================
+async function adminSettingsAction(action, payload = {}) {
+  const response = await adminFetch("/api/admin/settings", {
+    method: "POST",
+    body: JSON.stringify({ action, ...payload })
+  });
+
+  const data = await readJsonResponse(response);
+
+  if (await handleAdminAuthFailure(response, data)) {
+    throw new Error(data?.message || "انتهت جلسة الإدارة.");
+  }
+
+  if (!data?.success) {
+    throw new Error(data?.message || "تعذر تنفيذ العملية.");
+  }
+
+  return data;
+}
+
 // 2) حارس الأمان وتسجيل الدخول
 // ==========================================================================
 
@@ -6621,7 +6628,7 @@ function initSystemSettingsListener() {
       const configuredBanks = Array.isArray(settings?.banks) ? settings.banks : [];
       requiredBanks.forEach((bank) => {
         if (!configuredBanks.includes(bank)) {
-          systemAddBank(bank).catch((error) => {
+          adminSettingsAction("add_bank", { value: bank }).catch((error) => {
             console.error("Bank catalog migration error:", error?.message || error);
           });
         }
@@ -6638,7 +6645,7 @@ function initSystemSettingsListener() {
       const configuredWallets = Array.isArray(settings?.wallets) ? settings.wallets : [];
       requiredWallets.forEach((wallet) => {
         if (!configuredWallets.includes(wallet)) {
-          systemAddWallet(wallet).catch((error) => {
+          adminSettingsAction("add_wallet", { value: wallet }).catch((error) => {
             console.error("Wallet catalog migration error:", error?.message || error);
           });
         }
@@ -6732,7 +6739,7 @@ window.toggleStoreStatus =
   async function () {
     try {
       const newStatus =
-        await toggleStore();
+        (await adminSettingsAction("toggle_store")).result;
 
       await logAuditEvent(
         "تغيير حالة المتجر",
@@ -7013,9 +7020,7 @@ window.saveProductsConfig =
     };
 
     try {
-      await savePricing(
-        pricingData
-      );
+      await adminSettingsAction("update_pricing", { data: pricingData });
 
       await logAuditEvent(
         "حفظ إعدادات الأسعار",
@@ -7124,9 +7129,7 @@ window.addBank =
     }
 
     try {
-      await systemAddBank(
-        value
-      );
+      await adminSettingsAction("add_bank", { value });
 
       input.value =
         "";
@@ -7177,9 +7180,7 @@ window.deleteBank =
         return;
       }
 
-      await systemDeleteBank(
-        index
-      );
+      await adminSettingsAction("delete_bank", { index });
 
       await logAuditEvent(
         "حذف بنك",
@@ -7284,9 +7285,7 @@ window.addWallet =
     }
 
     try {
-      await systemAddWallet(
-        value
-      );
+      await adminSettingsAction("add_wallet", { value });
 
       input.value =
         "";
@@ -7337,9 +7336,7 @@ window.deleteWallet =
         return;
       }
 
-      await systemDeleteWallet(
-        index
-      );
+      await adminSettingsAction("delete_wallet", { index });
 
       await logAuditEvent(
         "حذف محفظة رقمية",
@@ -7467,9 +7464,7 @@ window.addCustomPaymentMethod =
         return;
       }
 
-      await systemAddPaymentMethod(
-        value
-      );
+      await adminSettingsAction("add_payment_method", { value });
 
       input.value =
         "";
@@ -7520,9 +7515,7 @@ window.deleteCustomPayment =
         return;
       }
 
-      await systemDeletePaymentMethod(
-        index
-      );
+      await adminSettingsAction("delete_payment_method", { index });
 
       await logAuditEvent(
         "حذف طريقة دفع",
@@ -7647,9 +7640,7 @@ window.addNewTerm =
         return;
       }
 
-      await systemAddTerm(
-        value
-      );
+      await adminSettingsAction("add_term", { value });
 
       input.value =
         "";
@@ -7700,9 +7691,7 @@ window.deleteTerm =
         return;
       }
 
-      await systemDeleteTerm(
-        index
-      );
+      await adminSettingsAction("delete_term", { index });
 
       await logAuditEvent(
         "حذف شرط وأحكام",
@@ -7730,225 +7719,55 @@ window.deleteTerm =
  * للواجهة استدعاؤها مباشرة.
  */
 window.toggleTermsEnabled =
-  async function (
-    enabled
-  ) {
-    const normalized =
-      Boolean(enabled);
-
+  async function (enabled) {
+    const normalized = Boolean(enabled);
     try {
-      await updateDoc(
-        doc(
-          db,
-          "system",
-          "settings"
-        ),
-        {
-          termsEnabled:
-            normalized,
-
-          updatedAt:
-            serverTimestamp()
-        }
-      );
-
-      currentSettingsData = {
-        ...currentSettingsData,
-        termsEnabled:
-          normalized
-      };
-
-      renderTermsEnabledUI(
-        currentSettingsData
-      );
-
+      await adminSettingsAction("toggle_terms_enabled", { enabled: normalized });
+      currentSettingsData = { ...currentSettingsData, termsEnabled: normalized };
+      renderTermsEnabledUI(currentSettingsData);
       await logAuditEvent(
-        normalized
-          ? "تفعيل الشروط والأحكام"
-          : "تعطيل الشروط والأحكام",
+        normalized ? "تفعيل الشروط والأحكام" : "تعطيل الشروط والأحكام",
         "الإعدادات",
         normalized
           ? "تم تفعيل ظهور الشروط والأحكام للعملاء"
           : "تم تعطيل ظهور الشروط والأحكام للعملاء"
       );
     } catch (error) {
-      console.error(
-        "Toggle terms enabled error:",
-        error?.message ||
-          error
-      );
-
-      showToast(
-        "❌ تعذر تحديث حالة الشروط والأحكام."
-      );
-
-      renderTermsEnabledUI(
-        currentSettingsData
-      );
+      console.error("Toggle terms enabled error:", error?.message || error);
+      showToast("❌ تعذر تحديث حالة الشروط والأحكام.");
+      renderTermsEnabledUI(currentSettingsData);
     }
   };
 
-// ==========================================================================
-// 17) رسائل المشاكل — قابلة للتعديل من الإعدادات
-// ==========================================================================
-
-function renderIssueMessages(
-  issueMessages = {}
-) {
-  const merged = {
-    ...DEFAULT_ISSUE_MESSAGES,
-    ...issueMessages
-  };
-
-  ISSUE_VALUES.forEach(
-    (issue) => {
-      const element =
-        document.getElementById(
-          `issueMessage_${issue}`
-        );
-
-      if (element) {
-        element.value =
-          merged[issue] ||
-          "";
-      }
-    }
-  );
-
-  const container =
-    document.getElementById(
-      "issueMessagesContainer"
-    );
-
-  if (!container) {
-    return;
-  }
-
-  container.innerHTML =
-    ISSUE_VALUES
-      .map(
-        (issue) => `
-          <div
-            style="
-              background:var(--input-bg);
-              border:1px solid var(--card-border);
-              border-radius:12px;
-              padding:12px;
-              margin-bottom:10px;
-            ">
-
-            <label
-              style="
-                display:block;
-                font-weight:800;
-                margin-bottom:7px;
-              ">
-              ${escapeHtml(
-                ISSUE_LABELS[
-                  issue
-                ] ||
-                  issue
-              )}
-            </label>
-
-            <input
-              id="issueMessage_${escapeAttribute(
-                issue
-              )}"
-              type="text"
-              value="${escapeAttribute(
-                merged[issue] ||
-                  ""
-              )}"
-              style="
-                width:100%;
-                padding:10px;
-                border-radius:8px;
-                border:1px solid var(--card-border);
-                background:var(--card-bg);
-                color:var(--text-main);
-              "
-            />
-
-          </div>
-        `
-      )
-      .join("");
-}
 
 window.saveIssueMessages =
   async function () {
     const messages = {};
+    ISSUE_VALUES.forEach((issue) => {
+      const element = document.getElementById(`issueMessage_${issue}`);
+      if (element) messages[issue] = element.value.trim();
+    });
 
-    ISSUE_VALUES.forEach(
-      (issue) => {
-        const element =
-          document.getElementById(
-            `issueMessage_${issue}`
-          );
-
-        if (element) {
-          messages[issue] =
-            element.value.trim();
-        }
-      }
-    );
-
-    if (
-      Object.keys(
-        messages
-      ).length === 0
-    ) {
-      showToast(
-        "لم يتم العثور على حقول رسائل المشاكل في الصفحة."
-      );
-
+    if (Object.keys(messages).length === 0) {
+      showToast("لم يتم العثور على حقول رسائل المشاكل في الصفحة.");
       return;
     }
 
     try {
-      await updateDoc(
-        doc(
-          db,
-          "system",
-          "settings"
-        ),
-        {
-          issueMessages:
-            messages,
-
-          updatedAt:
-            serverTimestamp()
-        }
-      );
-
-      currentSettingsData = {
-        ...currentSettingsData,
-        issueMessages:
-          messages
-      };
-
+      await adminSettingsAction("update_issue_messages", { messages });
+      currentSettingsData = { ...currentSettingsData, issueMessages: messages };
       await logAuditEvent(
         "تحديث رسائل الحالات",
         "الإعدادات",
         "تم تحديث رسائل المشاكل الخاصة بالطلبات"
       );
-
-      showToast(
-        "✅ تم حفظ رسائل الحالات بنجاح."
-      );
+      showToast("✅ تم حفظ رسائل الحالات بنجاح.");
     } catch (error) {
-      console.error(
-        "Save issue messages error:",
-        error?.message ||
-          error
-      );
-
-      showToast(
-        "❌ تعذر حفظ رسائل الحالات."
-      );
+      console.error("Save issue messages error:", error?.message || error);
+      showToast("❌ تعذر حفظ رسائل الحالات.");
     }
   };
+
 
 // ==========================================================================
 // 18) التنقل
