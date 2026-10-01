@@ -10,7 +10,6 @@
  * - drawnCoins / withdrawnQuantity
  * - issue كمشكلة مستقلة عن حالة الطلب
  * - payoutDetails / paymentInfoData
- * - نظام التقييم لمرة واحدة
  * - Realtime Server-Sent Events (SSE)
  */
 
@@ -21,7 +20,6 @@ let cachedState = {
     status: null,
     issue: null,
     drawnCoins: null,
-    reviewSubmitted: null,
     sensitivePurged: null
 };
 
@@ -222,11 +220,6 @@ async function fetchAndRenderOrder(ref) {
 
         setupSecurityEvents();
 
-        setupReviewSystem(
-            data.order,
-            data.reviewSuggestions
-        );
-
         updateCachedState(data.order);
 
         startRealtimeTracking();
@@ -419,9 +412,6 @@ function handleRealtimeTrackingEvent(rawData) {
     const newDrawnCoins =
         getDrawnCoins(order);
 
-    const newReviewSubmitted =
-        Boolean(order.reviewSubmitted);
-
     const newSensitivePurged =
         Boolean(
             order.sensitivePurged ||
@@ -432,8 +422,6 @@ function handleRealtimeTrackingEvent(rawData) {
         newStatus !== cachedState.status ||
         newIssue !== cachedState.issue ||
         newDrawnCoins !== cachedState.drawnCoins ||
-        newReviewSubmitted !==
-            cachedState.reviewSubmitted ||
         newSensitivePurged !==
             cachedState.sensitivePurged;
 
@@ -453,11 +441,6 @@ function handleRealtimeTrackingEvent(rawData) {
         );
 
         setupSecurityEvents();
-
-        setupReviewSystem(
-            order,
-            data.reviewSuggestions
-        );
 
         updateCachedState(order);
     }
@@ -510,9 +493,6 @@ function updateCachedState(order) {
     cachedState.drawnCoins =
         getDrawnCoins(order);
 
-    cachedState.reviewSubmitted =
-        Boolean(order.reviewSubmitted);
-
     cachedState.sensitivePurged =
         Boolean(
             order.sensitivePurged ||
@@ -552,7 +532,6 @@ function resetToLookup() {
         status: null,
         issue: null,
         drawnCoins: null,
-        reviewSubmitted: null,
         sensitivePurged: null
     };
 
@@ -2001,293 +1980,6 @@ function setupSecurityEvents() {
             }
         };
     }
-}
-
-/* ==========================================
-   نظام التقييم
-   ========================================== */
-
-function setupReviewSystem(
-    order,
-    reviewSuggestions
-) {
-    const reviewSection =
-        document.getElementById(
-            "reviewSection"
-        );
-
-    if (!reviewSection || !order) {
-        return;
-    }
-
-    const status =
-        normalizeStatus(
-            order.status ||
-            order.orderStatus
-        );
-
-    /*
-     * التقييم لا يظهر إلا بعد التحويل أو الاكتمال.
-     */
-    const eligible =
-        status === "transferred" ||
-        status === "completed";
-
-    /*
-     * إذا تم التقييم سابقاً،
-     * يختفي نهائياً من واجهة العميل.
-     */
-    if (order.reviewSubmitted) {
-        reviewSection.remove();
-        return;
-    }
-
-    if (!eligible) {
-        reviewSection.style.display =
-            "none";
-
-        return;
-    }
-
-    reviewSection.style.display =
-        "block";
-
-    const reviewTextarea =
-        document.getElementById(
-            "reviewTextarea"
-        ) ||
-        document.getElementById(
-            "reviewText"
-        );
-
-    const counter =
-        document.getElementById(
-            "reviewCounter"
-        );
-
-    if (reviewTextarea && counter) {
-        counter.innerText =
-            `${reviewTextarea.value.length}/500`;
-
-        /*
-         * نمنع إضافة listener متكرر أثناء polling.
-         */
-        if (
-            !reviewTextarea.dataset
-                .trackingReviewBound
-        ) {
-            reviewTextarea.dataset
-                .trackingReviewBound = "1";
-
-            reviewTextarea.addEventListener(
-                "input",
-                () => {
-                    counter.innerText =
-                        `${reviewTextarea.value.length}/500`;
-                }
-            );
-        }
-    }
-
-    /*
-     * الاقتراحات
-     */
-    const suggestionsContainer =
-        document.getElementById(
-            "reviewSuggestions"
-        );
-
-    if (
-        suggestionsContainer &&
-        Array.isArray(reviewSuggestions)
-    ) {
-        suggestionsContainer.innerHTML =
-            "";
-
-        reviewSuggestions.forEach(
-            (text) => {
-                const button =
-                    document.createElement(
-                        "button"
-                    );
-
-                button.type = "button";
-
-                button.className =
-                    "suggestion-btn";
-
-                button.innerText =
-                    text;
-
-                button.onclick = () => {
-                    if (!reviewTextarea) {
-                        return;
-                    }
-
-                    reviewTextarea.value =
-                        text;
-
-                    if (counter) {
-                        counter.innerText =
-                            `${reviewTextarea.value.length}/500`;
-                    }
-                };
-
-                suggestionsContainer.appendChild(
-                    button
-                );
-            }
-        );
-    }
-
-    const submitButton =
-        document.getElementById(
-            "submitReviewBtn"
-        );
-
-    if (!submitButton) {
-        return;
-    }
-
-    /*
-     * منع تكرار listener.
-     */
-    if (
-        submitButton.dataset
-            .trackingReviewBound
-    ) {
-        return;
-    }
-
-    submitButton.dataset
-        .trackingReviewBound = "1";
-
-    submitButton.onclick =
-        async () => {
-            if (!reviewTextarea) {
-                return;
-            }
-
-            const text =
-                reviewTextarea.value.trim();
-
-            if (text.length < 150) {
-                showToast(
-                    "الحد الأدنى للتقييم 150 حرف."
-                );
-
-                return;
-            }
-
-            if (text.length > 500) {
-                showToast(
-                    "الحد الأقصى للتقييم 500 حرف."
-                );
-
-                return;
-            }
-
-            /*
-             * منع الضغط المتكرر.
-             */
-            submitButton.disabled =
-                true;
-
-            try {
-                const response =
-                    await fetch(
-                        "/api/review/submit",
-                        {
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type":
-                                    "application/json"
-                            },
-
-                            body: JSON.stringify({
-                                referenceNumber:
-                                    order.referenceNumber,
-
-                                reviewText:
-                                    text
-                            })
-                        }
-                    );
-
-                const result =
-                    await response
-                        .json()
-                        .catch(() => ({}));
-
-                if (response.ok && result.success !== false) {
-                    /*
-                     * التقييم أصبح نهائياً.
-                     */
-                    order.reviewSubmitted =
-                        true;
-
-                    cachedState.reviewSubmitted =
-                        true;
-
-                    reviewSection.remove();
-
-                    const successElement =
-                        document.getElementById(
-                            "reviewSuccess"
-                        );
-
-                    if (successElement) {
-                        successElement.style.display =
-                            "block";
-                    }
-
-                    return;
-                }
-
-                /*
-                 * في حالة أن السيرفر رفض بسبب
-                 * وجود تقييم سابق مثلاً.
-                 */
-                if (
-                    response.status === 409 ||
-                    result.code ===
-                        "REVIEW_ALREADY_SUBMITTED"
-                ) {
-                    reviewSection.remove();
-
-                    const successElement =
-                        document.getElementById(
-                            "reviewSuccess"
-                        );
-
-                    if (successElement) {
-                        successElement.style.display =
-                            "block";
-                    }
-
-                    return;
-                }
-
-                showToast(
-                    result.message ||
-                    "حدث خطأ أثناء إرسال التقييم، يرجى المحاولة لاحقاً."
-                );
-
-            } catch (error) {
-                console.error(
-                    "Review submit error:",
-                    error
-                );
-
-                showToast(
-                    "حدث خطأ في الاتصال بالشبكة."
-                );
-            } finally {
-                submitButton.disabled =
-                    false;
-            }
-        };
 }
 
 /* ==========================================
