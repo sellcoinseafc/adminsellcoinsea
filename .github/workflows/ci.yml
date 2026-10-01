@@ -1,0 +1,35 @@
+name: SAMI COINS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project tests
+        run: npm test
+
+      - name: Check admin assets
+        run: |
+          test -s admin/index.html
+          test -s admin/style.css
+          test -s admin/admin.js
+          test -s shared/system.js
+          node --check admin/admin.js
+          node --check shared/system.js
