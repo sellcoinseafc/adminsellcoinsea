@@ -2988,7 +2988,61 @@ function formatAndCalculateInline(input) {
 }
 
 
-// ==========================================================================\n// 28.1 حماية البيانات الحساسة في المتصفح\n// ==========================================================================\n\n/**\n * يمسح البيانات الحساسة من حقول الصفحة بعد اكتمال إرسال الطلب.\n *\n * البيانات الحساسة لا نحتاج أن تبقى في DOM بعد إنشاء الطلب؛\n * السيرفر يكون قد استلمها وشفرها قبل حفظها في Firestore.\n */\nfunction clearSensitiveOrderFields() {\n\n    const sensitiveFieldIds = [\n        "eaEmail",\n        "eaPass",\n        "code1",\n        "code2",\n        "code3",\n        "accountName",\n        "iban",\n        "walletNumber",\n        "usdtWalletType",\n        "paypalEmail",\n        "wuName",\n        "wuCountry"\n    ];\n\n    sensitiveFieldIds.forEach((id) => {\n        const field = $(id);\n\n        if (field) {\n            field.value = "";\n        }\n    });\n}\n\n/**\n * يمسح البيانات الحساسة بعد فترة قصيرة من نجاح الطلب.\n *\n * لا يؤثر ذلك على البيانات التي تم إرسالها؛ الهدف فقط تقليل مدة بقاء\n * البيانات الحساسة داخل ذاكرة/DOM المتصفح.\n */\nfunction scheduleSensitiveFieldCleanup() {\n\n    window.setTimeout(\n        () => {\n            clearSensitiveOrderFields();\n        },\n        90 * 1000\n    );\n}\n\n// ==========================================================================
+// ==========================================================================
+// 28.1 حماية البيانات الحساسة في المتصفح
+// ==========================================================================
+
+/**
+ * يمسح البيانات الحساسة من حقول الصفحة بعد اكتمال إرسال الطلب.
+ *
+ * البيانات الحساسة لا نحتاج أن تبقى في DOM بعد إنشاء الطلب؛
+ * السيرفر يكون قد استلمها وشفرها قبل حفظها في Firestore.
+ */
+function clearSensitiveOrderFields() {
+
+    const sensitiveFieldIds = [
+        "eaEmail",
+        "eaPass",
+        "code1",
+        "code2",
+        "code3",
+        "accountName",
+        "iban",
+        "recipientName",
+        "walletNumber",
+        "usdtWalletType",
+        "usdDetails",
+        "paypalEmail",
+        "wuName",
+        "wuCountry"
+    ];
+
+    sensitiveFieldIds.forEach((id) => {
+        const field = $(id);
+
+        if (field) {
+            field.value = "";
+        }
+    });
+}
+
+/**
+ * يمسح البيانات الحساسة بعد فترة قصيرة من نجاح الطلب.
+ *
+ * لا يؤثر ذلك على البيانات التي تم إرسالها؛ الهدف فقط تقليل مدة بقاء
+ * البيانات الحساسة داخل ذاكرة/DOM المتصفح.
+ */
+function scheduleSensitiveFieldCleanup() {
+
+    window.setTimeout(
+        () => {
+            clearSensitiveOrderFields();
+        },
+        90 * 1000
+    );
+}
+
+// ==========================================================================
 // 28. إنشاء الطلب
 // ==========================================================================
 
