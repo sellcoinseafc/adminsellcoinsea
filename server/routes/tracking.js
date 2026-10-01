@@ -102,6 +102,10 @@ const SYSTEM_SETTINGS_DOC = db
  * The map only stores active HTTP response streams.
  */
 const trackingConnections = new Map();
+const trackingConnectionsByIp = new Map();
+const MAX_TRACKING_CONNECTIONS_PER_IP = 20;
+const MAX_TRACKING_CONNECTIONS_TOTAL = 200;
+const TRACKING_CONNECTION_TIMEOUT_MS = 30 * 60 * 1000;
 
 /**
  * ============================================================================
@@ -1251,23 +1255,46 @@ async function getTrackingSnapshot(
  * ============================================================================
  */
 
+function getTrackingConnectionCount() {
+  let total = 0;
+
+  for (const connections of trackingConnections.values()) {
+    total += connections.size;
+  }
+
+  return total;
+}
+
+function getTrackingIpCount(ip) {
+  return trackingConnectionsByIp.get(ip)?.size || 0;
+}
+
 function addTrackingConnection(
   ref,
-  response
+  response,
+  ip
 ) {
   let connections =
     trackingConnections.get(ref);
 
   if (!connections) {
     connections = new Set();
-
-    trackingConnections.set(
-      ref,
-      connections
-    );
+    trackingConnections.set(ref, connections);
   }
 
   connections.add(response);
+
+  let ipConnections =
+    trackingConnectionsByIp.get(ip);
+
+  if (!ipConnections) {
+    ipConnections = new Set();
+    trackingConnectionsByIp.set(ip, ipConnections);
+  }
+
+  ipConnections.add(response);
+
+  response.__trackingIp = ip;
 }
 
 function removeTrackingConnection(
@@ -1277,14 +1304,28 @@ function removeTrackingConnection(
   const connections =
     trackingConnections.get(ref);
 
-  if (!connections) {
-    return;
+  if (connections) {
+    connections.delete(response);
+
+    if (connections.size === 0) {
+      trackingConnections.delete(ref);
+    }
   }
 
-  connections.delete(response);
+  const ip = response.__trackingIp;
+  if (ip) {
+    const ipConnections =
+      trackingConnectionsByIp.get(ip);
 
-  if (connections.size === 0) {
-    trackingConnections.delete(ref);
+    if (ipConnections) {
+      ipConnections.delete(response);
+
+      if (ipConnections.size === 0) {
+        trackingConnectionsByIp.delete(ip);
+      }
+    }
+
+    delete response.__trackingIp;
   }
 }
 
@@ -1488,6 +1529,29 @@ router.get(
       });
     }
 
+    const connectionIp =
+      String(req.ip || "unknown");
+
+    if (
+      getTrackingConnectionCount() >=
+      MAX_TRACKING_CONNECTIONS_TOTAL
+    ) {
+      return res.status(503).json({
+        success: false,
+        message: "خدمة التتبع مشغولة حاليًا. حاول مرة أخرى لاحقًا."
+      });
+    }
+
+    if (
+      getTrackingIpCount(connectionIp) >=
+      MAX_TRACKING_CONNECTIONS_PER_IP
+    ) {
+      return res.status(429).json({
+        success: false,
+        message: "تم الوصول إلى الحد الأقصى لاتصالات التتبع من هذا الاتصال."
+      });
+    }
+
     res.status(200);
 
     res.set(
@@ -1524,6 +1588,12 @@ router.get(
      * Heartbeat transport فقط.
      * لا يوجد استعلام Firestore هنا.
      */
+    const connectionTimeout =
+      setTimeout(
+        cleanup,
+        TRACKING_CONNECTION_TIMEOUT_MS
+      );
+
     const heartbeat =
       setInterval(
         () => {
@@ -1557,6 +1627,10 @@ router.get(
         heartbeat
       );
 
+      clearTimeout(
+        connectionTimeout
+      );
+
       if (
         typeof unsubscribe ===
         "function"
@@ -1588,7 +1662,8 @@ router.get(
 
     addTrackingConnection(
       ref,
-      res
+      res,
+      connectionIp
     );
 
     try {
