@@ -956,8 +956,6 @@ function selectPlatform(
     showElement("durationInfoCardsStep1");
     showElement("qtyCardContainer");
     showElement("totalAmountBoxCard");
-    showElement("paymentCategoryCard");
-    showElement("payoutCardContainer");
 
     setText(
         "minLimitText",
