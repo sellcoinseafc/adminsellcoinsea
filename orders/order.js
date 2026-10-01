@@ -46,6 +46,7 @@ let unsubscribeSettingsRealtime = null;
 let settingsLoaded = false;
 
 let isEditingAll = false;
+let activeEditSection = "";
 let currentLanguage = "ar";
 
 
@@ -783,7 +784,7 @@ function applySettingsToUI() {
     const arabicName = $("storeArabicName");
     const englishName = $("storeEnglishName");
     if (arabicName) arabicName.textContent = storeSettings.arabicStoreName || "سامي كوينز";
-    if (englishName) englishName.textContent = storeSettings.storeName || "SAMI COINS";
+    if (englishName) englishName.textContent = "samicoins";
 
     const gameName =
         storeSettings.gameName || "FC";
@@ -1528,7 +1529,7 @@ function renderStep2PaymentFields() {
             </label>
 
             <div class="input-box-wrap">
-                <select id="walletTypeSelect" required>
+                <select id="walletTypeSelect" required autocomplete="off">
                     ${options}
                 </select>
             </div>
@@ -1546,6 +1547,7 @@ function renderStep2PaymentFields() {
                 <input
                     type="tel"
                     id="walletNumber"
+                    autocomplete="off"
                     placeholder="9665xxxxxxxx"
                     inputmode="numeric"
                     oninput="convertArabicNumbersToEnglish(this)"
@@ -2306,14 +2308,36 @@ function goToReview() {
 // ==========================================================================
 
 function openReviewEditSection(section) {
+    activeEditSection = section || "";
+    if (section === "platform") {
+        ["eaEditMode","clientEditMode","payoutEditMode"].forEach((id) => hideElement($(id)));
+        showElement($("editPlatformQtyPanel"));
+        showElement($("saveEditsButtonWrap"));
+        document.getElementById("editPlatformQtyPanel")?.scrollIntoView({behavior:"smooth", block:"center"});
+        return;
+    }
     const targetMap = { client: "clientEditMode", ea: "eaEditMode", payout: "payoutEditMode" };
     const target = targetMap[section];
     if (!target) return;
+    hideElement($("editPlatformQtyPanel"));
     ["clientEditMode","eaEditMode","payoutEditMode"].forEach((id) => {
         if (id === target) showElement($(id)); else hideElement($(id));
     });
     showElement($("saveEditsButtonWrap"));
     document.getElementById(target)?.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+function saveCurrentEditSection() {
+    if (activeEditSection === "platform") {
+        updateReviewPlatformUI();
+        setText("revQty", currentQty.toLocaleString("en-US"));
+        setText("revTotal", $("totalAmountText")?.textContent || "0.00 ر.س");
+        hideElement($("editPlatformQtyPanel"));
+        hideElement($("saveEditsButtonWrap"));
+        activeEditSection = "";
+        return;
+    }
+    toggleEditMode();
 }
 
 function resetEditButton() {
@@ -2499,6 +2523,7 @@ function renderInlinePayoutEdit() {
 
 function toggleEditMode() {
 
+    activeEditSection = "";
     isEditingAll =
         !isEditingAll;
 
@@ -2705,6 +2730,7 @@ function saveAllEdits() {
         }
     }
 
+    activeEditSection = "";
     updateReviewAfterEdit();
 }
 
@@ -3732,32 +3758,27 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(savedTheme === "light" ? "light" : "dark");
     applyLanguage();
     setupModalEvents();
-    const passwordInput = $("eaPass");
-    if (passwordInput) {
-        passwordInput.setAttribute("autocomplete","off");
-        passwordInput.setAttribute("data-lpignore","true");
-        passwordInput.setAttribute("data-1p-ignore","true");
-    }
-    const passwordEye = passwordInput?.parentElement?.querySelector("i");
-    if (passwordEye) {
-        passwordEye.addEventListener("click", () => {
-            const isPassword = passwordInput.type === "password";
-            passwordInput.type = isPassword ? "text" : "password";
-            passwordEye.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
-        });
-    }
-    const editPasswordInput = $("editEaPass");
-    const editPasswordWrap = editPasswordInput?.parentElement;
-    if (editPasswordWrap && !editPasswordWrap.querySelector("i")) {
-        const eye = document.createElement("i");
-        eye.className = "fa-solid fa-eye";
-        eye.addEventListener("click", () => {
-            const isPassword = editPasswordInput.type === "password";
-            editPasswordInput.type = isPassword ? "text" : "password";
-            eye.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
-        });
-        editPasswordWrap.appendChild(eye);
-    }
+    const setupSecretInput = (input) => {
+        if (!input) return;
+        input.type = "text";
+        input.autocomplete = "off";
+        input.name = input.id === "eaPass" ? "eaAccountSecret" : "eaAccountSecretEdit";
+        input.setAttribute("data-lpignore","true");
+        input.setAttribute("data-1p-ignore","true");
+        input.setAttribute("spellcheck","false");
+        input.setAttribute("autocapitalize","off");
+        input.classList.add("masked-secret");
+        const eye = input.parentElement?.querySelector("i");
+        if (eye && !eye.dataset.bound) {
+            eye.dataset.bound = "1";
+            eye.addEventListener("click", () => {
+                const unmasked = input.classList.toggle("secret-unmasked");
+                eye.className = unmasked ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+            });
+        }
+    };
+    setupSecretInput($("eaPass"));
+    setupSecretInput($("editEaPass"));
     loadSettings();
     updateAppBackButton("step1Screen");
 });
