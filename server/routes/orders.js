@@ -7,6 +7,7 @@ import {
   isEncryptedValue
 } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { createRateLimiter } from "../middleware/rateLimit.js";
 import {
   generateOrderNumbers,
   isValidReferenceNumber
@@ -16,6 +17,22 @@ const router = express.Router();
 
 const TS =
   admin.firestore.FieldValue.serverTimestamp;
+
+const adminMutationRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 60,
+  keyGenerator: (req) =>
+    `admin:${String(req.admin?.uid || req.ip || "unknown")}`,
+  message: "عدد عمليات الإدارة مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
+const publicOrderRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 20,
+  message: "عدد محاولات إنشاء الطلبات مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
+
 
 const STATUS_VALUES = new Set([
   "new",
@@ -1609,6 +1626,7 @@ router.get(
 
 router.post(
   "/create",
+  publicOrderRateLimit,
   async (req, res) => {
     try {
       const body =
@@ -2382,6 +2400,7 @@ switch (
 router.post(
   "/update",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const orderIdentifier = cleanString(req.body?.orderId);
@@ -2788,6 +2807,7 @@ router.post(
 router.post(
   "/update-status",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const {
@@ -3004,6 +3024,7 @@ router.post(
 router.post(
   "/update-drawn",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const {
@@ -3120,6 +3141,7 @@ router.post(
 router.post(
   "/delete",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const {
@@ -3189,6 +3211,7 @@ router.post(
 router.post(
   "/purge-sensitive",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const {
