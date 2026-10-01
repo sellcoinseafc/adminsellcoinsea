@@ -4130,7 +4130,7 @@ window.openClientModal =
 
     if (modalTitle) {
       modalTitle.innerText =
-        `سجل طلبات العميل: ${phone}`;
+        `سجل طلبات العميل: ${String(phone || "")}`;
     }
 
     modalBody.innerHTML = `
