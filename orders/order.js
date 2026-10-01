@@ -21,7 +21,7 @@ let storeSettings = {
     transferHours: "",
     pcWithdrawDays: "",
     pcTransferHours: "",
-    safeMethod: "آمنة 90%",
+    safeMethod: "آمنة 100%",
     paymentCategories: {},
     termsEn: [],
     termsEnabled: true,
