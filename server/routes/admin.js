@@ -7,6 +7,7 @@ import {
   isEncryptedValue
 } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
+import { createRateLimiter } from "../middleware/rateLimit.js";
 import {
   requireDecryptPermission
 } from "../middleware/decrypt.js";
@@ -43,6 +44,14 @@ const router = express.Router();
  */
 
 const DECRYPT_WINDOW_MS = 90_000;
+
+const decryptRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 5,
+  keyGenerator: (req) =>
+    `decrypt:${String(req.admin?.uid || req.ip || "unknown")}`,
+  message: "محاولات فك التشفير كثيرة جدًا. حاول مرة أخرى بعد قليل."
+});
 
 const MAX_IDENTIFIER_LENGTH = 200;
 
@@ -810,6 +819,7 @@ router.post(
   "/decrypt-order",
   requireAdmin,
   requireDecryptPermission,
+  decryptRateLimit,
   async (req, res) => {
     try {
       const orderIdentifier =
