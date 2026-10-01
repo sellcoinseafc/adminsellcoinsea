@@ -5223,7 +5223,7 @@ window.openOrderModal =
         <button
           class="btn-custom"
           style="background:var(--primary);color:#000;"
-          onclick="editOrderData(''+escapeAttribute(order.id)+'')">
+          onclick="editOrderData('${escapeAttribute(order.id)}')">
           <i class="fa-solid fa-pen-to-square"></i>
           تعديل بيانات الطلب
         </button>
