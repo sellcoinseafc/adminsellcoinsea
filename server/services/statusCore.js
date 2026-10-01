@@ -8,6 +8,16 @@ const STATUS_VALUES = new Set([
   "archived"
 ]);
 
+export const ALLOWED_STATUS_TRANSITIONS = {
+  new: new Set(["new", "review", "progress"]),
+  review: new Set(["review", "progress"]),
+  progress: new Set(["progress", "finished"]),
+  finished: new Set(["finished", "transferred"]),
+  transferred: new Set(["transferred", "completed"]),
+  completed: new Set(["completed"]),
+  archived: new Set(["archived"])
+};
+
 export function normalizeStatus(value) {
   const status = typeof value === "string"
     ? value.trim().toLowerCase()
