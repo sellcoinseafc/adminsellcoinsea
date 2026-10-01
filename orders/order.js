@@ -21,7 +21,7 @@ let storeSettings = {
     transferHours: "",
     pcWithdrawDays: "",
     pcTransferHours: "",
-    safeMethod: "آمنة 100%",
+    safeMethod: settings.safeMethod || storeSettings.safeMethod || "آمنة 99%",
     paymentCategories: {},
     termsEn: [],
     termsEnabled: true,
@@ -91,7 +91,7 @@ const translations = {
         brandSubtitle: "SAMI COINS",
         trackOrder: "استعلام عن الطلب",
         storeClosedBadge: "البيع مغلق حاليًا",
-        storeName: "متجر سامي كوينز",
+        storeName: "samicoins",
         storeClosedTitle: "نعتذر، لا نستقبل طلبات البيع حاليًا",
         storeClosedText:
             "المتجر مغلق في الوقت الحالي. يمكنك التواصل مع الدعم الفني للاستفسار عن موعد عودة استقبال طلبات البيع.",
@@ -174,8 +174,9 @@ const translations = {
         paymentDetails: "تفاصيل الدفع",
 
         termsTitle: "الشروط والأحكام",
+        declarationsTitle: "الإقرارات",
         termsSubtitle: "يرجى قراءة الشروط قبل اعتماد الطلب.",
-        termsAgreement: "أوافق على الشروط والأحكام",
+        termsAgreement: "لقد قرأت الشروط والأحكام وأوافق عليها",
         termsLink: "الشروط والأحكام",
         declarationsTitle: "الإقرارات وانسحاب الشروط والأحكام",
 
@@ -228,7 +229,7 @@ const translations = {
         brandSubtitle: "SAMI COINS",
         trackOrder: "Track Order",
         storeClosedBadge: "Selling is currently closed",
-        storeName: "SAMI COINS Store",
+        storeName: "samicoins",
         storeClosedTitle: "Sorry, we are not accepting selling orders now",
         storeClosedText:
             "The store is currently closed. Contact support to ask when selling orders will reopen.",
@@ -311,8 +312,9 @@ const translations = {
         paymentDetails: "Payment Information",
 
         termsTitle: "Terms & Conditions",
+        declarationsTitle: "Declarations & Terms & Conditions",
         termsSubtitle: "Please read the terms before submitting your order.",
-        termsAgreement: "I agree to the",
+        termsAgreement: "I have read and agree to the Terms & Conditions",
         termsLink: "Terms & Conditions",
 
         previous: "Previous",
@@ -649,8 +651,8 @@ function startSettingsRealtime() {
         unsubscribeSettingsRealtime = subscribeToPublicSettings((settings) => {
             storeSettings = {
                 ...storeSettings,
-                storeName: settings.storeName || storeSettings.storeName,
-                arabicStoreName: settings.arabicStoreName || "سامي كوينز",
+                storeName: "samicoins",
+                arabicStoreName: "samicoins",
                 gameName: settings.gameName || "FC",
                 gameVersion: Number(settings.gameVersion || 27),
                 rates: {
@@ -1965,11 +1967,10 @@ function buildPaymentDetailsHTML() {
         const bank =
             $("bankNameSelect")?.value || "";
 
-        const name =
+        const fullName =
             $("accountName")?.value?.trim() || "";
 
         const iban = $("iban")?.value?.trim() || "";
-        const recipientName = $("recipientName")?.value?.trim() || "";
 
         return `
             <div class="field-label">
@@ -1978,22 +1979,22 @@ function buildPaymentDetailsHTML() {
 
             <div class="review-value-box">
                 <span>
-                    تحويل بنكي (${escapeHtml(bank)})
+                    تحويل بنكي — ${escapeHtml(bank)}
                 </span>
             </div>
 
             <div class="field-label">
-                اسم الحساب:
+                الاسم الثلاثي:
             </div>
 
             <div class="review-value-box">
                 <span>
-                    ${escapeHtml(name)}
+                    ${escapeHtml(fullName)}
                 </span>
             </div>
 
             <div class="field-label">
-                الإيبان:
+                الآيبان:
             </div>
 
             <div class="review-value-box">
@@ -2002,16 +2003,7 @@ function buildPaymentDetailsHTML() {
                 </span>
             </div>
 
-            <div class="field-label">
-                اسم المستلم:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    ${escapeHtml(recipientName)}
-                </span>
-            </div>
-        `;
+                    `;
     }
 
     if (method === "wallet") {
@@ -2304,6 +2296,17 @@ function goToReview() {
 // ==========================================================================
 // 25. وضع التعديل
 // ==========================================================================
+
+function openReviewEditSection(section) {
+    const targetMap = { client: "clientEditMode", ea: "eaEditMode", payout: "payoutEditMode" };
+    const target = targetMap[section];
+    if (!target) return;
+    ["clientEditMode","eaEditMode","payoutEditMode"].forEach((id) => {
+        if (id === target) showElement($(id)); else hideElement($(id));
+    });
+    showElement($("saveEditsButtonWrap"));
+    document.getElementById(target)?.scrollIntoView({behavior:"smooth", block:"center"});
+}
 
 function resetEditButton() {
 
@@ -3072,15 +3075,16 @@ async function submitOrderFinal() {
             orderData.customerName
         );
 
-        setText(
-            "billClientPhone",
-            orderData.phone
-        );
+        setText("billClientPhone", orderData.phone);
+        setText("billOrderNumber", generatedReferenceNumber || "--");
+        setText("billStatusText", currentLanguage === "ar" ? "طلب جديد" : "New Order");
 
-        setText(
-            "billPlatform",
-            selectedPlatform
-        );
+        setText("billPlatform", selectedPlatform);
+        const billOval = $("billPlatformOval");
+        if (billOval) {
+            billOval.classList.remove("ps-theme","xbox-theme","pc-theme");
+            billOval.classList.add(selectedPlatform === "PlayStation" ? "ps-theme" : selectedPlatform === "Xbox" ? "xbox-theme" : "pc-theme");
+        }
 
         setText(
             "billQty",
@@ -3420,8 +3424,7 @@ const INLINE_TERMS_EN = [
 ];
 
 function showTermsModal() {
-    const terms = currentLanguage === "en" ? INLINE_TERMS_EN : INLINE_TERMS_AR;
-    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
+    const terms = currentLanguage === "en"\n        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])\n        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);\n    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
     const title = currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions";
 
     const html = `
@@ -3436,8 +3439,7 @@ function showTermsModal() {
 function renderInlineTerms() {
     const containers = [$("inlineTermsList"), $("reviewInlineTermsList")].filter(Boolean);
     if (!containers.length) return;
-    const terms = currentLanguage === "en" ? INLINE_TERMS_EN : INLINE_TERMS_AR;
-    const html = "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>";
+    const terms = currentLanguage === "en"\n        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])\n        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);\n    const html = terms.length\n        ? "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>"\n        : "<p class=\"terms-empty\">" + (currentLanguage === "ar" ? "لا توجد إقرارات مضافة حاليًا." : "No declarations are currently configured.") + "</p>";
     containers.forEach(container => { container.innerHTML = html; });
 }
 
@@ -3529,37 +3531,27 @@ function sendOrderViaWhatsapp() {
     }
     const en = currentLanguage === "en";
     const clientName = $("customerName")?.value.trim() || "--";
-    const clientPhone = $("customerPhone")?.value.trim() || "--";
     const total = $("totalAmountText")?.textContent || "--";
     const reference = generatedReferenceNumber || "--";
-    const method = getSelectedPaymentCode();
-    let paymentText = "";
-    if (method === "bank") paymentText = en ? "Payment Method:\\nBank Transfer\\nBank: " + ($("bankNameSelect")?.value || "--") : "طريقة الدفع:\\nتحويل بنكي\\nالبنك: " + ($("bankNameSelect")?.value || "--");
-    else if (method === "wallet") paymentText = en ? "Payment Method:\\nDigital Wallet\\nWallet: " + ($("walletTypeSelect")?.value || "--") : "طريقة الدفع:\\nمحفظة رقمية\\nالمحفظة: " + ($("walletTypeSelect")?.value || "--");
-    else if (method === "usd") paymentText = en ? "Payment Method:\\nUSDT" : "طريقة الدفع:\\nUSDT";
-    else if (method === "paypal") paymentText = en ? "Payment Method:\\nPayPal" : "طريقة الدفع:\\nPayPal";
-    else if (method === "western") paymentText = en ? "Payment Method:\\nWestern Union\\nCountry: " + ($("wuCountry")?.value || "--") : "طريقة الدفع:\\nWestern Union\\nالدولة: " + ($("wuCountry")?.value || "--");
+    const orderDate = new Intl.DateTimeFormat(en ? "en-GB" : "ar-SA", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(new Date());
     const message = en ? [
-        "New Coin Selling Order", "━━━━━━━━━━━━━━━━━━", "", "Order Details",
-        "• Order Number: " + reference, "• Platform: " + (selectedPlatform || "--"),
-        "• Quantity: " + currentQty.toLocaleString("en-US") + " Coins", "• Amount: " + total,
-        "", "Customer Details", "• Name: " + clientName, "• Phone: " + clientPhone,
-        paymentText, "", "Security Note:",
-        "Account and sensitive payment data were submitted through the secure order form and are not sent via WhatsApp.",
-        "", "━━━━━━━━━━━━━━━━━━", "SAMI COINS"
-    ].join("\\n") : [
-        "طلب بيع جديد", "━━━━━━━━━━━━━━━━━━", "", "بيانات الطلب",
-        "• رقم الطلب: " + reference, "• المنصة: " + (selectedPlatform || "--"),
-        "• الكمية: " + currentQty.toLocaleString("en-US") + " Coins", "• المبلغ: " + total,
-        "", "بيانات العميل", "• الاسم: " + clientName, "• الجوال: " + clientPhone,
-        paymentText, "", "ملاحظة أمنية:",
-        "تم إرسال بيانات الحساب وبيانات الدفع الحساسة عبر نموذج الطلب الآمن، ولا يتم إرسالها عبر WhatsApp.",
-        "", "━━━━━━━━━━━━━━━━━━", "SAMI COINS"
-    ].join("\\n");
+        "Coin Selling Order", "━━━━━━━━━━━━━━━━━━",
+        "Order Number: " + reference, "Order Date: " + orderDate, "",
+        "Customer Name: " + clientName,
+        "Quantity: " + currentQty.toLocaleString("en-US") + " Coins",
+        "Platform: " + (selectedPlatform || "--"), "Amount: " + total,
+        "━━━━━━━━━━━━━━━━━━", "samicoins"
+    ].join("\n") : [
+        "طلب بيع كوينز", "━━━━━━━━━━━━━━━━━━",
+        "رقم الطلب: " + reference, "تاريخ الطلب: " + orderDate, "",
+        "اسم العميل: " + clientName,
+        "الكمية: " + currentQty.toLocaleString("en-US") + " كوينز",
+        "المنصة: " + (selectedPlatform || "--"), "المبلغ: " + total,
+        "━━━━━━━━━━━━━━━━━━", "samicoins"
+    ].join("\n");
     const url = "https://wa.me/" + number + "?text=" + encodeURIComponent(message);
     window.open(url, "_blank", "noopener,noreferrer");
 }
-
 // 37. إغلاق المودال عند الضغط خارج النافذة
 // ==========================================================================
 
