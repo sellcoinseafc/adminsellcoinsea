@@ -16,8 +16,11 @@
     <div class="brand-block">
       <button class="brand-logo-button brand-home-link" type="button" onclick="showScreen('step1Screen')" aria-label="SAMI COINS">
   <span class="brand-logo-lockup">
-    <span id="storeArabicName" class="brand-logo-ar">سامي كوينز</span>
-    <span id="storeEnglishName" class="brand-logo-en">SAMI COINS</span>
+    <span class="brand-logo-mark" aria-hidden="true"><i class="fa-solid fa-coins"></i></span>
+    <span class="brand-logo-copy">
+      <span id="storeArabicName" class="brand-logo-ar">سامي كوينز</span>
+      <span id="storeEnglishName" class="brand-logo-en">SAMI COINS</span>
+    </span>
   </span>
 </button>
     </div>
@@ -31,13 +34,6 @@
     <button class="topbar-back hidden" id="appBackButton" type="button" onclick="showScreen('step1Screen')"><i class="fa-solid fa-arrow-right"></i></button>
     <div class="topbar-title" id="currentStepTitle">اختر المنصة والكمية</div>
     <button class="inquiry-mini" id="lblHeaderTrack" type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass"></i><span data-i18n="trackOrder">استعلام عن الطلب</span></button>
-  </div>
-
-  <div class="stepper-wrap" aria-label="مراحل الطلب">
-    <div class="stepper-line"><span id="orderProgressFill"></span></div>
-    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">المنصة والكمية</small></div>
-    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">البيانات</small></div>
-    <div class="progress-step" data-step="3"><span>3</span><small data-i18n="progressStep3">المراجعة</small></div>
   </div>
 
   <main class="app-content">
@@ -80,11 +76,18 @@
           </div>
         </section>
 
+  <div class="stepper-wrap" aria-label="مراحل الطلب">
+    <div class="stepper-line"><span id="orderProgressFill"></span></div>
+    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">المنصة والكمية</small></div>
+    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">البيانات</small></div>
+    <div class="progress-step" data-step="3"><span>3</span><small data-i18n="progressStep3">المراجعة</small></div>
+  </div>
+
         <div class="section-label platform-section-title" data-i18n="choosePlatform">اختر المنصة والكمية</div>
         <div class="platforms-flex">
-          <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')"><i class="fa-brands fa-playstation"></i><strong data-i18n="playstation">PlayStation</strong><small><span id="psSubPrice">--</span><span class="per-million-label"> — لكل مليون</span></small></button>
-          <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')"><i class="fa-brands fa-xbox"></i><strong data-i18n="xbox">Xbox</strong><small><span id="xboxSubPrice">--</span><span class="per-million-label"> — لكل مليون</span></small></button>
-          <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')"><i class="fa-solid fa-desktop"></i><strong data-i18n="pc">PC</strong><small><span id="pcSubPrice">--</span><span class="per-million-label"> — لكل مليون</span></small></button>
+          <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')"><i class="fa-brands fa-playstation"></i><strong data-i18n="playstation">PlayStation</strong><small><span id="psSubPrice">--</span><span class="per-million-label">1M</span></small></button>
+          <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')"><i class="fa-brands fa-xbox"></i><strong data-i18n="xbox">Xbox</strong><small><span id="xboxSubPrice">--</span><span class="per-million-label">1M</span></small></button>
+          <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')"><i class="fa-solid fa-desktop"></i><strong data-i18n="pc">PC</strong><small><span id="pcSubPrice">--</span><span class="per-million-label">1M</span></small></button>
         </div>
 
         <div id="platformPromptBox" class="empty-choice-card">
