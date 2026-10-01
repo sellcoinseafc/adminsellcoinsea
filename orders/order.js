@@ -3298,6 +3298,9 @@ window.showPrivacyModal =
 window.showTermsModal =
     showTermsModal;
 
+window.syncTermsChecks =
+    syncTermsChecks;
+
 window.copyOrderId =
     copyOrderId;
 
