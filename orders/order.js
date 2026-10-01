@@ -676,7 +676,7 @@ function startSettingsRealtime() {
                 transferHours: settings.psTransferDuration || storeSettings.transferHours,
                 pcWithdrawDays: settings.pcWithdrawDuration || storeSettings.pcWithdrawDays,
                 pcTransferHours: settings.pcTransferDuration || storeSettings.pcTransferHours,
-                safeMethod: settings.safeMethod || storeSettings.safeMethod,
+                safeMethod: "آمنة 100%",
                 paymentCategories: settings.paymentCategories || storeSettings.paymentCategories,
                 paymentMethods: settings.paymentMethods || storeSettings.paymentMethods,
                 supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
