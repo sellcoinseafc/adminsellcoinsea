@@ -179,15 +179,24 @@ function getConfiguredPaymentCodes(settings, category) {
     : [];
 
   if (categoryCodes.length) {
-    return new Set(categoryCodes.map(normalizePaymentMethodCode).filter(Boolean));
+    const codes = new Set(categoryCodes.map(normalizePaymentMethodCode).filter(Boolean));
+    if (codes.size) return codes;
   }
 
-  return new Set(
+  const codes = new Set(
     values.map(normalizePaymentMethodCode).filter((code) =>
       category === "local"
         ? code === "bank" || code === "wallet"
         : code === "usd" || code === "paypal" || code === "western"
     )
+  );
+
+  if (codes.size) return codes;
+
+  return new Set(
+    category === "local"
+      ? ["bank", "wallet"]
+      : ["usd", "paypal", "western"]
   );
 }
 
