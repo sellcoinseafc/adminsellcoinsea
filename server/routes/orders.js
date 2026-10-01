@@ -7,6 +7,11 @@ import {
   isEncryptedValue
 } from "../utils/crypto.js";
 import { requireAdmin } from "../middleware/auth.js";
+import {
+  normalizeStatus,
+  normalizeStoredStatus
+} from "../services/statusCore.js";
+
 import { createRateLimiter } from "../middleware/rateLimit.js";
 import {
   generateOrderNumbers,
@@ -33,26 +38,6 @@ const publicOrderRateLimit = createRateLimiter({
 });
 
 
-
-const STATUS_VALUES = new Set([
-  "new",
-  "review",
-  "progress",
-  "finished",
-  "transferred",
-  "completed",
-  "archived"
-]);
-
-const ALLOWED_STATUS_TRANSITIONS = {
-  new: new Set(["new", "review", "progress"]),
-  review: new Set(["review", "progress"]),
-  progress: new Set(["progress", "finished"]),
-  finished: new Set(["finished", "transferred"]),
-  transferred: new Set(["transferred", "completed"]),
-  completed: new Set(["completed"]),
-  archived: new Set(["archived"])
-};
 
 const ISSUE_VALUES = new Set([
   "wrong_credentials",
@@ -126,33 +111,6 @@ function normalizeQuantity(value) {
   return quantity > 0
     ? quantity
     : 0;
-}
-
-function normalizeStatus(value) {
-  const status =
-    cleanString(value).toLowerCase();
-
-  return STATUS_VALUES.has(status)
-    ? status
-    : "";
-}
-
-/*
- * Legacy order documents may still contain the historical "pending"
- * status. Normalize that only when interpreting stored data.
- *
- * API mutation inputs must use the canonical status values above and
- * must never silently convert an invalid client value.
- */
-function normalizeStoredStatus(value) {
-  const status =
-    cleanString(value).toLowerCase();
-
-  if (status === "pending") {
-    return "new";
-  }
-
-  return normalizeStatus(status);
 }
 
 function normalizeIssue(value) {
