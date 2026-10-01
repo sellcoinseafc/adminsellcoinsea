@@ -5298,6 +5298,20 @@ window.openOrderModal =
     modalBody.insertAdjacentHTML("afterbegin",
       '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-route"></i> مراحل الطلب</span>'+getStatusBadge(order.status)+'</div><div class="order-timeline">'+timelineMarkup+'</div></section>'
     );
+    const adminStatusNext = {
+      new: [["review","قيد المراجعة"],["progress","بدء السحب"]],
+      review: [["progress","بدء السحب"]],
+      progress: [["finished","تم إنهاء السحب"]],
+      finished: [["transferred","تسجيل التحويل المالي"]],
+      transferred: [["completed","إكمال الطلب"]],
+      completed: [],
+      archived: []
+    };
+    const nextControls = adminStatusNext[order.status] || [];
+    const statusControlsMarkup = nextControls.length
+      ? '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">الحالة الحالية: '+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+nextControls.map(([status,label]) => '<button class="btn-primary" type="button" onclick="changeOrderStatusDirect(\\''+escapeAttribute(order.id)+'\\',\\''+status+'\\')">'+escapeHtml(label)+'</button>').join("")+'</div></section>'
+      : '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">'+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><p class="muted">لا توجد حالة انتقالية متاحة من الحالة الحالية.</p></section>';
+    modalBody.insertAdjacentHTML("beforeend", statusControlsMarkup);
     modalBody.insertAdjacentHTML("beforeend",
       '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-clock-rotate-left"></i> سجل تحديثات الطلب</span></div><div class="order-history-system">'+historyMarkup+'</div></section>'
     );
@@ -5306,6 +5320,25 @@ window.openOrderModal =
       "active"
     );
   };
+
+window.changeOrderStatusDirect = async function(orderId, nextStatus) {
+  const order = ordersData.find((item) => item.id === orderId);
+  if (!order || !STATUS_VALUES.includes(nextStatus)) return;
+  const labels = {new:"طلب جديد",review:"طلب بانتظار المراجعة",progress:"جاري سحب الكوينز من حسابك",finished:"تم الانتهاء من سحب الكوينز من حسابك",transferred:"تم تحويل المبلغ إلى حسابك",completed:"مكتمل",archived:"مؤرشف"};
+  if (!confirm("تأكيد تغيير الحالة إلى: " + (labels[nextStatus] || nextStatus) + "؟")) return;
+  try {
+    const response = await adminFetch("/api/orders/update-status", {method:"POST", body:JSON.stringify({orderId:order.id,status:nextStatus})});
+    const data = await readJsonResponse(response);
+    if (await handleAdminAuthFailure(response, data)) return;
+    if (!data.success) { showToast("❌ " + (data.message || "تعذر تحديث الحالة.")); return; }
+    showToast("✅ تم تحديث حالة الطلب.");
+    await loadOrders();
+    openOrderModal(order.id);
+  } catch (error) {
+    console.error("Direct status update error:", error);
+    showToast("❌ تعذر تحديث حالة الطلب.");
+  }
+};
 
 window.closeOrderModal =
   function () {
