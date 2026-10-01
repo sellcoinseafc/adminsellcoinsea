@@ -274,7 +274,7 @@ export const defaultSettings = {
         paymentMethods: [
         "تحويل بنكي",
         "المحافظ الرقمية",
-        "USD",
+        "USDT",
         "PayPal",
         "Western Union"
     ],
