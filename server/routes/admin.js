@@ -997,6 +997,14 @@ router.post(
           decryptWindow.expiresAt
       };
 
+      await writeSecurityAudit({
+        adminIdentity: req.admin,
+        headers: req.headers,
+        action: "فك تشفير بيانات حساسة",
+        targetOrder: response.referenceNumber || response.orderId,
+        details: "تم كشف بيانات حساسة ضمن نافذة الخادم المحددة"
+      });
+
       return res.json({
         success: true,
         data: response
@@ -1393,6 +1401,27 @@ function sanitizeAuditText(value, maxLength) {
     .replace(/(?:iban|رقم\s*الآيبان)[^,;\n]*/gi, "[REDACTED]")
     .replace(/(?:wallet|المحفظة|walletAddress)[^,;\n]*/gi, "[REDACTED]")
     .slice(0, maxLength);
+}
+
+async function writeSecurityAudit({
+  adminIdentity,
+  headers,
+  action,
+  targetOrder = "عام",
+  details = ""
+}) {
+  await db.collection("audit_logs").add({
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timeString: new Date().toLocaleString("ar-SA", {
+      timeZone: "Asia/Riyadh"
+    }),
+    user: String(adminIdentity?.name || adminIdentity?.email || "مشرف").slice(0, 200),
+    userId: String(adminIdentity?.uid || "").slice(0, 200),
+    action: sanitizeAuditText(action, 200),
+    targetOrder: sanitizeAuditText(targetOrder, 200),
+    details: sanitizeAuditText(details, 1000),
+    userAgent: String(headers?.["user-agent"] || "").slice(0, 80)
+  });
 }
 
 router.post(
