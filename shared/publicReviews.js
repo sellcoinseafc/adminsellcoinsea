@@ -32,8 +32,8 @@ function formatQuantity(value) {
     return "—";
   }
 
-  if (quantity >= 1000000 && quantity % 1000000 === 0) {
-    return `${quantity / 1000000}M Coins`;
+  if (quantity >= 1000000) {
+    return `${quantity.toLocaleString("en-US")} Coins`;
   }
 
   if (quantity >= 1000 && quantity % 1000 === 0) {
