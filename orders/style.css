@@ -194,3 +194,25 @@ html[data-theme="light"] .app-header{background:rgba(255,255,255,.9)}
         max-width: 1240px;
     }
 }
+
+
+/* Footer follows the same responsive shell width. */
+.app-footer {
+    max-width: 620px;
+}
+.app-footer i {
+    font-size: 20px;
+}
+@media (min-width: 768px) {
+    .app-footer {
+        max-width: 900px;
+    }
+}
+@media (min-width: 1200px) {
+    .app-footer {
+        max-width: 1180px;
+    }
+    .app-footer i {
+        font-size: 22px;
+    }
+}
