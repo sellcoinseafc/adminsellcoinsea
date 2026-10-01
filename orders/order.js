@@ -1685,7 +1685,9 @@ function getCurrentPayoutDataFromForm() {
                 payoutType: "international",
                 method: "usd",
                 wallet:
-                    $("usdDetails")?.value?.trim() || ""
+                    $("usdDetails")?.value?.trim() || "",
+                network:
+                    "TRC20"
             };
 
         case "paypal":
