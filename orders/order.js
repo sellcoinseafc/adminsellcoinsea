@@ -697,6 +697,7 @@ function startSettingsRealtime() {
 
             settingsLoaded = true;
             applySettingsToUI();
+            renderInlineTerms();
 
             if (!currentPaymentCategory) {
                 switchPaymentCategory("local");
@@ -779,13 +780,10 @@ function contactClosedStoreWhatsapp() {
 
 function applySettingsToUI() {
 
-    const logo = $("storeLogoImage");
-    if (logo) {
-        const logoUrl = String(storeSettings.storeLogo || "").trim();
-        logo.src = logoUrl;
-        logo.classList.toggle("hidden", !logoUrl);
-        logo.alt = currentLanguage === "ar" ? "شعار سامي كوينز" : "SAMI COINS logo";
-    }
+    const arabicName = $("storeArabicName");
+    const englishName = $("storeEnglishName");
+    if (arabicName) arabicName.textContent = storeSettings.arabicStoreName || "سامي كوينز";
+    if (englishName) englishName.textContent = storeSettings.storeName || "SAMI COINS";
 
     const gameName =
         storeSettings.gameName || "FC";
