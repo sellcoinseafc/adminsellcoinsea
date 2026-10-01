@@ -6,7 +6,7 @@
     <title>Sami Coins | Ultimate Admin Dashboard V2.6</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261001">
 </head>
 <body>
 
@@ -138,6 +138,7 @@
             <li><a class="sidebar-link" onclick="switchTab('paymentsTab', this)"><i class="fa-solid fa-wallet"></i> وسائل الدفع والحقول</a></li>
             <li><a class="sidebar-link" onclick="switchTab('termsTab', this)"><i class="fa-solid fa-file-lines"></i> الشروط والأحكام</a></li>
             <li><a class="sidebar-link" onclick="switchTab('settingsTab', this)"><i class="fa-solid fa-gears"></i> إعدادات عامة</a></li>
+            <li><a class="sidebar-link" onclick="switchTab('purgeTab', this)"><i class="fa-solid fa-shield-halved" style="color:#ff5968;"></i> الإتلاف الآمن <span id="purgeBadgeCount" class="badge badge-review" style="margin-right:auto;">0</span></a></li>
             <li><a class="sidebar-link" onclick="handleLogout()" style="color:var(--danger);"><i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج</a></li>
         </ul>
     </aside>
@@ -192,7 +193,25 @@
         </div>
 
         <!-- 1. الرئيسية المختصرة -->
-        <div id="dashboardTab" class="tab-content active">
+        <div id="dashboardHero" class="dashboard-hero">
+                <div class="dashboard-hero-main">
+                    <div>
+                        <span class="dashboard-hero-badge"><i class="fa-solid fa-circle"></i> مركز التشغيل المباشر</span>
+                        <div class="dashboard-hero-title">مرحباً بك في لوحة SAMI COINS</div>
+                        <div class="dashboard-hero-sub">إدارة الطلبات، السحب، التحويلات، الأسعار ووسائل الدفع من واجهة واحدة متجاوبة تعمل على الجوال والتابلت والكمبيوتر.</div>
+                    </div>
+                    <div class="dashboard-hero-actions">
+                        <button type="button" class="btn-custom" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))"><i class="fa-solid fa-box"></i> إدارة الطلبات</button>
+                        <button type="button" class="btn-action" onclick="switchTab('paymentsTab', document.querySelector('.sidebar-menu li:nth-last-child(2) a'))"><i class="fa-solid fa-wallet"></i> وسائل الدفع</button>
+                    </div>
+                </div>
+                <div class="dashboard-quick-grid">
+                    <div class="dashboard-quick-card" onclick="switchTab('withdrawTab', document.querySelector('.sidebar-menu li:nth-child(3) a'))"><i class="fa-solid fa-coins"></i><div><strong>طلبات السحب</strong><span>متابعة الطلبات التشغيلية</span></div></div>
+                    <div class="dashboard-quick-card" onclick="switchTab('transferAlertsTab', document.querySelector('.sidebar-menu li:nth-child(4) a'))"><i class="fa-solid fa-money-bill-transfer"></i><div><strong>التحويلات</strong><span>طلبات بانتظار التحويل</span></div></div>
+                    <div class="dashboard-quick-card" onclick="switchTab('pricingTab', document.querySelector('.sidebar-menu li:nth-child(9) a'))"><i class="fa-solid fa-tags"></i><div><strong>الأسعار والعروض</strong><span>تعديل الأسعار والمدد</span></div></div>
+                    <div class="dashboard-quick-card" onclick="switchTab('settingsTab', document.querySelector('.sidebar-menu li:nth-last-child(3) a'))"><i class="fa-solid fa-gears"></i><div><strong>إعدادات النظام</strong><span>المتجر والدعم</span></div></div>
+                </div>
+            </div>
             <div class="stats-grid">
                 <div class="stat-card" onclick="switchTab('ordersTab', document.querySelector('.sidebar-menu li:nth-child(2) a'))">
                     <div class="stat-info"><span>الطلبات الجديدة</span><h3 id="dashStatNew">0</h3></div>
@@ -550,8 +569,8 @@
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-wallet"></i> إدارة وسائل الدفع والبنوك والحقول</h2></div>
 
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي</h3>
+                <div class="catalog-section">
+                    <h3><i class="fa-solid fa-building-columns"></i> 1. التحويل البنكي</h3>
                     <div id="banksListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newBankInput" class="form-control" placeholder="أضف اسم بنك جديد...">
@@ -559,8 +578,8 @@
                     </div>
                 </div>
 
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px; margin-bottom:20px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:#f59e0b; margin-bottom:10px;"><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية</h3>
+                <div class="catalog-section">
+                    <h3><i class="fa-solid fa-mobile-screen-button"></i> 2. المحافظ الرقمية</h3>
                     <div id="walletsListContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newWalletInput" class="form-control" placeholder="أضف محفظة جديدة...">
@@ -568,8 +587,8 @@
                     </div>
                 </div>
 
-                <div style="background:var(--input-bg); border:1.5px solid var(--card-border); padding:18px; border-radius:18px;">
-                    <h3 style="font-size:1rem; font-weight:900; color:var(--primary); margin-bottom:10px;"><i class="fa-solid fa-circle-plus"></i> 3. طرق دفع دولية (USD / PayPal / Western Union)</h3>
+                <div class="catalog-section">
+                    <h3><i class="fa-solid fa-circle-plus"></i> 3. طرق دفع دولية (USD / PayPal / Western Union)</h3>
                     <div id="customPayMethodsContainer" style="display:flex; flex-direction:column; gap:8px; margin-bottom:12px;"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="newCustomPaymentInput" class="form-control" placeholder="أدخل اسم طريقة الدفع الدولية...">
@@ -596,13 +615,47 @@
             </div>
         </div>
 
-        <!-- 12. إعدادات عامة -->
+        <!-- 12. الإتلاف الآمن -->
+        <div id="purgeTab" class="tab-content">
+            <div class="card-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-shield-halved" style="color:#ff5968;"></i> الإتلاف الآمن للبيانات الحساسة</h2>
+                    <span id="purgeHeaderBadge" class="badge badge-review">0 طلبات مستحقة للإتلاف</span>
+                </div>
+                <div class="catalog-section">
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                        <i class="fa-solid fa-lock" style="font-size:1.2rem;color:#ff5968;margin-top:2px;"></i>
+                        <div>
+                            <strong style="display:block;margin-bottom:4px;">حماية بيانات العملاء</strong>
+                            <span style="color:var(--text-muted);font-size:.74rem;line-height:1.8;">تظهر هنا الطلبات المكتملة التي لم يتم إتلاف بياناتها الحساسة بعد. الإتلاف نهائي ولا يمكن التراجع عنه.</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>رقم الطلب</th><th>اسم العميل</th><th>المنصة</th><th>تاريخ الإكمال</th><th>موعد الإتلاف</th><th>الحالة</th><th>الإجراء</th></tr></thead>
+                        <tbody id="purgeOrdersTableBody">
+                            <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">جاري تحميل الطلبات...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 13. إعدادات عامة -->
         <div id="settingsTab" class="tab-content">
             <div class="card-panel">
                 <div class="panel-header"><h2><i class="fa-solid fa-gears"></i> إعدادات المتجر العامة والدعم</h2></div>
                 <div class="form-grid-2">
                     <div class="form-group"><label>اسم المتجر الرسمي</label><input type="text" id="storeNameInput" class="form-control" value="SAMICOINS"></div>
                     <div class="form-group"><label>رقم واتساب الدعم</label><input type="text" id="supportWhatsappInput" class="form-control" value="966500000000"></div>
+                </div>
+                <div class="catalog-section" style="margin-top:18px;">
+                    <div class="panel-header" style="margin-bottom:14px;">
+                        <h2><i class="fa-solid fa-triangle-exclamation" style="color:#ffad32;"></i> رسائل حالات المشاكل</h2>
+                        <button type="button" class="btn-custom" onclick="saveIssueMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ الرسائل</button>
+                    </div>
+                    <div id="issueMessagesContainer"></div>
                 </div>
                 <button class="btn-custom" style="margin-top: 15px;" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات العامة</button>
             </div>
@@ -613,7 +666,7 @@
     <!-- سكربتات النظام والإدارة -->
     <script type="module" src="../shared/firebase.js"></script>
     <script type="module" src="../shared/system.js"></script>
-    <script type="module" src="admin.js"></script>
+    <script type="module" src="admin.js?v=20261001"></script>
 
 <nav class="mobile-app-nav" id="mobileAppNav" aria-label="التنقل السريع">
 <button type="button" class="mobile-app-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab', this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button>
