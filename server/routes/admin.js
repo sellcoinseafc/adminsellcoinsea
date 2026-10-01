@@ -1360,6 +1360,64 @@ router.post(
 
 
 /**
+ * POST /api/admin/audit
+ *
+ * Audit entries are server-authored so the browser cannot spoof
+ * actor identity, timestamps, or unrestricted audit metadata.
+ */
+function sanitizeAuditText(value, maxLength) {
+  return String(value || "")
+    .replace(/(?:password|كلمة\s*المرور|backup\s*codes?|الأكواد?\s*الاحتياطية)[^,;\n]*/gi, "[REDACTED]")
+    .replace(/(?:iban|رقم\s*الآيبان)[^,;\n]*/gi, "[REDACTED]")
+    .replace(/(?:wallet|المحفظة|walletAddress)[^,;\n]*/gi, "[REDACTED]")
+    .slice(0, maxLength);
+}
+
+router.post(
+  "/audit",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const action = sanitizeAuditText(req.body?.action, 200);
+      const targetOrder = sanitizeAuditText(req.body?.targetOrder, 200);
+      const details = sanitizeAuditText(req.body?.details, 1000);
+
+      if (!action) {
+        return res.status(400).json({
+          success: false,
+          message: "بيانات السجل غير مكتملة."
+        });
+      }
+
+      await db.collection("audit_logs").add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timeString: new Date().toLocaleString("ar-SA", {
+          timeZone: "Asia/Riyadh"
+        }),
+        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+        userId: String(req.admin?.uid || "").slice(0, 200),
+        action,
+        targetOrder,
+        details,
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+      });
+
+      return res.json({ success: true });
+    } catch (error) {
+      console.error(
+        "Admin audit error:",
+        error?.code || error?.message || "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر تسجيل حركة الإدارة."
+      });
+    }
+  }
+);
+
+/**
  * POST /api/admin/log-whatsapp
  * Logs a non-sensitive WhatsApp action initiated by an admin.
  */
