@@ -256,6 +256,32 @@
             </div>
         </section>
 
+        <section class="card tracking-extra-card" id="quantityProgressCard">
+            <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box green-icon"><span>＋</span></div><h2>تفاصيل الكمية</h2></div><span class="tracking-readonly-label">محدثة تلقائياً</span></div>
+            <div class="tracking-metrics-grid">
+                <div class="tracking-metric"><span>الكمية المطلوبة</span><strong id="requestedQuantity">0</strong><small>كوينز</small></div>
+                <div class="tracking-metric"><span>تم سحبه</span><strong id="withdrawnQuantityDetail">0</strong><small>كوينز</small></div>
+                <div class="tracking-metric"><span>المتبقي</span><strong id="remainingQuantity">0</strong><small>كوينز</small></div>
+                <div class="tracking-metric"><span>نسبة السحب</span><strong id="withdrawalPercentage">0%</strong><small>من الطلب</small></div>
+            </div>
+        </section>
+        <section class="card tracking-extra-card" id="currentStatusDetailCard">
+            <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box blue-icon"><span>◷</span></div><h2>تفاصيل الحالة الحالية</h2></div></div>
+            <div class="status-detail-box"><div><span>الحالة</span><strong id="statusDetailLabel"></strong></div><div><span>التفاصيل</span><p id="statusDetailMessage"></p></div><div><span>آخر تحديث</span><strong id="lastUpdateDetail"></strong></div></div>
+        </section>
+        <section class="card tracking-extra-card issue-card" id="customerActionCard" style="display:none;">
+            <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box orange-icon"><span>!</span></div><h2>مطلوب منك</h2></div><span class="action-required-badge">إجراء مطلوب</span></div>
+            <div class="customer-action-content"><strong id="customerActionTitle"></strong><p id="customerActionMessage"></p><small id="customerActionState"></small></div>
+        </section>
+        <section class="card tracking-extra-card" id="transferStatusCard">
+            <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box purple-icon"><span>→</span></div><h2>حالة التحويل</h2></div><span class="transfer-status-pill" id="transferStatusLabel"></span></div>
+            <div class="transfer-status-body"><p id="transferStatusMessage"></p><div class="transfer-completion-row" id="transferCompletionRow" style="display:none;"><span>وقت التحويل</span><strong id="transferredAt"></strong></div><div class="transfer-completion-row" id="completedAtRow" style="display:none;"><span>اكتمل الطلب</span><strong id="completedAt"></strong></div></div>
+        </section>
+        <section class="card tracking-extra-card" id="trackingHistoryCard" style="display:none;">
+            <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box blue-icon"><span>↻</span></div><h2>سجل تحديثات الطلب</h2></div></div>
+            <div id="trackingHistoryList" class="tracking-history-list"></div>
+        </section>
+
         <!-- Order Details Card -->
         <section class="card accordion-card">
             <div class="accordion-header" onclick="toggleAccordion('orderDetailsBody', 'orderDetailsArrow')">
@@ -281,7 +307,7 @@
                     <div class="grid-card">
                         <div class="grid-info">
                             <span class="grid-label">المبلغ</span>
-                            <span class="grid-value"><strong id="totalPrice"></strong> ريال سعودي</span>
+                            <span class="grid-value"><strong id="totalPrice"></strong> <span id="totalPriceCurrency">ريال سعودي</span></span>
                         </div>
                     </div>
 
@@ -376,7 +402,7 @@
     </div>
 
     <!-- مسار الـ JS المباشر داخل نفس المجلد -->
-    <script src="tracking.js"></script>
+    <script src="tracking.js?v=20261001"></script>
     <script>
         function toggleAccordion(bodyId, arrowId) {
             const body = document.getElementById(bodyId);
