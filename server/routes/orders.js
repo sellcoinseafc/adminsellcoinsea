@@ -3133,6 +3133,23 @@ router.post(
         error?.message
       );
 
+      if (
+        error?.code === "STALE_OR_INVALID_STATUS_TRANSITION"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "تغيرت حالة الطلب قبل تنفيذ العملية. حدّث الطلب وحاول مرة أخرى."
+        });
+      }
+
+      if (error?.code === "ORDER_NOT_FOUND") {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
+
       return res.status(500).json({
         success: false,
         message:
