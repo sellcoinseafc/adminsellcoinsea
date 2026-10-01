@@ -40,26 +40,6 @@ const publicOrderRateLimit = createRateLimiter({
 
 
 
-const STATUS_VALUES = new Set([
-  "new",
-  "review",
-  "progress",
-  "finished",
-  "transferred",
-  "completed",
-  "archived"
-]);
-
-const ALLOWED_STATUS_TRANSITIONS = {
-  new: new Set(["new", "review", "progress"]),
-  review: new Set(["review", "progress"]),
-  progress: new Set(["progress", "finished"]),
-  finished: new Set(["finished", "transferred"]),
-  transferred: new Set(["transferred", "completed"]),
-  completed: new Set(["completed"]),
-  archived: new Set(["archived"])
-};
-
 const ISSUE_VALUES = new Set([
   "wrong_credentials",
   "wrong_backup_codes",
