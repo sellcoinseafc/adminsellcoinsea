@@ -6,11 +6,9 @@ import {
   collection,
   doc,
   getDoc,
-  addDoc,
   updateDoc,
   deleteDoc,
   onSnapshot,
-  serverTimestamp,
   query,
   orderBy,
   limit
@@ -846,54 +844,14 @@ async function logAuditEvent(
   details = ""
 ) {
   try {
-    await addDoc(
-      collection(
-        db,
-        "audit_logs"
-      ),
-      {
-        timestamp:
-          serverTimestamp(),
-
-        timeString:
-          new Date().toLocaleString(
-            "ar-SA",
-            {
-              timeZone:
-                "Asia/Riyadh"
-            }
-          ),
-
-        user:
-          currentAdmin.name ||
-          "مشرف",
-
-        userId:
-          currentAdmin.uid ||
-          "system",
-
-        action:
-          String(
-            action || ""
-          ).slice(0, 200),
-
-        targetOrder:
-          String(
-            targetOrder || ""
-          ).slice(0, 200),
-
-        details:
-          String(
-            details || ""
-          ).slice(0, 1000),
-
-        userAgent:
-          navigator.userAgent.substring(
-            0,
-            80
-          )
+    await adminFetch("/api/admin/audit", {
+      method: "POST",
+      body: {
+        action,
+        targetOrder,
+        details
       }
-    );
+    });
   } catch (error) {
     console.error(
       "Audit Logging Error:",
