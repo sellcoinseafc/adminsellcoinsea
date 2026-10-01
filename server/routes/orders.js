@@ -141,7 +141,7 @@ function normalizeStatus(value) {
 
   return STATUS_VALUES.has(status)
     ? status
-    : "new";
+    : "";
 }
 
 function normalizeIssue(value) {
@@ -1353,6 +1353,26 @@ function buildPaymentPreview(
   }
 
   return preview;
+}
+
+function buildOrderAuditEntry({
+  req,
+  action,
+  targetOrder,
+  details = ""
+}) {
+  return {
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timeString: new Date().toLocaleString("ar-SA", {
+      timeZone: "Asia/Riyadh"
+    }),
+    user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+    userId: String(req.admin?.uid || "").slice(0, 200),
+    action: String(action || "").slice(0, 200),
+    targetOrder: String(targetOrder || "").slice(0, 200),
+    details: String(details || "").slice(0, 1200),
+    userAgent: String(req.headers?.["user-agent"] || "").slice(0, 80)
+  };
 }
 
 /* ==========================================================================
@@ -2638,6 +2658,18 @@ router.post(
                 message: "بيانات المحفظة غير مكتملة."
               });
             }
+
+            const normalizedWalletPhone =
+              payout.phone.replace(/[\s()-]/g, "").replace(/^00/, "+");
+
+            if (!/^(?:\+966|966|0)5\d{8}$/.test(normalizedWalletPhone)) {
+              return res.status(400).json({
+                success: false,
+                message: "رقم جوال المحفظة غير صحيح."
+              });
+            }
+
+            payout.phone = normalizedWalletPhone;
             break;
           }
           case "usd": {
@@ -2663,6 +2695,13 @@ router.post(
               return res.status(400).json({
                 success: false,
                 message: "بيانات Western Union غير مكتملة."
+              });
+            }
+
+            if (!/^[A-Za-z][A-Za-z .'-]*$/.test(payout.fullNameEnglish)) {
+              return res.status(400).json({
+                success: false,
+                message: "اسم Western Union يجب أن يكون بالإنجليزية فقط."
               });
             }
             break;
@@ -2757,28 +2796,153 @@ router.post(
         at: new Date()
       });
 
-      await found.ref.update(patch);
+      const editAuditRef = db.collection("audit_logs").doc();
+      let committedOrder = null;
 
-      await db.collection("audit_logs").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", {
-          timeZone: "Asia/Riyadh"
-        }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "تعديل بيانات الطلب",
-        targetOrder: String(current.referenceNumber || current.orderId || found.id).slice(0, 200),
-        details: JSON.stringify({
-          fields: changedFields.filter((field) => !field.includes("accountData") && field !== "payoutDetails").slice(0, 30),
-          sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20)
-        }).slice(0, 1800),
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshData = freshSnap.data() || {};
+        const transactionPatch = { ...patch };
+
+        /*
+         * Recompute all values that depend on mutable order state from
+         * the transaction's fresh snapshot. This prevents a stale admin
+         * read from overwriting a newer withdrawn quantity or pricing input.
+         */
+        if (
+          Object.prototype.hasOwnProperty.call(input, "quantity") ||
+          Object.prototype.hasOwnProperty.call(input, "platform")
+        ) {
+          const freshPlatform =
+            patch.platform ||
+            normalizePlatform(freshData.platform);
+
+          const freshQuantity =
+            patch.quantity ??
+            normalizeQuantity(freshData.quantity);
+
+          const freshWithdrawn =
+            normalizeQuantity(
+              freshData.withdrawnQuantity ??
+              freshData.drawnCoins
+            );
+
+          transactionPatch.remainingQuantity =
+            Math.max(0, freshQuantity - freshWithdrawn);
+        }
+
+        if (pricingChanged) {
+          const freshPlatform =
+            patch.platform ||
+            normalizePlatform(freshData.platform);
+
+          const freshQuantity =
+            patch.quantity ??
+            normalizeQuantity(freshData.quantity);
+
+          let payoutForPricing = null;
+
+          if (input.payout) {
+            payoutForPricing = normalizePayout({
+              payoutDetails: input.payout
+            });
+          } else {
+            payoutForPricing = {
+              method: cleanString(
+                freshData.paymentMethodType ||
+                freshData.paymentMethod ||
+                freshData.payoutDetails?.method
+              ),
+              payoutType: cleanString(
+                freshData.payoutDetails?.payoutType
+              )
+            };
+          }
+
+          const freshPrice = calculateServerPrice(
+            freshQuantity,
+            freshPlatform,
+            payoutForPricing,
+            settings
+          );
+
+          if (!freshPrice) {
+            const error = new Error("INVALID_PRICING");
+            error.code = "INVALID_PRICING";
+            throw error;
+          }
+
+          transactionPatch.rate = freshPrice.rate;
+          transactionPatch.totalPriceSar = freshPrice.totalSar;
+          transactionPatch.totalPriceUsd = freshPrice.totalUsd;
+          transactionPatch.priceCurrency = freshPrice.currency;
+          transactionPatch.displayTotalPrice = freshPrice.displayTotal;
+          transactionPatch.totalPrice = freshPrice.displayTotal;
+        }
+
+        transactionPatch.lastUpdate = TS();
+        transactionPatch.history =
+          admin.firestore.FieldValue.arrayUnion({
+            type: "order_edit",
+            fields: changedFields.slice(0, 50),
+            sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20),
+            actor:
+              req.admin?.email ||
+              req.admin?.uid ||
+              "admin",
+            at: new Date()
+          });
+
+        transaction.update(found.ref, transactionPatch);
+
+        transaction.set(editAuditRef, {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", {
+            timeZone: "Asia/Riyadh"
+          }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تعديل بيانات الطلب",
+          targetOrder: String(
+            freshData.referenceNumber ||
+            freshData.orderId ||
+            found.id
+          ).slice(0, 200),
+          details: JSON.stringify({
+            fields: changedFields
+              .filter((field) =>
+                !field.includes("accountData") &&
+                field !== "payoutDetails"
+              )
+              .slice(0, 30),
+            sensitiveFieldsChanged:
+              sensitiveFieldsChanged.slice(0, 20)
+          }).slice(0, 1800),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
+
+        committedOrder = freshData;
       });
+
+      if (!committedOrder) {
+        return res.status(500).json({
+          success: false,
+          message: "تعذر تثبيت تعديل الطلب."
+        });
+      }
 
       return res.json({
         success: true,
-        orderId: String(current.orderId || found.id),
-        referenceNumber: String(current.referenceNumber || ""),
+        orderId: String(committedOrder.orderId || found.id),
+        referenceNumber: String(committedOrder.referenceNumber || ""),
         changedFields: changedFields.filter(
           (field) => !field.includes("accountData") && field !== "payoutDetails"
         ),
@@ -2813,9 +2977,6 @@ router.post(
       const {
         orderId,
         status,
-        transferredAt,
-        transferredBy,
-        transferData,
         issue,
         issueMessage,
         issueState
@@ -2842,6 +3003,13 @@ router.post(
         normalizeStatus(
           status
         );
+
+      if (!nextStatus) {
+        return res.status(400).json({
+          success: false,
+          message: "حالة الطلب غير صحيحة."
+        });
+      }
 
       const updateData = {
         status:
@@ -2924,21 +3092,21 @@ router.post(
 
       /*
        * Manual transfer status.
+       *
+       * The browser is never trusted for transfer timestamp/actor.
+       * The server is the authoritative source for these fields.
        */
       if (
         nextStatus ===
         "transferred"
       ) {
         updateData.transferredAt =
-          transferredAt ||
-          transferData?.transferredAt ||
-          new Date().toISOString();
+          new Date();
 
         updateData.transferredBy =
-          transferredBy ||
-          transferData?.transferredBy ||
           req.admin?.email ||
           req.admin?.name ||
+          req.admin?.uid ||
           "Admin";
 
         updateData.transferCompleted =
@@ -2975,18 +3143,95 @@ router.post(
         });
       }
 
-      updateData.history = admin.firestore.FieldValue.arrayUnion({
-        type: "status_change",
-        from: previousStatus,
-        to: nextStatus,
-        issue: updateData.issue ?? normalizeIssue(current.issue),
-        actor: req.admin?.email || req.admin?.name || req.admin?.uid || "admin",
-        at: new Date()
-      });
+      const statusAuditRef = db.collection("audit_logs").doc();
+      const statusBatch = db.batch();
 
-      await found.ref.update(
-        updateData
-      );
+      /*
+       * Re-read the order inside the transaction so two admins cannot
+       * both make a decision from the same stale lifecycle state.
+       */
+      let transactionPreviousStatus = previousStatus;
+
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshData = freshSnap.data() || {};
+        transactionPreviousStatus =
+          normalizeStatus(freshData.status);
+
+        const freshAllowedNextStatuses =
+          ALLOWED_STATUS_TRANSITIONS[transactionPreviousStatus] ||
+          new Set([transactionPreviousStatus]);
+
+        if (!freshAllowedNextStatuses.has(nextStatus)) {
+          const error = new Error("STALE_OR_INVALID_STATUS_TRANSITION");
+          error.code = "STALE_OR_INVALID_STATUS_TRANSITION";
+          throw error;
+        }
+
+        const transactionUpdateData = {
+          ...updateData,
+          history: admin.firestore.FieldValue.arrayUnion({
+            type: "status_change",
+            from: transactionPreviousStatus,
+            to: nextStatus,
+            issue:
+              updateData.issue ??
+              normalizeIssue(freshData.issue),
+            actor:
+              req.admin?.email ||
+              req.admin?.name ||
+              req.admin?.uid ||
+              "admin",
+            at: new Date()
+          })
+        };
+
+        /*
+         * completedAt/purgeDueAt must be authored from the transaction's
+         * fresh state, not from the earlier read.
+         */
+        if (nextStatus === "completed" && !freshData.completedAt) {
+          const completedAt = new Date();
+          transactionUpdateData.completedAt = completedAt;
+          transactionUpdateData.purgeDueAt =
+            new Date(completedAt.getTime() + PURGE_DELAY_MS);
+        } else if (nextStatus !== "completed") {
+          delete transactionUpdateData.completedAt;
+          delete transactionUpdateData.purgeDueAt;
+        }
+
+        if (nextStatus === "transferred") {
+          transactionUpdateData.transferredAt = new Date();
+          transactionUpdateData.transferredBy =
+            req.admin?.email ||
+            req.admin?.name ||
+            req.admin?.uid ||
+            "Admin";
+          transactionUpdateData.transferCompleted = true;
+        }
+
+        transaction.update(found.ref, transactionUpdateData);
+        transaction.set(
+          statusAuditRef,
+          buildOrderAuditEntry({
+            req,
+            action: "تعديل حالة الطلب",
+            targetOrder:
+              freshData.referenceNumber ||
+              freshData.orderId ||
+              found.id,
+            details:
+              `تم تغيير الحالة من ${transactionPreviousStatus} إلى ${nextStatus}${transactionUpdateData.issue ? ` | المشكلة: ${transactionUpdateData.issue}` : ""}`
+          })
+        );
+      });
 
       return res.json({
         success: true,
@@ -3007,6 +3252,23 @@ router.post(
         "Update status error:",
         error?.message
       );
+
+      if (
+        error?.code === "STALE_OR_INVALID_STATUS_TRANSITION"
+      ) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "تغيرت حالة الطلب قبل تنفيذ العملية. حدّث الطلب وحاول مرة أخرى."
+        });
+      }
+
+      if (error?.code === "ORDER_NOT_FOUND") {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
 
       return res.status(500).json({
         success: false,
@@ -3047,14 +3309,6 @@ router.post(
         });
       }
 
-      const order =
-        found.snap.data() || {};
-
-      const quantity =
-        getOrderQuantity(
-          order
-        );
-
       const value =
         Math.max(
           0,
@@ -3067,57 +3321,93 @@ router.post(
           )
         );
 
-      if (
-        quantity > 0 &&
-        value > quantity
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "الكمية المسحوبة لا يمكن أن تتجاوز كمية الطلب."
-        });
-      }
-
       /*
        * IMPORTANT:
        * This endpoint NEVER changes status.
+       *
+       * The quantity is validated against the transaction's fresh
+       * order state so concurrent quantity edits cannot produce an
+       * invalid remainingQuantity.
        */
-      await found.ref.update({
-        withdrawnQuantity:
-          value,
+      const drawnAuditRef = db.collection("audit_logs").doc();
+      let committedDrawn = null;
 
-        drawnCoins:
-          value,
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
 
-        remainingQuantity:
-          Math.max(0, quantity - value),
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
 
-        lastUpdate:
-          TS(),
+        const freshOrder = freshSnap.data() || {};
+        const quantity = getOrderQuantity(freshOrder);
 
-        withdrawnUpdatedAt:
-          TS(),
+        if (quantity > 0 && value > quantity) {
+          const error = new Error("DRAWN_QUANTITY_EXCEEDS_ORDER");
+          error.code = "DRAWN_QUANTITY_EXCEEDS_ORDER";
+          throw error;
+        }
 
-        history:
-          admin.firestore.FieldValue.arrayUnion({
+        const remainingQuantity =
+          Math.max(0, quantity - value);
+
+        transaction.update(found.ref, {
+          withdrawnQuantity: value,
+          drawnCoins: value,
+          remainingQuantity,
+          lastUpdate: TS(),
+          withdrawnUpdatedAt: TS(),
+          history: admin.firestore.FieldValue.arrayUnion({
             type: "withdrawn_quantity",
             value,
-            actor: "admin",
+            actor:
+              req.admin?.email ||
+              req.admin?.uid ||
+              "admin",
             at: new Date()
           })
+        });
+
+        transaction.set(
+          drawnAuditRef,
+          buildOrderAuditEntry({
+            req,
+            action: "تحديث سحب الكوينز",
+            targetOrder:
+              freshOrder.referenceNumber ||
+              freshOrder.orderId ||
+              found.id,
+            details:
+              `تم تحديث الكمية المسحوبة إلى ${value} من أصل ${quantity}`
+          })
+        );
+
+        committedDrawn = {
+          value,
+          remainingQuantity
+        };
       });
+
+      if (!committedDrawn) {
+        return res.status(500).json({
+          success: false,
+          message: "تعذر تثبيت كمية الكوينز المسحوبة."
+        });
+      }
 
       return res.json({
         success: true,
 
         withdrawnQuantity:
-          value,
+          committedDrawn.value,
 
         drawnCoins:
-          value,
+          committedDrawn.value,
 
         remainingQuantity:
-          Math.max(0, quantity - value)
+          committedDrawn.remainingQuantity
       });
     } catch (error) {
       console.error(
@@ -3133,6 +3423,11 @@ router.post(
     }
   }
 );
+
+function currentOrderReference(data, fallbackId) {
+  const order = data && typeof data === "object" ? data : {};
+  return order.referenceNumber || order.orderId || fallbackId || "";
+}
 
 /* ==========================================================================
    Delete Order
@@ -3162,7 +3457,21 @@ router.post(
         });
       }
 
-      await found.ref.delete();
+      const deleteAuditRef = db.collection("audit_logs").doc();
+      const deleteBatch = db.batch();
+
+      deleteBatch.delete(found.ref);
+      deleteBatch.set(
+        deleteAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "حذف طلب",
+          targetOrder: currentOrderReference(found.snap.data(), found.id),
+          details: "تم حذف الطلب نهائيًا من قاعدة البيانات"
+        })
+      );
+
+      await deleteBatch.commit();
 
       return res.json({
         success: true
@@ -3367,27 +3676,45 @@ router.post(
       delete account.eaPassword;
       delete account.backupCodes;
 
-      await found.ref.update({
-        accountData:
-          account,
+      /*
+       * Purge both the canonical nested fields and legacy top-level
+       * sensitive fields so old orders cannot retain a second copy.
+       */
+      const purgeData = {
+        accountData: account,
 
-        sensitivePurged:
-          true,
+        eaEmail: admin.firestore.FieldValue.delete(),
+        eaPassword: admin.firestore.FieldValue.delete(),
+        backupCodes: admin.firestore.FieldValue.delete(),
 
-        sensitiveDataPurged:
-          true,
+        sensitivePurged: true,
+        sensitiveDataPurged: true,
 
-        purgedAt:
-          TS(),
+        purgedAt: TS(),
 
         purgedBy:
           req.admin?.email ||
           req.admin?.uid ||
           "Admin",
 
-        lastUpdate:
-          TS()
-      });
+        lastUpdate: TS()
+      };
+
+      const purgeAuditRef = db.collection("audit_logs").doc();
+      const purgeBatch = db.batch();
+
+      purgeBatch.update(found.ref, purgeData);
+      purgeBatch.set(
+        purgeAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "إتلاف البيانات الحساسة",
+          targetOrder: currentOrderReference(data, found.snap.id),
+          details: "تم إتلاف بيانات EA الحساسة نهائيًا مع الحفاظ على بيانات الطلب غير الحساسة"
+        })
+      );
+
+      await purgeBatch.commit();
 
       return res.json({
         success: true,

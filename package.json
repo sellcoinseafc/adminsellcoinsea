@@ -4,7 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --check server.js && node --check server/server.js && node --check server/routes/orders.js && node --check server/routes/admin.js && node --check server/routes/tracking.js && node --check server/services/firebase.js && node --check server/services/orderNumber.js && node --check server/utils/crypto.js && node --check server/middleware/auth.js && node --check server/middleware/decrypt.js && node --check shared/system.js && node --check shared/publicSettings.js && node --check shared/firebase.js && node --check shared/config.js && node --check shared/utils.js && node --check orders/order.js && node --check tracking/tracking.js && node --check admin/admin.js",
+    "test": "node --check server.js && node --check server/server.js && node --check server/routes/orders.js && node --check server/routes/admin.js && node --check server/routes/tracking.js && node --check server/services/firebase.js && node --check server/services/orderNumber.js && node --check server/utils/crypto.js && node --check server/middleware/auth.js && node --check server/middleware/decrypt.js && node --check shared/system.js && node --check shared/publicSettings.js && node --check shared/firebase.js && node --check shared/config.js && node --check shared/utils.js && node --check orders/order.js && node --check tracking/tracking.js && node --check admin/admin.js && node --test tests/*.test.mjs",
     "security:audit": "npm audit --omit=dev --audit-level=high"
   },
   "keywords": [],

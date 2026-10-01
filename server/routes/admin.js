@@ -1163,6 +1163,16 @@ router.post(
         "accountData.backupCodes":
           FieldValue.delete(),
 
+        /* Legacy top-level copies. */
+        eaEmail:
+          FieldValue.delete(),
+
+        eaPassword:
+          FieldValue.delete(),
+
+        backupCodes:
+          FieldValue.delete(),
+
         "payoutDetails.fullName":
           FieldValue.delete(),
 
@@ -1263,10 +1273,78 @@ router.post(
           )
       };
 
-      await db
-        .collection("orders")
-        .doc(found.id)
-        .update(updateData);
+      const purgeRef = db.collection("orders").doc(found.id);
+      const purgeAuditRef = db.collection("audit_logs").doc();
+
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(purgeRef);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshOrder = freshSnap.data() || {};
+
+        if (
+          freshOrder.sensitivePurged === true ||
+          freshOrder.sensitiveDataPurged === true ||
+          freshOrder.purgedAt
+        ) {
+          const error = new Error("ALREADY_PURGED");
+          error.code = "ALREADY_PURGED";
+          throw error;
+        }
+
+        const freshStatus = String(freshOrder.status || "").toLowerCase();
+        if (freshStatus !== "completed") {
+          const error = new Error("ORDER_NOT_COMPLETED");
+          error.code = "ORDER_NOT_COMPLETED";
+          throw error;
+        }
+
+        const freshCompletedAt = freshOrder.completedAt?.toDate
+          ? freshOrder.completedAt.toDate()
+          : freshOrder.completedAt
+            ? new Date(freshOrder.completedAt)
+            : null;
+
+        const freshPurgeDueAt = freshOrder.purgeDueAt?.toDate
+          ? freshOrder.purgeDueAt.toDate()
+          : freshOrder.purgeDueAt
+            ? new Date(freshOrder.purgeDueAt)
+            : freshCompletedAt
+              ? new Date(freshCompletedAt.getTime() + 5 * 24 * 60 * 60 * 1000)
+              : null;
+
+        if (
+          !freshPurgeDueAt ||
+          Number.isNaN(freshPurgeDueAt.getTime()) ||
+          freshPurgeDueAt.getTime() > Date.now()
+        ) {
+          const error = new Error("PURGE_NOT_DUE");
+          error.code = "PURGE_NOT_DUE";
+          throw error;
+        }
+
+        transaction.update(purgeRef, updateData);
+        transaction.set(purgeAuditRef, {
+          timestamp: FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "إتلاف البيانات الحساسة",
+          targetOrder: String(
+            freshOrder.referenceNumber ||
+            freshOrder.orderId ||
+            found.id
+          ).slice(0, 200),
+          details: "تم إتلاف بيانات الحساب وبيانات الدفع الحساسة نهائيًا",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
+      });
 
       /*
        * تنظيف أي نافذة decrypt موجودة لهذا الطلب
@@ -1366,16 +1444,59 @@ router.post(
         });
       }
 
-      await db.collection("orders").doc(found.id).update({
-        archived: true,
-        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
-        archivedBy: String(req.admin.uid),
-        lastUpdate: admin.firestore.FieldValue.serverTimestamp(),
-        history: admin.firestore.FieldValue.arrayUnion({
-          type: "archived",
-          actor: req.admin.email || req.admin.name || req.admin.uid,
-          at: new Date()
-        })
+      const archiveRef = db.collection("orders").doc(found.id);
+      const archiveAuditRef = db.collection("audit_logs").doc();
+
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(archiveRef);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshOrder = freshSnap.data() || {};
+
+        if (freshOrder.archived === true) {
+          const error = new Error("ALREADY_ARCHIVED");
+          error.code = "ALREADY_ARCHIVED";
+          throw error;
+        }
+
+        if (String(freshOrder.status || "").toLowerCase() !== "completed") {
+          const error = new Error("ORDER_NOT_COMPLETED");
+          error.code = "ORDER_NOT_COMPLETED";
+          throw error;
+        }
+
+        transaction.update(archiveRef, {
+          archived: true,
+          archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+          archivedBy: String(req.admin.uid),
+          lastUpdate: admin.firestore.FieldValue.serverTimestamp(),
+          history: admin.firestore.FieldValue.arrayUnion({
+            type: "archived",
+            actor: req.admin.email || req.admin.name || req.admin.uid,
+            at: new Date()
+          })
+        });
+
+        transaction.set(archiveAuditRef, {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "أرشفة طلب",
+          targetOrder: String(
+            freshOrder.referenceNumber ||
+            freshOrder.orderId ||
+            found.id
+          ).slice(0, 200),
+          details: "تمت أرشفة الطلب بعد اكتماله",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
       });
 
       return res.json({
@@ -1440,14 +1561,41 @@ router.post(
   requireAdmin,
   async (req, res) => {
     try {
-      const action = sanitizeAuditText(req.body?.action, 200);
-      const targetOrder = sanitizeAuditText(req.body?.targetOrder, 200);
-      const details = sanitizeAuditText(req.body?.details, 1000);
+      /*
+       * This endpoint is intentionally limited to UI activity telemetry.
+       * It is NOT a source of truth for security events or completed
+       * business mutations. Security-sensitive routes write their own
+       * server-authored audit records.
+       */
+      const action = sanitizeAuditText(req.body?.action, 120);
+      const targetOrder = sanitizeAuditText(req.body?.targetOrder, 120);
+      const details = sanitizeAuditText(req.body?.details, 600);
 
-      if (!action) {
+      const allowedUiActions = new Set([
+        "تسجيل دخول المشرف",
+        "تسجيل خروج",
+        "تسجيل مشكلة للطلب",
+        "إزالة مشكلة من الطلب",
+        "تغيير حالة المتجر",
+        "حفظ إعدادات الأسعار",
+        "إضافة بنك",
+        "حذف بنك",
+        "إضافة محفظة رقمية",
+        "حذف محفظة رقمية",
+        "إضافة طريقة دفع",
+        "حذف طريقة دفع",
+        "إضافة شرط وأحكام",
+        "حذف شرط وأحكام",
+        "تفعيل الشروط والأحكام",
+        "تعطيل الشروط والأحكام",
+        "تحديث رسائل الحالات",
+        "تحويل مالي"
+      ]);
+
+      if (!allowedUiActions.has(action)) {
         return res.status(400).json({
           success: false,
-          message: "بيانات السجل غير مكتملة."
+          message: "نوع سجل الإدارة غير مسموح."
         });
       }
 
@@ -1456,6 +1604,7 @@ router.post(
         timeString: new Date().toLocaleString("ar-SA", {
           timeZone: "Asia/Riyadh"
         }),
+        source: "admin-ui",
         user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
         userId: String(req.admin?.uid || "").slice(0, 200),
         action,
@@ -1490,7 +1639,9 @@ router.post(
     try {
       const orderId = normalizeIdentifier(req.body?.orderId);
       const referenceNumber = normalizeIdentifier(req.body?.referenceNumber);
-      const recipient = String(req.body?.recipient || "").replace(/[^0-9+]/g, "").slice(0, 32);
+      const recipientRaw = String(req.body?.recipient || "")
+        .replace(/[^0-9+]/g, "")
+        .slice(0, 32);
       const message = String(req.body?.message || "").trim().slice(0, 4000);
       const templateCode = String(req.body?.templateCode || "").trim().slice(0, 100);
 
@@ -1501,11 +1652,21 @@ router.post(
         });
       }
 
+      /*
+       * Data minimization:
+       * the audit log records that a message was prepared/sent, but does not
+       * persist the full customer message or recipient phone number.
+       */
+      const maskedRecipient =
+        recipientRaw.length > 4
+          ? `••••${recipientRaw.slice(-4)}`
+          : "••••";
+
       await db.collection("whatsappLogs").add({
         orderId,
         referenceNumber,
-        recipient,
-        message,
+        recipientMasked: maskedRecipient,
+        messageLength: message.length,
         templateCode,
         sentBy: String(req.admin.uid),
         sentByEmail: String(req.admin.email || ""),
@@ -1528,27 +1689,47 @@ router.post(
 );
 
 
-
 router.post(
   "/update-note",
   requireAdmin,
+  adminMutationRateLimit,
   async (req,res)=>{
     try{
       const orderIdentifier=normalizeIdentifier(req.body?.orderId);
       if(!orderIdentifier)return res.status(400).json({success:false,message:"رقم الطلب مطلوب."});
       const found=await findOrder(orderIdentifier);
       if(!found)return res.status(404).json({success:false,message:"الطلب غير موجود."});
+
       const note=String(req.body?.note||"").trim().slice(0,2000);
-      await found.ref.update({
+      const orderRef=db.collection("orders").doc(found.id);
+      const auditRef=db.collection("audit_logs").doc();
+      const batch=db.batch();
+      const actor=String(req.admin?.email||req.admin?.name||req.admin?.uid||"Admin").slice(0,200);
+
+      batch.update(orderRef,{
         adminNote:note,
         lastUpdate:admin.firestore.FieldValue.serverTimestamp(),
         history:admin.firestore.FieldValue.arrayUnion({
           type:"admin_note",
           note:note?"تم تحديث الملاحظة الإدارية":"تم حذف الملاحظة الإدارية",
-          actor:req.admin?.email||req.admin?.uid||"Admin",
+          actor,
           at:new Date()
         })
       });
+
+      batch.set(auditRef,{
+        timestamp:admin.firestore.FieldValue.serverTimestamp(),
+        timeString:new Date().toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}),
+        user:actor,
+        userId:String(req.admin?.uid||"").slice(0,200),
+        action:note?"تحديث الملاحظة الإدارية":"حذف الملاحظة الإدارية",
+        targetOrder:String(found.data?.referenceNumber||found.data?.orderId||found.id).slice(0,200),
+        details:"تم تعديل الملاحظة الإدارية دون تسجيل محتواها.",
+        userAgent:String(req.headers["user-agent"]||"").slice(0,80),
+        source:"server"
+      });
+
+      await batch.commit();
       return res.json({success:true});
     }catch(error){
       console.error("Admin update-note error:",error?.code||error?.message||"unknown_error");
@@ -1821,7 +2002,38 @@ router.post(
       }
 
       patch.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-      await settingsRef.set(patch, { merge: true });
+
+      const settingsAuditRef = db.collection("audit_logs").doc();
+      const settingsBatch = db.batch();
+
+      settingsBatch.set(
+        settingsRef,
+        patch,
+        { merge: true }
+      );
+
+      settingsBatch.set(
+        settingsAuditRef,
+        {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", {
+            timeZone: "Asia/Riyadh"
+          }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تعديل إعدادات النظام",
+          targetOrder: "الإعدادات",
+          details: JSON.stringify({
+            action,
+            updatedFields: Object.keys(patch)
+              .filter((field) => field !== "updatedAt")
+              .slice(0, 50)
+          }).slice(0, 1200),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+        }
+      );
+
+      await settingsBatch.commit();
 
       return res.json({
         success: true,
@@ -1852,6 +2064,7 @@ router.post(
 router.post(
   "/reviews/status",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const reviewId =
@@ -1924,55 +2137,78 @@ router.post(
         });
       }
 
-      const batch =
-        db.batch();
+      const reviewAuditRef = db.collection("audit_logs").doc();
 
-      batch.update(
-        reviewRef,
-        {
-          status:
-            requestedStatus,
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(reviewRef);
 
-          updatedAt:
-            new Date(),
+        if (!freshSnap.exists) {
+          const error = new Error("REVIEW_NOT_FOUND");
+          error.code = "REVIEW_NOT_FOUND";
+          throw error;
+        }
 
-          moderatedAt:
-            new Date(),
+        const freshReview = freshSnap.data() || {};
+        const freshComment = String(
+          freshReview.comment ||
+          freshReview.text ||
+          ""
+        ).trim();
+        const freshPlatform = String(freshReview.platform || "").trim();
+        const freshQuantity = Number(freshReview.quantity);
+        const freshRating = Number(freshReview.rating);
 
+        if (
+          requestedStatus === "published" &&
+          (
+            !freshComment ||
+            Array.from(freshComment).length > 600 ||
+            !freshPlatform ||
+            !Number.isFinite(freshQuantity) ||
+            freshQuantity <= 0 ||
+            !Number.isInteger(freshRating) ||
+            freshRating < 1 ||
+            freshRating > 5
+          )
+        ) {
+          const error = new Error("INVALID_REVIEW");
+          error.code = "INVALID_REVIEW";
+          throw error;
+        }
+
+        transaction.update(reviewRef, {
+          status: requestedStatus,
+          updatedAt: new Date(),
+          moderatedAt: new Date(),
           moderatedBy:
             req.admin?.email ||
             req.admin?.uid ||
             "Admin"
+        });
+
+        if (requestedStatus === "published") {
+          transaction.set(publicRef, {
+            platform: freshPlatform,
+            quantity: freshQuantity,
+            rating: freshRating,
+            comment: freshComment,
+            publishedAt: new Date()
+          });
+        } else {
+          transaction.delete(publicRef);
         }
-      );
 
-      if (requestedStatus === "published") {
-        batch.set(
-          publicRef,
-          {
-            platform,
-            quantity,
-            rating,
-            comment,
-            publishedAt:
-              new Date()
-          }
-        );
-      } else {
-        batch.delete(publicRef);
-      }
-
-      await batch.commit();
-
-      await db.collection("audit_logs").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "تحديث حالة التقييم",
-        targetOrder: reviewId.slice(0, 200),
-        details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+        transaction.set(reviewAuditRef, {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تحديث حالة التقييم",
+          targetOrder: reviewId.slice(0, 200),
+          details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
       });
 
       return res.json({
@@ -1998,6 +2234,7 @@ router.post(
 router.post(
   "/reviews/delete",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const reviewId =
@@ -2026,23 +2263,30 @@ router.post(
         });
       }
 
-      const batch =
-        db.batch();
+      const reviewDeleteAuditRef = db.collection("audit_logs").doc();
 
-      batch.delete(reviewRef);
-      batch.delete(publicRef);
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(reviewRef);
 
-      await batch.commit();
+        if (!freshSnap.exists) {
+          const error = new Error("REVIEW_NOT_FOUND");
+          error.code = "REVIEW_NOT_FOUND";
+          throw error;
+        }
 
-      await db.collection("audit_logs").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "حذف تقييم",
-        targetOrder: reviewId.slice(0, 200),
-        details: "تم حذف التقييم نهائيًا",
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+        transaction.delete(reviewRef);
+        transaction.delete(publicRef);
+        transaction.set(reviewDeleteAuditRef, {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "حذف تقييم",
+          targetOrder: reviewId.slice(0, 200),
+          details: "تم حذف التقييم نهائيًا",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
       });
 
       return res.json({
