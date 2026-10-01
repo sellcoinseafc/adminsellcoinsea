@@ -1,4 +1,4 @@
-import { subscribeToSettings } from "../shared/system.js";
+import { subscribeToPublicSettings } from "../shared/publicSettings.js?v=20261001";
 
 // ==========================================================================
 // SAMI COINS — ORDERS FRONTEND
@@ -650,7 +650,7 @@ function startSettingsRealtime() {
     }
 
     try {
-        unsubscribeSettingsRealtime = subscribeToSettings((settings) => {
+        unsubscribeSettingsRealtime = subscribeToPublicSettings((settings) => {
             storeSettings = {
                 ...storeSettings,
                 storeName: settings.storeName || storeSettings.storeName,
@@ -3657,47 +3657,7 @@ window.addEventListener(
 );
 
 
-window.addEventListener(
-    "DOMContentLoaded",
-    () => {
-        const savedLanguage =
-            localStorage.getItem(
-                "samiCoinsLanguage"
-            );
 
-        const savedTheme =
-            localStorage.getItem(
-                "samiCoinsTheme"
-            );
-
-        if (
-            savedLanguage === "ar" ||
-            savedLanguage === "en"
-        ) {
-            currentLanguage =
-                savedLanguage;
-        }
-
-        applyTheme(
-            savedTheme === "light"
-                ? "light"
-                : "dark"
-        );
-
-        applyLanguage();
-        showScreen("step1Screen");
-        setupModalEvents();
-
-        /*
-         * Single initialization path:
-         * settings are loaded by the main initialization block below.
-         * Keeping this listener free of loadSettings() prevents:
-         * - duplicate API requests
-         * - duplicate Firestore realtime subscriptions
-         * - duplicated UI refreshes
-         */
-    }
-);
 
 
 // ==========================================================================
