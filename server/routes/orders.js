@@ -9,7 +9,8 @@ import {
 import { requireAdmin } from "../middleware/auth.js";
 import {
   normalizeStatus,
-  normalizeStoredStatus
+  normalizeStoredStatus,
+  ALLOWED_STATUS_TRANSITIONS
 } from "../services/statusCore.js";
 
 import { createRateLimiter } from "../middleware/rateLimit.js";
