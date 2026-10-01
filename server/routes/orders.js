@@ -55,7 +55,7 @@ const ISSUE_STATES = new Set([
 const PAYOUT_METHODS = new Set([
   "bank",
   "wallet",
-  "usdt",
+  "usd",
   "paypal",
   "western"
 ]);
@@ -159,7 +159,7 @@ function normalizePaymentMethodCode(value) {
   const text = cleanString(value).toLowerCase();
   if (["bank", "bank_transfer", "تحويل بنكي"].includes(text)) return "bank";
   if (["wallet", "digital_wallet", "المحافظ الرقمية"].includes(text)) return "wallet";
-  if (text === "usdt") return "usdt";
+  if (["usdt", "usd", "dollar", "دولار"].includes(text)) return "usd";
   if (["paypal", "بايبال"].includes(text)) return "paypal";
   if (["western", "western_union", "ويسترن يونيون"].includes(text)) return "western";
   return "";
@@ -186,7 +186,7 @@ function getConfiguredPaymentCodes(settings, category) {
     values.map(normalizePaymentMethodCode).filter((code) =>
       category === "local"
         ? code === "bank" || code === "wallet"
-        : code === "usdt" || code === "paypal" || code === "western"
+        : code === "usd" || code === "paypal" || code === "western"
     )
   );
 }
