@@ -644,6 +644,14 @@ function hideLookupError() {
     }
 }
 
+function formatTrackingDateTime(value) { if (!value) return ""; const d=new Date(value); return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString("ar-SA", {dateStyle:"medium", timeStyle:"short"}); }
+
+function getCurrencyDisplay(order) { return String(order?.priceCurrency || "SAR").toUpperCase()==="USD" ? "دولار أمريكي" : "ريال سعودي"; }
+
+function getAmountDisplay(order) { const currency=String(order?.priceCurrency || "SAR").toUpperCase(); const value=currency==="USD" ? (order?.totalPriceUsd ?? order?.totalPrice ?? order?.total ?? "") : (order?.totalPriceSar ?? order?.totalPrice ?? order?.total ?? ""); return value==="" ? "" : Number.isFinite(Number(value)) ? Number(value).toLocaleString("en-US", {maximumFractionDigits:2}) : String(value); }
+
+function getIssueTitle(issue) { const labels={wrong_credentials:"بيانات الدخول غير صحيحة",wrong_backup_codes:"الأكواد الاحتياطية غير صحيحة",logged_in_platform:"يرجى تسجيل الخروج من المنصة",market_closed:"سوق الانتقالات مغلق",wrong_platform:"المنصة غير صحيحة",other_issue:"توجد مشكلة في الطلب"}; return labels[String(issue||"").toLowerCase()] || "توجد مشكلة في الطلب"; }
+
 /* ==========================================
    تحديث واجهة الطلب
    ========================================== */
