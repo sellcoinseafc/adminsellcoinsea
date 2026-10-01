@@ -2412,7 +2412,7 @@ function renderInlinePayoutEdit() {
                     type="text"
                     id="editUsdtWalletType"
                     value="${escapeHtml(
-                        $("usdtWalletType")?.value || ""
+                        $("usdDetails")?.value || ""
                     )}"
                 >
             </div>
@@ -2655,8 +2655,8 @@ function saveAllEdits() {
 
     if (method === "usd") {
 
-        if ($("usdtWalletType")) {
-            $("usdtWalletType").value =
+        if ($("usdDetails")) {
+            $("usdDetails").value =
                 $("editUsdtWalletType")?.value || "";
         }
     }
