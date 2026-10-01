@@ -1818,7 +1818,7 @@ function showScreen(screenId) {
     }
 
     if (screenId === "step4SuccessScreen") {
-        step = 4;
+        step = 3;
     }
 
     updateProgressUI(step);
