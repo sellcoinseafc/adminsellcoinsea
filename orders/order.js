@@ -21,7 +21,7 @@ let storeSettings = {
     transferHours: "",
     pcWithdrawDays: "",
     pcTransferHours: "",
-    safeMethod: "آمنة 100%",
+    safeMethod: "آمنة 90%",
     paymentCategories: {},
     termsEn: [],
     termsEnabled: true,
@@ -175,8 +175,9 @@ const translations = {
 
         termsTitle: "الشروط والأحكام",
         termsSubtitle: "يرجى قراءة الشروط قبل اعتماد الطلب.",
-        termsAgreement: "لقد وافقت على",
+        termsAgreement: "أوافق على الشروط والأحكام",
         termsLink: "الشروط والأحكام",
+        declarationsTitle: "الإقرارات وانسحاب الشروط والأحكام",
 
         previous: "السابق",
         reviewOrder: "مراجعة الطلب",
@@ -311,8 +312,9 @@ const translations = {
 
         termsTitle: "Terms & Conditions",
         termsSubtitle: "Please read the terms before submitting your order.",
-        termsAgreement: "I agree to the",
+        termsAgreement: "I agree to the Terms & Conditions",
         termsLink: "Terms & Conditions",
+        declarationsTitle: "Acknowledgments & Terms Withdrawal",
 
         previous: "Previous",
         reviewOrder: "Review Order",
@@ -409,6 +411,7 @@ function applyLanguage() {
     }
 
     updateProgressUI(getCurrentStepNumber());
+    renderInlineTerms();
 }
 
 function toggleLanguage() {
@@ -539,31 +542,17 @@ function normalizePaymentMethodCode(method) {
 }
 
 function getPaymentMethodsForCategory(category) {
-    const paymentMethods =
-        storeSettings.paymentMethods || {};
+    const paymentMethods = storeSettings.paymentMethods || {};
+    const configuredCategories = storeSettings.paymentCategories || {};
+    const categoryCodes = Array.isArray(configuredCategories[category]) ? configuredCategories[category] : [];
+    let methods = [];
 
-    if (
-        paymentMethods &&
-        typeof paymentMethods === "object" &&
-        !Array.isArray(paymentMethods)
-    ) {
-        const methods = paymentMethods[category];
-        return Array.isArray(methods) ? methods : [];
-    }
-
-    const configuredCategories =
-        storeSettings.paymentCategories || {};
-
-    const categoryCodes =
-        Array.isArray(configuredCategories[category])
-            ? configuredCategories[category]
-            : [];
-
-    if (Array.isArray(paymentMethods) && paymentMethods.length) {
-        return paymentMethods.filter((method) => {
+    if (paymentMethods && typeof paymentMethods === "object" && !Array.isArray(paymentMethods)) {
+        methods = Array.isArray(paymentMethods[category]) ? paymentMethods[category] : [];
+    } else if (Array.isArray(paymentMethods) && paymentMethods.length) {
+        methods = paymentMethods.filter((method) => {
             const code = normalizePaymentMethodCode(method);
             if (!code) return false;
-
             if (categoryCodes.length) {
                 return categoryCodes.some((configuredCode) => {
                     const normalized = String(configuredCode || "").toLowerCase();
@@ -571,547 +560,21 @@ function getPaymentMethodsForCategory(category) {
                         (normalized === "bank_transfer" && code === "bank") ||
                         (normalized === "digital_wallet" && code === "wallet") ||
                         (normalized === "usdt" && code === "usd") ||
+                        (normalized === "usd" && code === "usd") ||
                         (normalized === "paypal" && code === "paypal") ||
                         (normalized === "western_union" && code === "western")
                     );
                 });
             }
-
-            return category === "local"
-                ? code === "bank" || code === "wallet"
-                : code === "usd" || code === "paypal" || code === "western";
+            return category === "local" ? code === "bank" || code === "wallet" : code === "usd" || code === "paypal" || code === "western";
         });
     }
 
-    return [];
+    if (methods.length) return methods;
+
+    return category === "local" ? ["تحويل بنكي", "المحافظ الرقمية"] : ["USD", "PayPal", "Western Union"];
 }
 
-function getSelectedPaymentCode() {
-    return normalizePaymentMethodCode(
-        selectedPaymentMethod
-    );
-}
-
-function getSupportWhatsappNumber() {
-    return String(
-        storeSettings.supportWhatsapp ||
-        storeSettings.supportWhatsappNumber ||
-        ""
-    ).replace(/[^\d]/g, "");
-}
-
-
-// ==========================================================================
-function localizeSettingText(value) {
-    const text = String(value ?? "").trim();
-    if (!text) return "--";
-    if (currentLanguage === "en") {
-        return text
-            .replace(/أيام عمل/g, "business days")
-            .replace(/أيام/g, "days")
-            .replace(/ساعة/g, "hours")
-            .replace(/سوق الانتقالات \(Web App\)/g, "Transfer Market (Web App)");
-    }
-    return text;
-}
-
-function getCurrentPlatformDurations() {
-    if (selectedPlatform === "PC") {
-        return {
-            withdraw: storeSettings.pcWithdrawDays || storeSettings.withdrawDays || "--",
-            transfer: storeSettings.pcTransferHours || storeSettings.transferHours || "--"
-        };
-    }
-    return {
-        withdraw: storeSettings.withdrawDays || "--",
-        transfer: storeSettings.transferHours || "--"
-    };
-}
-
-
-// ==========================================================================
-// 7. الإعدادات
-// ==========================================================================
-
-function loadSettings() {
-    // Public order-page settings are read directly from Firestore in realtime.
-    // The orders API is reserved for order creation and sensitive server work.
-    startSettingsRealtime();
-}
-
-
-// ==========================================================================
-// 8. الإعدادات اللحظية
-// ==========================================================================
-
-function startSettingsRealtime() {
-    if (typeof unsubscribeSettingsRealtime === "function") {
-        unsubscribeSettingsRealtime();
-    }
-
-    try {
-        unsubscribeSettingsRealtime = subscribeToPublicSettings((settings) => {
-            storeSettings = {
-                ...storeSettings,
-                storeName: settings.storeName || storeSettings.storeName,
-                arabicStoreName: settings.arabicStoreName || "سامي كوينز",
-                gameName: settings.gameName || "FC",
-                gameVersion: Number(settings.gameVersion || 27),
-                rates: {
-                    ...storeSettings.rates,
-                    PlayStation: Number(settings.psRate ?? storeSettings.rates.PlayStation ?? 0),
-                    Xbox: Number(settings.psRate ?? storeSettings.rates.Xbox ?? 0),
-                    PC: Number(settings.pcRate ?? storeSettings.rates.PC ?? 0)
-                },
-                limits: {
-                    ...storeSettings.limits,
-                    psMin: Number(settings.psMin ?? storeSettings.limits.psMin ?? 0),
-                    psMax: Number(settings.psMax ?? storeSettings.limits.psMax ?? 0),
-                    pcMin: Number(settings.pcMin ?? storeSettings.limits.pcMin ?? 0),
-                    pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
-                },
-                banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
-                wallets: Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets,
-                terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
-                termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
-                termsEnabled: settings.termsEnabled !== false,
-                storeOpen: settings.storeOpen !== false,
-                withdrawDays: settings.psWithdrawDuration || storeSettings.withdrawDays,
-                transferHours: settings.psTransferDuration || storeSettings.transferHours,
-                pcWithdrawDays: settings.pcWithdrawDuration || storeSettings.pcWithdrawDays,
-                pcTransferHours: settings.pcTransferDuration || storeSettings.pcTransferHours,
-                safeMethod: settings.safeMethod || storeSettings.safeMethod,
-                paymentCategories: settings.paymentCategories || storeSettings.paymentCategories,
-                paymentMethods: settings.paymentMethods || storeSettings.paymentMethods,
-                supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
-            };
-
-            settingsLoaded = true;
-            applySettingsToUI();
-
-            if (!currentPaymentCategory) {
-                switchPaymentCategory("local");
-            }
-        }, (error) => {
-            settingsLoaded = false;
-            showStoreClosedState(false);
-
-            showToast(
-                currentLanguage === "ar"
-                    ? "تعذر الاتصال بقاعدة بيانات إعدادات المتجر. حاول تحديث الصفحة."
-                    : "Unable to connect to Firestore store settings. Please refresh the page."
-            );
-
-            console.error(
-                "Orders settings realtime error:",
-                error?.code ||
-                    error?.message ||
-                    error
-            );
-        });
-    } catch (error) {
-        console.error("Realtime settings initialization failed:", error);
-        settingsLoaded = false;
-        showStoreClosedState(false);
-
-        showToast(
-            currentLanguage === "ar"
-                ? "تعذر تهيئة إعدادات المتجر."
-                : "Unable to initialize store settings."
-        );
-    }
-}
-
-
-// ==========================================================================
-// 8. حالة المتجر
-// ==========================================================================
-
-function showStoreClosedState(isClosed) {
-    const closedScreen =
-        $("storeClosedScreen");
-
-    const orderApplication =
-        $("orderApplication");
-
-    if (isClosed) {
-        closedScreen?.classList.remove("hidden");
-        orderApplication?.classList.add("hidden");
-    } else {
-        closedScreen?.classList.add("hidden");
-        orderApplication?.classList.remove("hidden");
-    }
-}
-
-function contactClosedStoreWhatsapp() {
-    const number =
-        getSupportWhatsappNumber();
-
-    if (!number) {
-        showToast(
-            currentLanguage === "ar"
-                ? "رقم الدعم غير متوفر حاليًا."
-                : "Support number is currently unavailable."
-        );
-        return;
-    }
-
-    window.open(
-        `https://wa.me/${number}`,
-        "_blank",
-        "noopener,noreferrer"
-    );
-}
-
-
-// ==========================================================================
-// 9. تطبيق الإعدادات على HTML
-// ==========================================================================
-
-function applySettingsToUI() {
-
-    const gameName =
-        storeSettings.gameName || "FC";
-
-    const gameVersion =
-        Number(storeSettings.gameVersion || 27);
-
-    setText(
-        "gameVersionBadge",
-        `${gameName} ${gameVersion}`
-    );
-
-    // الأسعار
-    const rates =
-        storeSettings.rates || {};
-
-    if (rates.PlayStation !== undefined) {
-        setText(
-            "psSubPrice",
-            `${rates.PlayStation} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
-        );
-    }
-
-    if (rates.Xbox !== undefined) {
-        setText(
-            "xboxSubPrice",
-            `${rates.Xbox} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
-        );
-    }
-
-    if (rates.PC !== undefined) {
-        setText(
-            "pcSubPrice",
-            `${rates.PC} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
-        );
-    }
-
-    // المدد حسب المنصة
-    const durations = getCurrentPlatformDurations();
-    setText("withdrawText", localizeSettingText(durations.withdraw));
-    setText("transferText", localizeSettingText(durations.transfer));
-
-    setText(
-        "safeMethodText",
-        localizeSettingText(storeSettings.safeMethod)
-    );
-
-    setText(
-        "revWithdrawText",
-        localizeSettingText(durations.withdraw)
-    );
-
-    setText(
-        "revTransferText",
-        localizeSettingText(durations.transfer)
-    );
-
-    setText(
-        "revSafeMethodText",
-        storeSettings.safeMethod || "--"
-    );
-
-    setText(
-        "successWithdrawText",
-        localizeSettingText(durations.withdraw)
-    );
-
-    setText(
-        "successTransferText",
-        localizeSettingText(durations.transfer)
-    );
-
-    setText(
-        "successSafeMethodText",
-        storeSettings.safeMethod || "--"
-    );
-
-    // الشروط
-    const termsContainer =
-        $("termsContainer");
-
-    if (termsContainer) {
-        termsContainer.style.display =
-            storeSettings.termsEnabled === false
-                ? "none"
-                : "";
-    }
-
-    // المتجر
-    showStoreClosedState(
-        storeSettings.storeOpen === false
-    );
-
-    // إعادة اختيار المنصة إن كانت موجودة
-    if (selectedPlatform) {
-        selectPlatform(
-            selectedPlatform,
-            true
-        );
-    }
-}
-
-
-// ==========================================================================
-// 10. اختيار المنصة
-// ==========================================================================
-
-function selectPlatform(
-    platform,
-    silent = false
-) {
-    if (!settingsLoaded) {
-        showToast(
-            currentLanguage === "ar"
-                ? "جاري تحميل إعدادات المتجر، حاول بعد لحظات."
-                : "Store settings are still loading. Please try again in a moment."
-        );
-        return;
-    }
-
-    const validPlatforms = [
-        "PlayStation",
-        "Xbox",
-        "PC"
-    ];
-
-    if (!validPlatforms.includes(platform)) {
-        return;
-    }
-
-    selectedPlatform =
-        platform;
-
-    document
-        .querySelectorAll(".platform-btn")
-        .forEach((button) => {
-            button.classList.remove("active");
-        });
-
-    const classMap = {
-        PlayStation: ".ps-btn",
-        Xbox: ".xbox-btn",
-        PC: ".pc-btn"
-    };
-
-    document
-        .querySelectorAll(
-            classMap[platform]
-        )
-        .forEach((button) => {
-            button.classList.add("active");
-        });
-
-    const rates =
-        storeSettings.rates || {};
-
-    const limits =
-        storeSettings.limits || {};
-
-    if (platform === "PC") {
-
-        currentRate =
-            Number(rates.PC ?? 0);
-
-        minLimit =
-            Number(limits.pcMin ?? 0);
-
-        maxLimit =
-            Number(limits.pcMax ?? 0);
-
-    } else {
-
-        currentRate =
-            Number(
-                platform === "Xbox"
-                    ? rates.Xbox ?? 0
-                    : rates.PlayStation ?? 0
-            );
-
-        minLimit =
-            Number(limits.psMin ?? 0);
-
-        maxLimit =
-            Number(limits.psMax ?? 0);
-    }
-
-    hideElement("platformPromptBox");
-    showElement("singlePlatformRateCard");
-    showElement("durationInfoCardsStep1");
-    showElement("qtyCardContainer");
-    showElement("totalAmountBoxCard");
-    showElement("paymentCategoryCard");
-    showElement("payoutCardContainer");
-
-    setText(
-        "minLimitText",
-        minLimit.toLocaleString("en-US")
-    );
-
-    setText(
-        "maxLimitText",
-        maxLimit.toLocaleString("en-US")
-    );
-
-    const range =
-        $("qtyRange");
-
-    if (range) {
-        range.min = "0";
-        range.max =
-            String(maxLimit || 5000000);
-        range.step = "100000";
-
-        if (
-            currentQty >
-            Number(range.max)
-        ) {
-            currentQty =
-                Number(range.max);
-        }
-
-        range.value =
-            String(currentQty);
-    }
-
-    const qtyInput =
-        $("quantityInput");
-
-    if (qtyInput) {
-        qtyInput.value =
-            currentQty > 0
-                ? currentQty.toLocaleString("en-US")
-                : "";
-    }
-
-    updateRateCardsUI();
-    calculateTotal();
-
-    if (!silent) {
-        updateProgressUI(
-            getCurrentStepNumber()
-        );
-    }
-}
-
-
-// ==========================================================================
-// 11. عرض سعر المنصة
-// ==========================================================================
-
-function updateRateCardsUI() {
-    if (!selectedPlatform) return;
-
-    setText(
-        "displaySelectedRate",
-        Number(currentRate || 0).toLocaleString("en-US")
-    );
-
-    const icon =
-        $("selectedPlatformIcon");
-
-    if (!icon) return;
-
-    if (selectedPlatform === "PlayStation") {
-        icon.className =
-            "fa-brands fa-playstation";
-    }
-
-    if (selectedPlatform === "Xbox") {
-        icon.className =
-            "fa-brands fa-xbox";
-    }
-
-    if (selectedPlatform === "PC") {
-        icon.className =
-            "fa-solid fa-desktop";
-    }
-}
-
-
-// ==========================================================================
-// 12. فئة الدفع
-// ==========================================================================
-
-function switchPaymentCategory(category) {
-    if (!settingsLoaded) {
-        showToast(
-            currentLanguage === "ar"
-                ? "إعدادات المتجر غير جاهزة بعد."
-                : "Store settings are not ready yet."
-        );
-        return;
-    }
-
-    if (
-        category !== "local" &&
-        category !== "international"
-    ) {
-        return;
-    }
-
-    currentPaymentCategory =
-        category;
-
-    $("tabLocal")?.classList.toggle(
-        "active",
-        category === "local"
-    );
-
-    $("tabIntl")?.classList.toggle(
-        "active",
-        category === "international"
-    );
-
-    const methods =
-        getPaymentMethodsForCategory(
-            category
-        );
-
-    selectedPaymentMethod =
-        methods.length > 0
-            ? methods[0]
-            : "";
-
-    showElement(
-        "dynamicPaymentMethodsGrid"
-    );
-
-    updateDynamicUI();
-
-    if (selectedPaymentMethod) {
-        selectPaymentMethod(
-            selectedPaymentMethod
-        );
-    } else {
-        renderStep2PaymentFields();
-    }
-
-    calculateTotal();
-}
-
-
-// ==========================================================================
 // 13. بناء طرق الدفع
 // ==========================================================================
 
@@ -1492,6 +955,29 @@ function renderStep2PaymentFields() {
                     required
                     placeholder="SA0000000000000000000000"
                     autocomplete="off"
+                >
+            </div>
+
+            <label class="field-label">
+                ${
+                    currentLanguage === "ar"
+                        ? "الاسم الثلاثي للمستلم"
+                        : "Recipient Full Name"
+                }
+                <span class="required-star">*</span>
+            </label>
+
+            <div class="input-box-wrap">
+                <input
+                    type="text"
+                    id="recipientName"
+                    required
+                    placeholder="${
+                        currentLanguage === "ar"
+                            ? "الاسم الثلاثي كما في بيانات التحويل"
+                            : "Recipient full name"
+                    }"
+                    autocomplete="name"
                 >
             </div>
         `;
@@ -2191,7 +1677,7 @@ function buildPaymentDetailsHTML() {
     if (method === "usd") {
 
         const wallet =
-            $("usdtWalletType")?.value?.trim() || "";
+            $("usdDetails")?.value?.trim() || "";
 
         return `
             <div class="field-label">
@@ -2333,6 +1819,7 @@ function goToReview() {
     ];
 
     updateReviewPlatformUI();
+    syncTermsChecks($("termsCheck"));
 
     setText(
         "revQty",
@@ -3007,6 +2494,12 @@ async function submitOrderFinal() {
     }
 
 
+    const termsReview = $("termsCheckReview");
+    if (termsReview && !termsReview.checked) {
+        termsReview.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+    }
+
     if (isEditingAll) {
         toggleEditMode();
 
@@ -3486,37 +2979,53 @@ function showPrivacyModal() {
     openModal(currentLanguage === "ar" ? "سياسة الخصوصية" : "Privacy Policy", currentLanguage === "ar" ? ar : en);
 }
 
+const INLINE_TERMS_AR = [
+    "يتم تنفيذ الطلب وفق سعر السوق وقت المعالجة.",
+    "في حال تغيّر السوق، سيتم إشعار البائع بأي تعديل في السعر قبل التنفيذ.",
+    "لن يتم سحب أو تحويل أي عملات دون موافقة البائع المسبقة.",
+    "تقديم الطلب لا يضمن التنفيذ الكامل أو التنفيذ بالسعر الأصلي.",
+    "تختلف مدة التنفيذ حسب حالة السوق وحجم الطلبات، وقد تحدث تأخيرات بسيطة.",
+    "بيع العملات ينطوي على نسبة مخاطر تقديرية أقل من 1% لاحتمالية تقييد أو حظر حساب EA.",
+    "يعتمد متجر سامي كوينز طرق نقل احترافية لتقليل المخاطر إلى أدنى حد ممكن، دون تقديم ضمان نهائي.",
+    "لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.",
+    "لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.",
+    "إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل."
+];
+
+const INLINE_TERMS_EN = [
+    "Orders are processed according to the market price at the time of processing.",
+    "If the market changes, the seller will be notified of any price adjustment before processing.",
+    "No coins will be withdrawn or transferred without prior approval.",
+    "Submitting an order does not guarantee full execution or execution at the original price.",
+    "Processing time varies according to market conditions and order volume, and minor delays may occur.",
+    "Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.",
+    "SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.",
+    "SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.",
+    "No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.",
+    "Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions."
+];
+
+function renderInlineTerms() {
+    const containers = [$("inlineTermsList"), $("reviewInlineTermsList")].filter(Boolean);
+    if (!containers.length) return;
+    const terms = currentLanguage === "en" ? INLINE_TERMS_EN : INLINE_TERMS_AR;
+    const html = "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>";
+    containers.forEach(container => { container.innerHTML = html; });
+}
+
+function syncTermsChecks(source) {
+    const checked = Boolean(source?.checked);
+    const first = $("termsCheck");
+    const review = $("termsCheckReview");
+    if (first && first !== source) first.checked = checked;
+    if (review && review !== source) review.checked = checked;
+}
+
 function showTermsModal() {
-    const fallbackAr = [
-        "يتم تنفيذ الطلب وفق سعر السوق وقت المعالجة.",
-        "في حال تغيّر السوق، سيتم إشعار البائع بأي تعديل في السعر قبل التنفيذ.",
-        "لن يتم سحب أو تحويل أي عملات دون موافقة البائع المسبقة.",
-        "تقديم الطلب لا يضمن التنفيذ الكامل أو التنفيذ بالسعر الأصلي.",
-        "تختلف مدة التنفيذ حسب حالة السوق وحجم الطلبات، وقد تحدث تأخيرات بسيطة.",
-        "بيع العملات ينطوي على نسبة مخاطر تقديرية أقل من 1% لاحتمالية تقييد أو حظر حساب EA.",
-        "يعتمد متجر سامي كوينز طرق نقل احترافية لتقليل المخاطر إلى أدنى حد ممكن، دون تقديم ضمان نهائي.",
-        "لا يتحمل متجر سامي كوينز مسؤولية أي إغلاق أو تقييد أو حظر يصدر من EA على الحساب.",
-        "لا يوجد تعويض عن أي خسائر أو إجراءات ناتجة عن قرارات EA أو تقلبات السوق.",
-        "إتمام عملية البيع يعني إقرار البائع بقراءة هذه الشروط والموافقة عليها بالكامل."
-    ];
-    const fallbackEn = [
-        "Orders are processed according to the market price at the time of processing.",
-        "If the market changes, the seller will be notified of any price adjustment before processing.",
-        "No coins will be withdrawn or transferred without the seller's prior approval.",
-        "Submitting an order does not guarantee full execution or execution at the original price.",
-        "Processing time varies according to market conditions and order volume, and minor delays may occur.",
-        "Coin selling carries an estimated risk of less than 1% of an EA account being restricted or banned.",
-        "SAMI COINS uses professional transfer methods to reduce risks as much as possible, without providing an absolute guarantee.",
-        "SAMI COINS is not responsible for any closure, restriction, or ban imposed by EA on the account.",
-        "No compensation is provided for losses or actions resulting from EA decisions or market fluctuations.",
-        "Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions."
-    ];
-    const terms = currentLanguage === "en"
-        ? (Array.isArray(storeSettings.termsEn) && storeSettings.termsEn.length ? storeSettings.termsEn : fallbackEn)
-        : (Array.isArray(storeSettings.terms) && storeSettings.terms.length ? storeSettings.terms : fallbackAr);
+    const terms = currentLanguage === "en" ? INLINE_TERMS_EN : INLINE_TERMS_AR;
     const dir = currentLanguage === "ar" ? "rtl" : "ltr";
     const title = currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions";
-    const html = `<div class="legal-content" dir="${dir}"><ol>${terms.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol></div>`;
+    const html = '<div class="legal-content" dir="' + dir + '"><ol>' + terms.map(item => '<li>' + escapeHtml(item) + '</li>').join("") + '</ol></div>';
     openModal(title, html);
 }
 
