@@ -38,5 +38,6 @@ jobs:
           test -s tracking/tracking.js
           node --check admin/admin.js
           node --check shared/system.js
+          node --check server/routes/orders.js
           node --check orders/order.js
           node --check tracking/tracking.js
