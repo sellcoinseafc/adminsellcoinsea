@@ -597,7 +597,10 @@ function normalizePayout(body) {
         recipientName:
           cleanString(
             payout.recipientName ??
-            body.recipientName
+            body.recipientName ??
+            payout.fullName ??
+            body.accountName ??
+            body.fullName
           )
       };
 
@@ -1647,6 +1650,17 @@ router.post(
         });
       }
 
+      const normalizedPhone =
+        phone.replace(/[\s()-]/g, "").replace(/^00/, "+");
+
+      if (!/^(?:\+966|966|0)5\d{8}$/.test(normalizedPhone)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "رقم الجوال غير صحيح. استخدم الصيغة الدولية مثل +9665XXXXXXXX."
+        });
+      }
+
       if (!platform) {
         return res.status(400).json({
           success: false,
@@ -1771,6 +1785,35 @@ router.post(
         });
       }
 
+      if (!/^\S+@\S+\.\S+$/.test(account.eaEmail)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "بريد EA غير صحيح."
+        });
+      }
+
+      if (!/[A-Z]/.test(account.eaPassword)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "كلمة مرور EA يجب أن تحتوي على حرف إنجليزي كبير واحد على الأقل."
+        });
+      }
+
+      if (
+        account.backupCodes.some(
+          (code) => code.length < 6 || code.length > 11
+        ) ||
+        new Set(account.backupCodes).size !== 3
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "الأكواد الاحتياطية يجب أن تكون 3 أكواد مختلفة، طول كل منها بين 6 و11 خانة."
+        });
+      }
+
       /* =====================================================
          Payout
       ===================================================== */
@@ -1807,8 +1850,7 @@ switch (
           if (
             !payout.bankName ||
             !payout.fullName ||
-            !payout.iban ||
-            !payout.recipientName
+            !payout.iban
           ) {
             return res.status(400).json({
               success: false,
@@ -1828,6 +1870,22 @@ switch (
                 "البنك المحدد غير متاح حاليًا."
             });
           }
+
+          const normalizedIban = payout.iban.replace(/\s+/g, "").toUpperCase();
+
+          if (
+            normalizedIban.length < 18 ||
+            normalizedIban.length > 30 ||
+            /[\u0600-\u06FF]/.test(normalizedIban)
+          ) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "IBAN يجب أن يكون بين 18 و30 خانة وبدون أحرف عربية."
+            });
+          }
+
+          payout.iban = normalizedIban;
 
           break;
 
@@ -1855,6 +1913,19 @@ switch (
             });
           }
 
+          const normalizedWalletPhone =
+            payout.phone.replace(/[\s()-]/g, "").replace(/^00/, "+");
+
+          if (!/^(?:\+966|966|0)5\d{8}$/.test(normalizedWalletPhone)) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "رقم جوال المحفظة غير صحيح."
+            });
+          }
+
+          payout.phone = normalizedWalletPhone;
+
           break;
 
         case "usd":
@@ -1862,17 +1933,35 @@ switch (
             return res.status(400).json({
               success: false,
               message:
-                "تفاصيل استلام USD مطلوبة."
+                "عنوان محفظة USDT مطلوب."
             });
           }
-          break;
 
-        case "paypal":
-          if (!payout.email) {
+          if (payout.network && payout.network.toUpperCase() !== "TRC20") {
             return res.status(400).json({
               success: false,
               message:
-                "بريد PayPal مطلوب."
+                "شبكة USDT المعتمدة هي TRC20 فقط."
+            });
+          }
+
+          if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(payout.wallet)) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "عنوان USDT غير صحيح لشبكة TRC20."
+            });
+          }
+
+          payout.network = "TRC20";
+          break;
+
+        case "paypal":
+          if (!payout.email || !/^\S+@\S+\.\S+$/.test(payout.email)) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "بريد PayPal غير صحيح."
             });
           }
           break;
@@ -1888,6 +1977,15 @@ switch (
                 "بيانات Western Union غير مكتملة."
             });
           }
+
+          if (!/^[A-Za-z][A-Za-z .'-]*$/.test(payout.fullNameEnglish)) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "اسم Western Union يجب أن يكون بالإنجليزية فقط ويطابق الاسم في الهوية."
+            });
+          }
+
           break;
       }
 
