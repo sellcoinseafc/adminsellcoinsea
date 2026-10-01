@@ -9,10 +9,10 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active != false;
     }
 
-    // Public order form reads only the published settings document.
+    // Public settings are readable, but all mutations are server-authoritative.
     match /system/settings {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if false;
     }
 
     // Numbering/reservation is server-only. Firebase client SDKs never write it.
