@@ -1291,7 +1291,7 @@ function buildPaymentPreview(
   }
 
   if (
-    method === "usdt"
+    (method === "usd" || method === "usdt")
   ) {
     const wallet =
       safeDecrypt(
