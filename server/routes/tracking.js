@@ -1365,9 +1365,7 @@ router.get(
           issueData.issue,
 
         issueMessage:
-          issueData.issueMessage,
-
-        reviewSuggestions
+          issueData.issueMessage
       });
     } catch (error) {
       console.error(
@@ -1603,10 +1601,7 @@ router.get(
             initialIssue.issue,
 
           issueMessage:
-            initialIssue.issueMessage,
-
-          reviewSuggestions:
-            initialSuggestions
+            initialIssue.issueMessage
         }
       );
 
