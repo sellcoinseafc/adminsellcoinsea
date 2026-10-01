@@ -3583,6 +3583,51 @@ function syncTermsChecks(source) {
 }
 
 
+async function copyTrackingLinkUrl() {
+    const reference = generatedReferenceNumber || "";
+    if (!reference) return;
+    const url = new URL("/tracking/?ref=" + encodeURIComponent(reference), window.location.origin).href;
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = url;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+        }
+        showToast(currentLanguage === "ar" ? "تم نسخ رابط التتبع." : "Tracking link copied.");
+    } catch (error) {
+        console.error("Copy tracking link error:", error);
+    }
+}
+
+async function copyOrderId() {
+    const reference = generatedReferenceNumber || $("finalOrderId")?.textContent?.trim() || "";
+    if (!reference) return;
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(reference);
+        } else {
+            const textarea = document.createElement("textarea");
+            textarea.value = reference;
+            textarea.style.position = "fixed";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            textarea.remove();
+        }
+        showToast(currentLanguage === "ar" ? "تم نسخ رقم الطلب." : "Order number copied.");
+    } catch (error) {
+        console.error("Copy order number error:", error);
+    }
+}
+
 // 35. الاستعلام
 // ==========================================================================
 
