@@ -652,6 +652,38 @@ function getAmountDisplay(order) { const currency=String(order?.priceCurrency ||
 
 function getIssueTitle(issue) { const labels={wrong_credentials:"بيانات الدخول غير صحيحة",wrong_backup_codes:"الأكواد الاحتياطية غير صحيحة",logged_in_platform:"يرجى تسجيل الخروج من المنصة",market_closed:"سوق الانتقالات مغلق",wrong_platform:"المنصة غير صحيحة",other_issue:"توجد مشكلة في الطلب"}; return labels[String(issue||"").toLowerCase()] || "توجد مشكلة في الطلب"; }
 
+function renderTrackingExtras(order,statusMessage,issueMessage){
+ const total=Number(order?.orderedQuantity||order?.quantity||0)||0;
+ const withdrawn=Math.max(0,Number(order?.withdrawnQuantity||order?.drawnCoins||0)||0);
+ const remaining=Math.max(0,Number(order?.remainingQuantity ?? (total-withdrawn))||0);
+ const pct=total>0?Math.min(100,(withdrawn/total)*100):0;
+ setElementText('requestedQuantity',formatNumber(total));
+ setElementText('withdrawnQuantityDetail',formatNumber(withdrawn));
+ setElementText('remainingQuantity',formatNumber(remaining));
+ setElementText('withdrawalPercentage',Math.round(pct)+'%');
+ const status=normalizeStatus(order?.status||order?.orderStatus);
+ const cfg=STATUS_CONFIG[status]||STATUS_CONFIG.new;
+ setElementText('statusDetailLabel',order?.statusLabel||cfg.text);
+ setElementText('statusDetailMessage',statusMessage||order?.statusMessage||cfg.text);
+ setElementText('lastUpdateDetail',formatTrackingDateTime(order?.updatedAt)||order?.lastUpdate||'');
+ const action=document.getElementById('customerActionCard');
+ const needs=Boolean(order?.issue)&&String(order?.issueState||'needs_customer_action')==='needs_customer_action';
+ if(action)action.style.display=needs?'block':'none';
+ if(needs){setElementText('customerActionTitle',getIssueTitle(order.issue));setElementText('customerActionMessage',issueMessage||order?.issueMessage||'');setElementText('customerActionState','حالة الطلب: بانتظار إجراء العميل');}
+ const key=String(order?.transferStatusKey||'pending');
+ const labels={pending:'بانتظار التحويل',processing:'جاري التحويل',transferred:'تم التحويل',completed:'اكتمل التحويل'};
+ const messages={pending:'لم تبدأ مرحلة التحويل بعد.',processing:'جاري تجهيز وتحويل المبلغ.',transferred:'تم تسجيل تحويل المبلغ.',completed:'تم اكتمال التحويل وإغلاق الطلب.'};
+ setElementText('transferStatusLabel',labels[key]||labels.pending);
+ setElementText('transferStatusMessage',messages[key]||messages.pending);
+ const tr=document.getElementById('transferCompletionRow'),cr=document.getElementById('completedAtRow');
+ if(tr)tr.style.display=order?.transferredAt?'flex':'none';
+ if(cr)cr.style.display=order?.completedAt?'flex':'none';
+ setElementText('transferredAt',formatTrackingDateTime(order?.transferredAt));
+ setElementText('completedAt',formatTrackingDateTime(order?.completedAt));
+ const hc=document.getElementById('trackingHistoryCard'),hl=document.getElementById('trackingHistoryList');
+ const history=Array.isArray(order?.statusHistory)?order.statusHistory:[];
+ if(hc&&hl){hc.style.display=history.length?'block':'none';hl.innerHTML=history.map(function(item){return '<div class="tracking-history-item"><div class="tracking-history-dot"></div><div><strong>'+escapeHtml(item?.statusLabel||item?.label||'تحديث الطلب')+'</strong>'+((item?.message||item?.statusMessage)?'<p>'+escapeHtml(item.message||item.statusMessage)+'</p>':'')+'<small>'+escapeHtml(formatTrackingDateTime(item?.timestamp||item?.at||item?.createdAt))+'</small></div></div>';}).join('');}
+}
 /* ==========================================
    تحديث واجهة الطلب
    ========================================== */
@@ -716,12 +748,8 @@ function updateTrackingUI(
         formatNumber(order.quantity)
     );
 
-    setElementText(
-        "totalPrice",
-        order.totalPrice ??
-        order.total ??
-        ""
-    );
+    setElementText("totalPrice", getAmountDisplay(order));
+    setElementText("totalPriceCurrency", getCurrencyDisplay(order));
 
     /*
      * طريقة الدفع يجب أن تبقى ظاهرة دائماً.
@@ -760,6 +788,7 @@ function updateTrackingUI(
      * عرض بيانات الدفع بشكل آمن.
      */
     renderPaymentInfo(order);
+    renderTrackingExtras(order, statusMessage, issueMessage);
 
     /*
      * عرض بيانات الحساب بشكل آمن.
