@@ -1052,3 +1052,27 @@ body{
 .success-platform-oval.pc-theme{background:linear-gradient(135deg,rgba(201,166,76,.62),rgba(55,43,15,.92));color:#fff}
 .success-duration-grid .mini-card{min-height:90px}
 @media (max-width:720px){.success-oval-grid{grid-template-columns:1fr}.success-total-status-oval{grid-template-columns:1fr 1fr}.success-phone-line{border-radius:20px}.tracking-action-pill{min-height:56px}.review-platform{border-radius:28px}}
+
+/* Real store logo */
+.brand-logo-button{
+  appearance:none;
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  width:auto;
+  min-width:72px;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.store-logo-image{
+  display:block;
+  width:auto;
+  max-width:150px;
+  height:44px;
+  object-fit:contain;
+}
+.store-logo-image.hidden{display:none!important}
