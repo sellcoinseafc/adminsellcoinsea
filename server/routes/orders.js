@@ -2359,8 +2359,415 @@ switch (
 );
 
 /* ==========================================================================
+   Update Order
+========================================================================== */
+
+/**
+ * Server-authoritative order editing.
+ *
+ * Ordinary fields:
+ * - customerName
+ * - phone
+ * - customerEmail
+ * - platform
+ * - quantity
+ *
+ * Sensitive fields:
+ * - EA email/password/backup codes
+ * - payout identity/payment details
+ *
+ * All sensitive values are encrypted before persistence.
+ * Price is always recalculated server-side when pricing inputs change.
+ */
+router.post(
+  "/update",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const orderIdentifier = cleanString(req.body?.orderId);
+
+      if (!orderIdentifier) {
+        return res.status(400).json({
+          success: false,
+          message: "رقم الطلب مطلوب."
+        });
+      }
+
+      const found = await findOrder(orderIdentifier);
+
+      if (!found) {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
+
+      const current = found.snap.data() || {};
+      const input =
+        req.body?.data &&
+        typeof req.body.data === "object" &&
+        !Array.isArray(req.body.data)
+          ? req.body.data
+          : {};
+
+      const settingsSnap = await db.collection("system").doc("settings").get();
+      const settings = settingsSnap.data() || {};
+
+      const patch = {};
+      const changedFields = [];
+      const sensitiveFieldsChanged = [];
+
+      if (Object.prototype.hasOwnProperty.call(input, "customerName")) {
+        const value = cleanString(input.customerName);
+        if (!value) {
+          return res.status(400).json({
+            success: false,
+            message: "اسم العميل لا يمكن أن يكون فارغًا."
+          });
+        }
+        patch.customerName = value;
+        changedFields.push("customerName");
+      }
+
+      if (Object.prototype.hasOwnProperty.call(input, "phone")) {
+        const value = cleanString(input.phone);
+        const normalizedPhone = value.replace(/[\s()-]/g, "").replace(/^00/, "+");
+        if (!/^(?:\+966|966|0)5\d{8}$/.test(normalizedPhone)) {
+          return res.status(400).json({
+            success: false,
+            message: "رقم الجوال غير صحيح."
+          });
+        }
+        patch.phone = normalizedPhone;
+        changedFields.push("phone");
+      }
+
+      if (Object.prototype.hasOwnProperty.call(input, "customerEmail")) {
+        const value = cleanString(input.customerEmail);
+        if (value && !/^\S+@\S+\.\S+$/.test(value)) {
+          return res.status(400).json({
+            success: false,
+            message: "البريد الإلكتروني غير صحيح."
+          });
+        }
+        patch.customerEmail = value;
+        changedFields.push("customerEmail");
+      }
+
+      const pricingChanged =
+        Object.prototype.hasOwnProperty.call(input, "platform") ||
+        Object.prototype.hasOwnProperty.call(input, "quantity") ||
+        Object.prototype.hasOwnProperty.call(input, "payout");
+
+      if (Object.prototype.hasOwnProperty.call(input, "platform")) {
+        const value = normalizePlatform(input.platform);
+        if (!value) {
+          return res.status(400).json({
+            success: false,
+            message: "المنصة غير صحيحة."
+          });
+        }
+        patch.platform = value;
+        changedFields.push("platform");
+      }
+
+      if (Object.prototype.hasOwnProperty.call(input, "quantity")) {
+        const value = normalizeQuantity(input.quantity);
+        if (!value) {
+          return res.status(400).json({
+            success: false,
+            message: "كمية الكوينز غير صحيحة."
+          });
+        }
+
+        const platform =
+          patch.platform ||
+          normalizePlatform(current.platform);
+
+        const isPc = platform.toUpperCase() === "PC";
+        const minLimit = isPc
+          ? toNumber(settings.pcMin, 0)
+          : toNumber(settings.psMin, 0);
+        const maxLimit = isPc
+          ? toNumber(settings.pcMax, 0)
+          : toNumber(settings.psMax, 0);
+
+        if (minLimit > 0 && value < minLimit) {
+          return res.status(400).json({
+            success: false,
+            message: "الكمية أقل من الحد الأدنى المسموح."
+          });
+        }
+
+        if (maxLimit > 0 && value > maxLimit) {
+          return res.status(400).json({
+            success: false,
+            message: "الكمية أكبر من الحد الأقصى المسموح."
+          });
+        }
+
+        patch.quantity = value;
+        patch.remainingQuantity = Math.max(
+          0,
+          value - normalizeQuantity(current.withdrawnQuantity ?? current.drawnCoins)
+        );
+        changedFields.push("quantity");
+      }
+
+      if (Object.prototype.hasOwnProperty.call(input, "account")) {
+        const accountInput =
+          input.account &&
+          typeof input.account === "object" &&
+          !Array.isArray(input.account)
+            ? input.account
+            : {};
+
+        const currentAccount = current.accountData || {};
+
+        if (Object.prototype.hasOwnProperty.call(accountInput, "eaEmail")) {
+          const value = cleanString(accountInput.eaEmail);
+          if (!/^\S+@\S+\.\S+$/.test(value)) {
+            return res.status(400).json({
+              success: false,
+              message: "بريد EA غير صحيح."
+            });
+          }
+          patch["accountData.eaEmail"] = encryptIfNeeded(value);
+          changedFields.push("accountData.eaEmail");
+          sensitiveFieldsChanged.push("eaEmail");
+        }
+
+        if (Object.prototype.hasOwnProperty.call(accountInput, "eaPassword")) {
+          const value = cleanString(accountInput.eaPassword);
+          if (!value) {
+            return res.status(400).json({
+              success: false,
+              message: "كلمة مرور EA لا يمكن أن تكون فارغة."
+            });
+          }
+          patch["accountData.eaPassword"] = encryptIfNeeded(value);
+          changedFields.push("accountData.eaPassword");
+          sensitiveFieldsChanged.push("eaPassword");
+        }
+
+        if (Object.prototype.hasOwnProperty.call(accountInput, "backupCodes")) {
+          const codes = normalizeBackupCodes(accountInput.backupCodes);
+          if (codes.length !== 3 || new Set(codes).size !== 3) {
+            return res.status(400).json({
+              success: false,
+              message: "يجب إدخال 3 أكواد احتياطية مختلفة."
+            });
+          }
+          patch["accountData.backupCodes"] = encryptBackupCodes(codes);
+          changedFields.push("accountData.backupCodes");
+          sensitiveFieldsChanged.push("backupCodes");
+        }
+
+        if (!Object.keys(currentAccount).length && !sensitiveFieldsChanged.length) {
+          // لا شيء.
+        }
+      }
+
+      if (Object.prototype.hasOwnProperty.call(input, "payout")) {
+        const payoutInput =
+          input.payout &&
+          typeof input.payout === "object" &&
+          !Array.isArray(input.payout)
+            ? input.payout
+            : {};
+
+        const payout = normalizePayout({
+          payoutDetails: payoutInput
+        });
+
+        if (!PAYOUT_METHODS.has(payout.method)) {
+          return res.status(400).json({
+            success: false,
+            message: "طريقة الدفع غير صحيحة."
+          });
+        }
+
+        if (!isConfiguredPaymentMethod(settings, payout)) {
+          return res.status(400).json({
+            success: false,
+            message: "طريقة الدفع غير متاحة حاليًا."
+          });
+        }
+
+        switch (payout.method) {
+          case "bank": {
+            if (!payout.bankName || !payout.fullName || !payout.iban) {
+              return res.status(400).json({
+                success: false,
+                message: "بيانات الحساب البنكي غير مكتملة."
+              });
+            }
+            const iban = payout.iban.replace(/\s+/g, "").toUpperCase();
+            if (iban.length < 18 || iban.length > 30 || /[\u0600-\u06FF]/.test(iban)) {
+              return res.status(400).json({
+                success: false,
+                message: "IBAN غير صحيح."
+              });
+            }
+            payout.iban = iban;
+            break;
+          }
+          case "wallet": {
+            if (!payout.walletName || !payout.phone) {
+              return res.status(400).json({
+                success: false,
+                message: "بيانات المحفظة غير مكتملة."
+              });
+            }
+            break;
+          }
+          case "usd": {
+            if (!payout.wallet || !/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(payout.wallet)) {
+              return res.status(400).json({
+                success: false,
+                message: "عنوان USDT غير صحيح."
+              });
+            }
+            payout.network = "TRC20";
+            break;
+          }
+          case "paypal":
+            if (!payout.email || !/^\S+@\S+\.\S+$/.test(payout.email)) {
+              return res.status(400).json({
+                success: false,
+                message: "بريد PayPal غير صحيح."
+              });
+            }
+            break;
+          case "western":
+            if (!payout.fullNameEnglish || !payout.country) {
+              return res.status(400).json({
+                success: false,
+                message: "بيانات Western Union غير مكتملة."
+              });
+            }
+            break;
+        }
+
+        const encryptedPayout = encryptPayoutDetails(payout);
+        patch.payoutDetails = encryptedPayout;
+        patch.paymentMethodType = payout.method;
+        patch.paymentMethod = payout.method;
+        patch.paymentInfoData = buildLegacyPaymentInfo(payout);
+        patch.paymentPreview = buildPaymentPreview({
+          payoutDetails: payout,
+          paymentMethod: payout.method,
+          paymentMethodType: payout.method
+        });
+
+        changedFields.push("payoutDetails");
+        sensitiveFieldsChanged.push("payoutDetails");
+      }
+
+      if (pricingChanged) {
+        const platform =
+          patch.platform ||
+          normalizePlatform(current.platform);
+
+        const quantity =
+          patch.quantity ??
+          normalizeQuantity(current.quantity);
+
+        let payoutForPricing = null;
+
+        if (input.payout) {
+          payoutForPricing = normalizePayout({
+            payoutDetails: input.payout
+          });
+        } else {
+          payoutForPricing = {
+            method: cleanString(
+              current.paymentMethodType ||
+              current.paymentMethod ||
+              current.payoutDetails?.method
+            ),
+            payoutType: cleanString(
+              current.payoutDetails?.payoutType
+            )
+          };
+        }
+
+        const price = calculateServerPrice(
+          quantity,
+          platform,
+          payoutForPricing,
+          settings
+        );
+
+        if (!price) {
+          return res.status(400).json({
+            success: false,
+            message: "تعذر إعادة حساب قيمة الطلب."
+          });
+        }
+
+        patch.rate = price.rate;
+        patch.totalPriceSar = price.totalSar;
+        patch.totalPriceUsd = price.totalUsd;
+        patch.priceCurrency = price.currency;
+        patch.displayTotalPrice = price.displayTotal;
+        patch.totalPrice = price.displayTotal;
+
+        changedFields.push(
+          "rate",
+          "totalPriceSar",
+          "totalPriceUsd",
+          "priceCurrency",
+          "displayTotalPrice"
+        );
+      }
+
+      if (!changedFields.length) {
+        return res.status(400).json({
+          success: false,
+          message: "لم يتم إرسال أي بيانات قابلة للتعديل."
+        });
+      }
+
+      patch.lastUpdate = TS();
+      patch.history = admin.firestore.FieldValue.arrayUnion({
+        type: "order_edit",
+        fields: changedFields.slice(0, 50),
+        sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20),
+        actor: req.admin?.email || req.admin?.uid || "admin",
+        at: new Date()
+      });
+
+      await found.ref.update(patch);
+
+      return res.json({
+        success: true,
+        orderId: String(current.orderId || found.id),
+        referenceNumber: String(current.referenceNumber || ""),
+        changedFields: changedFields.filter(
+          (field) => !field.includes("accountData") && field !== "payoutDetails"
+        ),
+        sensitiveFieldsChanged: sensitiveFieldsChanged.map((field) => field)
+      });
+    } catch (error) {
+      console.error(
+        "Update order error:",
+        error?.code || error?.message || "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر تحديث بيانات الطلب."
+      });
+    }
+  }
+);
+
+/* ==========================================================================
    Update Status
 ========================================================================== */
+
+
 
 router.post(
   "/update-status",
