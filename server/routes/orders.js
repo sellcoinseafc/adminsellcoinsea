@@ -170,7 +170,8 @@ function getConfiguredPaymentCodes(settings, category) {
 
   if (configured && typeof configured === "object" && !Array.isArray(configured)) {
     const values = Array.isArray(configured[category]) ? configured[category] : [];
-    return new Set(values.map(normalizePaymentMethodCode).filter(Boolean));
+    const codes = new Set(values.map(normalizePaymentMethodCode).filter(Boolean));
+    if (codes.size) return codes;
   }
 
   const values = Array.isArray(configured) ? configured : [];
