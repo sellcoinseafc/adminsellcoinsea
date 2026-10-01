@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from "express";
 import cors from "cors";
+import { createRateLimiter } from "./server/middleware/rateLimit.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -52,6 +53,10 @@ const __dirname =
  */
 
 const app = express();
+app.disable("x-powered-by");
+
+const trustProxy = String(process.env.TRUST_PROXY || "").trim();
+if (trustProxy) app.set("trust proxy", trustProxy === "true" ? true : trustProxy);
 
 /**
  * لا نكشف نوع/إصدار Express في response headers.
@@ -113,7 +118,7 @@ app.use(
  */
 app.use(
   express.json({
-    limit: "2mb"
+    limit: "256kb"
   })
 );
 
@@ -138,6 +143,14 @@ app.use(
  * - no-store للـAPI يمنع caching للبيانات الحساسة.
  * - nosniff يمنع MIME sniffing.
  */
+
+const apiRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 180,
+  message: "عدد طلبات API مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
+app.use("/api", apiRateLimit);
 
 app.use(
   "/api",
@@ -174,6 +187,16 @@ app.use(
       "DENY"
     );
 
+    res.setHeader(
+      "Content-Security-Policy",
+      "frame-ancestors 'none';"
+    );
+
+    res.setHeader(
+      "X-DNS-Prefetch-Control",
+      "off"
+    );
+
     /*
      * تقليل تسريب Referer من صفحات API.
      */
@@ -199,8 +222,18 @@ app.use(
  * الهدف منها تقليل مخاطر المتصفح الأساسية.
  */
 
+const enableHsts =
+  String(process.env.ENABLE_HSTS || "").toLowerCase() === "true";
+
 app.use(
   (req, res, next) => {
+    if (enableHsts) {
+      res.setHeader(
+        "Strict-Transport-Security",
+        "max-age=31536000; includeSubDomains"
+      );
+    }
+
     res.setHeader(
       "X-Content-Type-Options",
       "nosniff"
