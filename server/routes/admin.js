@@ -1518,7 +1518,9 @@ router.post(
     try {
       const orderId = normalizeIdentifier(req.body?.orderId);
       const referenceNumber = normalizeIdentifier(req.body?.referenceNumber);
-      const recipient = String(req.body?.recipient || "").replace(/[^0-9+]/g, "").slice(0, 32);
+      const recipientRaw = String(req.body?.recipient || "")
+        .replace(/[^0-9+]/g, "")
+        .slice(0, 32);
       const message = String(req.body?.message || "").trim().slice(0, 4000);
       const templateCode = String(req.body?.templateCode || "").trim().slice(0, 100);
 
@@ -1529,11 +1531,21 @@ router.post(
         });
       }
 
+      /*
+       * Data minimization:
+       * the audit log records that a message was prepared/sent, but does not
+       * persist the full customer message or recipient phone number.
+       */
+      const maskedRecipient =
+        recipientRaw.length > 4
+          ? `••••${recipientRaw.slice(-4)}`
+          : "••••";
+
       await db.collection("whatsappLogs").add({
         orderId,
         referenceNumber,
-        recipient,
-        message,
+        recipientMasked: maskedRecipient,
+        messageLength: message.length,
         templateCode,
         sentBy: String(req.admin.uid),
         sentByEmail: String(req.admin.email || ""),
@@ -1554,7 +1566,6 @@ router.post(
     }
   }
 );
-
 
 
 router.post(
