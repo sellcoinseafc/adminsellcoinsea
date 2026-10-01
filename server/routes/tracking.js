@@ -1153,6 +1153,9 @@ function buildTrackingOrder(
         ? String(order.issueState || "needs_customer_action")
         : "resolved",
 
+    reviewSubmitted:
+      order.reviewSubmitted === true,
+
     transferStatusKey:
       order.transferCompleted === true
         ? "completed"
@@ -1784,6 +1787,235 @@ router.get(
       "close",
       cleanup
     );
+  }
+);
+
+/**
+ * ============================================================================
+ * POST /api/tracking/:ref/review
+ * ============================================================================
+ *
+ * Customer review submission.
+ * - Only completed orders can submit.
+ * - One review per order.
+ * - Platform and quantity are always read from the order, never trusted from
+ *   the browser.
+ * - Review text is limited to 600 Unicode characters.
+ * - Review is stored as pending until an admin approves it.
+ * ============================================================================
+ */
+
+router.post(
+  "/:ref/review",
+  async (req, res) => {
+    try {
+      res.set(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, proxy-revalidate"
+      );
+
+      const ref =
+        normalizeReference(req.params.ref);
+
+      if (!isValidReference(ref)) {
+        return res.status(400).json({
+          success: false,
+          message: "رقم الطلب غير صحيح."
+        });
+      }
+
+      const comment =
+        String(req.body?.comment ?? "").trim();
+
+      const rating =
+        Number(req.body?.rating);
+
+      const commentLength =
+        Array.from(comment).length;
+
+      if (!comment) {
+        return res.status(400).json({
+          success: false,
+          message: "اكتب تقييمك أولاً."
+        });
+      }
+
+      if (commentLength > 600) {
+        return res.status(400).json({
+          success: false,
+          message: "التقييم يجب ألا يتجاوز 600 حرف."
+        });
+      }
+
+      if (
+        !Number.isInteger(rating) ||
+        rating < 1 ||
+        rating > 5
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "اختر تقييمًا من نجمة إلى خمس نجوم."
+        });
+      }
+
+      const found =
+        await getTrackingSnapshot(ref);
+
+      if (!found) {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
+
+      const orderRef =
+        db.collection("orders").doc(found.id);
+
+      const reviewRef =
+        db.collection("reviews").doc(ref);
+
+      await db.runTransaction(async (transaction) => {
+        const orderSnap =
+          await transaction.get(orderRef);
+
+        const reviewSnap =
+          await transaction.get(reviewRef);
+
+        if (!orderSnap.exists) {
+          throw new Error("ORDER_NOT_FOUND");
+        }
+
+        const order =
+          orderSnap.data() || {};
+
+        const status =
+          normalizeStatus(
+            order.status || order.orderStatus
+          );
+
+        if (status !== "completed") {
+          throw new Error("ORDER_NOT_COMPLETED");
+        }
+
+        if (
+          order.reviewSubmitted === true ||
+          reviewSnap.exists
+        ) {
+          throw new Error("REVIEW_ALREADY_SUBMITTED");
+        }
+
+        const quantity =
+          getQuantity(order);
+
+        if (quantity <= 0) {
+          throw new Error("INVALID_ORDER_QUANTITY");
+        }
+
+        const platform =
+          String(order.platform || "").trim();
+
+        if (!platform) {
+          throw new Error("INVALID_ORDER_PLATFORM");
+        }
+
+        transaction.create(
+          reviewRef,
+          {
+            orderId:
+              String(order.orderId || found.id),
+
+            referenceNumber:
+              String(order.referenceNumber || ref),
+
+            customerName:
+              String(order.customerName || "عميل"),
+
+            platform,
+
+            quantity,
+
+            rating,
+
+            comment,
+
+            status:
+              "pending",
+
+            createdAt:
+              new Date(),
+
+            updatedAt:
+              new Date()
+          }
+        );
+
+        transaction.update(
+          orderRef,
+          {
+            reviewSubmitted:
+              true,
+
+            reviewSubmittedAt:
+              new Date(),
+
+            reviewId:
+              reviewRef.id,
+
+            lastUpdate:
+              new Date()
+          }
+        );
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: "تم إرسال تقييمك بنجاح.",
+        reviewSubmitted: true
+      });
+    } catch (error) {
+      const code =
+        error?.message || "";
+
+      if (code === "ORDER_NOT_FOUND") {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
+
+      if (code === "ORDER_NOT_COMPLETED") {
+        return res.status(400).json({
+          success: false,
+          message: "يمكن إرسال التقييم بعد اكتمال الطلب فقط."
+        });
+      }
+
+      if (code === "REVIEW_ALREADY_SUBMITTED") {
+        return res.status(409).json({
+          success: false,
+          message: "تم إرسال تقييم لهذا الطلب مسبقًا."
+        });
+      }
+
+      if (code === "INVALID_ORDER_QUANTITY" || code === "INVALID_ORDER_PLATFORM") {
+        return res.status(400).json({
+          success: false,
+          message: "بيانات الطلب غير مكتملة لإرسال التقييم."
+        });
+      }
+
+      console.error(
+        "Review submission error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر إرسال التقييم، حاول مرة أخرى."
+      });
+    }
   }
 );
 
