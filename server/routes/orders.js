@@ -2053,6 +2053,22 @@ switch (
           legacyPaymentInfo,
 
         /*
+         * Safe public tracking preview.
+         * Contains only masked/non-sensitive payment metadata.
+         * It is generated before encryption and never contains
+         * full IBANs, wallet addresses, payment emails, or phone numbers.
+         */
+        paymentPreview:
+          buildPaymentPreview({
+            payoutDetails:
+              payout,
+            paymentMethod:
+              payout.method,
+            paymentMethodType:
+              payout.method
+          }),
+
+        /*
          * EA account.
          */
         accountData:
