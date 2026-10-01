@@ -192,7 +192,7 @@ export const defaultSettings = {
         "24 ساعة",
 
     safeMethod:
-        "سوق الانتقالات (Web App)",
+        "آمنة 90%",
 
     /*
      * Legacy/manual value kept only for compatibility.
