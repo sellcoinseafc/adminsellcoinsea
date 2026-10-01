@@ -683,7 +683,189 @@ function renderTrackingExtras(order,statusMessage,issueMessage){
  const hc=document.getElementById('trackingHistoryCard'),hl=document.getElementById('trackingHistoryList');
  const history=Array.isArray(order?.statusHistory)?order.statusHistory:[];
  if(hc&&hl){hc.style.display=history.length?'block':'none';hl.innerHTML=history.map(function(item){return '<div class="tracking-history-item"><div class="tracking-history-dot"></div><div><strong>'+escapeHtml(item?.statusLabel||item?.label||'تحديث الطلب')+'</strong>'+((item?.message||item?.statusMessage)?'<p>'+escapeHtml(item.message||item.statusMessage)+'</p>':'')+'<small>'+escapeHtml(formatTrackingDateTime(item?.timestamp||item?.at||item?.createdAt))+'</small></div></div>';}).join('');}
+ renderCustomerReview(order);
 }
+let customerReviewRating = 0;
+let customerReviewSubmitting = false;
+
+function setCustomerReviewFeedback(message, type) {
+    const element = document.getElementById("customerReviewFeedback");
+    if (!element) return;
+
+    element.innerText = message || "";
+    element.className = "customer-review-feedback";
+    if (type) {
+        element.classList.add(`is-${type}`);
+    }
+}
+
+function updateCustomerReviewCounter() {
+    const input = document.getElementById("customerReviewText");
+    const counter = document.getElementById("reviewCharacterCount");
+    if (!input || !counter) return;
+
+    counter.innerText = `${Array.from(input.value || "").length} / 600`;
+}
+
+function setCustomerReviewRating(value) {
+    const rating = Math.max(1, Math.min(5, Number(value) || 0));
+    customerReviewRating = rating;
+
+    document.querySelectorAll("#customerReviewStars .customer-review-star").forEach((button) => {
+        const buttonRating = Number(button.dataset.rating || 0);
+        button.classList.toggle("is-selected", buttonRating <= rating);
+    });
+}
+
+function setupCustomerReviewEvents() {
+    const card = document.getElementById("customerReviewCard");
+    const input = document.getElementById("customerReviewText");
+    const submit = document.getElementById("customerReviewSubmit");
+    const stars = document.getElementById("customerReviewStars");
+
+    if (!card || card.dataset.bound === "true") {
+        return;
+    }
+
+    card.dataset.bound = "true";
+
+    input?.addEventListener("input", () => {
+        if (Array.from(input.value).length > 600) {
+            input.value = Array.from(input.value).slice(0, 600).join("");
+        }
+
+        updateCustomerReviewCounter();
+        setCustomerReviewFeedback("", "");
+    });
+
+    stars?.addEventListener("click", (event) => {
+        const button = event.target.closest(".customer-review-star");
+        if (!button) return;
+        setCustomerReviewRating(button.dataset.rating);
+        setCustomerReviewFeedback("", "");
+    });
+
+    submit?.addEventListener("click", submitCustomerReview);
+
+    updateCustomerReviewCounter();
+}
+
+function renderCustomerReview(order) {
+    const card = document.getElementById("customerReviewCard");
+    if (!card) return;
+
+    setupCustomerReviewEvents();
+
+    const status = normalizeStatus(
+        order?.status || order?.orderStatus
+    );
+
+    const completed = status === "completed";
+    const alreadySubmitted = order?.reviewSubmitted === true;
+
+    if (!completed || alreadySubmitted || customerReviewSubmitting) {
+        card.style.display = "none";
+        return;
+    }
+
+    card.style.display = "block";
+}
+
+async function submitCustomerReview() {
+    if (customerReviewSubmitting || !activeRef) {
+        return;
+    }
+
+    const input = document.getElementById("customerReviewText");
+    const submit = document.getElementById("customerReviewSubmit");
+
+    const comment = String(input?.value || "").trim();
+    const length = Array.from(comment).length;
+
+    if (!comment) {
+        setCustomerReviewFeedback("اكتب تقييمك أولاً.", "error");
+        input?.focus();
+        return;
+    }
+
+    if (length > 600) {
+        setCustomerReviewFeedback("التقييم يجب ألا يتجاوز 600 حرف.", "error");
+        input?.focus();
+        return;
+    }
+
+    if (!Number.isInteger(customerReviewRating) || customerReviewRating < 1 || customerReviewRating > 5) {
+        setCustomerReviewFeedback("اختر تقييمك من نجمة إلى خمس نجوم.", "error");
+        return;
+    }
+
+    customerReviewSubmitting = true;
+
+    if (submit) {
+        submit.disabled = true;
+    }
+
+    setCustomerReviewFeedback("جاري إرسال التقييم...", "");
+
+    try {
+        const response = await fetch(
+            `/api/tracking/${encodeURIComponent(activeRef)}/review`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    comment,
+                    rating: customerReviewRating
+                })
+            }
+        );
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || data?.success !== true) {
+            throw new Error(
+                data?.message || "تعذر إرسال التقييم."
+            );
+        }
+
+        const card = document.getElementById("customerReviewCard");
+        if (card) {
+            card.style.display = "none";
+        }
+
+        if (input) {
+            input.value = "";
+        }
+
+        customerReviewRating = 0;
+        document.querySelectorAll("#customerReviewStars .customer-review-star").forEach((button) => {
+            button.classList.remove("is-selected");
+        });
+
+        updateCustomerReviewCounter();
+    } catch (error) {
+        customerReviewSubmitting = false;
+
+        if (submit) {
+            submit.disabled = false;
+        }
+
+        setCustomerReviewFeedback(
+            error?.message || "تعذر إرسال التقييم، حاول مرة أخرى.",
+            "error"
+        );
+
+        return;
+    }
+
+    customerReviewSubmitting = false;
+    if (submit) {
+        submit.disabled = false;
+    }
+}
+
 /* ==========================================
    تحديث واجهة الطلب
    ========================================== */
