@@ -24,6 +24,22 @@
  * ============================================================================
  */
 
+const DEFAULT_DECRYPT_EMAILS = new Set([
+  "mt.samicoins@gmail.com",
+  "psnsa7@gmail.com"
+]);
+
+function getConfiguredSet(name, fallback) {
+  const raw = String(process.env[name] || "").trim();
+  if (!raw) return fallback;
+  return new Set(
+    raw.split(",").map((value) => value.trim().toLowerCase()).filter(Boolean)
+  );
+}
+
+const decryptAdminEmails = getConfiguredSet("DECRYPT_ADMIN_EMAILS", DEFAULT_DECRYPT_EMAILS);
+const decryptAdminUids = getConfiguredSet("DECRYPT_ADMIN_UIDS", new Set());
+
 function forbidden(
   res,
   message = "ليس لديك صلاحية للوصول إلى البيانات الحساسة."
@@ -97,6 +113,24 @@ export function requireDecryptPermission(
     return forbidden(
       res,
       "حساب الإدارة غير مفعل."
+    );
+  }
+
+  /**
+   * Decryption is a higher privilege than ordinary administration.
+   * Prefer stable Firebase UIDs when DECRYPT_ADMIN_UIDS is configured.
+   * Otherwise use the explicitly configured admin emails.
+   */
+  const uid = String(req.admin.uid || "").trim();
+  const email = String(req.admin.email || "").trim().toLowerCase();
+
+  const uidAllowed = decryptAdminUids.size > 0 && decryptAdminUids.has(uid);
+  const emailAllowed = decryptAdminUids.size === 0 && decryptAdminEmails.has(email);
+
+  if (!uidAllowed && !emailAllowed) {
+    return forbidden(
+      res,
+      "هذا الحساب لا يملك صلاحية فك تشفير البيانات الحساسة."
     );
   }
 
