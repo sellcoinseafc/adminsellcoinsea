@@ -3426,27 +3426,45 @@ router.post(
       delete account.eaPassword;
       delete account.backupCodes;
 
-      await found.ref.update({
-        accountData:
-          account,
+      /*
+       * Purge both the canonical nested fields and legacy top-level
+       * sensitive fields so old orders cannot retain a second copy.
+       */
+      const purgeData = {
+        accountData: account,
 
-        sensitivePurged:
-          true,
+        eaEmail: admin.firestore.FieldValue.delete(),
+        eaPassword: admin.firestore.FieldValue.delete(),
+        backupCodes: admin.firestore.FieldValue.delete(),
 
-        sensitiveDataPurged:
-          true,
+        sensitivePurged: true,
+        sensitiveDataPurged: true,
 
-        purgedAt:
-          TS(),
+        purgedAt: TS(),
 
         purgedBy:
           req.admin?.email ||
           req.admin?.uid ||
           "Admin",
 
-        lastUpdate:
-          TS()
-      });
+        lastUpdate: TS()
+      };
+
+      const purgeAuditRef = db.collection("audit_logs").doc();
+      const purgeBatch = db.batch();
+
+      purgeBatch.update(found.ref, purgeData);
+      purgeBatch.set(
+        purgeAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "إتلاف البيانات الحساسة",
+          targetOrder: currentOrderReference(data, found.snap.id),
+          details: "تم إتلاف بيانات EA الحساسة نهائيًا مع الحفاظ على بيانات الطلب غير الحساسة"
+        })
+      );
+
+      await purgeBatch.commit();
 
       return res.json({
         success: true,
