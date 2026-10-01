@@ -45,6 +45,14 @@ const router = express.Router();
 
 const DECRYPT_WINDOW_MS = 90_000;
 
+const adminMutationRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 60,
+  keyGenerator: (req) =>
+    `admin:${String(req.admin?.uid || req.ip || "unknown")}`,
+  message: "عدد عمليات الإدارة مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
 const decryptRateLimit = createRateLimiter({
   windowMs: 60_000,
   max: 5,
@@ -818,6 +826,7 @@ router.get(
 router.post(
   "/decrypt-order",
   requireAdmin,
+  adminMutationRateLimit,
   requireDecryptPermission,
   decryptRateLimit,
   async (req, res) => {
@@ -1056,6 +1065,7 @@ router.post(
 router.post(
   "/destroy-sensitive-data",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const orderIdentifier =
