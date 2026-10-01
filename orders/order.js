@@ -3508,6 +3508,20 @@ const INLINE_TERMS_EN = [
     "Completing the sale means the seller acknowledges reading and fully accepting these Terms & Conditions."
 ];
 
+function showTermsModal() {
+    const terms = currentLanguage === "en" ? INLINE_TERMS_EN : INLINE_TERMS_AR;
+    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
+    const title = currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions";
+
+    const html = `
+        <div class="legal-content" dir="${dir}">
+            <ol>${terms.map((item) => "<li>" + escapeHtml(item) + "</li>").join("")}</ol>
+        </div>
+    `;
+
+    openModal(title, html);
+}
+
 function renderInlineTerms() {
     const containers = [$("inlineTermsList"), $("reviewInlineTermsList")].filter(Boolean);
     if (!containers.length) return;
