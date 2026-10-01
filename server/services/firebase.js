@@ -30,6 +30,18 @@ dotenv.config({
 
 dotenv.config();
 
+function normalizePrivateKey(value) {
+  return value?.replace(/\\n/g, "\n").trim() || "";
+}
+
+function isValidPrivateKey(value) {
+  return (
+    value.startsWith("-----BEGIN PRIVATE KEY-----") &&
+    value.endsWith("-----END PRIVATE KEY-----") &&
+    value.includes("\n")
+  );
+}
+
 function loadServiceAccount() {
   const projectId =
     process.env.FIREBASE_PROJECT_ID?.trim();
@@ -38,16 +50,18 @@ function loadServiceAccount() {
     process.env.FIREBASE_CLIENT_EMAIL?.trim();
 
   const privateKey =
-    process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+    normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY);
 
   /*
-   * Preferred production path:
-   * credentials are supplied through the process environment.
-   *
-   * This avoids coupling PM2/deployment to a credentials file
-   * and makes key rotation possible without changing source code.
+   * Use environment credentials only when the private key is a valid PEM.
+   * This prevents a malformed/stale FIREBASE_PRIVATE_KEY from breaking
+   * a deployment that already has a valid VPS-only service account file.
    */
-  if (projectId && clientEmail && privateKey) {
+  if (
+    projectId &&
+    clientEmail &&
+    isValidPrivateKey(privateKey)
+  ) {
     return {
       projectId,
       clientEmail,
@@ -67,7 +81,7 @@ function loadServiceAccount() {
 
   if (!existsSync(serviceAccountPath)) {
     throw new Error(
-      "Firebase credentials are not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY, or provide server/services/serviceAccountKey.json on the server."
+      "Firebase credentials are not configured. Set valid FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY, or provide server/services/serviceAccountKey.json on the server."
     );
   }
 
@@ -96,10 +110,19 @@ function loadServiceAccount() {
     );
   }
 
+  const filePrivateKey =
+    normalizePrivateKey(serviceAccount.private_key);
+
+  if (!isValidPrivateKey(filePrivateKey)) {
+    throw new Error(
+      "Firebase service account key contains an invalid private key."
+    );
+  }
+
   return {
     projectId: serviceAccount.project_id,
     clientEmail: serviceAccount.client_email,
-    privateKey: serviceAccount.private_key
+    privateKey: filePrivateKey
   };
 }
 
