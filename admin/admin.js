@@ -3225,7 +3225,7 @@ function initReviewsListener() {
 
               status:
                 data.status ||
-                "published"
+                "pending"
             };
           }
         );
