@@ -3718,6 +3718,20 @@ window.openReviewModal =
         </p>
 
         <p style="margin-bottom:8px;">
+          <b>المنصة:</b>
+          ${escapeHtml(
+            review.platform || "---"
+          )}
+        </p>
+
+        <p style="margin-bottom:8px;">
+          <b>الكمية:</b>
+          ${escapeHtml(
+            formatNumber(review.quantity || 0)
+          )}
+        </p>
+
+        <p style="margin-bottom:8px;">
           <b>التقييم:</b>
           <span style="color:#f59e0b;">
             ${"⭐".repeat(
