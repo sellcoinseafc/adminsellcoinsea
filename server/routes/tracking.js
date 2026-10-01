@@ -1,11 +1,26 @@
 import express from "express";
 import { db } from "../services/firebase.js";
+import { createRateLimiter } from "../middleware/rateLimit.js";
 import {
   decrypt,
   isEncryptedValue
 } from "../utils/crypto.js";
 
 const router = express.Router();
+
+const trackingRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 30,
+  message: "عدد محاولات التتبع مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
+const reviewRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 10,
+  message: "عدد محاولات إرسال التقييم مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
+
 
 /**
  * ============================================================================
@@ -1308,6 +1323,7 @@ function writeSseEvent(
 
 router.get(
   "/:ref",
+  trackingRateLimit,
   async (req, res) => {
     try {
       res.set(
@@ -1425,6 +1441,7 @@ router.get(
  */
 router.get(
   "/:ref/events",
+  trackingRateLimit,
   async (req, res) => {
     const ref =
       normalizeReference(
