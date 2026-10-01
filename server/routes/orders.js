@@ -1423,6 +1423,14 @@ router.get(
                 data.phone ||
                 "",
 
+              customerEmail:
+                data.customerEmail ||
+                "",
+
+              adminNote:
+                data.adminNote ||
+                "",
+
               platform:
                 data.platform ||
                 "",
