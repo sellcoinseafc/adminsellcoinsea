@@ -5309,7 +5309,7 @@ window.openOrderModal =
     };
     const nextControls = adminStatusNext[order.status] || [];
     const statusControlsMarkup = nextControls.length
-      ? '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">الحالة الحالية: '+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+nextControls.map(([status,label]) => '<button class="btn-primary" type="button" onclick="changeOrderStatusDirect(\\''+escapeAttribute(order.id)+'\\',\\''+status+'\\')">'+escapeHtml(label)+'</button>').join("")+'</div></section>'
+      ? '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">الحالة الحالية: '+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+nextControls.map(([status,label]) => '<button class="btn-primary" type="button" onclick="changeOrderStatusDirect(\''+escapeAttribute(order.id)+'\',\''+status+'\')">'+escapeHtml(label)+'</button>').join("")+'</div></section>'
       : '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">'+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><p class="muted">لا توجد حالة انتقالية متاحة من الحالة الحالية.</p></section>';
     modalBody.insertAdjacentHTML("beforeend", statusControlsMarkup);
     modalBody.insertAdjacentHTML("beforeend",
