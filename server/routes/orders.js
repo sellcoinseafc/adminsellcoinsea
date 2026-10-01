@@ -1355,6 +1355,26 @@ function buildPaymentPreview(
   return preview;
 }
 
+function buildOrderAuditEntry({
+  req,
+  action,
+  targetOrder,
+  details = ""
+}) {
+  return {
+    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timeString: new Date().toLocaleString("ar-SA", {
+      timeZone: "Asia/Riyadh"
+    }),
+    user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+    userId: String(req.admin?.uid || "").slice(0, 200),
+    action: String(action || "").slice(0, 200),
+    targetOrder: String(targetOrder || "").slice(0, 200),
+    details: String(details || "").slice(0, 1200),
+    userAgent: String(req.headers?.["user-agent"] || "").slice(0, 80)
+  };
+}
+
 /* ==========================================================================
    API Test
 ========================================================================== */
@@ -2984,9 +3004,21 @@ router.post(
         at: new Date()
       });
 
-      await found.ref.update(
-        updateData
+      const statusAuditRef = db.collection("audit_logs").doc();
+      const statusBatch = db.batch();
+
+      statusBatch.update(found.ref, updateData);
+      statusBatch.set(
+        statusAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "تعديل حالة الطلب",
+          targetOrder: current.referenceNumber || current.orderId || found.id,
+          details: `تم تغيير الحالة من ${previousStatus} إلى ${nextStatus}${updateData.issue ? ` | المشكلة: ${updateData.issue}` : ""}`
+        })
       );
+
+      await statusBatch.commit();
 
       return res.json({
         success: true,
@@ -3082,30 +3114,34 @@ router.post(
        * IMPORTANT:
        * This endpoint NEVER changes status.
        */
-      await found.ref.update({
-        withdrawnQuantity:
+      const drawnUpdate = {
+        withdrawnQuantity: value,
+        drawnCoins: value,
+        remainingQuantity: Math.max(0, quantity - value),
+        lastUpdate: TS(),
+        withdrawnUpdatedAt: TS(),
+        history: admin.firestore.FieldValue.arrayUnion({
+          type: "withdrawn_quantity",
           value,
+          actor: req.admin?.email || req.admin?.uid || "admin",
+          at: new Date()
+        })
+      };
 
-        drawnCoins:
-          value,
+      const drawnAuditRef = db.collection("audit_logs").doc();
+      const drawnBatch = db.batch();
+      drawnBatch.update(found.ref, drawnUpdate);
+      drawnBatch.set(
+        drawnAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "تحديث سحب الكوينز",
+          targetOrder: order.referenceNumber || order.orderId || found.id,
+          details: `تم تحديث الكمية المسحوبة إلى ${value} من أصل ${quantity}`
+        })
+      );
 
-        remainingQuantity:
-          Math.max(0, quantity - value),
-
-        lastUpdate:
-          TS(),
-
-        withdrawnUpdatedAt:
-          TS(),
-
-        history:
-          admin.firestore.FieldValue.arrayUnion({
-            type: "withdrawn_quantity",
-            value,
-            actor: "admin",
-            at: new Date()
-          })
-      });
+      await drawnBatch.commit();
 
       return res.json({
         success: true,
@@ -3133,6 +3169,11 @@ router.post(
     }
   }
 );
+
+function currentOrderReference(data, fallbackId) {
+  const order = data && typeof data === "object" ? data : {};
+  return order.referenceNumber || order.orderId || fallbackId || "";
+}
 
 /* ==========================================================================
    Delete Order
@@ -3162,7 +3203,21 @@ router.post(
         });
       }
 
-      await found.ref.delete();
+      const deleteAuditRef = db.collection("audit_logs").doc();
+      const deleteBatch = db.batch();
+
+      deleteBatch.delete(found.ref);
+      deleteBatch.set(
+        deleteAuditRef,
+        buildOrderAuditEntry({
+          req,
+          action: "حذف طلب",
+          targetOrder: currentOrderReference(found.snap.data(), found.id),
+          details: "تم حذف الطلب نهائيًا من قاعدة البيانات"
+        })
+      );
+
+      await deleteBatch.commit();
 
       return res.json({
         success: true
