@@ -1860,7 +1860,38 @@ router.post(
       }
 
       patch.updatedAt = admin.firestore.FieldValue.serverTimestamp();
-      await settingsRef.set(patch, { merge: true });
+
+      const settingsAuditRef = db.collection("audit_logs").doc();
+      const settingsBatch = db.batch();
+
+      settingsBatch.set(
+        settingsRef,
+        patch,
+        { merge: true }
+      );
+
+      settingsBatch.set(
+        settingsAuditRef,
+        {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", {
+            timeZone: "Asia/Riyadh"
+          }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تعديل إعدادات النظام",
+          targetOrder: "الإعدادات",
+          details: JSON.stringify({
+            action,
+            updatedFields: Object.keys(patch)
+              .filter((field) => field !== "updatedAt")
+              .slice(0, 50)
+          }).slice(0, 1200),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+        }
+      );
+
+      await settingsBatch.commit();
 
       return res.json({
         success: true,
