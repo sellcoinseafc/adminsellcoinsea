@@ -21,7 +21,7 @@ let storeSettings = {
     transferHours: "",
     pcWithdrawDays: "",
     pcTransferHours: "",
-    safeMethod: "",
+    safeMethod: "آمنة 100%",
     paymentCategories: {},
     termsEn: [],
     termsEnabled: true,
@@ -520,8 +520,8 @@ function normalizePaymentMethodCode(method) {
         return "wallet";
     }
 
-    if (value.includes("usdt")) {
-        return "usdt";
+    if (value.includes("usdt") || value === "usd" || value.includes("usd")) {
+        return "usd";
     }
 
     if (value.includes("paypal")) {
@@ -570,7 +570,7 @@ function getPaymentMethodsForCategory(category) {
                     return (
                         (normalized === "bank_transfer" && code === "bank") ||
                         (normalized === "digital_wallet" && code === "wallet") ||
-                        (normalized === "usdt" && code === "usdt") ||
+                        (normalized === "usdt" && code === "usd") ||
                         (normalized === "paypal" && code === "paypal") ||
                         (normalized === "western_union" && code === "western")
                     );
@@ -579,7 +579,7 @@ function getPaymentMethodsForCategory(category) {
 
             return category === "local"
                 ? code === "bank" || code === "wallet"
-                : code === "usdt" || code === "paypal" || code === "western";
+                : code === "usd" || code === "paypal" || code === "western";
         });
     }
 
@@ -1191,7 +1191,7 @@ function updateDynamicUI() {
                 "fa-solid fa-mobile-screen-button";
         }
 
-        if (code === "usdt") {
+        if (code === "usd") {
             icon =
                 "fa-solid fa-coins";
         }
@@ -1552,22 +1552,22 @@ function renderStep2PaymentFields() {
         return;
     }
 
-    if (method === "usdt") {
+    if (method === "usd") {
 
         container.innerHTML = `
             <label class="field-label">
-                USDT TRC20
+                USD
                 <span class="required-star">*</span>
             </label>
 
             <div class="input-box-wrap">
                 <input
                     type="text"
-                    id="usdtWalletType"
+                    id="usdDetails"
                     placeholder="${
                         currentLanguage === "ar"
-                            ? "أدخل عنوان محفظة USDT"
-                            : "Enter your USDT wallet address"
+                            ? "أدخل تفاصيل استلام USD"
+                            : "Enter your USD receiving details"
                     }"
                     autocomplete="off"
                     required
@@ -1670,7 +1670,9 @@ function getCurrentPayoutDataFromForm() {
                 fullName:
                     $("accountName")?.value?.trim() || "",
                 iban:
-                    $("iban")?.value?.trim() || ""
+                    $("iban")?.value?.trim() || "",
+                recipientName:
+                    $("recipientName")?.value?.trim() || ""
             };
 
         case "wallet":
@@ -1683,12 +1685,12 @@ function getCurrentPayoutDataFromForm() {
                     $("walletNumber")?.value?.trim() || ""
             };
 
-        case "usdt":
+        case "usd":
             return {
                 payoutType: "international",
                 method: "usdt",
                 wallet:
-                    $("usdtWalletType")?.value?.trim() || ""
+                    $("usdDetails")?.value?.trim() || ""
             };
 
         case "paypal":
@@ -2118,8 +2120,8 @@ function buildPaymentDetailsHTML() {
         const name =
             $("accountName")?.value?.trim() || "";
 
-        const iban =
-            $("iban")?.value?.trim() || "";
+        const iban = $("iban")?.value?.trim() || "";
+        const recipientName = $("recipientName")?.value?.trim() || "";
 
         return `
             <div class="field-label">
@@ -2151,6 +2153,16 @@ function buildPaymentDetailsHTML() {
                     ${escapeHtml(iban)}
                 </span>
             </div>
+
+            <div class="field-label">
+                اسم المستلم:
+            </div>
+
+            <div class="review-value-box">
+                <span>
+                    ${escapeHtml(recipientName)}
+                </span>
+            </div>
         `;
     }
 
@@ -2176,7 +2188,7 @@ function buildPaymentDetailsHTML() {
         `;
     }
 
-    if (method === "usdt") {
+    if (method === "usd") {
 
         const wallet =
             $("usdtWalletType")?.value?.trim() || "";
@@ -2188,7 +2200,7 @@ function buildPaymentDetailsHTML() {
 
             <div class="review-value-box">
                 <span>
-                    USDT: ${escapeHtml(wallet)}
+                    USD: ${escapeHtml(wallet)}
                 </span>
             </div>
         `;
@@ -2554,10 +2566,10 @@ function renderInlinePayoutEdit() {
         return;
     }
 
-    if (method === "usdt") {
+    if (method === "usd") {
 
         wrap.innerHTML = `
-            <label class="field-label">عنوان USDT:</label>
+            <label class="field-label">عنوان USD:</label>
 
             <div class="input-box-wrap">
                 <input
@@ -2805,7 +2817,7 @@ function saveAllEdits() {
         }
     }
 
-    if (method === "usdt") {
+    if (method === "usd") {
 
         if ($("usdtWalletType")) {
             $("usdtWalletType").value =
@@ -3595,7 +3607,7 @@ function sendOrderViaWhatsapp() {
     let paymentText = "";
     if (method === "bank") paymentText = en ? "Payment Method:\\nBank Transfer\\nBank: " + ($("bankNameSelect")?.value || "--") : "طريقة الدفع:\\nتحويل بنكي\\nالبنك: " + ($("bankNameSelect")?.value || "--");
     else if (method === "wallet") paymentText = en ? "Payment Method:\\nDigital Wallet\\nWallet: " + ($("walletTypeSelect")?.value || "--") : "طريقة الدفع:\\nمحفظة رقمية\\nالمحفظة: " + ($("walletTypeSelect")?.value || "--");
-    else if (method === "usdt") paymentText = en ? "Payment Method:\\nUSDT" : "طريقة الدفع:\\nUSDT";
+    else if (method === "usd") paymentText = en ? "Payment Method:\\nUSDT" : "طريقة الدفع:\\nUSDT";
     else if (method === "paypal") paymentText = en ? "Payment Method:\\nPayPal" : "طريقة الدفع:\\nPayPal";
     else if (method === "western") paymentText = en ? "Payment Method:\\nWestern Union\\nCountry: " + ($("wuCountry")?.value || "--") : "طريقة الدفع:\\nWestern Union\\nالدولة: " + ($("wuCountry")?.value || "--");
     const message = en ? [
