@@ -6628,7 +6628,7 @@ function initSystemSettingsListener() {
       const configuredBanks = Array.isArray(settings?.banks) ? settings.banks : [];
       requiredBanks.forEach((bank) => {
         if (!configuredBanks.includes(bank)) {
-          systemAddBank(bank).catch((error) => {
+          adminSettingsAction("add_bank", { value: bank }).catch((error) => {
             console.error("Bank catalog migration error:", error?.message || error);
           });
         }
@@ -6645,7 +6645,7 @@ function initSystemSettingsListener() {
       const configuredWallets = Array.isArray(settings?.wallets) ? settings.wallets : [];
       requiredWallets.forEach((wallet) => {
         if (!configuredWallets.includes(wallet)) {
-          systemAddWallet(wallet).catch((error) => {
+          adminSettingsAction("add_wallet", { value: wallet }).catch((error) => {
             console.error("Wallet catalog migration error:", error?.message || error);
           });
         }
