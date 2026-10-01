@@ -17,7 +17,7 @@ const router = express.Router();
  * - عدم كشف Firestore document ID.
  * - عدم كشف ciphertext أو البيانات الحساسة.
  * - إظهار بيانات الدفع بصورة آمنة ومقنّعة.
- * - إظهار بيانات EA بصورة مقنّعة فقط.
+ * - عدم إعادة بيانات EA الحساسة إلى العميل.
  * - إظهار رسالة الإتلاف بعد حذف بيانات EA.
  * - دعم issue مستقل عن status.
  * - قراءة رسائل المشاكل من system/settings.
@@ -73,9 +73,6 @@ const DEFAULT_ISSUE_MESSAGES = {
   wrong_platform: "يرجى التواصل معنا عبر الواتساب",
   other_issue: "يرجى التواصل معنا عبر الواتساب بشكل عاجل"
 };
-
-const PURGED_ACCOUNT_MESSAGE =
-  "تمت معالجة طلبك بنجاح، وتم حذف بيانات الحساب الحساسة حفاظًا على أمانك.";
 
 const SYSTEM_SETTINGS_DOC = db
   .collection("system")
@@ -467,24 +464,6 @@ function maskName(name) {
       );
     })
     .join(" ");
-}
-
-/**
- * ============================================================================
- * Account helpers
- * ============================================================================
- */
-
-function getAccountData(order) {
-  if (
-    order.accountData &&
-    typeof order.accountData === "object" &&
-    !Array.isArray(order.accountData)
-  ) {
-    return order.accountData;
-  }
-
-  return {};
 }
 
 /**
