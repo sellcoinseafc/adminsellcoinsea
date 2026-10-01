@@ -1309,7 +1309,7 @@ function getDisplayPrice(
 
   if (
     order?.priceCurrency ===
-    "USD"
+    "USDT"
   ) {
     const usd =
       Number(
@@ -6570,18 +6570,46 @@ function initSystemSettingsListener() {
       currentSettingsData =
         settings || {};
 
-      if (
-        Array.isArray(settings?.banks) &&
-        settings.banks.length < 13 &&
-        !settings.banks.includes("بنك الخليج الدولي")
-      ) {
-        systemAddBank("بنك الخليج الدولي").catch((error) => {
-          console.error(
-            "Bank catalog migration error:",
-            error?.message || error
-          );
-        });
-      }
+      const requiredBanks = [
+        "مصرف الراجحي",
+        "البنك الأهلي السعودي",
+        "بنك الرياض",
+        "مصرف الإنماء",
+        "بنك البلاد",
+        "بنك الجزيرة",
+        "البنك الأول (SAB)",
+        "البنك العربي الوطني",
+        "البنك السعودي الفرنسي",
+        "البنك السعودي للاستثمار",
+        "STC Bank",
+        "D360 Bank",
+        "بنك الخليج الدولي"
+      ];
+      const configuredBanks = Array.isArray(settings?.banks) ? settings.banks : [];
+      requiredBanks.forEach((bank) => {
+        if (!configuredBanks.includes(bank)) {
+          systemAddBank(bank).catch((error) => {
+            console.error("Bank catalog migration error:", error?.message || error);
+          });
+        }
+      });
+
+      const requiredWallets = [
+        "STC Pay",
+        "Barq",
+        "URPay",
+        "Mobily Pay",
+        "Tiqmo",
+        "Alinma Pay"
+      ];
+      const configuredWallets = Array.isArray(settings?.wallets) ? settings.wallets : [];
+      requiredWallets.forEach((wallet) => {
+        if (!configuredWallets.includes(wallet)) {
+          systemAddWallet(wallet).catch((error) => {
+            console.error("Wallet catalog migration error:", error?.message || error);
+          });
+        }
+      });
 
       updateStoreStatusUI(
         settings.storeOpen !==
