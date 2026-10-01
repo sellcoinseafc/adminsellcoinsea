@@ -1507,4 +1507,221 @@ router.post(
   }
 );
 
+/**
+ * ============================================================================
+ * Review management
+ * ============================================================================
+ *
+ * Admin-only review moderation. The browser never writes review documents
+ * directly; all mutations are validated and mirrored by the server.
+ * ============================================================================
+ */
+
+router.post(
+  "/reviews/status",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const reviewId =
+        String(req.body?.reviewId || "").trim();
+
+      const requestedStatus =
+        String(req.body?.status || "").trim().toLowerCase();
+
+      const allowedStatuses =
+        new Set([
+          "pending",
+          "published",
+          "archived"
+        ]);
+
+      if (!reviewId || !allowedStatuses.has(requestedStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: "بيانات حالة التقييم غير صحيحة."
+        });
+      }
+
+      const reviewRef =
+        db.collection("reviews").doc(reviewId);
+
+      const publicRef =
+        db.collection("publicReviews").doc(reviewId);
+
+      const reviewSnap =
+        await reviewRef.get();
+
+      if (!reviewSnap.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "التقييم غير موجود."
+        });
+      }
+
+      const review =
+        reviewSnap.data() || {};
+
+      const comment =
+        String(review.comment || review.text || "").trim();
+
+      const platform =
+        String(review.platform || "").trim();
+
+      const quantity =
+        Number(review.quantity);
+
+      const rating =
+        Number(review.rating);
+
+      if (
+        requestedStatus === "published" &&
+        (
+          !comment ||
+          Array.from(comment).length > 600 ||
+          !platform ||
+          !Number.isFinite(quantity) ||
+          quantity <= 0 ||
+          !Number.isInteger(rating) ||
+          rating < 1 ||
+          rating > 5
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "التقييم لا يحتوي بيانات صالحة للنشر."
+        });
+      }
+
+      const batch =
+        db.batch();
+
+      batch.update(
+        reviewRef,
+        {
+          status:
+            requestedStatus,
+
+          updatedAt:
+            new Date(),
+
+          moderatedAt:
+            new Date(),
+
+          moderatedBy:
+            req.admin?.email ||
+            req.admin?.uid ||
+            "Admin"
+        }
+      );
+
+      if (requestedStatus === "published") {
+        batch.set(
+          publicRef,
+          {
+            platform,
+            quantity,
+            rating,
+            comment,
+            publishedAt:
+              new Date()
+          }
+        );
+      } else {
+        batch.delete(publicRef);
+      }
+
+      await batch.commit();
+
+      await writeAuditLog({
+        req,
+        action: "تحديث حالة التقييم",
+        targetId: reviewId,
+        details: `تغيير حالة التقييم إلى: ${requestedStatus}`
+      });
+
+      return res.json({
+        success: true,
+        status: requestedStatus
+      });
+    } catch (error) {
+      console.error(
+        "Review status error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر تحديث حالة التقييم."
+      });
+    }
+  }
+);
+
+router.post(
+  "/reviews/delete",
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const reviewId =
+        String(req.body?.reviewId || "").trim();
+
+      if (!reviewId) {
+        return res.status(400).json({
+          success: false,
+          message: "معرّف التقييم مطلوب."
+        });
+      }
+
+      const reviewRef =
+        db.collection("reviews").doc(reviewId);
+
+      const publicRef =
+        db.collection("publicReviews").doc(reviewId);
+
+      const reviewSnap =
+        await reviewRef.get();
+
+      if (!reviewSnap.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "التقييم غير موجود."
+        });
+      }
+
+      const batch =
+        db.batch();
+
+      batch.delete(reviewRef);
+      batch.delete(publicRef);
+
+      await batch.commit();
+
+      await writeAuditLog({
+        req,
+        action: "حذف تقييم",
+        targetId: reviewId,
+        details: "تم حذف التقييم نهائيًا"
+      });
+
+      return res.json({
+        success: true
+      });
+    } catch (error) {
+      console.error(
+        "Review delete error:",
+        error?.code ||
+          error?.message ||
+          "unknown_error"
+      );
+
+      return res.status(500).json({
+        success: false,
+        message: "تعذر حذف التقييم."
+      });
+    }
+  }
+);
+
 export default router;
