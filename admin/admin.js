@@ -1652,6 +1652,14 @@ async function loadOrders() {
               order.phone ||
               "",
 
+            customerEmail:
+              order.customerEmail ||
+              "",
+
+            adminNote:
+              order.adminNote ||
+              "",
+
             platform:
               order.platform ||
               "",
@@ -1816,6 +1824,13 @@ async function loadOrders() {
     lastOrdersCount =
       ordersData.length ||
       previousCount;
+
+    const mobileOrdersBadge = document.getElementById("mobileOrdersBadge");
+    if (mobileOrdersBadge) {
+      const newOrders = ordersData.filter((item) => ["new","review"].includes(item.status)).length;
+      mobileOrdersBadge.textContent = String(newOrders);
+      mobileOrdersBadge.style.display = newOrders > 0 ? "grid" : "none";
+    }
 
     sortOrdersByPriority();
 
@@ -5228,6 +5243,42 @@ window.openOrderModal =
 
       </div>
     `;
+
+
+    /* V3: lifecycle timeline and history are visual projections of existing order data. */
+    const lifecycle = [
+      ["new","طلب جديد","fa-file-circle-plus"],
+      ["review","قيد المراجعة","fa-magnifying-glass"],
+      ["progress","جاري السحب","fa-gears"],
+      ["finished","تم السحب","fa-coins"],
+      ["transferred","تم التحويل","fa-money-bill-transfer"],
+      ["completed","مكتمل","fa-circle-check"]
+    ];
+    const currentIndex = Math.max(0, lifecycle.findIndex((item) => item[0] === order.status));
+    const timelineMarkup = lifecycle.map((item, index) => {
+      const done = index < currentIndex;
+      const current = index === currentIndex;
+      const stamp = current ? order.updatedAt : (index === 0 ? order.createdAt : "");
+      const stampText = stamp ? new Date(stamp).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}) : "";
+      return '<div class="order-timeline-step '+(done?'done ':'')+(current?'current':'')+'">'+
+        '<div class="order-timeline-dot"><i class="fa-solid '+item[2]+'"></i></div>'+
+        '<div class="order-timeline-label">'+escapeHtml(item[1])+'</div>'+
+        '<div class="order-timeline-time">'+escapeHtml(stampText)+'</div>'+
+      '</div>';
+    }).join("");
+    const historyMarkup = Array.isArray(order.history) && order.history.length
+      ? order.history.slice(-50).reverse().map((entry) => {
+          const at = entry.at ? (parseFirestoreDate(entry.at) || entry.at) : "";
+          const when = at ? new Date(at).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}) : "---";
+          return '<div class="order-history-system-item"><div class="field-label">'+escapeHtml(when)+'</div><div><strong>'+escapeHtml(entry.type || entry.status || "تحديث")+'</strong></div><div class="badge">'+escapeHtml(entry.actor || "النظام")+'</div></div>';
+        }).join("")
+      : '<div class="empty-state">لا توجد تحديثات مسجلة بعد.</div>';
+    modalBody.insertAdjacentHTML("afterbegin",
+      '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-route"></i> مراحل الطلب</span>'+getStatusBadge(order.status)+'</div><div class="order-timeline">'+timelineMarkup+'</div></section>'
+    );
+    modalBody.insertAdjacentHTML("beforeend",
+      '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-clock-rotate-left"></i> سجل تحديثات الطلب</span></div><div class="order-history-system">'+historyMarkup+'</div></section>'
+    );
 
     modal.classList.add(
       "active"
