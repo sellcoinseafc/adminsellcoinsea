@@ -628,6 +628,7 @@ function buildPaymentResponse(
     bankName: "",
     fullName: "",
     iban: "",
+    recipientName: "",
 
     walletName: "",
     walletPhone: "",
@@ -663,6 +664,11 @@ function buildPaymentResponse(
       response.iban =
         safeDecrypt(
           payout.iban
+        );
+
+      response.recipientName =
+        safeDecrypt(
+          payout.recipientName
         );
 
       break;
@@ -934,6 +940,12 @@ router.post(
         phone:
           String(
             order.phone ||
+            ""
+          ),
+
+        adminNote:
+          String(
+            order.adminNote ||
             ""
           ),
 
@@ -1465,5 +1477,34 @@ router.post(
   }
 );
 
+
+
+router.post(
+  "/update-note",
+  requireAdmin,
+  async (req,res)=>{
+    try{
+      const orderIdentifier=normalizeIdentifier(req.body?.orderId);
+      if(!orderIdentifier)return res.status(400).json({success:false,message:"رقم الطلب مطلوب."});
+      const found=await findOrder(orderIdentifier);
+      if(!found)return res.status(404).json({success:false,message:"الطلب غير موجود."});
+      const note=String(req.body?.note||"").trim().slice(0,2000);
+      await found.ref.update({
+        adminNote:note,
+        lastUpdate:admin.firestore.FieldValue.serverTimestamp(),
+        history:admin.firestore.FieldValue.arrayUnion({
+          type:"admin_note",
+          note:note?"تم تحديث الملاحظة الإدارية":"تم حذف الملاحظة الإدارية",
+          actor:req.admin?.email||req.admin?.uid||"Admin",
+          at:new Date()
+        })
+      });
+      return res.json({success:true});
+    }catch(error){
+      console.error("Admin update-note error:",error?.code||error?.message||"unknown_error");
+      return res.status(500).json({success:false,message:"تعذر حفظ الملاحظة."});
+    }
+  }
+);
 
 export default router;
