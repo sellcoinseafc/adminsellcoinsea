@@ -49,9 +49,17 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Reviews are managed by the admin dashboard.
+    // Review records are server-authored. Admins can read them through the dashboard.
     match /reviews/{reviewId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Only approved, non-sensitive review cards are public.
+    // The server creates/removes these mirror documents.
+    match /publicReviews/{reviewId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     match /{document=**} {
