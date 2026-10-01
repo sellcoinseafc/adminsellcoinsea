@@ -1275,25 +1275,76 @@ router.post(
 
       const purgeRef = db.collection("orders").doc(found.id);
       const purgeAuditRef = db.collection("audit_logs").doc();
-      const purgeBatch = db.batch();
 
-      purgeBatch.update(purgeRef, updateData);
-      purgeBatch.set(
-        purgeAuditRef,
-        {
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(purgeRef);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshOrder = freshSnap.data() || {};
+
+        if (
+          freshOrder.sensitivePurged === true ||
+          freshOrder.sensitiveDataPurged === true ||
+          freshOrder.purgedAt
+        ) {
+          const error = new Error("ALREADY_PURGED");
+          error.code = "ALREADY_PURGED";
+          throw error;
+        }
+
+        const freshStatus = String(freshOrder.status || "").toLowerCase();
+        if (freshStatus !== "completed") {
+          const error = new Error("ORDER_NOT_COMPLETED");
+          error.code = "ORDER_NOT_COMPLETED";
+          throw error;
+        }
+
+        const freshCompletedAt = freshOrder.completedAt?.toDate
+          ? freshOrder.completedAt.toDate()
+          : freshOrder.completedAt
+            ? new Date(freshOrder.completedAt)
+            : null;
+
+        const freshPurgeDueAt = freshOrder.purgeDueAt?.toDate
+          ? freshOrder.purgeDueAt.toDate()
+          : freshOrder.purgeDueAt
+            ? new Date(freshOrder.purgeDueAt)
+            : freshCompletedAt
+              ? new Date(freshCompletedAt.getTime() + 5 * 24 * 60 * 60 * 1000)
+              : null;
+
+        if (
+          !freshPurgeDueAt ||
+          Number.isNaN(freshPurgeDueAt.getTime()) ||
+          freshPurgeDueAt.getTime() > Date.now()
+        ) {
+          const error = new Error("PURGE_NOT_DUE");
+          error.code = "PURGE_NOT_DUE";
+          throw error;
+        }
+
+        transaction.update(purgeRef, updateData);
+        transaction.set(purgeAuditRef, {
           timestamp: FieldValue.serverTimestamp(),
           timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "إتلاف البيانات الحساسة",
-          targetOrder: String(order.referenceNumber || order.orderId || found.id).slice(0, 200),
+          targetOrder: String(
+            freshOrder.referenceNumber ||
+            freshOrder.orderId ||
+            found.id
+          ).slice(0, 200),
           details: "تم إتلاف بيانات الحساب وبيانات الدفع الحساسة نهائيًا",
           userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
           source: "server"
-        }
-      );
-
-      await purgeBatch.commit();
+        });
+      });
 
       /*
        * تنظيف أي نافذة decrypt موجودة لهذا الطلب
@@ -1395,36 +1446,58 @@ router.post(
 
       const archiveRef = db.collection("orders").doc(found.id);
       const archiveAuditRef = db.collection("audit_logs").doc();
-      const archiveBatch = db.batch();
 
-      archiveBatch.update(archiveRef, {
-        archived: true,
-        archivedAt: admin.firestore.FieldValue.serverTimestamp(),
-        archivedBy: String(req.admin.uid),
-        lastUpdate: admin.firestore.FieldValue.serverTimestamp(),
-        history: admin.firestore.FieldValue.arrayUnion({
-          type: "archived",
-          actor: req.admin.email || req.admin.name || req.admin.uid,
-          at: new Date()
-        })
-      });
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(archiveRef);
 
-      archiveBatch.set(
-        archiveAuditRef,
-        {
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshOrder = freshSnap.data() || {};
+
+        if (freshOrder.archived === true) {
+          const error = new Error("ALREADY_ARCHIVED");
+          error.code = "ALREADY_ARCHIVED";
+          throw error;
+        }
+
+        if (String(freshOrder.status || "").toLowerCase() !== "completed") {
+          const error = new Error("ORDER_NOT_COMPLETED");
+          error.code = "ORDER_NOT_COMPLETED";
+          throw error;
+        }
+
+        transaction.update(archiveRef, {
+          archived: true,
+          archivedAt: admin.firestore.FieldValue.serverTimestamp(),
+          archivedBy: String(req.admin.uid),
+          lastUpdate: admin.firestore.FieldValue.serverTimestamp(),
+          history: admin.firestore.FieldValue.arrayUnion({
+            type: "archived",
+            actor: req.admin.email || req.admin.name || req.admin.uid,
+            at: new Date()
+          })
+        });
+
+        transaction.set(archiveAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "أرشفة طلب",
-          targetOrder: String(order.referenceNumber || order.orderId || found.id).slice(0, 200),
+          targetOrder: String(
+            freshOrder.referenceNumber ||
+            freshOrder.orderId ||
+            found.id
+          ).slice(0, 200),
           details: "تمت أرشفة الطلب بعد اكتماله",
           userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
           source: "server"
-        }
-      );
-
-      await archiveBatch.commit();
+        });
+      });
 
       return res.json({
         success: true,
@@ -2064,47 +2137,68 @@ router.post(
         });
       }
 
-      const batch =
-        db.batch();
+      const reviewAuditRef = db.collection("audit_logs").doc();
 
-      batch.update(
-        reviewRef,
-        {
-          status:
-            requestedStatus,
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(reviewRef);
 
-          updatedAt:
-            new Date(),
+        if (!freshSnap.exists) {
+          const error = new Error("REVIEW_NOT_FOUND");
+          error.code = "REVIEW_NOT_FOUND";
+          throw error;
+        }
 
-          moderatedAt:
-            new Date(),
+        const freshReview = freshSnap.data() || {};
+        const freshComment = String(
+          freshReview.comment ||
+          freshReview.text ||
+          ""
+        ).trim();
+        const freshPlatform = String(freshReview.platform || "").trim();
+        const freshQuantity = Number(freshReview.quantity);
+        const freshRating = Number(freshReview.rating);
 
+        if (
+          requestedStatus === "published" &&
+          (
+            !freshComment ||
+            Array.from(freshComment).length > 600 ||
+            !freshPlatform ||
+            !Number.isFinite(freshQuantity) ||
+            freshQuantity <= 0 ||
+            !Number.isInteger(freshRating) ||
+            freshRating < 1 ||
+            freshRating > 5
+          )
+        ) {
+          const error = new Error("INVALID_REVIEW");
+          error.code = "INVALID_REVIEW";
+          throw error;
+        }
+
+        transaction.update(reviewRef, {
+          status: requestedStatus,
+          updatedAt: new Date(),
+          moderatedAt: new Date(),
           moderatedBy:
             req.admin?.email ||
             req.admin?.uid ||
             "Admin"
+        });
+
+        if (requestedStatus === "published") {
+          transaction.set(publicRef, {
+            platform: freshPlatform,
+            quantity: freshQuantity,
+            rating: freshRating,
+            comment: freshComment,
+            publishedAt: new Date()
+          });
+        } else {
+          transaction.delete(publicRef);
         }
-      );
 
-      if (requestedStatus === "published") {
-        batch.set(
-          publicRef,
-          {
-            platform,
-            quantity,
-            rating,
-            comment,
-            publishedAt:
-              new Date()
-          }
-        );
-      } else {
-        batch.delete(publicRef);
-      }
-
-      batch.set(
-        db.collection("audit_logs").doc(),
-        {
+        transaction.set(reviewAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
@@ -2114,10 +2208,8 @@ router.post(
           details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
           userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
           source: "server"
-        }
-      );
-
-      await batch.commit();
+        });
+      });
 
       return res.json({
         success: true,
@@ -2171,15 +2263,20 @@ router.post(
         });
       }
 
-      const batch =
-        db.batch();
+      const reviewDeleteAuditRef = db.collection("audit_logs").doc();
 
-      batch.delete(reviewRef);
-      batch.delete(publicRef);
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(reviewRef);
 
-      batch.set(
-        db.collection("audit_logs").doc(),
-        {
+        if (!freshSnap.exists) {
+          const error = new Error("REVIEW_NOT_FOUND");
+          error.code = "REVIEW_NOT_FOUND";
+          throw error;
+        }
+
+        transaction.delete(reviewRef);
+        transaction.delete(publicRef);
+        transaction.set(reviewDeleteAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
@@ -2189,10 +2286,8 @@ router.post(
           details: "تم حذف التقييم نهائيًا",
           userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
           source: "server"
-        }
-      );
-
-      await batch.commit();
+        });
+      });
 
       return res.json({
         success: true
