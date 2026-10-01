@@ -3447,7 +3447,7 @@ function renderInlineTerms() {
         : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);
     const html = terms.length
         ? "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>"
-        : "<p class="terms-empty">" + (currentLanguage === "ar" ? "لا توجد إقرارات مضافة حاليًا." : "No declarations are currently configured.") + "</p>";
+        : "<p class=\"terms-empty\">" + (currentLanguage === "ar" ? "لا توجد إقرارات مضافة حاليًا." : "No declarations are currently configured.") + "</p>";
     containers.forEach(container => { container.innerHTML = html; });
 }
 
