@@ -653,7 +653,8 @@ function normalizeSettings(
  */
 
 export function subscribeToSettings(
-    callback
+    callback,
+    onError = null
 ) {
     if (
         typeof callback !==
@@ -699,6 +700,11 @@ export function subscribeToSettings(
                                 error
                         );
 
+                        if (typeof onError === "function") {
+                            onError(error);
+                            return;
+                        }
+
                         callback(
                             normalizeSettings(
                                 defaultSettings
@@ -714,6 +720,11 @@ export function subscribeToSettings(
                     error?.message ||
                     error
             );
+
+            if (typeof onError === "function") {
+                onError(error);
+                return;
+            }
 
             callback(
                 normalizeSettings(
