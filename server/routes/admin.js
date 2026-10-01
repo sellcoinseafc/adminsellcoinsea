@@ -1440,14 +1440,41 @@ router.post(
   requireAdmin,
   async (req, res) => {
     try {
-      const action = sanitizeAuditText(req.body?.action, 200);
-      const targetOrder = sanitizeAuditText(req.body?.targetOrder, 200);
-      const details = sanitizeAuditText(req.body?.details, 1000);
+      /*
+       * This endpoint is intentionally limited to UI activity telemetry.
+       * It is NOT a source of truth for security events or completed
+       * business mutations. Security-sensitive routes write their own
+       * server-authored audit records.
+       */
+      const action = sanitizeAuditText(req.body?.action, 120);
+      const targetOrder = sanitizeAuditText(req.body?.targetOrder, 120);
+      const details = sanitizeAuditText(req.body?.details, 600);
 
-      if (!action) {
+      const allowedUiActions = new Set([
+        "تسجيل دخول المشرف",
+        "تسجيل خروج",
+        "تسجيل مشكلة للطلب",
+        "إزالة مشكلة من الطلب",
+        "تغيير حالة المتجر",
+        "حفظ إعدادات الأسعار",
+        "إضافة بنك",
+        "حذف بنك",
+        "إضافة محفظة رقمية",
+        "حذف محفظة رقمية",
+        "إضافة طريقة دفع",
+        "حذف طريقة دفع",
+        "إضافة شرط وأحكام",
+        "حذف شرط وأحكام",
+        "تفعيل الشروط والأحكام",
+        "تعطيل الشروط والأحكام",
+        "تحديث رسائل الحالات",
+        "تحويل مالي"
+      ]);
+
+      if (!allowedUiActions.has(action)) {
         return res.status(400).json({
           success: false,
-          message: "بيانات السجل غير مكتملة."
+          message: "نوع سجل الإدارة غير مسموح."
         });
       }
 
@@ -1456,6 +1483,7 @@ router.post(
         timeString: new Date().toLocaleString("ar-SA", {
           timeZone: "Asia/Riyadh"
         }),
+        source: "admin-ui",
         user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
         userId: String(req.admin?.uid || "").slice(0, 200),
         action,
