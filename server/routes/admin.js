@@ -1632,11 +1632,15 @@ router.post(
 
       await batch.commit();
 
-      await writeAuditLog({
-        req,
+      await db.collection("audit_logs").add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+        userId: String(req.admin?.uid || "").slice(0, 200),
         action: "تحديث حالة التقييم",
-        targetId: reviewId,
-        details: `تغيير حالة التقييم إلى: ${requestedStatus}`
+        targetOrder: reviewId.slice(0, 200),
+        details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
       });
 
       return res.json({
@@ -1698,11 +1702,15 @@ router.post(
 
       await batch.commit();
 
-      await writeAuditLog({
-        req,
+      await db.collection("audit_logs").add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+        userId: String(req.admin?.uid || "").slice(0, 200),
         action: "حذف تقييم",
-        targetId: reviewId,
-        details: "تم حذف التقييم نهائيًا"
+        targetOrder: reviewId.slice(0, 200),
+        details: "تم حذف التقييم نهائيًا",
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
       });
 
       return res.json({
