@@ -1076,3 +1076,138 @@ body{
   object-fit:contain;
 }
 .store-logo-image.hidden{display:none!important}
+
+
+/* ==========================================================================
+   SAMI COINS order-page light theme completion + brand lockup
+   ========================================================================== */
+.brand-logo-button{
+  border:0;
+  background:transparent;
+  padding:0;
+  color:var(--text);
+  min-width:150px;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.brand-logo-lockup{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  gap:3px;
+  direction:rtl;
+  padding:5px 10px;
+  border-radius:14px;
+  border:1px solid rgba(255,210,28,.34);
+  background:linear-gradient(135deg,rgba(255,210,28,.12),rgba(24,211,123,.05));
+  box-shadow:0 0 18px rgba(255,210,28,.10);
+}
+.brand-logo-ar{
+  font-size:16px;
+  font-weight:900;
+  color:var(--gold);
+  letter-spacing:0;
+}
+.brand-logo-en{
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:1.8px;
+  color:var(--text);
+  direction:ltr;
+}
+html[data-theme="light"] .brand-logo-lockup{
+  background:linear-gradient(135deg,rgba(230,169,0,.12),rgba(7,156,89,.06));
+  border-color:rgba(201,142,0,.28);
+  box-shadow:0 5px 18px rgba(18,35,45,.08);
+}
+html[data-theme="light"] .hero-card{
+  background:linear-gradient(135deg,#ffffff 0%,#e8f1f5 58%,#dce9ee 100%);
+  border-color:rgba(201,142,0,.35);
+  box-shadow:var(--shadow);
+}
+html[data-theme="light"] .hero-card:before{background:linear-gradient(130deg,transparent 35%,rgba(20,117,209,.08) 55%,transparent 75%)}
+html[data-theme="light"] .hero-fc{color:#12212a;text-shadow:none}
+html[data-theme="light"] .hero-fc strong{color:#1475d1}
+html[data-theme="light"] .hero-copy{
+  background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(247,250,252,.98));
+  border-color:rgba(201,142,0,.34);
+}
+html[data-theme="light"] .hero-copy p{color:var(--text)}
+html[data-theme="light"] .stepper-line{background:#cbd6dd}
+html[data-theme="light"] .progress-step span{background:#e5edf2;border-color:#b8c7d0;color:var(--text)}
+html[data-theme="light"] .progress-step{color:#637783}
+html[data-theme="light"] .trust-row div,
+html[data-theme="light"] .platform-btn,
+html[data-theme="light"] .empty-choice-card,
+html[data-theme="light"] .info-card,
+html[data-theme="light"] .form-card,
+html[data-theme="light"] .review-card,
+html[data-theme="light"] .terms-card,
+html[data-theme="light"] .success-card,
+html[data-theme="light"] .mini-card,
+html[data-theme="light"] .total-card,
+html[data-theme="light"] .payment-tabs button,
+html[data-theme="light"] .pay-btn-compact,
+html[data-theme="light"] .review-banner,
+html[data-theme="light"] .code-display-row,
+html[data-theme="light"] .invoice-grid>div{
+  background:var(--panel);
+  color:var(--text);
+  box-shadow:var(--shadow);
+}
+html[data-theme="light"] .stage-heading,
+html[data-theme="light"] .stage-security-strip,
+html[data-theme="light"] .legal-notice-outside,
+html[data-theme="light"] .backup-input-card,
+html[data-theme="light"] .backup-input-card>span,
+html[data-theme="light"] .security-note{
+  color:var(--text);
+}
+html[data-theme="light"] .input-box-wrap input,
+html[data-theme="light"] .input-box-wrap select,
+html[data-theme="light"] .quantity-box,
+html[data-theme="light"] .quantity-box input{
+  background:#fff;
+  color:#12212a;
+  border-color:#c9d5dc;
+}
+html[data-theme="light"] .input-box-wrap input::placeholder,
+html[data-theme="light"] .quantity-box input::placeholder{color:#7a8b95}
+html[data-theme="light"] .payment-tabs button.active,
+html[data-theme="light"] .pay-btn-compact.active{
+  background:rgba(230,169,0,.13);
+  color:#8a6200;
+  border-color:rgba(201,142,0,.45);
+}
+html[data-theme="light"] .primary-btn{
+  background:linear-gradient(135deg,#e6a900,#c98e00);
+  color:#fff;
+}
+html[data-theme="light"] .secondary-btn{
+  background:#fff;
+  color:#12212a;
+  border-color:#c9d5dc;
+}
+html[data-theme="light"] .link-btn,
+html[data-theme="light"] .terms-bottom-link{color:#1475d1}
+html[data-theme="light"] .inquiry-mini{
+  background:rgba(230,169,0,.10);
+  color:#8a6200;
+  border-color:rgba(201,142,0,.35);
+}
+html[data-theme="light"] .app-footer button{color:#526873}
+html[data-theme="light"] .modal-card{
+  background:#fff;
+  color:#12212a;
+  border-color:#c9d5dc;
+}
+html[data-theme="light"] .modal-overlay{background:rgba(18,33,42,.38)}
+html[data-theme="light"] .toast{background:#12212a;color:#fff}
+html[data-theme="light"] .terms-empty{color:#637783}
+html[data-theme="light"] .legal-content{color:#12212a}
+html[data-theme="light"] .review-values span{color:#526873}
+html[data-theme="light"] .success-reference{background:#f4f8fa;color:#12212a}
