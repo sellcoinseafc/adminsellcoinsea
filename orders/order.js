@@ -826,10 +826,7 @@ function applySettingsToUI() {
     setText("withdrawText", localizeSettingText(durations.withdraw));
     setText("transferText", localizeSettingText(durations.transfer));
 
-    setText(
-        "safeMethodText",
-        localizeSettingText(storeSettings.safeMethod)
-    );
+    setText("safeMethodText","آمنة 99%");
 
     setText(
         "revWithdrawText",
@@ -841,10 +838,7 @@ function applySettingsToUI() {
         localizeSettingText(durations.transfer)
     );
 
-    setText(
-        "revSafeMethodText",
-        storeSettings.safeMethod || "--"
-    );
+    setText("revSafeMethodText","آمنة 99%");
 
     setText(
         "successWithdrawText",
@@ -856,10 +850,7 @@ function applySettingsToUI() {
         localizeSettingText(durations.transfer)
     );
 
-    setText(
-        "successSafeMethodText",
-        storeSettings.safeMethod || "--"
-    );
+    setText("successSafeMethodText","آمنة 99%");
 
     // الشروط
     const termsContainer =
@@ -3097,6 +3088,16 @@ async function submitOrderFinal() {
         setText("billStatusText", currentLanguage === "ar" ? "طلب جديد" : "New Order");
 
         setText("billPlatform", selectedPlatform);
+        const billPlatformIcon = $("billPlatformIcon");
+        if (billPlatformIcon) {
+            billPlatformIcon.className =
+                selectedPlatform === "PlayStation"
+                    ? "fa-brands fa-playstation"
+                    : selectedPlatform === "Xbox"
+                        ? "fa-brands fa-xbox"
+                        : "fa-solid fa-desktop";
+            billPlatformIcon.style.color = "#fff";
+        }
         const billOval = $("billPlatformOval");
         if (billOval) {
             billOval.classList.remove("ps-theme","xbox-theme","pc-theme");
@@ -3125,10 +3126,7 @@ async function submitOrderFinal() {
             storeSettings.transferHours || "--"
         );
 
-        setText(
-            "successSafeMethodText",
-            storeSettings.safeMethod || "--"
-        );
+        setText("successSafeMethodText","آمنة 99%");
 
         const paymentCard =
             $("billPaymentCard");
@@ -3431,7 +3429,7 @@ function showTermsModal() {
 }
 
 function renderInlineTerms() {
-    const containers = [$("inlineTermsList"), $("reviewInlineTermsList")].filter(Boolean);
+    const containers = [$("inlineTermsList")].filter(Boolean);
     if (!containers.length) return;
     const terms = currentLanguage === "en"
         ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])
@@ -3445,9 +3443,7 @@ function renderInlineTerms() {
 function syncTermsChecks(source) {
     const checked = Boolean(source?.checked);
     const first = $("termsCheck");
-    const review = $("termsCheckReview");
     if (first && first !== source) first.checked = checked;
-    if (review && review !== source) review.checked = checked;
 }
 
 async function copyTrackingLinkUrl() {
@@ -3528,26 +3524,32 @@ function sendOrderViaWhatsapp() {
         showToast(currentLanguage === "ar" ? "رقم الدعم غير متوفر حاليًا." : "Support number is unavailable.");
         return;
     }
-    const en = currentLanguage === "en";
+
     const clientName = $("customerName")?.value.trim() || "--";
-    const total = $("totalAmountText")?.textContent || "--";
     const reference = generatedReferenceNumber || "--";
-    const orderDate = new Intl.DateTimeFormat(en ? "en-GB" : "ar-SA", { dateStyle: "medium", timeZone: "Asia/Riyadh" }).format(new Date());
-    const message = en ? [
-        "Coin Selling Order", "━━━━━━━━━━━━━━━━━━",
-        "Order Number: " + reference, "Order Date: " + orderDate, "",
-        "Customer Name: " + clientName,
-        "Quantity: " + currentQty.toLocaleString("en-US") + " Coins",
-        "Platform: " + (selectedPlatform || "--"), "Amount: " + total,
-        "━━━━━━━━━━━━━━━━━━", "samicoins"
-    ].join("\n") : [
-        "طلب بيع كوينز", "━━━━━━━━━━━━━━━━━━",
-        "رقم الطلب: " + reference, "تاريخ الطلب: " + orderDate, "",
+    const total = $("totalAmountText")?.textContent || "--";
+    const trackingUrl = new URL(
+        "/tracking/?ref=" + encodeURIComponent(generatedReferenceNumber || ""),
+        window.location.origin
+    ).href;
+
+    const message = [
+        "تفاصيل طلب بيع الكوينز",
+        "",
+        "رقم الطلب: " + reference,
+        "",
         "اسم العميل: " + clientName,
+        "",
+        "المنصة: " + (selectedPlatform || "--"),
         "الكمية: " + currentQty.toLocaleString("en-US") + " كوينز",
-        "المنصة: " + (selectedPlatform || "--"), "المبلغ: " + total,
-        "━━━━━━━━━━━━━━━━━━", "samicoins"
+        "المبلغ المستحق: " + total,
+        "",
+        "رابط متابعة الطلب:",
+        trackingUrl,
+        "",
+        "شكرًا لاختيارك متجر سامي كوينز"
     ].join("\n");
+
     const url = "https://wa.me/" + number + "?text=" + encodeURIComponent(message);
     window.open(url, "_blank", "noopener,noreferrer");
 }
@@ -3731,6 +3733,11 @@ document.addEventListener("DOMContentLoaded", () => {
     applyLanguage();
     setupModalEvents();
     const passwordInput = $("eaPass");
+    if (passwordInput) {
+        passwordInput.setAttribute("autocomplete","off");
+        passwordInput.setAttribute("data-lpignore","true");
+        passwordInput.setAttribute("data-1p-ignore","true");
+    }
     const passwordEye = passwordInput?.parentElement?.querySelector("i");
     if (passwordEye) {
         passwordEye.addEventListener("click", () => {
