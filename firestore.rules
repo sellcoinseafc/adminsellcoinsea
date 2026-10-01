@@ -38,11 +38,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Audit history may be read by admins; entries are immutable from the browser.
+    // Audit history is server-authored; the browser is read-only.
     match /audit_logs/{logId} {
       allow read: if isAdmin();
-      allow create: if isAdmin();
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
     match /whatsappLogs/{logId} {
