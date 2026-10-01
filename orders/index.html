@@ -14,7 +14,12 @@
 <div class="app-shell" id="pageShell">
   <header class="app-header">
     <div class="brand-block">
-      <button class="brand-logo-button brand-home-link" type="button" onclick="showScreen('step1Screen')" aria-label="SAMI COINS"><img id="storeLogoImage" class="store-logo-image hidden" src="" alt="SAMI COINS"></button>
+      <button class="brand-logo-button brand-home-link" type="button" onclick="showScreen('step1Screen')" aria-label="SAMI COINS">
+  <span class="brand-logo-lockup">
+    <span id="storeArabicName" class="brand-logo-ar">سامي كوينز</span>
+    <span id="storeEnglishName" class="brand-logo-en">SAMI COINS</span>
+  </span>
+</button>
     </div>
     <div class="header-actions">
       <button class="header-icon-btn" type="button" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Theme"><i id="themeToggleIcon" class="fa-solid fa-moon"></i></button>
