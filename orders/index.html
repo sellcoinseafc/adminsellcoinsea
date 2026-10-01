@@ -14,8 +14,7 @@
 <div class="app-shell" id="pageShell">
   <header class="app-header">
     <div class="brand-block">
-      <div class="brand-title" data-i18n="storeName">متجر سامي كوينز</div>
-      <div class="brand-domain">SA4Coins.com</div>
+      <button class="brand-title brand-home-link" type="button" onclick="showScreen('step1Screen')" aria-label="samicoins">samicoins</button>
     </div>
     <div class="header-actions">
       <button class="header-icon-btn" type="button" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Theme"><i id="themeToggleIcon" class="fa-solid fa-moon"></i></button>
@@ -31,8 +30,8 @@
 
   <div class="stepper-wrap" aria-label="مراحل الطلب">
     <div class="stepper-line"><span id="orderProgressFill"></span></div>
-    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">بيانات الحساب</small></div>
-    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">العميل والدفع</small></div>
+    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">المنصة والكمية</small></div>
+    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">البيانات</small></div>
     <div class="progress-step" data-step="3"><span>3</span><small data-i18n="progressStep3">المراجعة</small></div>
   </div>
 
@@ -76,7 +75,7 @@
           </div>
         </section>
 
-        <div class="section-label platform-section-title" data-i18n="choosePlatform">اختر المنصة</div>
+        <div class="section-label platform-section-title" data-i18n="choosePlatform">اختر المنصة والكمية</div>
         <div class="platforms-flex">
           <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')"><i class="fa-brands fa-playstation"></i><strong data-i18n="playstation">PlayStation</strong><small><span id="psSubPrice">--</span><span class="per-million-label"> — لكل مليون</span></small></button>
           <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')"><i class="fa-brands fa-xbox"></i><strong data-i18n="xbox">Xbox</strong><small><span id="xboxSubPrice">--</span><span class="per-million-label"> — لكل مليون</span></small></button>
@@ -192,9 +191,10 @@
 
             <div id="termsCard" class="terms-card">
               <div id="termsContainer">
-                <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات والشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
+                <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات</span><i class="fa-solid fa-file-contract"></i></div>
                 <div id="inlineTermsList" class="inline-terms-list"></div>
-                <label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
+                <label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">لقد قرأت الشروط والأحكام وأوافق عليها</span></label>
+                <button type="button" class="terms-bottom-link" onclick="showTermsModal()"><i class="fa-solid fa-file-contract"></i><span data-i18n="termsLink">الشروط والأحكام</span></button>
               </div>
             </div>
 
@@ -236,27 +236,28 @@
         </div>
 
         <div class="review-card">
-          <div class="card-heading"><span data-i18n="customerInformation">معلومات العميل</span></div>
+          <div class="card-heading"><span data-i18n="customerInformation">معلومات العميل</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('client')" data-i18n="edit">تعديل</button></div>
           <div id="clientViewMode" class="review-values"><span id="revClientName">--</span><span id="revClientPhone">--</span></div>
           <div id="clientEditMode" class="hidden"><label class="field-label" data-i18n="customerName">اسم العميل</label><div class="input-box-wrap"><input id="editClientName"></div><label class="field-label" data-i18n="whatsappNumber">رقم التواصل واتساب</label><div class="input-box-wrap"><input id="editClientPhone"></div></div>
         </div>
 
         <div class="review-card">
-          <div class="card-heading"><span data-i18n="eaDataAndCodes">بيانات حساب EA والأكواد</span></div>
+          <div class="card-heading"><span data-i18n="eaDataAndCodes">بيانات حساب EA والأكواد</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('ea')" data-i18n="edit">تعديل</button></div>
           <div id="eaViewMode"><div class="review-values"><span id="revEmail">--</span><span id="revPass">••••••••</span></div><div id="revCodes"></div></div>
           <div id="eaEditMode" class="hidden"><label class="field-label" data-i18n="email">البريد الإلكتروني</label><div class="input-box-wrap"><input id="editEaEmail"></div><label class="field-label" data-i18n="password">كلمة المرور</label><div class="input-box-wrap"><input id="editEaPass" type="password"></div><div class="code-input-row"><span>1</span><div class="input-box-wrap"><input id="editCode1"></div></div><div class="code-input-row"><span>2</span><div class="input-box-wrap"><input id="editCode2"></div></div><div class="code-input-row"><span>3</span><div class="input-box-wrap"><input id="editCode3"></div></div></div>
         </div>
 
         <div class="review-card">
-          <div class="card-heading"><span data-i18n="transferAndPayout">معلومات التحويل والاستلام</span></div>
+          <div class="card-heading"><span data-i18n="transferAndPayout">معلومات التحويل والاستلام</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('payout')" data-i18n="edit">تعديل</button></div>
           <div id="payoutViewMode"><div id="revSpecificDetailsContainer"></div></div>
           <div id="payoutEditMode" class="hidden"><div id="inlinePayoutEditWrap"></div></div>
         </div>
 
         <div id="reviewTermsCard" class="terms-card">
-          <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات وانسحاب الشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
+          <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات والشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
           <div id="reviewInlineTermsList" class="inline-terms-list"></div>
-          <label class="terms-check"><input id="termsCheckReview" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
+          <label class="terms-check"><input id="termsCheckReview" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">لقد قرأت الشروط والأحكام وأوافق عليها</span></label>
+          <button type="button" class="terms-bottom-link" onclick="showTermsModal()"><i class="fa-solid fa-file-contract"></i><span data-i18n="termsLink">الشروط والأحكام</span></button>
         </div>
 
         <div id="saveEditsButtonWrap" class="hidden"><button class="primary-btn" type="button" onclick="toggleEditMode()" data-i18n="saveChanges">حفظ التعديلات</button></div>
@@ -265,12 +266,12 @@
       </section>
 
       <section id="step4SuccessScreen" class="screen hidden">
-        <div class="success-hero"><div class="success-check"><i class="fa-solid fa-check"></i></div><h1 data-i18n="successTitle">تم استلام طلبك بنجاح</h1><p data-i18n="successText">احتفظ برقم الطلب لمتابعة حالة طلبك.</p></div>
+        <div class="success-hero success-hero-compact"><div class="success-check"><i class="fa-solid fa-check"></i></div><h1 data-i18n="successTitle">تم استلام طلبك بنجاح</h1><p data-i18n="successText">احتفظ برقم الطلب لمتابعة حالة طلبك.</p></div>
         <div class="success-reference"><span data-i18n="orderCreated">رقم الطلب</span><div class="reference-number"><strong id="finalOrderId">--</strong><button type="button" onclick="copyOrderId()"><i class="fa-regular fa-copy"></i></button></div><small data-i18n="referenceCopyHint">اضغط على رقم الطلب لنسخه</small></div>
-        <div class="success-card"><div class="card-heading"><span>رابط التتبع</span><button class="copy-btn" type="button" onclick="copyTrackingLinkUrl()"><i class="fa-regular fa-copy"></i></button></div><div id="finalTrackingLink" class="tracking-link">سيتم إنشاء الرابط بعد إنشاء الطلب</div></div>
+        <div class="success-card tracking-action-card"><div class="card-heading"><span>رابط التتبع</span></div><div class="tracking-action-pill"><button type="button" onclick="openInquiryPage()"><i class="fa-solid fa-arrow-up-right-from-square"></i><span data-i18n="openTracking">فتح</span></button><span class="tracking-action-divider"></span><button type="button" onclick="copyTrackingLinkUrl()"><i class="fa-regular fa-copy"></i><span data-i18n="copyTracking">نسخ</span></button></div><div id="finalTrackingLink" class="tracking-link tracking-link-hidden" aria-hidden="true"></div></div>
         
-        <div class="success-card"><div class="card-heading"><span data-i18n="invoiceDetails">الفاتورة وتفاصيل الطلب</span></div><div class="invoice-grid"><div><small data-i18n="customerName">الاسم</small><strong id="billClientName">--</strong></div><div><small data-i18n="whatsappNumber">الجوال</small><strong id="billClientPhone">--</strong></div><div><small data-i18n="platform">المنصة</small><strong id="billPlatform">--</strong></div><div><small data-i18n="requestedQuantity">الكمية المطلوبة</small><strong id="billQty">--</strong></div><div><small data-i18n="totalAmount">المبلغ</small><strong id="billTotal">--</strong></div></div><div id="billPaymentCard" class="payment-invoice"></div></div>
-        <div class="mini-grid"><div class="mini-card"><span data-i18n="withdrawDuration">مدة السحب</span><strong id="successWithdrawText">--</strong></div><div class="mini-card"><span data-i18n="transferDuration">مدة التحويل</span><strong id="successTransferText">--</strong></div><div class="mini-card"><span data-i18n="safeMethod">طريقة النقل</span><strong id="successSafeMethodText">--</strong></div></div>
+        <div class="success-card invoice-card"><div class="card-heading"><span data-i18n="invoiceDetails">الفاتورة وتفاصيل الطلب</span></div><div class="success-oval-grid"><div class="success-oval"><small>الاسم</small><strong id="billClientName">--</strong><small>رقم الطلب</small><strong id="billOrderNumber">--</strong></div><div class="success-oval success-platform-oval" id="billPlatformOval"><small>المنصة</small><strong id="billPlatform">--</strong><small>الكمية</small><strong id="billQty">--</strong></div><div class="success-oval success-total-status-oval"><div><small>السعر الإجمالي</small><strong id="billTotal">--</strong></div><div><small>حالة الطلب</small><strong id="billStatusText">طلب جديد</strong></div></div></div><div class="success-phone-line"><small data-i18n="whatsappNumber">الجوال</small><strong id="billClientPhone">--</strong></div><div id="billPaymentCard" class="payment-invoice"></div></div>
+        <div class="mini-grid success-duration-grid"><div class="mini-card"><span data-i18n="withdrawDuration">مدة السحب</span><strong id="successWithdrawText">--</strong></div><div class="mini-card"><span data-i18n="transferDuration">مدة التحويل</span><strong id="successTransferText">--</strong></div><div class="mini-card"><span data-i18n="safeMethod">طريقة النقل</span><strong id="successSafeMethodText">--</strong></div></div>
         <div class="success-actions"><button class="primary-btn" type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass-chart"></i><span data-i18n="trackYourOrder">تتبع حالة طلبك</span></button><button class="secondary-btn whatsapp-btn" type="button" onclick="sendOrderViaWhatsapp()"><i class="fa-brands fa-whatsapp"></i><span data-i18n="sendViaWhatsapp">إرسال تفاصيل الطلب عبر الواتساب</span></button><button class="secondary-btn" type="button" onclick="location.reload()"><i class="fa-solid fa-plus"></i><span data-i18n="newOrder">إنشاء طلب جديد</span></button></div>
       </section>
     </section>
