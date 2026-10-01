@@ -993,10 +993,9 @@ function renderPaymentInfo(order) {
         order.paymentInfoData ||
         {};
 
-    const price =
-        order.totalPrice ??
-        order.total ??
-        "";
+    const price = getAmountDisplay(order);
+    const currency = getCurrencyDisplay(order);
+    const recipientName = payout.recipientName || order.recipientName || "";
 
     let html = "";
 
@@ -1025,6 +1024,13 @@ function renderPaymentInfo(order) {
 
             <div class="grid-card">
                 <div class="grid-info">
+                    <span class="grid-label">اسم المستفيد</span>
+                    <span class="grid-value">${escapeHtml(recipientName || "—")}</span>
+                </div>
+            </div>
+
+            <div class="grid-card">
+                <div class="grid-info">
                     <span class="grid-label">آخر 6 أرقام من IBAN</span>
                     <span class="grid-value">
                         ${ibanLast6
@@ -1038,7 +1044,7 @@ function renderPaymentInfo(order) {
                 <div class="grid-info">
                     <span class="grid-label">المبلغ</span>
                     <span class="grid-value">
-                        ${escapeHtml(price)} ريال
+                        ${escapeHtml(price)} ${escapeHtml(currency)}
                     </span>
                 </div>
             </div>
@@ -1083,7 +1089,7 @@ function renderPaymentInfo(order) {
                 <div class="grid-info">
                     <span class="grid-label">المبلغ</span>
                     <span class="grid-value">
-                        ${escapeHtml(price)} ريال
+                        ${escapeHtml(price)} ${escapeHtml(currency)}
                     </span>
                 </div>
             </div>
