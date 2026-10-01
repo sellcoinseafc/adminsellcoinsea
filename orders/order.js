@@ -880,6 +880,15 @@ function selectPlatform(
     platform,
     silent = false
 ) {
+    if (!settingsLoaded) {
+        showToast(
+            currentLanguage === "ar"
+                ? "جاري تحميل إعدادات المتجر، حاول بعد لحظات."
+                : "Store settings are still loading. Please try again in a moment."
+        );
+        return;
+    }
+
     const validPlatforms = [
         "PlayStation",
         "Xbox",
@@ -1045,6 +1054,14 @@ function updateRateCardsUI() {
 // ==========================================================================
 
 function switchPaymentCategory(category) {
+    if (!settingsLoaded) {
+        showToast(
+            currentLanguage === "ar"
+                ? "إعدادات المتجر غير جاهزة بعد."
+                : "Store settings are not ready yet."
+        );
+        return;
+    }
 
     if (
         category !== "local" &&
