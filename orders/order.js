@@ -206,8 +206,8 @@ const translations = {
 
         orderCreated: "تم إنشاء الطلب",
         successTitle: "تم استلام طلبك بنجاح",
-        successText: "احتفظ برقم المرجع لمتابعة حالة طلبك.",
-        referenceCopyHint: "اضغط على رقم المرجع لنسخه",
+        successText: "احتفظ برقم الطلب لمتابعة حالة طلبك.",
+        referenceCopyHint: "اضغط على رقم الطلب لنسخه",
         invoiceDetails: "الفاتورة وتفاصيل الطلب",
         requestedQuantity: "الكمية المطلوبة",
         trackYourOrder: "تتبع حالة طلبك",
@@ -342,8 +342,8 @@ const translations = {
 
         orderCreated: "Order Created",
         successTitle: "Your order was received successfully",
-        successText: "Keep your reference number to track your order.",
-        referenceCopyHint: "Tap the reference number to copy it",
+        successText: "Keep your order number to track your order.",
+        referenceCopyHint: "Tap the order number to copy it",
         invoiceDetails: "Invoice & Order Details",
         requestedQuantity: "Requested Quantity",
         trackYourOrder: "Track Your Order",
