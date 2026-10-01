@@ -1707,3 +1707,51 @@ html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-e
 .platform-oval-quantity strong{font-size:12px!important}
 .success-order-oval{min-height:64px}.success-total-status-oval{min-height:64px}
 @media(max-width:720px){.success-oval-grid{grid-template-columns:1fr}.success-platform-oval{min-height:108px}}
+
+
+/* APPROVED ORDERS PAGE UPDATES */
+.masked-secret{-webkit-text-security:disc;text-security:disc}
+.masked-secret.secret-unmasked{-webkit-text-security:none;text-security:none}
+
+#step1Screen>.platforms-flex .platform-btn small{color:#fff!important;font-size:12px;line-height:1.05}
+#step1Screen>.platforms-flex .platform-btn small span:first-child{color:#fff!important;font-size:12px;font-weight:900}
+#step1Screen>.platforms-flex .per-million-label{color:#fff!important;font-size:9px;font-weight:700}
+#singlePlatformRateCard .rate-big{color:#fff!important;font-size:18px;font-weight:800}
+#singlePlatformRateCard .rate-big small{color:#fff!important;font-size:9px}
+
+.inline-terms-list{display:grid;gap:7px;margin-top:8px}
+.inline-terms-list ol{list-style:none;padding:0;margin:0;display:grid;gap:7px}
+.inline-terms-list li{margin:0;padding:9px 13px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.035);color:var(--text);font-size:10px;line-height:1.65}
+.terms-check{margin-top:12px;min-height:48px;padding:10px 12px;border:1px solid rgba(255,210,28,.28);border-radius:999px;background:rgba(255,210,28,.07);gap:9px;font-size:13px;font-weight:900;color:#fff}
+.terms-check input{width:20px;height:20px;flex:0 0 20px}
+
+#step3ReviewScreen .backup-codes-stack{gap:8px;margin-top:9px}
+#step3ReviewScreen .code-display-row{min-height:50px;padding:10px 14px;border-radius:999px;font-size:13px;font-weight:800;align-items:center}
+#step3ReviewScreen .code-number-tag{font-size:11px;font-weight:900}
+
+#step4SuccessScreen .invoice-card .success-oval-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#step4SuccessScreen .invoice-card .success-oval{min-width:0;min-height:64px;padding:12px 16px;border-radius:999px;background:var(--platform-accent,#1f2937);border:1px solid rgba(255,255,255,.18);color:#fff;box-shadow:none}
+#step4SuccessScreen .invoice-card .success-oval small{color:rgba(255,255,255,.72);font-size:9px}
+#step4SuccessScreen .invoice-card .success-oval strong{color:#fff;font-size:12px;overflow-wrap:anywhere}
+#step4SuccessScreen .invoice-card .success-name-oval,#step4SuccessScreen .invoice-card .success-phone-oval{grid-column:1/-1}
+#step4SuccessScreen .success-quantity-price-oval,#step4SuccessScreen .success-platform-status-oval{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:center}
+#step4SuccessScreen .success-quantity-price-oval>div,#step4SuccessScreen .success-platform-status-oval>div{min-width:0;display:grid;gap:4px}
+#step4SuccessScreen .success-quantity-price-oval>div+div,#step4SuccessScreen .success-platform-status-oval>div+div{border-inline-start:1px solid rgba(255,255,255,.18);padding-inline-start:14px}
+#step4SuccessScreen .platform-oval-main{display:flex;align-items:center;gap:8px;min-width:0}
+#step4SuccessScreen .platform-oval-main i{color:#fff!important;font-size:22px;flex:0 0 auto}
+#step4SuccessScreen .platform-oval-main strong{white-space:nowrap}
+#step4SuccessScreen .invoice-card .payment-invoice{margin-top:10px}
+
+@media(max-width:720px){
+  #step1Screen>.platforms-flex .platform-btn small,#step1Screen>.platforms-flex .platform-btn small span:first-child{font-size:10px}
+  #step1Screen>.platforms-flex .per-million-label{font-size:8px}
+  #singlePlatformRateCard .rate-big{font-size:16px}
+  .terms-check{font-size:12px;line-height:1.45}
+  #step3ReviewScreen .code-display-row{min-height:48px;padding:9px 12px;font-size:12px}
+  #step4SuccessScreen .invoice-card .success-oval-grid{grid-template-columns:1fr}
+  #step4SuccessScreen .invoice-card .success-name-oval,#step4SuccessScreen .invoice-card .success-phone-oval,#step4SuccessScreen .invoice-card .success-quantity-price-oval,#step4SuccessScreen .invoice-card .success-platform-status-oval{grid-column:1}
+  #step4SuccessScreen .success-quantity-price-oval,#step4SuccessScreen .success-platform-status-oval{grid-template-columns:1fr 1fr;gap:10px}
+  #step4SuccessScreen .success-quantity-price-oval>div+div,#step4SuccessScreen .success-platform-status-oval>div+div{padding-inline-start:10px}
+  #step4SuccessScreen .platform-oval-main strong{font-size:11px;white-space:normal;overflow-wrap:anywhere}
+  #step4SuccessScreen .invoice-card .success-oval{padding:11px 13px}
+}
