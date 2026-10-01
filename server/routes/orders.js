@@ -2797,32 +2797,152 @@ router.post(
       });
 
       const editAuditRef = db.collection("audit_logs").doc();
-      const editBatch = db.batch();
+      let committedOrder = null;
 
-      editBatch.update(found.ref, patch);
-      editBatch.set(editAuditRef, {
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", {
-          timeZone: "Asia/Riyadh"
-        }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "تعديل بيانات الطلب",
-        targetOrder: String(current.referenceNumber || current.orderId || found.id).slice(0, 200),
-        details: JSON.stringify({
-          fields: changedFields.filter((field) => !field.includes("accountData") && field !== "payoutDetails").slice(0, 30),
-          sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20)
-        }).slice(0, 1800),
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
-        source: "server"
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshData = freshSnap.data() || {};
+        const transactionPatch = { ...patch };
+
+        /*
+         * Recompute all values that depend on mutable order state from
+         * the transaction's fresh snapshot. This prevents a stale admin
+         * read from overwriting a newer withdrawn quantity or pricing input.
+         */
+        if (
+          Object.prototype.hasOwnProperty.call(input, "quantity") ||
+          Object.prototype.hasOwnProperty.call(input, "platform")
+        ) {
+          const freshPlatform =
+            patch.platform ||
+            normalizePlatform(freshData.platform);
+
+          const freshQuantity =
+            patch.quantity ??
+            normalizeQuantity(freshData.quantity);
+
+          const freshWithdrawn =
+            normalizeQuantity(
+              freshData.withdrawnQuantity ??
+              freshData.drawnCoins
+            );
+
+          transactionPatch.remainingQuantity =
+            Math.max(0, freshQuantity - freshWithdrawn);
+        }
+
+        if (pricingChanged) {
+          const freshPlatform =
+            patch.platform ||
+            normalizePlatform(freshData.platform);
+
+          const freshQuantity =
+            patch.quantity ??
+            normalizeQuantity(freshData.quantity);
+
+          let payoutForPricing = null;
+
+          if (input.payout) {
+            payoutForPricing = normalizePayout({
+              payoutDetails: input.payout
+            });
+          } else {
+            payoutForPricing = {
+              method: cleanString(
+                freshData.paymentMethodType ||
+                freshData.paymentMethod ||
+                freshData.payoutDetails?.method
+              ),
+              payoutType: cleanString(
+                freshData.payoutDetails?.payoutType
+              )
+            };
+          }
+
+          const freshPrice = calculateServerPrice(
+            freshQuantity,
+            freshPlatform,
+            payoutForPricing,
+            settings
+          );
+
+          if (!freshPrice) {
+            const error = new Error("INVALID_PRICING");
+            error.code = "INVALID_PRICING";
+            throw error;
+          }
+
+          transactionPatch.rate = freshPrice.rate;
+          transactionPatch.totalPriceSar = freshPrice.totalSar;
+          transactionPatch.totalPriceUsd = freshPrice.totalUsd;
+          transactionPatch.priceCurrency = freshPrice.currency;
+          transactionPatch.displayTotalPrice = freshPrice.displayTotal;
+          transactionPatch.totalPrice = freshPrice.displayTotal;
+        }
+
+        transactionPatch.lastUpdate = TS();
+        transactionPatch.history =
+          admin.firestore.FieldValue.arrayUnion({
+            type: "order_edit",
+            fields: changedFields.slice(0, 50),
+            sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20),
+            actor:
+              req.admin?.email ||
+              req.admin?.uid ||
+              "admin",
+            at: new Date()
+          });
+
+        transaction.update(found.ref, transactionPatch);
+
+        transaction.set(editAuditRef, {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", {
+            timeZone: "Asia/Riyadh"
+          }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تعديل بيانات الطلب",
+          targetOrder: String(
+            freshData.referenceNumber ||
+            freshData.orderId ||
+            found.id
+          ).slice(0, 200),
+          details: JSON.stringify({
+            fields: changedFields
+              .filter((field) =>
+                !field.includes("accountData") &&
+                field !== "payoutDetails"
+              )
+              .slice(0, 30),
+            sensitiveFieldsChanged:
+              sensitiveFieldsChanged.slice(0, 20)
+          }).slice(0, 1800),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        });
+
+        committedOrder = freshData;
       });
 
-      await editBatch.commit();
+      if (!committedOrder) {
+        return res.status(500).json({
+          success: false,
+          message: "تعذر تثبيت تعديل الطلب."
+        });
+      }
 
       return res.json({
         success: true,
-        orderId: String(current.orderId || found.id),
-        referenceNumber: String(current.referenceNumber || ""),
+        orderId: String(committedOrder.orderId || found.id),
+        referenceNumber: String(committedOrder.referenceNumber || ""),
         changedFields: changedFields.filter(
           (field) => !field.includes("accountData") && field !== "payoutDetails"
         ),
@@ -3189,14 +3309,6 @@ router.post(
         });
       }
 
-      const order =
-        found.snap.data() || {};
-
-      const quantity =
-        getOrderQuantity(
-          order
-        );
-
       const value =
         Math.max(
           0,
@@ -3209,61 +3321,93 @@ router.post(
           )
         );
 
-      if (
-        quantity > 0 &&
-        value > quantity
-      ) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "الكمية المسحوبة لا يمكن أن تتجاوز كمية الطلب."
-        });
-      }
-
       /*
        * IMPORTANT:
        * This endpoint NEVER changes status.
+       *
+       * The quantity is validated against the transaction's fresh
+       * order state so concurrent quantity edits cannot produce an
+       * invalid remainingQuantity.
        */
-      const drawnUpdate = {
-        withdrawnQuantity: value,
-        drawnCoins: value,
-        remainingQuantity: Math.max(0, quantity - value),
-        lastUpdate: TS(),
-        withdrawnUpdatedAt: TS(),
-        history: admin.firestore.FieldValue.arrayUnion({
-          type: "withdrawn_quantity",
-          value,
-          actor: req.admin?.email || req.admin?.uid || "admin",
-          at: new Date()
-        })
-      };
-
       const drawnAuditRef = db.collection("audit_logs").doc();
-      const drawnBatch = db.batch();
-      drawnBatch.update(found.ref, drawnUpdate);
-      drawnBatch.set(
-        drawnAuditRef,
-        buildOrderAuditEntry({
-          req,
-          action: "تحديث سحب الكوينز",
-          targetOrder: order.referenceNumber || order.orderId || found.id,
-          details: `تم تحديث الكمية المسحوبة إلى ${value} من أصل ${quantity}`
-        })
-      );
+      let committedDrawn = null;
 
-      await drawnBatch.commit();
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshOrder = freshSnap.data() || {};
+        const quantity = getOrderQuantity(freshOrder);
+
+        if (quantity > 0 && value > quantity) {
+          const error = new Error("DRAWN_QUANTITY_EXCEEDS_ORDER");
+          error.code = "DRAWN_QUANTITY_EXCEEDS_ORDER";
+          throw error;
+        }
+
+        const remainingQuantity =
+          Math.max(0, quantity - value);
+
+        transaction.update(found.ref, {
+          withdrawnQuantity: value,
+          drawnCoins: value,
+          remainingQuantity,
+          lastUpdate: TS(),
+          withdrawnUpdatedAt: TS(),
+          history: admin.firestore.FieldValue.arrayUnion({
+            type: "withdrawn_quantity",
+            value,
+            actor:
+              req.admin?.email ||
+              req.admin?.uid ||
+              "admin",
+            at: new Date()
+          })
+        });
+
+        transaction.set(
+          drawnAuditRef,
+          buildOrderAuditEntry({
+            req,
+            action: "تحديث سحب الكوينز",
+            targetOrder:
+              freshOrder.referenceNumber ||
+              freshOrder.orderId ||
+              found.id,
+            details:
+              `تم تحديث الكمية المسحوبة إلى ${value} من أصل ${quantity}`
+          })
+        );
+
+        committedDrawn = {
+          value,
+          remainingQuantity
+        };
+      });
+
+      if (!committedDrawn) {
+        return res.status(500).json({
+          success: false,
+          message: "تعذر تثبيت كمية الكوينز المسحوبة."
+        });
+      }
 
       return res.json({
         success: true,
 
         withdrawnQuantity:
-          value,
+          committedDrawn.value,
 
         drawnCoins:
-          value,
+          committedDrawn.value,
 
         remainingQuantity:
-          Math.max(0, quantity - value)
+          committedDrawn.remainingQuantity
       });
     } catch (error) {
       console.error(
