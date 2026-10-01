@@ -1696,9 +1696,7 @@ router.get(
                         issueData.issue,
 
                       issueMessage:
-                        issueData.issueMessage,
-
-                      reviewSuggestions
+                        issueData.issueMessage
                     }
                   );
 
