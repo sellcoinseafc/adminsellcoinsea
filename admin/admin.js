@@ -3447,8 +3447,11 @@ function renderReviewsTable() {
     pending:
       '<span class="badge badge-review">بانتظار المراجعة</span>',
 
+    archived:
+      '<span class="badge badge-archived">مؤرشف</span>',
+
     hidden:
-      '<span class="badge badge-archived">مخفي</span>'
+      '<span class="badge badge-archived">مؤرشف</span>'
   };
 
   tbody.innerHTML =
@@ -3493,6 +3496,18 @@ function renderReviewsTable() {
                     review.referenceNumber
                   )}
                 </code>
+              </td>
+
+              <td>
+                <span style="font-weight:800;color:#dbe5ef;">
+                  ${escapeHtml(review.platform || "---")}
+                </span>
+              </td>
+
+              <td>
+                <span style="font-weight:800;color:var(--primary);">
+                  ${escapeHtml(formatNumber(review.quantity || 0))}
+                </span>
               </td>
 
               <td>
@@ -3549,7 +3564,7 @@ function renderReviewsTable() {
                         <button
                           class="btn-action"
                           style="color:var(--primary);"
-                          title="نشر التقييم"
+                          title="اعتماد التقييم"
                           onclick="updateReviewStatus('${escapeAttribute(
                             review.id
                           )}','published')">
@@ -3561,16 +3576,16 @@ function renderReviewsTable() {
 
                   ${
                     review.status !==
-                    "hidden"
+                    "archived"
                       ? `
                         <button
                           class="btn-action"
                           style="color:var(--warning);"
-                          title="إخفاء التقييم"
+                          title="أرشفة التقييم"
                           onclick="updateReviewStatus('${escapeAttribute(
                             review.id
-                          )}','hidden')">
-                          <i class="fa-solid fa-eye-slash"></i>
+                          )}','archived')">
+                          <i class="fa-solid fa-box-archive"></i>
                         </button>
                       `
                       : ""
@@ -3759,8 +3774,8 @@ window.openReviewModal =
           style="background:#f59e0b;color:#fff;"
           onclick="updateReviewStatus('${escapeAttribute(
             review.id
-          )}','hidden');closeReviewModal();">
-          إخفاء
+          )}','archived');closeReviewModal();">
+          أرشفة
         </button>
 
         <button
@@ -3810,7 +3825,7 @@ window.updateReviewStatus =
       [
         "published",
         "pending",
-        "hidden"
+        "archived"
       ];
 
     if (
@@ -3822,23 +3837,18 @@ window.updateReviewStatus =
     }
 
     try {
-      await updateDoc(
-        doc(
-          db,
-          "reviews",
-          reviewId
-        ),
+      const response = await adminFetch(
+        "/api/admin/reviews/status",
         {
-          status:
-            newStatus
+          method: "POST",
+          body: JSON.stringify({
+            reviewId,
+            status: newStatus
+          })
         }
       );
 
-      await logAuditEvent(
-        "تحديث حالة التقييم",
-        reviewId,
-        `تغيير الحالة إلى: ${newStatus}`
-      );
+      await readJsonResponse(response);
     } catch (error) {
       showToast(
         "❌ فشل تحديث حالة التقييم: " +
@@ -3863,19 +3873,17 @@ window.deleteReview =
     }
 
     try {
-      await deleteDoc(
-        doc(
-          db,
-          "reviews",
-          reviewId
-        )
+      const response = await adminFetch(
+        "/api/admin/reviews/delete",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            reviewId
+          })
+        }
       );
 
-      await logAuditEvent(
-        "حذف تقييم",
-        reviewId,
-        "تم حذف التقييم من النظام"
-      );
+      await readJsonResponse(response);
     } catch (error) {
       showToast(
         "❌ فشل حذف التقييم: " +
