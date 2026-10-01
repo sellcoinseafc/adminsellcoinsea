@@ -1619,23 +1619,44 @@ router.post(
 router.post(
   "/update-note",
   requireAdmin,
+  adminMutationRateLimit,
   async (req,res)=>{
     try{
       const orderIdentifier=normalizeIdentifier(req.body?.orderId);
       if(!orderIdentifier)return res.status(400).json({success:false,message:"رقم الطلب مطلوب."});
       const found=await findOrder(orderIdentifier);
       if(!found)return res.status(404).json({success:false,message:"الطلب غير موجود."});
+
       const note=String(req.body?.note||"").trim().slice(0,2000);
-      await found.ref.update({
+      const orderRef=db.collection("orders").doc(found.id);
+      const auditRef=db.collection("audit_logs").doc();
+      const batch=db.batch();
+      const actor=String(req.admin?.email||req.admin?.name||req.admin?.uid||"Admin").slice(0,200);
+
+      batch.update(orderRef,{
         adminNote:note,
         lastUpdate:admin.firestore.FieldValue.serverTimestamp(),
         history:admin.firestore.FieldValue.arrayUnion({
           type:"admin_note",
           note:note?"تم تحديث الملاحظة الإدارية":"تم حذف الملاحظة الإدارية",
-          actor:req.admin?.email||req.admin?.uid||"Admin",
+          actor,
           at:new Date()
         })
       });
+
+      batch.set(auditRef,{
+        timestamp:admin.firestore.FieldValue.serverTimestamp(),
+        timeString:new Date().toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}),
+        user:actor,
+        userId:String(req.admin?.uid||"").slice(0,200),
+        action:note?"تحديث الملاحظة الإدارية":"حذف الملاحظة الإدارية",
+        targetOrder:String(found.data?.referenceNumber||found.data?.orderId||found.id).slice(0,200),
+        details:"تم تعديل الملاحظة الإدارية دون تسجيل محتواها.",
+        userAgent:String(req.headers["user-agent"]||"").slice(0,80),
+        source:"server"
+      });
+
+      await batch.commit();
       return res.json({success:true});
     }catch(error){
       console.error("Admin update-note error:",error?.code||error?.message||"unknown_error");
