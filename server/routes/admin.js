@@ -1922,6 +1922,7 @@ router.post(
 router.post(
   "/reviews/status",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const reviewId =
@@ -2032,18 +2033,22 @@ router.post(
         batch.delete(publicRef);
       }
 
-      await batch.commit();
+      batch.set(
+        db.collection("audit_logs").doc(),
+        {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "تحديث حالة التقييم",
+          targetOrder: reviewId.slice(0, 200),
+          details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        }
+      );
 
-      await db.collection("audit_logs").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "تحديث حالة التقييم",
-        targetOrder: reviewId.slice(0, 200),
-        details: `تغيير حالة التقييم إلى: ${requestedStatus}`.slice(0, 1000),
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
-      });
+      await batch.commit();
 
       return res.json({
         success: true,
@@ -2068,6 +2073,7 @@ router.post(
 router.post(
   "/reviews/delete",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const reviewId =
@@ -2102,18 +2108,22 @@ router.post(
       batch.delete(reviewRef);
       batch.delete(publicRef);
 
-      await batch.commit();
+      batch.set(
+        db.collection("audit_logs").doc(),
+        {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "حذف تقييم",
+          targetOrder: reviewId.slice(0, 200),
+          details: "تم حذف التقييم نهائيًا",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        }
+      );
 
-      await db.collection("audit_logs").add({
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
-        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
-        userId: String(req.admin?.uid || "").slice(0, 200),
-        action: "حذف تقييم",
-        targetOrder: reviewId.slice(0, 200),
-        details: "تم حذف التقييم نهائيًا",
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
-      });
+      await batch.commit();
 
       return res.json({
         success: true
