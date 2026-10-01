@@ -633,54 +633,10 @@ function getCurrentPlatformDurations() {
 // 7. الإعدادات
 // ==========================================================================
 
-async function loadSettings() {
-    try {
-        const response =
-            await fetch(
-                "/api/orders/settings",
-                {
-                    method: "GET",
-                    headers: {
-                        Accept: "application/json"
-                    },
-                    cache: "no-store"
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(
-                data.message ||
-                "Failed to load settings"
-            );
-        }
-
-        storeSettings = {
-            ...storeSettings,
-            ...data
-        };
-
-        settingsLoaded = true;
-        applySettingsToUI();
-        startSettingsRealtime();
-
-    } catch (error) {
-        console.error(
-            "Settings Error:",
-            error
-        );
-
-        settingsLoaded = false;
-        showStoreClosedState(false);
-
-        showToast(
-            currentLanguage === "ar"
-                ? "تعذر تحميل إعدادات المتجر. حاول تحديث الصفحة."
-                : "Unable to load store settings. Please refresh the page."
-        );
-    }
+function loadSettings() {
+    // Public order-page settings are read directly from Firestore in realtime.
+    // The orders API is reserved for order creation and sensitive server work.
+    startSettingsRealtime();
 }
 
 
@@ -730,10 +686,39 @@ function startSettingsRealtime() {
                 supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
             };
 
+            settingsLoaded = true;
             applySettingsToUI();
+
+            if (!currentPaymentCategory) {
+                switchPaymentCategory("local");
+            }
+        }, (error) => {
+            settingsLoaded = false;
+            showStoreClosedState(false);
+
+            showToast(
+                currentLanguage === "ar"
+                    ? "تعذر الاتصال بقاعدة بيانات إعدادات المتجر. حاول تحديث الصفحة."
+                    : "Unable to connect to Firestore store settings. Please refresh the page."
+            );
+
+            console.error(
+                "Orders settings realtime error:",
+                error?.code ||
+                    error?.message ||
+                    error
+            );
         });
     } catch (error) {
         console.error("Realtime settings initialization failed:", error);
+        settingsLoaded = false;
+        showStoreClosedState(false);
+
+        showToast(
+            currentLanguage === "ar"
+                ? "تعذر تهيئة إعدادات المتجر."
+                : "Unable to initialize store settings."
+        );
     }
 }
 
@@ -3857,8 +3842,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         editPasswordWrap.appendChild(eye);
     }
-    loadSettings().then(() => {
-        if (!currentPaymentCategory) switchPaymentCategory("local");
-    });
+    loadSettings();
     updateAppBackButton("step1Screen");
 });
