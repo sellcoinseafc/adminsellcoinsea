@@ -267,13 +267,13 @@ export const defaultSettings = {
 
     paymentCategories: {
             local: ["bank_transfer", "digital_wallet"],
-            international: ["usdt", "paypal", "western_union"]
+            international: ["usd", "paypal", "western_union"]
         },
 
         paymentMethods: [
         "تحويل بنكي",
         "المحافظ الرقمية",
-        "USDT",
+        "USD",
         "PayPal",
         "Western Union"
     ],
