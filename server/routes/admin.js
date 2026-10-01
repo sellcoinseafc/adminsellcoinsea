@@ -1163,6 +1163,16 @@ router.post(
         "accountData.backupCodes":
           FieldValue.delete(),
 
+        /* Legacy top-level copies. */
+        eaEmail:
+          FieldValue.delete(),
+
+        eaPassword:
+          FieldValue.delete(),
+
+        backupCodes:
+          FieldValue.delete(),
+
         "payoutDetails.fullName":
           FieldValue.delete(),
 
@@ -1263,10 +1273,27 @@ router.post(
           )
       };
 
-      await db
-        .collection("orders")
-        .doc(found.id)
-        .update(updateData);
+      const purgeRef = db.collection("orders").doc(found.id);
+      const purgeAuditRef = db.collection("audit_logs").doc();
+      const purgeBatch = db.batch();
+
+      purgeBatch.update(purgeRef, updateData);
+      purgeBatch.set(
+        purgeAuditRef,
+        {
+          timestamp: FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "إتلاف البيانات الحساسة",
+          targetOrder: String(order.referenceNumber || order.orderId || found.id).slice(0, 200),
+          details: "تم إتلاف بيانات الحساب وبيانات الدفع الحساسة نهائيًا",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        }
+      );
+
+      await purgeBatch.commit();
 
       /*
        * تنظيف أي نافذة decrypt موجودة لهذا الطلب
@@ -1366,7 +1393,11 @@ router.post(
         });
       }
 
-      await db.collection("orders").doc(found.id).update({
+      const archiveRef = db.collection("orders").doc(found.id);
+      const archiveAuditRef = db.collection("audit_logs").doc();
+      const archiveBatch = db.batch();
+
+      archiveBatch.update(archiveRef, {
         archived: true,
         archivedAt: admin.firestore.FieldValue.serverTimestamp(),
         archivedBy: String(req.admin.uid),
@@ -1377,6 +1408,23 @@ router.post(
           at: new Date()
         })
       });
+
+      archiveBatch.set(
+        archiveAuditRef,
+        {
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+          userId: String(req.admin?.uid || "").slice(0, 200),
+          action: "أرشفة طلب",
+          targetOrder: String(order.referenceNumber || order.orderId || found.id).slice(0, 200),
+          details: "تمت أرشفة الطلب بعد اكتماله",
+          userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+          source: "server"
+        }
+      );
+
+      await archiveBatch.commit();
 
       return res.json({
         success: true,
