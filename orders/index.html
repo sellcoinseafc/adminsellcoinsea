@@ -29,12 +29,11 @@
     <button class="inquiry-mini" id="lblHeaderTrack" type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass"></i><span data-i18n="trackOrder">استعلام</span></button>
   </div>
 
-  <div class="stepper-wrap">
+  <div class="stepper-wrap" aria-label="مراحل الطلب">
     <div class="stepper-line"><span id="orderProgressFill"></span></div>
-    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">الكمية</small></div>
-    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">البيانات</small></div>
+    <div class="progress-step active" data-step="1"><span>1</span><small data-i18n="progressStep1">بيانات الحساب</small></div>
+    <div class="progress-step" data-step="2"><span>2</span><small data-i18n="progressStep2">العميل والدفع</small></div>
     <div class="progress-step" data-step="3"><span>3</span><small data-i18n="progressStep3">المراجعة</small></div>
-    <div class="progress-step" data-step="4"><span>4</span><small data-i18n="progressStep4">تم الطلب</small></div>
   </div>
 
   <main class="app-content">
@@ -113,65 +112,95 @@
           <small data-i18n="totalCalculation">يتم احتسابه حسب الكمية والمنصة</small>
         </div>
 
-        <div id="paymentCategoryCard" class="info-card hidden">
-          <div class="card-heading"><span data-i18n="receiveMoney">استلام المبلغ</span><i class="fa-solid fa-wallet"></i></div>
-          <div class="payment-tabs">
-            <button id="tabLocal" type="button" onclick="switchPaymentCategory('local')"><span data-i18n="localPayment">دفع محلي</span></button>
-            <button id="tabIntl" type="button" onclick="switchPaymentCategory('international')"><span data-i18n="internationalPayment">دفع دولي</span></button>
-          </div>
-          <p class="payment-hint" id="paymentCategoryHint" data-i18n="paymentHint">اختر نوع الدفع لعرض طرق الاستلام المتاحة.</p>
-          <div id="dynamicPaymentMethodsGrid" class="payment-methods-grid hidden"></div>
-        </div>
 
-        <div id="payoutCardContainer" class="info-card hidden">
-          <div class="card-heading"><span data-i18n="paymentDetails">تفاصيل الدفع</span><i class="fa-solid fa-money-check-dollar"></i></div>
-          <div class="selected-payment-note" id="selectedPaymentNote">--</div>
-        </div>
-
-        <button id="btnNextStep" class="primary-btn" type="button" onclick="goToStep2()"><span data-i18n="startSelling">ابدأ ببيع كوينز الآن</span><i class="fa-solid fa-arrow-left"></i></button>
-      </section>
-
-      <section id="step2Screen" class="screen hidden">
-        <form id="orderForm" novalidate>
-          <div class="form-card">
-            <div class="card-heading"><span data-i18n="customerDetails">بيانات العميل والتواصل</span><i class="fa-solid fa-user"></i></div>
-            <label class="field-label" data-i18n="customerName">اسم العميل</label>
-            <div class="input-box-wrap"><input id="customerName" type="text" data-i18n-placeholder="customerName" placeholder="اسم العميل" autocomplete="name"></div>
-            <label class="field-label" data-i18n="whatsappNumber">رقم التواصل واتساب</label>
-            <div class="input-box-wrap phone-input-wrap"><input id="customerPhone" type="tel" inputmode="numeric" placeholder="05xxxxxxxx" oninput="convertArabicNumbersToEnglish(this)" autocomplete="tel"></div>
+        <section class="stage-section account-stage" aria-labelledby="accountStageTitle">
+          <div class="stage-heading">
+            <div class="stage-number">01</div>
+            <div>
+              <span class="stage-kicker">SAMI COINS</span>
+              <h2 id="accountStageTitle">بيانات حساب EA</h2>
+              <p>أدخل بيانات الحساب والأكواد الاحتياطية المطلوبة لتنفيذ عملية السحب.</p>
+            </div>
+            <i class="fa-solid fa-shield-halved"></i>
           </div>
 
           <div class="form-card">
             <div class="card-heading"><span data-i18n="eaAccount">حساب EA</span><i class="fa-brands fa-ea"></i></div>
             <label class="field-label" data-i18n="eaEmail">البريد الإلكتروني لحساب EA</label>
-            <div class="input-box-wrap"><input id="eaEmail" type="email" placeholder="example@ea.com" autocomplete="off"></div>
+            <div class="input-box-wrap"><input id="eaEmail" type="email" placeholder="example@email.com" autocomplete="off" inputmode="email"></div>
             <label class="field-label" data-i18n="eaPassword">كلمة مرور حساب EA</label>
-            <div class="input-box-wrap password-wrap"><input id="eaPass" type="password" placeholder="••••••••••" autocomplete="new-password"><i class="fa-solid fa-eye"></i></div>
+            <div class="input-box-wrap password-wrap"><input id="eaPass" type="password" placeholder="كلمة المرور" autocomplete="new-password"><i class="fa-solid fa-eye"></i></div>
             <div class="security-note"><i class="fa-solid fa-lock"></i><span data-i18n="encryptedData">يتم تشفير بيانات الحساب لحمايتها.</span></div>
           </div>
 
-          <div class="form-card">
+          <div class="form-card backup-card">
             <div class="card-heading"><span data-i18n="backupCodes">الأكواد الاحتياطية</span><button type="button" class="link-btn" onclick="openBackupGuideModal()" data-i18n="howToGetCodes">طريقة الاستخراج؟</button></div>
             <p class="muted" data-i18n="backupCodesNote">أدخل 3 أكواد احتياطية مختلفة من حساب EA الخاص بك.</p>
-            <div class="code-input-row"><span>1</span><div class="input-box-wrap"><input id="code1" type="text" inputmode="numeric" maxlength="11" placeholder="••••••••"></div></div>
-            <div class="code-input-row"><span>2</span><div class="input-box-wrap"><input id="code2" type="text" inputmode="numeric" maxlength="11" placeholder="••••••••"></div></div>
-            <div class="code-input-row"><span>3</span><div class="input-box-wrap"><input id="code3" type="text" inputmode="numeric" maxlength="11" placeholder="••••••••"></div></div>
-          </div>
-
-          <div class="form-card">
-            <div class="card-heading"><span data-i18n="receivingData">بيانات الاستلام</span><i class="fa-solid fa-building-columns"></i></div>
-            <div id="step2PaymentFieldsContainer"></div>
-          </div>
-
-          <div id="termsCard" class="terms-card">
-            <div id="termsContainer">
-              <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات وانسحاب الشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
-              <div id="inlineTermsList" class="inline-terms-list"></div>
-              <label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
+            <div class="backup-input-grid">
+              <div class="backup-input-card"><span>01</span><div class="input-box-wrap"><input id="code1" type="text" inputmode="text" maxlength="11" placeholder="الكود الأول" autocomplete="off"></div></div>
+              <div class="backup-input-card"><span>02</span><div class="input-box-wrap"><input id="code2" type="text" inputmode="text" maxlength="11" placeholder="الكود الثاني" autocomplete="off"></div></div>
+              <div class="backup-input-card"><span>03</span><div class="input-box-wrap"><input id="code3" type="text" inputmode="text" maxlength="11" placeholder="الكود الثالث" autocomplete="off"></div></div>
             </div>
+            <div class="security-note backup-note"><i class="fa-solid fa-circle-info"></i><span>نحتاج 3 أكواد مختلفة فقط من أصل الأكواد الاحتياطية المتاحة في حسابك.</span></div>
           </div>
 
-          <div class="bottom-actions">
+          <div class="stage-security-strip"><i class="fa-solid fa-user-shield"></i><span>بيانات حساب EA الحساسة تُرسل إلى الخادم وتُحفظ مشفّرة وفق نظام الحماية.</span></div>
+        </section>
+        <button id="btnNextStep" class="primary-btn" type="button" onclick="goToStep2()"><span data-i18n="startSelling">ابدأ ببيع كوينز الآن</span><i class="fa-solid fa-arrow-left"></i></button>
+      </section>
+
+
+      <section id="step2Screen" class="screen hidden">
+        <form id="orderForm" novalidate>
+          <section class="stage-section customer-stage" aria-labelledby="customerStageTitle">
+            <div class="stage-heading">
+              <div class="stage-number">02</div>
+              <div>
+                <span class="stage-kicker">SAMI COINS</span>
+                <h2 id="customerStageTitle">بيانات العميل والدفع</h2>
+                <p>أدخل بيانات التواصل وطريقة استلام المبلغ بدقة قبل المراجعة.</p>
+              </div>
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+
+            <div class="form-card">
+              <div class="card-heading"><span data-i18n="customerDetails">بيانات العميل والتواصل</span><i class="fa-solid fa-user"></i></div>
+              <label class="field-label" data-i18n="customerName">الاسم الكامل</label>
+              <div class="input-box-wrap"><input id="customerName" type="text" data-i18n-placeholder="customerName" placeholder="الاسم الكامل" autocomplete="name"></div>
+
+              <label class="field-label" data-i18n="whatsappNumber">رقم التواصل مع مفتاح الدولة</label>
+              <div class="phone-example">مثال للسعودية: <strong dir="ltr">+966 5XXXXXXXX</strong></div>
+              <div class="input-box-wrap phone-input-wrap"><input id="customerPhone" type="tel" inputmode="tel" placeholder="+966 5XXXXXXXX" autocomplete="tel" dir="ltr"></div>
+              <div class="field-hint"><i class="fa-solid fa-circle-info"></i> اكتب الرقم بصيغة دولية مع رمز الدولة.</div>
+            </div>
+
+            <div class="form-card payment-card">
+              <div class="card-heading"><span data-i18n="receiveMoney">طريقة استلام المبلغ</span><i class="fa-solid fa-money-bill-transfer"></i></div>
+              <div class="payment-tabs">
+                <button id="tabLocal" type="button" onclick="switchPaymentCategory('local')"><i class="fa-solid fa-location-dot"></i><span data-i18n="localPayment">محلي</span></button>
+                <button id="tabIntl" type="button" onclick="switchPaymentCategory('international')"><i class="fa-solid fa-earth-americas"></i><span data-i18n="internationalPayment">دولي</span></button>
+              </div>
+              <p class="payment-hint" id="paymentCategoryHint" data-i18n="paymentHint">اختر نوع الدفع لعرض طرق الاستلام المتاحة.</p>
+              <div id="dynamicPaymentMethodsGrid" class="payment-methods-grid hidden"></div>
+              <div id="payoutCardContainer" class="payout-details-card hidden">
+                <div class="card-heading"><span data-i18n="paymentDetails">تفاصيل الاستلام</span><i class="fa-solid fa-receipt"></i></div>
+                <div class="selected-payment-note" id="selectedPaymentNote">--</div>
+                <div id="step2PaymentFieldsContainer"></div>
+              </div>
+            </div>
+
+            <div id="termsCard" class="terms-card">
+              <div id="termsContainer">
+                <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات والشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
+                <div id="inlineTermsList" class="inline-terms-list"></div>
+                <label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
+              </div>
+            </div>
+
+            <div class="legal-notice-outside"><i class="fa-solid fa-shield-halved"></i><div><strong>تنبيه الخصوصية</strong><span>بيانات الحساب والدفع حساسة. لا تشاركها خارج هذه الصفحة، ويتم التعامل معها وفق نظام الحماية.</span></div></div>
+          </section>
+
+          <div class="bottom-actions stage-actions">
             <button type="button" class="secondary-btn" onclick="showScreen('step1Screen')" data-i18n="previous">السابق</button>
             <button type="button" class="primary-btn" onclick="goToReview()"><span data-i18n="reviewOrder">مراجعة الطلب</span><i class="fa-solid fa-arrow-left"></i></button>
           </div>
@@ -179,6 +208,17 @@
       </section>
 
       <section id="step3ReviewScreen" class="screen hidden">
+        <div class="stage-section review-stage">
+          <div class="stage-heading">
+            <div class="stage-number">03</div>
+            <div>
+              <span class="stage-kicker">SAMI COINS</span>
+              <h2>المراجعة والتأكيد</h2>
+              <p>راجع جميع البيانات، ثم أكد إنشاء الطلب.</p>
+            </div>
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+        </div>
         <div class="review-banner"><i class="fa-solid fa-clipboard-check"></i><div><strong data-i18n="reviewAndConfirm">مراجعة الطلب والاعتماد</strong><span data-i18n="reviewDescription">راجع جميع البيانات قبل إنشاء الطلب.</span></div><button id="editToggleBtn" type="button" class="small-edit-btn" onclick="toggleEditMode()"><i class="fa-solid fa-pen"></i><span data-i18n="edit">تعديل</span></button></div>
 
         <div id="editPlatformQtyPanel" class="form-card hidden">
