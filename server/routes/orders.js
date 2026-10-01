@@ -141,7 +141,7 @@ function normalizeStatus(value) {
 
   return STATUS_VALUES.has(status)
     ? status
-    : "new";
+    : "";
 }
 
 function normalizeIssue(value) {
@@ -2833,9 +2833,6 @@ router.post(
       const {
         orderId,
         status,
-        transferredAt,
-        transferredBy,
-        transferData,
         issue,
         issueMessage,
         issueState
@@ -2862,6 +2859,13 @@ router.post(
         normalizeStatus(
           status
         );
+
+      if (!nextStatus) {
+        return res.status(400).json({
+          success: false,
+          message: "حالة الطلب غير صحيحة."
+        });
+      }
 
       const updateData = {
         status:
@@ -2944,21 +2948,21 @@ router.post(
 
       /*
        * Manual transfer status.
+       *
+       * The browser is never trusted for transfer timestamp/actor.
+       * The server is the authoritative source for these fields.
        */
       if (
         nextStatus ===
         "transferred"
       ) {
         updateData.transferredAt =
-          transferredAt ||
-          transferData?.transferredAt ||
-          new Date().toISOString();
+          new Date();
 
         updateData.transferredBy =
-          transferredBy ||
-          transferData?.transferredBy ||
           req.admin?.email ||
           req.admin?.name ||
+          req.admin?.uid ||
           "Admin";
 
         updateData.transferCompleted =
