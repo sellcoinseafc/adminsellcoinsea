@@ -15,9 +15,11 @@ import {
 
 import { createRateLimiter } from "../middleware/rateLimit.js";
 import {
-  generateOrderNumbers,
-  isValidReferenceNumber
+  generateOrderNumbers
 } from "../services/orderNumber.js";
+import {
+  isValidReferenceNumber
+} from "../services/orderNumberCore.js";
 
 const router = express.Router();
 
