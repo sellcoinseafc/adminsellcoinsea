@@ -2658,6 +2658,18 @@ router.post(
                 message: "بيانات المحفظة غير مكتملة."
               });
             }
+
+            const normalizedWalletPhone =
+              payout.phone.replace(/[\s()-]/g, "").replace(/^00/, "+");
+
+            if (!/^(?:\+966|966|0)5\d{8}$/.test(normalizedWalletPhone)) {
+              return res.status(400).json({
+                success: false,
+                message: "رقم جوال المحفظة غير صحيح."
+              });
+            }
+
+            payout.phone = normalizedWalletPhone;
             break;
           }
           case "usd": {
@@ -2683,6 +2695,13 @@ router.post(
               return res.status(400).json({
                 success: false,
                 message: "بيانات Western Union غير مكتملة."
+              });
+            }
+
+            if (!/^[A-Za-z][A-Za-z .'-]*$/.test(payout.fullNameEnglish)) {
+              return res.status(400).json({
+                success: false,
+                message: "اسم Western Union يجب أن يكون بالإنجليزية فقط."
               });
             }
             break;
@@ -2777,9 +2796,11 @@ router.post(
         at: new Date()
       });
 
-      await found.ref.update(patch);
+      const editAuditRef = db.collection("audit_logs").doc();
+      const editBatch = db.batch();
 
-      await db.collection("audit_logs").add({
+      editBatch.update(found.ref, patch);
+      editBatch.set(editAuditRef, {
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
         timeString: new Date().toLocaleString("ar-SA", {
           timeZone: "Asia/Riyadh"
@@ -2792,8 +2813,11 @@ router.post(
           fields: changedFields.filter((field) => !field.includes("accountData") && field !== "payoutDetails").slice(0, 30),
           sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20)
         }).slice(0, 1800),
-        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+        source: "server"
       });
+
+      await editBatch.commit();
 
       return res.json({
         success: true,
