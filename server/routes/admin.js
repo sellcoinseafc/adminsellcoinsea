@@ -1328,6 +1328,7 @@ router.post(
 router.post(
   "/archive-order",
   requireAdmin,
+  adminMutationRateLimit,
   async (req, res) => {
     try {
       const orderIdentifier =
