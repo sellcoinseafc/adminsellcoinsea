@@ -3023,30 +3023,95 @@ router.post(
         });
       }
 
-      updateData.history = admin.firestore.FieldValue.arrayUnion({
-        type: "status_change",
-        from: previousStatus,
-        to: nextStatus,
-        issue: updateData.issue ?? normalizeIssue(current.issue),
-        actor: req.admin?.email || req.admin?.name || req.admin?.uid || "admin",
-        at: new Date()
-      });
-
       const statusAuditRef = db.collection("audit_logs").doc();
       const statusBatch = db.batch();
 
-      statusBatch.update(found.ref, updateData);
-      statusBatch.set(
-        statusAuditRef,
-        buildOrderAuditEntry({
-          req,
-          action: "تعديل حالة الطلب",
-          targetOrder: current.referenceNumber || current.orderId || found.id,
-          details: `تم تغيير الحالة من ${previousStatus} إلى ${nextStatus}${updateData.issue ? ` | المشكلة: ${updateData.issue}` : ""}`
-        })
-      );
+      /*
+       * Re-read the order inside the transaction so two admins cannot
+       * both make a decision from the same stale lifecycle state.
+       */
+      let transactionPreviousStatus = previousStatus;
 
-      await statusBatch.commit();
+      await db.runTransaction(async (transaction) => {
+        const freshSnap = await transaction.get(found.ref);
+
+        if (!freshSnap.exists) {
+          const error = new Error("ORDER_NOT_FOUND");
+          error.code = "ORDER_NOT_FOUND";
+          throw error;
+        }
+
+        const freshData = freshSnap.data() || {};
+        transactionPreviousStatus =
+          normalizeStatus(freshData.status);
+
+        const freshAllowedNextStatuses =
+          ALLOWED_STATUS_TRANSITIONS[transactionPreviousStatus] ||
+          new Set([transactionPreviousStatus]);
+
+        if (!freshAllowedNextStatuses.has(nextStatus)) {
+          const error = new Error("STALE_OR_INVALID_STATUS_TRANSITION");
+          error.code = "STALE_OR_INVALID_STATUS_TRANSITION";
+          throw error;
+        }
+
+        const transactionUpdateData = {
+          ...updateData,
+          history: admin.firestore.FieldValue.arrayUnion({
+            type: "status_change",
+            from: transactionPreviousStatus,
+            to: nextStatus,
+            issue:
+              updateData.issue ??
+              normalizeIssue(freshData.issue),
+            actor:
+              req.admin?.email ||
+              req.admin?.name ||
+              req.admin?.uid ||
+              "admin",
+            at: new Date()
+          })
+        };
+
+        /*
+         * completedAt/purgeDueAt must be authored from the transaction's
+         * fresh state, not from the earlier read.
+         */
+        if (nextStatus === "completed" && !freshData.completedAt) {
+          const completedAt = new Date();
+          transactionUpdateData.completedAt = completedAt;
+          transactionUpdateData.purgeDueAt =
+            new Date(completedAt.getTime() + PURGE_DELAY_MS);
+        } else if (nextStatus !== "completed") {
+          delete transactionUpdateData.completedAt;
+          delete transactionUpdateData.purgeDueAt;
+        }
+
+        if (nextStatus === "transferred") {
+          transactionUpdateData.transferredAt = new Date();
+          transactionUpdateData.transferredBy =
+            req.admin?.email ||
+            req.admin?.name ||
+            req.admin?.uid ||
+            "Admin";
+          transactionUpdateData.transferCompleted = true;
+        }
+
+        transaction.update(found.ref, transactionUpdateData);
+        transaction.set(
+          statusAuditRef,
+          buildOrderAuditEntry({
+            req,
+            action: "تعديل حالة الطلب",
+            targetOrder:
+              freshData.referenceNumber ||
+              freshData.orderId ||
+              found.id,
+            details:
+              `تم تغيير الحالة من ${transactionPreviousStatus} إلى ${nextStatus}${transactionUpdateData.issue ? ` | المشكلة: ${transactionUpdateData.issue}` : ""}`
+          })
+        );
+      });
 
       return res.json({
         success: true,
