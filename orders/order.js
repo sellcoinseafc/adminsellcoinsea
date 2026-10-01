@@ -3424,7 +3424,10 @@ const INLINE_TERMS_EN = [
 ];
 
 function showTermsModal() {
-    const terms = currentLanguage === "en"\n        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])\n        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);\n    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
+    const terms = currentLanguage === "en"
+        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])
+        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);
+    const dir = currentLanguage === "ar" ? "rtl" : "ltr";
     const title = currentLanguage === "ar" ? "الشروط والأحكام" : "Terms & Conditions";
 
     const html = `
@@ -3439,7 +3442,12 @@ function showTermsModal() {
 function renderInlineTerms() {
     const containers = [$("inlineTermsList"), $("reviewInlineTermsList")].filter(Boolean);
     if (!containers.length) return;
-    const terms = currentLanguage === "en"\n        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])\n        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);\n    const html = terms.length\n        ? "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>"\n        : "<p class=\"terms-empty\">" + (currentLanguage === "ar" ? "لا توجد إقرارات مضافة حاليًا." : "No declarations are currently configured.") + "</p>";
+    const terms = currentLanguage === "en"
+        ? (Array.isArray(storeSettings.termsEn) ? storeSettings.termsEn : [])
+        : (Array.isArray(storeSettings.terms) ? storeSettings.terms : []);
+    const html = terms.length
+        ? "<ol>" + terms.map(item => "<li>" + escapeHtml(item) + "</li>").join("") + "</ol>"
+        : "<p class="terms-empty">" + (currentLanguage === "ar" ? "لا توجد إقرارات مضافة حاليًا." : "No declarations are currently configured.") + "</p>";
     containers.forEach(container => { container.innerHTML = html; });
 }
 
