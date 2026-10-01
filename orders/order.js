@@ -1899,7 +1899,17 @@ function validateAccountStep1() {
 }
 
 function goToStep2() {
-    if(!selectedPlatform){document.querySelector(".platforms-flex")?.scrollIntoView({behavior:"smooth",block:"center"});return;}
+    if(!selectedPlatform){
+        const platformGrid = document.querySelector(".platforms-flex");
+        const prompt = $("platformPromptBox");
+        platformGrid?.classList.add("platform-required-error");
+        prompt?.classList.add("platform-required-error");
+        prompt?.scrollIntoView({behavior:"smooth",block:"center"});
+        showToast(currentLanguage === "ar" ? "اختر المنصة أولًا للمتابعة." : "Please select a platform first.");
+        return;
+    }
+    document.querySelector(".platforms-flex")?.classList.remove("platform-required-error");
+    $("platformPromptBox")?.classList.remove("platform-required-error");
     if(currentQty<minLimit||(maxLimit>0&&currentQty>maxLimit)){markInvalid($("quantityInput"),"أدخل كمية ضمن الحدود المسموحة.");return;}
     if(!validateAccountStep1()) return;
     showScreen("step2Screen");
