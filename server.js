@@ -149,6 +149,24 @@ const apiRateLimit = createRateLimiter({
   message: "عدد طلبات API مرتفع جدًا. حاول مرة أخرى بعد قليل."
 });
 
+/**
+ * Admin write limiter.
+ *
+ * This is intentionally mounted at the server boundary so every
+ * administrative mutation is rate-limited, including routes that may
+ * be added later and do not yet have a route-local limiter.
+ *
+ * Existing stricter route-local limiters (for example decrypt/update)
+ * remain in place and therefore still take precedence for those flows.
+ */
+const adminWriteRateLimit = createRateLimiter({
+  windowMs: 60_000,
+  max: 60,
+  keyGenerator: (req) =>
+    `admin-write:${String(req.admin?.uid || req.ip || "unknown")}`,
+  message: "عدد عمليات الإدارة مرتفع جدًا. حاول مرة أخرى بعد قليل."
+});
+
 app.use("/api", apiRateLimit);
 
 app.use(
@@ -364,6 +382,21 @@ app.get(
  */
 app.use(
   "/api/admin",
+  (req, res, next) => {
+    /*
+     * Only state-changing HTTP methods are rate-limited here.
+     * GET endpoints remain governed by the global API limiter and any
+     * route-specific controls.
+     *
+     * The limiter is intentionally before the router so new admin
+     * mutation endpoints cannot accidentally omit protection.
+     */
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+      return adminWriteRateLimit(req, res, next);
+    }
+
+    return next();
+  },
   adminRoutes
 );
 
