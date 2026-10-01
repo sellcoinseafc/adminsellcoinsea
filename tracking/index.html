@@ -9,11 +9,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
     <!-- مسار الـ CSS المباشر داخل نفس المجلد -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20261001">
 </head>
 <body class="tracking-page-body">
 
     <div class="tracking-readonly-badge" aria-label="واجهة تتبع للقراءة فقط">تتبع الطلب — للعرض فقط</div>
+
+    <!-- تقييمات العملاء المعتمدة -->
+    <section class="public-reviews-section tracking-public-reviews" aria-labelledby="trackingReviewsTitle">
+        <div class="public-reviews-heading">
+            <div>
+                <span class="public-reviews-kicker">SAMI COINS</span>
+                <h2 id="trackingReviewsTitle">آراء عملائنا</h2>
+                <p>تجارب حقيقية من عملائنا الكرام</p>
+            </div>
+            <div class="public-reviews-heading-icon"><i class="fa-solid fa-star"></i></div>
+        </div>
+        <div class="public-reviews-container" data-public-reviews>
+            <div class="public-reviews-empty">جاري تحميل التقييمات...</div>
+        </div>
+    </section>
 
     <!-- ==========================================
          1. واجهة الإدخال (تظهر أولاً إذا لم يوجد طلب)
@@ -277,6 +292,43 @@
             <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box purple-icon"><span>→</span></div><h2>حالة التحويل</h2></div><span class="transfer-status-pill" id="transferStatusLabel"></span></div>
             <div class="transfer-status-body"><p id="transferStatusMessage"></p><div class="transfer-completion-row" id="transferCompletionRow" style="display:none;"><span>وقت التحويل</span><strong id="transferredAt"></strong></div><div class="transfer-completion-row" id="completedAtRow" style="display:none;"><span>اكتمل الطلب</span><strong id="completedAt"></strong></div></div>
         </section>
+        <section class="card customer-review-card" id="customerReviewCard" style="display:none;" aria-labelledby="customerReviewTitle">
+            <div class="customer-review-header">
+                <div class="accordion-title">
+                    <div class="icon-box gold-icon"><i class="fa-solid fa-star"></i></div>
+                    <div>
+                        <h2 id="customerReviewTitle">قيّم تجربتك معنا</h2>
+                        <p>رأيك يهمنا ويساعد عملاءنا الآخرين</p>
+                    </div>
+                </div>
+                <span class="customer-review-limit" id="reviewCharacterCount">0 / 600</span>
+            </div>
+
+            <div class="customer-review-body">
+                <label class="customer-review-label" for="customerReviewText">اكتب تقييمك</label>
+                <textarea id="customerReviewText" maxlength="600" rows="5" placeholder="اكتب تقييمك هنا (حد أقصى 600 حرف)..."></textarea>
+
+                <div class="customer-review-bottom">
+                    <div class="customer-review-rating" aria-label="التقييم من خمس نجوم">
+                        <span class="customer-review-rating-label">تقييمك العام</span>
+                        <div class="customer-review-stars" id="customerReviewStars">
+                            <button type="button" class="customer-review-star" data-rating="1" aria-label="نجمة واحدة">★</button>
+                            <button type="button" class="customer-review-star" data-rating="2" aria-label="نجمتان">★</button>
+                            <button type="button" class="customer-review-star" data-rating="3" aria-label="ثلاث نجوم">★</button>
+                            <button type="button" class="customer-review-star" data-rating="4" aria-label="أربع نجوم">★</button>
+                            <button type="button" class="customer-review-star" data-rating="5" aria-label="خمس نجوم">★</button>
+                        </div>
+                    </div>
+                    <button type="button" class="customer-review-submit" id="customerReviewSubmit">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>إرسال التقييم</span>
+                    </button>
+                </div>
+
+                <div class="customer-review-feedback" id="customerReviewFeedback" role="status" aria-live="polite"></div>
+            </div>
+        </section>
+
         <section class="card tracking-extra-card" id="trackingHistoryCard" style="display:none;">
             <div class="tracking-extra-header"><div class="accordion-title"><div class="icon-box blue-icon"><span>↻</span></div><h2>سجل تحديثات الطلب</h2></div></div>
             <div id="trackingHistoryList" class="tracking-history-list"></div>
