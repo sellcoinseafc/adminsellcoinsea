@@ -53,8 +53,6 @@ const __dirname =
  */
 
 const app = express();
-app.disable("x-powered-by");
-
 const trustProxy = String(process.env.TRUST_PROXY || "").trim();
 if (trustProxy) app.set("trust proxy", trustProxy === "true" ? true : trustProxy);
 
@@ -113,7 +111,7 @@ app.use(
 /**
  * JSON body.
  *
- * 2MB كافية للـAPI الحالي
+ * 256KB كافية للـAPI الحالي
  * وتمنع payloads غير الضرورية.
  */
 app.use(
@@ -128,7 +126,8 @@ app.use(
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "2mb"
+    limit: "256kb",
+    parameterLimit: 100
   })
 );
 
@@ -333,8 +332,7 @@ app.get(
         status: "online",
         database: "online",
         service:
-          "adminsellcoinsea",
-        port: PORT
+          "adminsellcoinsea"
       });
     } catch (error) {
       console.error(
@@ -347,8 +345,7 @@ app.get(
         status: "online",
         database: "offline",
         service:
-          "adminsellcoinsea",
-        port: PORT
+          "adminsellcoinsea"
       });
     }
   }
