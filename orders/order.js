@@ -21,7 +21,7 @@ let storeSettings = {
     transferHours: "",
     pcWithdrawDays: "",
     pcTransferHours: "",
-    safeMethod: settings.safeMethod || storeSettings.safeMethod || "آمنة 99%",
+    safeMethod: "آمنة 100%",
     paymentCategories: {},
     termsEn: [],
     termsEnabled: true,
@@ -222,6 +222,8 @@ const translations = {
         privacy: "الخصوصية",
         terms: "الشروط والأحكام",
         orderInquiry: "استعلام عن الطلب",
+        openTracking: "فتح التتبع",
+        copyTracking: "نسخ الرابط",
         allRightsReserved: "جميع الحقوق محفوظة"
     },
 
@@ -359,6 +361,8 @@ const translations = {
         privacy: "Privacy",
         terms: "Terms",
         orderInquiry: "Order Inquiry",
+        openTracking: "Open Tracking",
+        copyTracking: "Copy Link",
         allRightsReserved: "All rights reserved"
     }
 };
@@ -657,8 +661,9 @@ function startSettingsRealtime() {
         unsubscribeSettingsRealtime = subscribeToPublicSettings((settings) => {
             storeSettings = {
                 ...storeSettings,
-                storeName: "samicoins",
-                arabicStoreName: "samicoins",
+                storeName: settings.storeName || storeSettings.storeName || "SAMI COINS",
+                arabicStoreName: settings.arabicStoreName || storeSettings.arabicStoreName || "سامي كوينز",
+                storeLogo: settings.storeLogo || storeSettings.storeLogo || "",
                 gameName: settings.gameName || "FC",
                 gameVersion: Number(settings.gameVersion || 27),
                 rates: {
@@ -773,6 +778,14 @@ function contactClosedStoreWhatsapp() {
 // ==========================================================================
 
 function applySettingsToUI() {
+
+    const logo = $("storeLogoImage");
+    if (logo) {
+        const logoUrl = String(storeSettings.storeLogo || "").trim();
+        logo.src = logoUrl;
+        logo.classList.toggle("hidden", !logoUrl);
+        logo.alt = currentLanguage === "ar" ? "شعار سامي كوينز" : "SAMI COINS logo";
+    }
 
     const gameName =
         storeSettings.gameName || "FC";
