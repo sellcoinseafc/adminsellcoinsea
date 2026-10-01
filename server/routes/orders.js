@@ -2170,6 +2170,12 @@ switch (
         reviewSubmitted:
           false,
 
+        reviewSubmittedAt:
+          null,
+
+        reviewId:
+          null,
+
         /*
          * Timestamps.
          */
