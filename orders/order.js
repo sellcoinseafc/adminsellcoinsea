@@ -1224,6 +1224,7 @@ function selectPaymentMethod(method) {
     updateDynamicUI();
 
     renderStep2PaymentFields();
+    showElement("payoutCardContainer");
     const note = $("selectedPaymentNote");
     if (note) note.textContent = selectedPaymentMethod || "--";
 
@@ -1378,7 +1379,7 @@ function calculateTotal() {
             totalSar / 3.75;
 
         totalEl.textContent =
-            `$${totalUsd.toFixed(2)}`;
+            `USDT ${totalUsd.toFixed(2)}`;
 
     } else {
 
@@ -1552,7 +1553,7 @@ function renderStep2PaymentFields() {
 
         container.innerHTML = `
             <label class="field-label">
-                USD
+                USDT (TRC20)
                 <span class="required-star">*</span>
             </label>
 
@@ -1562,8 +1563,8 @@ function renderStep2PaymentFields() {
                     id="usdDetails"
                     placeholder="${
                         currentLanguage === "ar"
-                            ? "أدخل تفاصيل استلام USD"
-                            : "Enter your USD receiving details"
+                            ? "عنوان محفظة USDT على شبكة TRC20"
+                            : "USDT wallet address on TRC20"
                     }"
                     autocomplete="off"
                     required
@@ -1739,7 +1740,7 @@ function getCurrentStepNumber() {
     }
 
     if (!$("step4SuccessScreen")?.classList.contains("hidden")) {
-        return 4;
+        return 3;
     }
 
     return 1;
@@ -1750,8 +1751,7 @@ function updateProgressUI(step) {
     const titles = {
         1: "step1Title",
         2: "step2Title",
-        3: "step3Title",
-        4: "step4Title"
+        3: "step3Title"
     };
 
     const titleKey =
@@ -1767,7 +1767,7 @@ function updateProgressUI(step) {
 
     setText(
         "currentStepCount",
-        `${step} / 4`
+        `${Math.min(step, 3)} / 3`
     );
 
     const fill =
@@ -1775,7 +1775,7 @@ function updateProgressUI(step) {
 
     if (fill) {
         fill.style.width =
-            `${((step - 1) / 3) * 100}%`;
+            `${((Math.min(step, 3) - 1) / 2) * 100}%`;
     }
 
     document
@@ -1873,7 +1873,7 @@ function markInvalid(element, message = "") {
 
 function clearInvalidFields() {
     document.querySelectorAll(
-        "#step2Screen input, #step2Screen select, #step2Screen .field-invalid"
+        "#step1Screen input, #step1Screen select, #step2Screen input, #step2Screen select, #step1Screen .field-invalid, #step2Screen .field-invalid"
     ).forEach((field) => clearFieldError(field));
     document.querySelectorAll(
         ".field-error"
@@ -1883,223 +1883,65 @@ function clearInvalidFields() {
     ).forEach((el) => el.classList.remove("validation-invalid"));
 }
 
+function validateAccountStep1() {
+    clearInvalidFields();
+    const email=$("eaEmail"), password=$("eaPass"), code1=$("code1"), code2=$("code2"), code3=$("code3");
+    for (const field of [email,password,code1,code2,code3]) {
+        if (!field || !String(field.value||"").trim()) { markInvalid(field); return false; }
+    }
+    if (!/^\S+@\S+\.\S+$/.test(String(email.value).trim())) { markInvalid(email,"أدخل بريدًا إلكترونيًا صحيحًا."); return false; }
+    if (!/[A-Z]/.test(password.value)) { markInvalid(password,"يجب أن تحتوي كلمة المرور على حرف إنجليزي كبير واحد على الأقل."); return false; }
+    const codes=[code1.value.trim(),code2.value.trim(),code3.value.trim()];
+    const bad=[code1,code2,code3].find(x=>{const v=String(x?.value||"").trim();return v.length<6||v.length>11;});
+    if(bad){markInvalid(bad,"الكود يجب أن يكون بين 6 و11 خانة.");return false;}
+    if(new Set(codes).size!==3){markInvalid(code3,"يجب أن تكون الأكواد الثلاثة مختلفة.");return false;}
+    return true;
+}
+
 function goToStep2() {
-
-    if (!selectedPlatform) {
-
-        const platform =
-            document.querySelector(
-                ".platforms-flex"
-            );
-
-        platform?.scrollIntoView({
-            behavior: "smooth",
-            block: "center"
-        });
-
-        return;
-    }
-
-    if (
-        !currentPaymentCategory ||
-        !selectedPaymentMethod
-    ) {
-
-        const paymentBox =
-            $("paymentCategoryCard");
-
-        if (paymentBox) {
-            paymentBox.style.borderColor =
-                "#ef4444";
-
-            paymentBox.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-        }
-
-        return;
-    }
-
-    if (
-        currentQty < minLimit ||
-        (
-            maxLimit > 0 &&
-            currentQty > maxLimit
-        )
-    ) {
-
-        markInvalid(
-            $("quantityInput")
-        );
-
-        return;
-    }
-
-    renderStep2PaymentFields();
-
-    showScreen(
-        "step2Screen"
-    );
+    if(!selectedPlatform){document.querySelector(".platforms-flex")?.scrollIntoView({behavior:"smooth",block:"center"});return;}
+    if(currentQty<minLimit||(maxLimit>0&&currentQty>maxLimit)){markInvalid($("quantityInput"),"أدخل كمية ضمن الحدود المسموحة.");return;}
+    if(!validateAccountStep1()) return;
+    showScreen("step2Screen");
 }
 
 
-// ==========================================================================
 // 21. التحقق من الخطوة الثانية
 // ==========================================================================
 
 function validateStep2() {
-
     clearInvalidFields();
-
-    const name =
-        $("customerName");
-
-    const phone =
-        $("customerPhone");
-
-    const email =
-        $("eaEmail");
-
-    const password =
-        $("eaPass");
-
-    const code1 =
-        $("code1");
-
-    const code2 =
-        $("code2");
-
-    const code3 =
-        $("code3");
-
-    const fields = [
-        name,
-        phone,
-        email,
-        password,
-        code1,
-        code2,
-        code3
-    ];
-
-    for (const field of fields) {
-
-        if (
-            !field ||
-            !String(field.value || "").trim()
-        ) {
-            markInvalid(field);
-            return false;
-        }
+    const name=$("customerName"), phone=$("customerPhone");
+    if(!name||!String(name.value||"").trim()){markInvalid(name);return false;}
+    if(!phone||!String(phone.value||"").trim()){markInvalid(phone);return false;}
+    const p=String(phone.value||"").replace(/[\s()-]/g,"").replace(/^00/,"+");
+    if(!/^(?:\+966|966|0)5\d{8}$/.test(p)){markInvalid(phone,"أدخل رقم جوال صحيحًا مع مفتاح الدولة، مثال: +966 5XXXXXXXX.");return false;}
+    if(!currentPaymentCategory||!selectedPaymentMethod){showToast("اختر طريقة استلام المبلغ أولاً.");$("dynamicPaymentMethodsGrid")?.scrollIntoView({behavior:"smooth",block:"center"});return false;}
+    const fields=document.querySelectorAll("#step2PaymentFieldsContainer input,#step2PaymentFieldsContainer select");
+    for(const field of fields){if(!String(field.value||"").trim()){markInvalid(field);return false;}}
+    const method=getSelectedPaymentCode();
+    if(method==="bank"){
+        const iban=String($("iban")?.value||"").replace(/\s+/g,"").toUpperCase();
+        if(!/^\S{18,30}$/.test(iban)||/[\u0600-\u06FF]/.test(iban)){markInvalid($("iban"),"IBAN يجب أن يكون بين 18 و30 خانة وبدون أحرف عربية.");return false;}
+        $("iban").value=iban;
     }
-
-    const phoneValue =
-        phone.value
-            .replace(/\s/g, "")
-            .replace(/^0/, "");
-
-    if (
-        !/^5\d{8}$/.test(phoneValue) &&
-        !/^9665\d{8}$/.test(phoneValue)
-    ) {
-        markInvalid(phone);
-        return false;
+    if(method==="usd"){
+        const address=String($("usdDetails")?.value||"").trim();
+        if(!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address)){markInvalid($("usdDetails"),"أدخل عنوان USDT صحيحًا على شبكة TRC20 يبدأ بحرف T.");return false;}
     }
-
-    if (!String(password.value).trim()) {
-        markInvalid(password);
-        return false;
+    if(method==="paypal"){
+        const email=String($("paypalEmail")?.value||"").trim();
+        if(!/^\S+@\S+\.\S+$/.test(email)){markInvalid($("paypalEmail"),"أدخل بريد PayPal صحيحًا.");return false;}
     }
-
-    if (
-        !/[A-Z]/.test(password.value)
-    ) {
-        markInvalid(password);
-        return false;
+    if(method==="western"){
+        const wu=String($("wuName")?.value||"").trim();
+        if(!/^[A-Za-z][A-Za-z .'-]*$/.test(wu)){markInvalid($("wuName"),"اسم Western Union يجب أن يكون بالإنجليزية فقط ويطابق الاسم في الهوية.");return false;}
     }
-
-    const codes = [
-        code1.value.trim(),
-        code2.value.trim(),
-        code3.value.trim()
-    ];
-
-    if (
-        codes.some(
-            (code) =>
-                code.length < 6 ||
-                code.length > 11
-        )
-    ) {
-        const invalid =
-            [
-                code1,
-                code2,
-                code3
-            ].find(
-                (field) =>
-                    field.value.trim().length < 6 ||
-                    field.value.trim().length > 11
-            );
-
-        markInvalid(invalid);
-        return false;
-    }
-
-    if (
-        new Set(codes).size !== 3
-    ) {
-        markInvalid(code3);
-        return false;
-    }
-
-    if (
-        storeSettings.termsEnabled !== false
-    ) {
-
-        const terms =
-            $("termsCheck");
-
-        if (
-            !terms ||
-            !terms.checked
-        ) {
-
-            if (terms?.parentElement) {
-                terms.parentElement.style.color =
-                    "#ef4444";
-            }
-
-            terms?.scrollIntoView({
-                behavior: "smooth",
-                block: "center"
-            });
-
-            return false;
-        }
-    }
-
-    const paymentFields =
-        document.querySelectorAll(
-            "#step2PaymentFieldsContainer input, #step2PaymentFieldsContainer select"
-        );
-
-    for (const field of paymentFields) {
-
-        if (
-            !String(field.value || "").trim()
-        ) {
-            markInvalid(field);
-            return false;
-        }
-    }
-
+    if(storeSettings.termsEnabled!==false&&!$("termsCheck")?.checked){$("termsCheck")?.scrollIntoView({behavior:"smooth",block:"center"});showToast("يجب الموافقة على الشروط والأحكام.");return false;}
     return true;
 }
 
 
-// ==========================================================================
 // 22. تفاصيل الدفع في المراجعة
 // ==========================================================================
 
@@ -2196,7 +2038,7 @@ function buildPaymentDetailsHTML() {
 
             <div class="review-value-box">
                 <span>
-                    USD: ${escapeHtml(wallet)}
+                    USDT (TRC20): ${escapeHtml(wallet)}
                 </span>
             </div>
         `;
@@ -2565,7 +2407,7 @@ function renderInlinePayoutEdit() {
     if (method === "usd") {
 
         wrap.innerHTML = `
-            <label class="field-label">عنوان USD:</label>
+            <label class="field-label">عنوان USDT (TRC20):</label>
 
             <div class="input-box-wrap">
                 <input
@@ -3063,6 +2905,11 @@ async function submitOrderFinal() {
         if (isEditingAll) {
             return;
         }
+    }
+
+    if (!validateAccountStep1()) {
+        showScreen("step1Screen");
+        return;
     }
 
     if (!validateStep2()) {
