@@ -30,3 +30,167 @@ html[data-theme="light"] .app-header{background:rgba(255,255,255,.9)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:flex-end;justify-content:center;z-index:100;padding:10px}.modal-overlay.active{display:flex}.modal-card{width:min(560px,100%);max-height:86vh;overflow:auto;background:var(--panel);border:1px solid rgba(255,210,28,.3);border-radius:20px;padding:20px;position:relative;box-shadow:0 -20px 70px rgba(0,0,0,.5)}.close-modal-btn{position:absolute;top:10px;left:10px;width:34px;height:34px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text)}.modal-header-icon{text-align:center;color:var(--gold);font-size:30px}.modal-title{text-align:center;margin:8px 0 15px}.modal-body-content{font-size:11px;line-height:1.9}.legal-content h4{color:var(--gold);margin:15px 0 4px}.legal-content p{margin:6px 0}.legal-content ol{padding-right:20px}.toast-container{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:120;width:min(90%,450px)}.toast{background:#102633;color:#fff;border:1px solid var(--gold);border-radius:11px;padding:10px;text-align:center;font-size:10px;margin-bottom:6px;box-shadow:var(--shadow)}
 @media(min-width:700px){.app-shell{max-width:560px;min-height:100vh}.app-content{padding-left:16px;padding-right:16px}}
 @media(max-width:370px){.brand-title{font-size:16px}.hero-fc{font-size:37px}.hero-copy h1{font-size:15px}.platform-btn{min-height:88px}.mini-grid{gap:5px}}
+
+
+/* ==========================================================================
+   Responsive expansion — Mobile-first, Tablet, Desktop
+   ========================================================================== */
+
+/* Keep the approved mobile layout as the base. */
+.app-shell {
+    width: 100%;
+    max-width: 620px;
+    margin-inline: auto;
+}
+
+/* Tablet: expand the working area without turning the mobile layout into
+   a desktop dashboard. */
+@media (min-width: 768px) {
+    .app-shell {
+        max-width: 900px;
+    }
+
+    .app-content {
+        padding-inline: 28px;
+    }
+
+    .hero-card {
+        padding: 24px;
+    }
+
+    .platforms-flex {
+        gap: 14px;
+    }
+
+    .platform-btn {
+        min-height: 132px;
+    }
+
+    .mini-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .payment-methods-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-card {
+        padding: 24px;
+    }
+
+    .success-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* Desktop: use the additional width for breathing room and denser
+   information grouping while preserving the same visual language. */
+@media (min-width: 1200px) {
+    .app-shell {
+        max-width: 1180px;
+    }
+
+    .app-header,
+    .app-topbar,
+    .stepper-wrap,
+    .app-content,
+    .app-footer {
+        padding-inline: 34px;
+    }
+
+    .app-content {
+        padding-top: 26px;
+        padding-bottom: 30px;
+    }
+
+    #step1Screen {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr);
+        gap: 18px;
+        align-items: start;
+    }
+
+    #step1Screen > .hero-card,
+    #step1Screen > .trust-row,
+    #step1Screen > .section-label,
+    #step1Screen > .platforms-flex,
+    #step1Screen > #platformPromptBox,
+    #step1Screen > #singlePlatformRateCard,
+    #step1Screen > #durationInfoCardsStep1,
+    #step1Screen > #qtyCardContainer,
+    #step1Screen > #totalAmountBoxCard,
+    #step1Screen > #paymentCategoryCard,
+    #step1Screen > #payoutCardContainer,
+    #step1Screen > #btnNextStep {
+        min-width: 0;
+    }
+
+    #step1Screen > .hero-card,
+    #step1Screen > .trust-row,
+    #step1Screen > .section-label,
+    #step1Screen > .platforms-flex,
+    #step1Screen > #btnNextStep {
+        grid-column: 1 / -1;
+    }
+
+    #step1Screen > #platformPromptBox,
+    #step1Screen > #singlePlatformRateCard,
+    #step1Screen > #durationInfoCardsStep1,
+    #step1Screen > #qtyCardContainer,
+    #step1Screen > #totalAmountBoxCard,
+    #step1Screen > #paymentCategoryCard,
+    #step1Screen > #payoutCardContainer {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #step1Screen > #durationInfoCardsStep1 {
+        align-self: stretch;
+    }
+
+    .platform-btn {
+        min-height: 142px;
+        padding: 18px 12px;
+    }
+
+    .platform-btn i {
+        font-size: 42px;
+    }
+
+    .platform-btn strong {
+        font-size: 14px;
+    }
+
+    .platform-btn small {
+        font-size: 12px;
+    }
+
+    .info-card,
+    .total-card,
+    .form-card {
+        padding: 26px;
+    }
+
+    .payment-methods-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .app-footer i {
+        font-size: 21px;
+    }
+
+    .app-footer button {
+        min-height: 58px;
+    }
+
+    .modal-card {
+        width: min(900px, calc(100vw - 80px));
+    }
+}
+
+/* Very wide screens: stop the form from becoming unnecessarily stretched. */
+@media (min-width: 1600px) {
+    .app-shell {
+        max-width: 1240px;
+    }
+}
