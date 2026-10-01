@@ -2740,6 +2740,22 @@ router.post(
 
       await found.ref.update(patch);
 
+      await db.collection("audit_logs").add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        timeString: new Date().toLocaleString("ar-SA", {
+          timeZone: "Asia/Riyadh"
+        }),
+        user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+        userId: String(req.admin?.uid || "").slice(0, 200),
+        action: "تعديل بيانات الطلب",
+        targetOrder: String(current.referenceNumber || current.orderId || found.id).slice(0, 200),
+        details: JSON.stringify({
+          fields: changedFields.filter((field) => !field.includes("accountData") && field !== "payoutDetails").slice(0, 30),
+          sensitiveFieldsChanged: sensitiveFieldsChanged.slice(0, 20)
+        }).slice(0, 1800),
+        userAgent: String(req.headers["user-agent"] || "").slice(0, 80)
+      });
+
       return res.json({
         success: true,
         orderId: String(current.orderId || found.id),
