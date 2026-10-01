@@ -577,11 +577,17 @@ function getPaymentMethodsForCategory(category) {
         });
     }
 
+    if (category === "local") {
+        const normalized = new Set(methods.map(normalizePaymentMethodCode));
+        if (!normalized.has("bank")) methods.push("تحويل بنكي");
+        if (!normalized.has("wallet")) methods.push("المحافظ الرقمية");
+    }
+
     if (methods.length) return methods;
 
     return category === "local"
         ? ["تحويل بنكي", "المحافظ الرقمية"]
-        : ["USD", "PayPal", "Western Union"];
+        : ["USDT", "PayPal", "Western Union"];
 }
 
 function getSelectedPaymentCode() {
