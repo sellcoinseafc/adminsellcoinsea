@@ -13,10 +13,9 @@
 <body>
 <div class="app-shell" id="pageShell">
   <header class="app-header">
-    <button class="header-icon-btn" type="button" aria-label="Menu" onclick="showSupportModal()"><i class="fa-solid fa-bars"></i></button>
     <div class="brand-block">
       <div class="brand-title" data-i18n="storeName">متجر سامي كوينز</div>
-      <div class="brand-domain">SAMI COINS</div>
+      <div class="brand-domain">SA4Coins.com</div>
     </div>
     <div class="header-actions">
       <button class="header-icon-btn" type="button" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Theme"><i id="themeToggleIcon" class="fa-solid fa-moon"></i></button>
@@ -152,8 +151,9 @@
 
           <div id="termsCard" class="terms-card">
             <div id="termsContainer">
-              <label class="terms-check"><input id="termsCheck" type="checkbox"><span data-i18n="termsAgreement">لقد وافقت على</span> <button type="button" class="link-btn" onclick="showTermsModal()" data-i18n="termsLink">الشروط والأحكام</button></label>
-              <p data-i18n="termsSubtitle">يرجى قراءة الشروط قبل اعتماد الطلب.</p>
+              <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات وانسحاب الشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
+              <div id="inlineTermsList" class="inline-terms-list"></div>
+              <label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
             </div>
           </div>
 
@@ -196,6 +196,12 @@
           <div class="card-heading"><span data-i18n="transferAndPayout">معلومات التحويل والاستلام</span></div>
           <div id="payoutViewMode"><div id="revSpecificDetailsContainer"></div></div>
           <div id="payoutEditMode" class="hidden"><div id="inlinePayoutEditWrap"></div></div>
+        </div>
+
+        <div id="reviewTermsCard" class="terms-card">
+          <div class="card-heading"><span data-i18n="declarationsTitle">الإقرارات وانسحاب الشروط والأحكام</span><i class="fa-solid fa-file-contract"></i></div>
+          <div id="reviewInlineTermsList" class="inline-terms-list"></div>
+          <label class="terms-check"><input id="termsCheckReview" type="checkbox" onchange="syncTermsChecks(this)"><span data-i18n="termsAgreement">أوافق على الشروط والأحكام</span></label>
         </div>
 
         <div id="saveEditsButtonWrap" class="hidden"><button class="primary-btn" type="button" onclick="toggleEditMode()" data-i18n="saveChanges">حفظ التعديلات</button></div>
