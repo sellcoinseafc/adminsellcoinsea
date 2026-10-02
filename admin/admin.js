@@ -1139,6 +1139,28 @@ function formatAdminDate(value) {
   </span>`;
 }
 
+function formatAdminLastUpdate(value) {
+  const date = parseFirestoreDate(value);
+  if (!date) return "---";
+
+  const time = date.toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Riyadh",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  const dateText = date.toLocaleDateString("en-GB", {
+    timeZone: "Asia/Riyadh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+  return `<span class="last-update-stack">
+    <b>${time}</b>
+    <span>${dateText}</span>
+  </span>`;
+}
+
 function formatCoinsNumber(
   value
 ) {
@@ -2406,7 +2428,7 @@ window.renderOrdersTables =
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="ريال سعودي" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
-          <td data-label="آخر تحديث"><span class="last-update-value">${formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt)}</span></td>
+          <td data-label="آخر تحديث"><span class="last-update-value">${formatAdminLastUpdate(order.lastUpdate || order.updatedAt || order.createdAt)}</span></td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
       `;
@@ -4203,7 +4225,7 @@ window.openOrderModal = function (orderId) {
   const withdrawn=Math.min(total,Math.max(0,Number(order.withdrawnQuantity??order.drawnCoins??0)||0));
   const remaining=Math.max(0,total-withdrawn);
   const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
-  const locked=["finished","pending_transfer","transferred","completed","archived"].includes(order.status);
+  const locked=order.status!=="progress";
   const baseStatusLabel=STATUS_LABELS[order.status]||order.status||"---";
   const statusLabel=order.issue?(ISSUE_LABELS[order.issue]||getIssueLabel(order.issue)):baseStatusLabel;
     const platform=String(order.platform||"").trim();
@@ -4602,16 +4624,8 @@ window.saveModalWithdrawnQuantity=async function(orderId){
 
   if (!order || !input) return;
 
-  if (
-    [
-      "finished",
-      "pending_transfer",
-      "transferred",
-      "completed",
-      "archived"
-    ].includes(order.status)
-  ) {
-    showToast("هذه الكمية مقفلة لهذه الحالة.");
+  if (order.status !== "progress") {
+    showToast("هذه الكمية مقفلة. لا يمكن تعديلها إلا أثناء حالة جاري سحب الكوينز من حسابك.");
     return;
   }
 
@@ -4720,10 +4734,11 @@ window.openOrderStatusEditForm=function(orderId){
   if(!body||!modal)return;
 
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
-  const locked=["finished","pending_transfer","transferred","completed","archived"].includes(order.status);
+  const withdrawalUnlocked=order.status==="progress";
+  const locked=!withdrawalUnlocked;
   const lockedText=locked
-    ? "قسم سحب الكوينز مقفل لأن الطلب وصل إلى مرحلة ما بعد السحب."
-    : "يمكن تحديث كمية السحب من داخل التفاصيل ما دام الطلب في مرحلة السحب.";
+    ? "قسم سحب الكوينز مقفل. يصبح قابلًا للتعديل فقط عند وصول الطلب إلى حالة: جاري سحب الكوينز من حسابك."
+    : "قسم سحب الكوينز مفتوح لأن الطلب في مرحلة السحب.";
 
   if(title) title.innerText=`تعديل حالة الطلب #${escapeHtml(order.referenceNumber||order.orderId||order.id)}`;
   body.innerHTML=`
