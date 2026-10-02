@@ -2178,6 +2178,8 @@ function renderStatisticsPage() {
 
   const stockPs = document.getElementById("statsStockPSTrend");
   const stockPc = document.getElementById("statsStockPCTrend");
+  setText("statsStockPSValue", formatCoinsNumber(inventory.shared.remaining));
+  setText("statsStockPCValue", formatCoinsNumber(inventory.pc.remaining));
   if (stockPs) stockPs.innerHTML = getStockTrendMarkup(inventory.shared.remaining);
   if (stockPc) stockPc.innerHTML = getStockTrendMarkup(inventory.pc.remaining);
 
@@ -2329,181 +2331,63 @@ function getOrderStatusBadge(order) {
 
 window.renderOrdersTables =
   function () {
-    const tbody =
-      document.getElementById(
-        "fullOrdersTableBody"
-      );
-
+    const tbody = document.getElementById("fullOrdersTableBody");
     if (!tbody) return;
 
-    const filter =
-      document.getElementById(
-        "orderStatusFilter"
-      )?.value ||
-      "all";
+    const filter = document.getElementById("orderStatusFilter")?.value || "all";
+    let filteredData = ordersData;
 
-    let filteredData =
-      ordersData;
-
-    if (
-      filter !== "all"
-    ) {
-      filteredData =
-        ordersData.filter(
-          (order) =>
-            order.status ===
-            filter
-        );
+    if (filter !== "all") {
+      filteredData = ordersData.filter((order) => order.status === filter);
     }
 
-    if (
-      activeSearchQuery
-    ) {
-      filteredData =
-        filteredData.filter(
-          (order) => {
-            const ref =
-              String(
-                order.referenceNumber ||
-                  ""
-              ).toLowerCase();
+    if (activeSearchQuery) {
+      filteredData = filteredData.filter((order) => {
+        const ref = String(order.referenceNumber || "").toLowerCase();
+        const name = String(order.name || "").toLowerCase();
+        const phone = String(order.phone || "").toLowerCase();
+        const orderId = String(order.orderId || "").toLowerCase();
 
-            const name =
-              String(
-                order.name || ""
-              ).toLowerCase();
-
-            const phone =
-              String(
-                order.phone || ""
-              ).toLowerCase();
-
-            const orderId =
-              String(
-                order.orderId || ""
-              ).toLowerCase();
-
-            return (
-              ref.includes(
-                activeSearchQuery
-              ) ||
-              name.includes(
-                activeSearchQuery
-              ) ||
-              phone.includes(
-                activeSearchQuery
-              ) ||
-              orderId.includes(
-                activeSearchQuery
-              )
-            );
-          }
+        return (
+          ref.includes(activeSearchQuery) ||
+          name.includes(activeSearchQuery) ||
+          phone.includes(activeSearchQuery) ||
+          orderId.includes(activeSearchQuery)
         );
+      });
     }
 
-    if (
-      filteredData.length ===
-      0
-    ) {
+    if (filteredData.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="8"
-              style="text-align:center;padding:20px;color:var(--text-muted);">
-            لا توجد طلبات مسجلة مطابقة.
-          </td>
-        </tr>
+        <tr><td colspan="8" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
       `;
-
       return;
     }
 
-    tbody.innerHTML =
-      filteredData
-        .map(
-          (order) => {
-            const ref =
-              order.referenceNumber ||
-              "";
+    tbody.innerHTML = filteredData.map((order) => {
+      const ref = order.referenceNumber || "---";
+      const internalRef = order.internalReference || order.orderId || order.id || "---";
 
-            return `
-              <tr>
-
-                <td>
-                  <b
-                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                    onclick="copyTrackingLink('${escapeAttribute(
-                      ref
-                    )}')">
-                    ${escapeHtml(
-                      ref || "---"
-                    )}
-                    <i class="fa-solid fa-copy"></i>
-                  </b>
-                </td>
-
-                <td>
-                  <span style="font-family:monospace;font-size:0.8rem;color:var(--text-muted);">
-                    ${escapeHtml(
-                      order.internalReference ||
-                        order.orderId ||
-                        order.id ||
-                        "---"
-                    )}
-                  </span>
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.name ||
-                      "---"
-                  )}
-                </td>
-
-                <td>
-                  <span class="badge badge-new">
-                    ${escapeHtml(
-                      order.platform ||
-                        "---"
-                    )}
-                  </span>
-                </td>
-
-                <td>
-                  ${formatCoinsNumber(
-                    order.totalQty
-                  )}
-                </td>
-
-                <td>
-                  <b style="color:var(--primary);">
-                    ${escapeHtml(
-                      getDisplayPrice(
-                        order
-                      )
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${getOrderStatusBadge(
-                    order
-                  )}
-                  ${getIssueBadge(
-                    order.issue
-                  )}
-                </td>
-
-                <td>
-                  ${buildActionButtonsHTML(
-                    order
-                  )}
-                </td>
-
-              </tr>
-            `;
-          }
-        )
-        .join("");
+      return `
+        <tr class="full-order-row">
+          <td data-label="الطلب">
+            <div class="order-ref-stack">
+              <small>${escapeHtml(internalRef)}</small>
+              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+                ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              </b>
+            </div>
+          </td>
+          <td data-label="العميل"><strong>${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
+          <td data-label="الكمية"><strong class="recent-quantity">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="المبلغ"><strong class="recent-price">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="آخر تحديث"><span class="last-update-value">${escapeHtml(formatDate(order.lastUpdate || order.updatedAt || order.createdAt))}</span></td>
+          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
+        </tr>
+      `;
+    }).join("");
   };
 
 window.renderRecentOrdersTable =
@@ -3842,7 +3726,7 @@ window.openClientModal =
         <strong>إجمالي الطلبات:</strong>
         ${clientOrders.length}
         |
-        <strong>إجمالي الكوينز:</strong>
+        <strong>إجمالي الكمية:</strong>
         ${formatCoinsNumber(
           clientOrders.reduce(
             (
@@ -3897,10 +3781,7 @@ window.openClientModal =
                       </td>
 
                       <td>
-                        ${escapeHtml(
-                          order.platform ||
-                            ""
-                        )}
+                        ${renderPlatformBadge(order.platform)}
                       </td>
 
                       <td>
