@@ -492,3 +492,36 @@ body:not(.light-mode) .modal-overlay{background:rgba(0,0,0,.68)}
   .stat-card{min-height:100px}
   .panel{box-shadow:0 5px 20px rgba(20,42,29,.05)}
 }
+
+/* SAMI COINS V3.0 foundation */
+:root{--v3-bg:#f5f7f6;--v3-surface:#fff;--v3-surface-2:#f8faf9;--v3-border:#e3e9e5;--v3-text:#18221d;--v3-muted:#708078;--v3-green:#168a45;--v3-green-soft:#eaf6ee;--v3-shadow:0 6px 24px rgba(24,34,29,.055);--v3-radius:18px}
+body{background:var(--v3-bg);color:var(--v3-text);font-family:Tajawal,Arial,sans-serif}
+body:not(.light-mode){--v3-bg:#101512;--v3-surface:#171d19;--v3-surface-2:#1d2520;--v3-border:#2b342e;--v3-text:#eef5f0;--v3-muted:#9aaa9f;--v3-green:#39b86a;--v3-green-soft:#193225;--v3-shadow:0 8px 28px rgba(0,0,0,.2)}
+.sidebar{width:272px!important;background:var(--v3-surface)!important;border:0!important;border-left:1px solid var(--v3-border)!important;box-shadow:none!important;padding:18px 14px!important}
+[dir=rtl] .sidebar{border-left:1px solid var(--v3-border)!important}
+.sidebar-brand{border-bottom:1px solid var(--v3-border);padding:4px 7px 14px!important}
+.brand-mark>span{background:var(--v3-green)!important;color:#fff!important;border:0!important;border-radius:12px}
+.sidebar-user{background:var(--v3-surface-2)!important;border:1px solid var(--v3-border)!important;border-radius:14px!important}
+.sidebar-link{color:var(--v3-muted)!important;border-color:transparent!important;border-radius:12px!important}
+.sidebar-link:hover{background:var(--v3-surface-2)!important;color:var(--v3-text)!important}
+.sidebar-link.active{background:var(--v3-green-soft)!important;color:var(--v3-green)!important;border-color:transparent!important}
+.main-wrapper{margin-left:272px!important;padding:0 30px 80px!important}
+[dir=rtl] .main-wrapper{margin-left:0!important;margin-right:272px!important}
+.topbar{position:sticky;top:0;z-index:200;margin:0 -30px 18px;padding:14px 30px!important;background:var(--v3-bg)!important;border-bottom:1px solid var(--v3-border)!important}
+.topbar h1{color:var(--v3-text)!important;font-size:1.28rem!important}
+.global-search,.store-pill,.icon-btn{background:var(--v3-surface)!important;border:1px solid var(--v3-border)!important;color:var(--v3-text)!important;border-radius:12px!important}
+.panel,.stat-card,.inventory-card,.hero{background:var(--v3-surface)!important;border:1px solid var(--v3-border)!important;box-shadow:var(--v3-shadow)!important}
+.hero{border-radius:22px!important}
+.stats-grid{gap:12px!important}
+.stat-card{border-radius:16px!important}
+.stat-card span,.muted{color:var(--v3-muted)!important}
+.stat-card strong,.panel h3,.page-head h2{color:var(--v3-text)!important}
+.btn-primary{background:var(--v3-green)!important;border-color:var(--v3-green)!important;color:#fff!important;border-radius:11px!important}
+.btn-secondary,.btn-custom,.btn-action{background:var(--v3-surface)!important;border:1px solid var(--v3-border)!important;color:var(--v3-text)!important;border-radius:11px!important}
+.compact-input,.form-control,input,select,textarea{background:var(--v3-surface)!important;color:var(--v3-text)!important;border-color:var(--v3-border)!important;border-radius:11px!important}
+thead th{background:var(--v3-surface-2)!important;color:var(--v3-muted)!important;border-color:var(--v3-border)!important}
+tbody td{color:var(--v3-text)!important;border-color:var(--v3-border)!important}
+tbody tr:hover td{background:var(--v3-surface-2)!important}
+.modal-card{background:var(--v3-surface)!important;color:var(--v3-text)!important;border:1px solid var(--v3-border)!important}
+.order-detail-section,.order-detail-system-section,.quantity-card,.copy-pill,.secure-copy-field,.payment-copy-field,.status-message-card{background:var(--v3-surface-2)!important;border-color:var(--v3-border)!important;color:var(--v3-text)!important}
+.login-card-nextgen{background:var(--v3-surface)!important;border-color:var(--v3-border)!important}
