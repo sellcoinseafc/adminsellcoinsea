@@ -1063,6 +1063,30 @@ function escapeAttribute(value) {
     );
 }
 
+function getPlatformMeta(platform) {
+  const value = String(platform || "").trim().toUpperCase();
+  if (value === "PLAYSTATION") return { label: "PlayStation", icon: "fa-brands fa-playstation", className: "platform-playstation" };
+  if (value === "XBOX") return { label: "Xbox", icon: "fa-brands fa-xbox", className: "platform-xbox" };
+  return { label: "PC", icon: "fa-solid fa-desktop", className: "platform-pc" };
+}
+
+function renderPlatformBadge(platform) {
+  const meta = getPlatformMeta(platform);
+  return `
+    <span class="platform-badge ${meta.className}" title="${escapeAttribute(meta.label)}">
+      <i class="${meta.icon}" aria-hidden="true"></i>
+      <strong>${escapeHtml(meta.label)}</strong>
+    </span>
+  `;
+}
+
+function getStockTrendMarkup(value) {
+  const amount = Number(value) || 0;
+  if (amount > 2000000) return '<span class="stock-trend stock-trend-up" title="المخزون أعلى من 2 مليون"><i class="fa-solid fa-arrow-up"></i></span>';
+  if (amount < 2000000) return '<span class="stock-trend stock-trend-down" title="المخزون أقل من 2 مليون"><i class="fa-solid fa-arrow-down"></i></span>';
+  return '<span class="stock-trend stock-trend-flat" title="المخزون يساوي 2 مليون"><i class="fa-solid fa-minus"></i></span>';
+}
+
 function formatCoinsNumber(
   value
 ) {
@@ -2090,151 +2114,80 @@ function renderDashboardQuickStats() {
   const inventory = calculateLocalInventory();
   setText("dashStockPS", formatCoinsNumber(inventory.shared.remaining));
   setText("dashStockPC", formatCoinsNumber(inventory.pc.remaining));
+
+  const psTrend = document.getElementById("dashStockPSTrend");
+  const pcTrend = document.getElementById("dashStockPCTrend");
+  if (psTrend) psTrend.innerHTML = getStockTrendMarkup(inventory.shared.remaining);
+  if (pcTrend) pcTrend.innerHTML = getStockTrendMarkup(inventory.pc.remaining);
 }
 
 function renderStatisticsPage() {
-  const now =
-    new Date();
-
-  const todayStr =
-    now.toLocaleDateString(
-      "en-CA",
-      {
-        timeZone:
-          "Asia/Riyadh"
-      }
-    );
-
   let totalCoins = 0;
-  let totalMoneySar = 0;
-  let todayCoins = 0;
-  let todayMoneySar = 0;
+  let withdrawnCoins = 0;
+  let playstationCoins = 0;
+  let xboxCoins = 0;
+  let pcCoins = 0;
+  let transferredMoneySar = 0;
+  const clientsSet = new Set();
 
-  const clientsSet =
-    new Set();
+  ordersData.forEach((order) => {
+    const total = Math.max(0, Number(order.totalQty ?? order.quantity ?? 0) || 0);
+    const withdrawn = Math.min(
+      total,
+      Math.max(0, Number(order.withdrawnQuantity ?? order.drawnCoins ?? 0) || 0)
+    );
+    const platform = String(order.platform || "").trim().toUpperCase();
 
-  ordersData.forEach(
-    (order) => {
-      if (order.phone) {
-        clientsSet.add(
-          order.phone
-        );
-      }
+    totalCoins += total;
+    withdrawnCoins += withdrawn;
 
-      if (
-        order.status ===
-          "completed" ||
-        order.status ===
-          "finished" ||
-        order.status ===
-          "transferred"
-      ) {
-        const priceSar =
-          getSarAmount(
-            order
-          );
+    if (platform === "PLAYSTATION") playstationCoins += total;
+    else if (platform === "XBOX") xboxCoins += total;
+    else if (platform === "PC") pcCoins += total;
 
-        totalCoins +=
-          Number(
-            order.totalQty
-          ) || 0;
+    if (order.phone) clientsSet.add(order.phone);
 
-        totalMoneySar +=
-          priceSar;
+    const wasTransferred =
+      order.transferCompleted === true ||
+      order.status === "transferred" ||
+      order.status === "completed";
 
-        const orderDate =
-          parseFirestoreDate(
-            order.createdAt
-          );
+    if (wasTransferred) transferredMoneySar += getSarAmount(order);
+  });
 
-        const orderDateStr =
-          orderDate
-            ? orderDate.toLocaleDateString(
-                "en-CA",
-                {
-                  timeZone:
-                    "Asia/Riyadh"
-                }
-              )
-            : "";
+  const remainingCoins = Math.max(0, totalCoins - withdrawnCoins);
+  const inventory = calculateLocalInventory();
 
-        if (
-          orderDateStr ===
-          todayStr
-        ) {
-          todayCoins +=
-            Number(
-              order.totalQty
-            ) || 0;
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.innerText = value;
+  };
 
-          todayMoneySar +=
-            priceSar;
-        }
-      }
-    }
-  );
-
-  const setText =
-    (
-      id,
-      value
-    ) => {
-      const element =
-        document.getElementById(
-          id
-        );
-
-      if (element) {
-        element.innerText =
-          value;
-      }
-    };
-
+  setText("statsTotalOrders", ordersData.length);
+  setText("statsTotalClients", clientsSet.size);
+  setText("statsTotalCoins", formatCoinsNumber(totalCoins));
+  setText("statsWithdrawnCoins", formatCoinsNumber(withdrawnCoins));
+  setText("statsRemainingCoins", formatCoinsNumber(remainingCoins));
+  setText("statsPlayStationCoins", formatCoinsNumber(playstationCoins));
+  setText("statsXboxCoins", formatCoinsNumber(xboxCoins));
+  setText("statsPCCoins", formatCoinsNumber(pcCoins));
   setText(
-    "statTotalOrders",
-    ordersData.length
+    "statsTransferredMoney",
+    transferredMoneySar.toLocaleString("ar-SA", { maximumFractionDigits: 2 }) + " ريال"
   );
 
-  setText(
-    "statTotalClients",
-    clientsSet.size
-  );
+  const stockPs = document.getElementById("statsStockPSTrend");
+  const stockPc = document.getElementById("statsStockPCTrend");
+  if (stockPs) stockPs.innerHTML = getStockTrendMarkup(inventory.shared.remaining);
+  if (stockPc) stockPc.innerHTML = getStockTrendMarkup(inventory.pc.remaining);
 
-  setText(
-    "statTotalCoins",
-    formatCoinsNumber(
-      totalCoins
-    )
-  );
+  const statsTotalOrdersSub = document.getElementById("statsTotalOrdersSub");
+  const statsWithdrawnSub = document.getElementById("statsWithdrawnSub");
+  const statsTransferredSub = document.getElementById("statsTransferredSub");
 
-  setText(
-    "statTotalMoney",
-    totalMoneySar.toLocaleString(
-      "ar-SA",
-      {
-        maximumFractionDigits: 2
-      }
-    ) +
-      " ريال"
-  );
-
-  setText(
-    "statTodayCoins",
-    formatCoinsNumber(
-      todayCoins
-    )
-  );
-
-  setText(
-    "statTodayMoney",
-    todayMoneySar.toLocaleString(
-      "ar-SA",
-      {
-        maximumFractionDigits: 2
-      }
-    ) +
-      " ريال"
-  );
+  if (statsTotalOrdersSub) statsTotalOrdersSub.innerText = `${clientsSet.size} عميل`;
+  if (statsWithdrawnSub) statsWithdrawnSub.innerText = `من ${formatCoinsNumber(totalCoins)} إجمالي الكمية`;
+  if (statsTransferredSub) statsTransferredSub.innerText = "إجمالي المبالغ التي تم تحويلها";
 }
 
 window.handleGlobalSearch =
@@ -2555,317 +2508,99 @@ window.renderOrdersTables =
 
 window.renderRecentOrdersTable =
   function () {
-    const tbody =
-      document.getElementById(
-        "recentOrdersTableBody"
-      );
-
+    const tbody = document.getElementById("recentOrdersTableBody");
     if (!tbody) return;
 
-    const recentOrders =
-      [...ordersData]
-        .sort(
-          (a, b) =>
-            (
-              b.createdAt?.getTime() ||
-              0
-            ) -
-            (
-              a.createdAt?.getTime() ||
-              0
-            )
-        )
-        .slice(
-          0,
-          5
-        );
+    const recentOrders = [...ordersData]
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
+      .slice(0, 5);
 
-    if (
-      recentOrders.length ===
-      0
-    ) {
+    if (recentOrders.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="8"
-              style="text-align:center;padding:20px;color:var(--text-muted);">
-            لا توجد طلبات حديثة.
-          </td>
-        </tr>
+        <tr><td colspan="7" class="empty-row">لا توجد طلبات حديثة.</td></tr>
       `;
-
       return;
     }
 
-    tbody.innerHTML =
-      recentOrders
-        .map(
-          (order) => {
-            const ref =
-              order.referenceNumber ||
-              "";
+    tbody.innerHTML = recentOrders.map((order) => {
+      const ref = order.referenceNumber || "---";
+      const internalRef = order.internalReference || order.orderId || order.id || "---";
 
-            return `
-              <tr>
-
-                <td>
-                  <b
-                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                    onclick="copyTrackingLink('${escapeAttribute(
-                      ref
-                    )}')">
-                    ${escapeHtml(
-                      ref || "---"
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.internalReference ||
-                      order.orderId ||
-                      order.id ||
-                      "---"
-                  )}
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.name ||
-                      "---"
-                  )}
-                </td>
-
-                <td>
-                  <span class="badge badge-new">
-                    ${escapeHtml(
-                      order.platform ||
-                        "---"
-                    )}
-                  </span>
-                </td>
-
-                <td>
-                  ${formatCoinsNumber(
-                    order.totalQty
-                  )}
-                </td>
-
-                <td>
-                  <b style="color:var(--primary);">
-                    ${escapeHtml(
-                      getDisplayPrice(
-                        order
-                      )
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${getOrderStatusBadge(
-                    order
-                  )}
-                </td>
-
-                <td>
-                  ${buildActionButtonsHTML(
-                    order
-                  )}
-                </td>
-
-              </tr>
-            `;
-          }
-        )
-        .join("");
+      return `
+        <tr class="recent-order-row">
+          <td data-label="الطلب">
+            <div class="order-ref-stack">
+              <small>${escapeHtml(internalRef)}</small>
+              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+                ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              </b>
+            </div>
+          </td>
+          <td data-label="العميل"><strong class="recent-customer-name">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
+          <td data-label="الكمية"><strong class="recent-quantity">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="السعر"><strong class="recent-price">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
+        </tr>
+      `;
+    }).join("");
   };
 
 window.renderWithdrawOrdersTable =
   function () {
-    const tbody =
-      document.getElementById(
-        "withdrawOrdersTableBody"
-      );
-
+    const tbody = document.getElementById("withdrawOrdersTableBody");
     if (!tbody) return;
 
-    let withdrawOrders =
-      ordersData.filter(
-        (order) =>
-          order.status ===
-            "new" ||
-          order.status ===
-            "pending" ||
-          order.status ===
-            "review"
-      );
-
-    const under500k =
-      withdrawOrders.filter(
-        (order) =>
-          order.totalQty <
-          500000
-      );
-
-    const over500k =
-      withdrawOrders.filter(
-        (order) =>
-          order.totalQty >=
-          500000
-      );
-
-    const setText =
-      (
-        id,
-        value
-      ) => {
-        const element =
-          document.getElementById(
-            id
-          );
-
-        if (element) {
-          element.innerText =
-            value;
-        }
-      };
-
-    setText(
-      "countUnder500k",
-      under500k.length
+    let withdrawOrders = ordersData.filter((order) =>
+      ["new", "pending", "review", "progress"].includes(order.status)
     );
 
-    setText(
-      "countOver500k",
-      over500k.length
-    );
-
-    setText(
-      "withdrawBadgeCount",
-      withdrawOrders.length
-    );
-
-    setText(
-      "withdrawHeaderBadge",
-      `${withdrawOrders.length} طلبات بانتظار الإجراء`
-    );
-
-    const filter =
-      document.getElementById(
-        "withdrawFilter"
-      )?.value ||
-      "all";
-
-    if (
-      filter ===
-      "under"
-    ) {
-      withdrawOrders =
-        under500k;
-    } else if (
-      filter ===
-      "over"
-    ) {
-      withdrawOrders =
-        over500k;
+    const filter = document.getElementById("withdrawFilter")?.value || "all";
+    if (filter !== "all") {
+      withdrawOrders = withdrawOrders.filter((order) => order.status === filter);
     }
 
-    if (
-      withdrawOrders.length ===
-      0
-    ) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7"
-              style="text-align:center;padding:20px;color:var(--text-muted);">
-            لا توجد طلبات سحب مطابقة للفلتر المختار.
-          </td>
-        </tr>
-      `;
+    const badge = document.getElementById("withdrawBadgeCount");
+    if (badge) badge.innerText = String(withdrawOrders.length);
 
+    const headerBadge = document.getElementById("withdrawHeaderBadge");
+    if (headerBadge) headerBadge.innerText = `${withdrawOrders.length} طلبات بانتظار الإجراء`;
+
+    if (withdrawOrders.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="8" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
+      `;
       return;
     }
 
-    tbody.innerHTML =
-      withdrawOrders
-        .map(
-          (order) => {
-            const total =
-              order.totalQty ||
-              0;
+    tbody.innerHTML = withdrawOrders.map((order) => {
+      const total = Math.max(0, Number(order.totalQty) || 0);
+      const withdrawn = Math.min(
+        total,
+        Math.max(0, Number(order.withdrawnQuantity ?? order.drawnCoins ?? 0) || 0)
+      );
+      const remaining = Math.max(0, total - withdrawn);
+      const ref = order.referenceNumber || "---";
 
-            const isUnder =
-              total <
-              500000;
-
-            const categoryBadge =
-              isUnder
-                ? '<span class="badge">أقل من 500K</span>'
-                : '<span class="badge">500K فأكثر</span>';
-
-            const ref =
-              order.referenceNumber ||
-              "";
-
-            return `
-              <tr>
-
-                <td>
-                  <b
-                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                    onclick="copyTrackingLink('${escapeAttribute(
-                      ref
-                    )}')">
-                    ${escapeHtml(
-                      ref || "---"
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.name ||
-                      "---"
-                  )}
-                </td>
-
-                <td>
-                  <span class="badge badge-new">
-                    ${escapeHtml(
-                      order.platform ||
-                        "---"
-                    )}
-                  </span>
-                </td>
-
-                <td>
-                  <b>
-                    ${formatCoinsNumber(
-                      total
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${getOrderStatusBadge(
-                    order
-                  )}
-                </td>
-
-                <td>
-                  ${categoryBadge}
-                </td>
-
-                <td>
-                  ${buildActionButtonsHTML(
-                    order
-                  )}
-                </td>
-
-              </tr>
-            `;
-          }
-        )
-        .join("");
+      return `
+        <tr class="withdraw-order-row">
+          <td data-label="الطلب">
+            <div class="order-ref-stack">
+              <small>${escapeHtml(order.internalReference || order.orderId || order.id || "---")}</small>
+              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
+            </div>
+          </td>
+          <td data-label="العميل"><strong>${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
+          <td data-label="المطلوب"><strong class="recent-quantity">${formatCoinsNumber(total)}</strong></td>
+          <td data-label="المسحوب"><strong class="withdrawn-value">${formatCoinsNumber(withdrawn)}</strong></td>
+          <td data-label="المتبقي"><strong class="remaining-value">${formatCoinsNumber(remaining)}</strong></td>
+          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
+        </tr>
+      `;
+    }).join("");
   };
 
 window.renderTransferAlertsTable =
@@ -3996,164 +3731,58 @@ window.deleteReview =
 // ==========================================================================
 
 window.renderClientsTable =
-  function (
-    searchQuery = ""
-  ) {
-    const tbody =
-      document.getElementById(
-        "clientsTableBody"
-      );
-
+  function (searchQuery = "") {
+    const tbody = document.getElementById("clientsTableBody");
     if (!tbody) return;
 
-    const clientsMap =
-      {};
+    const clientsMap = {};
 
-    ordersData.forEach(
-      (order) => {
-        const key =
-          order.phone?.trim() ||
-          order.name?.trim() ||
-          "عميل غير معروف";
+    ordersData.forEach((order) => {
+      const key = order.phone?.trim() || order.name?.trim() || "عميل غير معروف";
 
-        if (!clientsMap[key]) {
-          clientsMap[key] = {
-            phone:
-              order.phone ||
-              "بدون رقم",
-
-            name:
-              order.name ||
-              "عميل",
-
-            orderCount: 0,
-            totalCoins: 0,
-            totalMoneySar: 0
-          };
-        }
-
-        clientsMap[key]
-          .orderCount +=
-          1;
-
-        clientsMap[key]
-          .totalCoins +=
-          Number(
-            order.totalQty
-          ) || 0;
-
-        clientsMap[key]
-          .totalMoneySar +=
-          getSarAmount(
-            order
-          );
+      if (!clientsMap[key]) {
+        clientsMap[key] = {
+          phone: order.phone || "بدون رقم",
+          name: order.name || "عميل",
+          orderCount: 0,
+          totalCoins: 0,
+          totalMoneySar: 0
+        };
       }
-    );
 
-    let clientsList =
-      Object.values(
-        clientsMap
-      );
+      clientsMap[key].orderCount += 1;
+      clientsMap[key].totalCoins += Number(order.totalQty) || 0;
+      clientsMap[key].totalMoneySar += getSarAmount(order);
+    });
 
-    const search =
-      String(
-        searchQuery || ""
-      )
-        .trim()
-        .toLowerCase();
+    const search = String(searchQuery || "").trim().toLowerCase();
+    let clientsList = Object.values(clientsMap);
 
     if (search) {
-      clientsList =
-        clientsList.filter(
-          (client) =>
-            client.name
-              .toLowerCase()
-              .includes(search) ||
-            client.phone
-              .toLowerCase()
-              .includes(search)
-        );
+      clientsList = clientsList.filter(
+        (client) =>
+          client.name.toLowerCase().includes(search) ||
+          client.phone.toLowerCase().includes(search)
+      );
     }
 
-    if (
-      clientsList.length ===
-      0
-    ) {
+    if (clientsList.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="6"
-              style="text-align:center;color:var(--text-muted);padding:20px;">
-            لا توجد نتائج مطابقة للبحث.
-          </td>
-        </tr>
+        <tr><td colspan="6" class="empty-row">لا توجد نتائج مطابقة للبحث.</td></tr>
       `;
-
       return;
     }
 
-    tbody.innerHTML =
-      clientsList
-        .map(
-          (client) => `
-            <tr>
-
-              <td>
-                <b>
-                  ${escapeHtml(
-                    client.name
-                  )}
-                </b>
-              </td>
-
-              <td>
-                <span style="font-family:monospace;color:var(--primary);">
-                  ${escapeHtml(
-                    client.phone
-                  )}
-                </span>
-              </td>
-
-              <td>
-                <span class="badge badge-new">
-                  ${client.orderCount} طلبات
-                </span>
-              </td>
-
-              <td>
-                <b>
-                  ${formatCoinsNumber(
-                    client.totalCoins
-                  )}
-                  كوينز
-                </b>
-              </td>
-
-              <td>
-                <b style="color:var(--primary);">
-                  ${client.totalMoneySar.toLocaleString(
-                    "ar-SA",
-                    {
-                      maximumFractionDigits: 2
-                    }
-                  )}
-                  ريال
-                </b>
-              </td>
-
-              <td>
-                <button
-                  class="btn-action"
-                  onclick="openClientModal('${encodeURIComponent(
-                    client.phone
-                  )}')">
-                  سجل الطلبات
-                </button>
-              </td>
-
-            </tr>
-          `
-        )
-        .join("");
+    tbody.innerHTML = clientsList.map((client) => `
+      <tr class="client-row">
+        <td data-label="العميل"><strong>${escapeHtml(client.name)}</strong></td>
+        <td data-label="الجوال"><span class="phone-value" dir="ltr">${escapeHtml(client.phone)}</span></td>
+        <td data-label="عدد الطلبات"><span class="badge badge-new">${client.orderCount} طلبات</span></td>
+        <td data-label="إجمالي الكمية"><strong>${formatCoinsNumber(client.totalCoins)}</strong></td>
+        <td data-label="إجمالي المبلغ"><strong class="recent-price">${client.totalMoneySar.toLocaleString("ar-SA",{maximumFractionDigits:2})} ريال</strong></td>
+        <td data-label="الإجراء"><button class="btn-action client-history-btn" onclick="openClientModal('${encodeURIComponent(client.phone)}')">سجل الطلبات</button></td>
+      </tr>
+    `).join("");
   };
 
 window.filterClients =
