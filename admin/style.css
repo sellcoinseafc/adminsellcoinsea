@@ -6040,3 +6040,361 @@ body.light-mode{
     max-width:calc(100vw - 8px)!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — PHASE 6 / FINAL UI CONSISTENCY
+   One visual language across desktop, tablet and mobile.
+   Presentation only — no data or business logic changes.
+   ========================================================================== */
+
+/* Shared component geometry */
+:root{
+  --ui-radius-sm:10px;
+  --ui-radius-md:14px;
+  --ui-radius-lg:18px;
+  --ui-control-h:44px;
+  --ui-focus:rgba(21,156,255,.28);
+}
+
+.panel,
+.orders-panel,
+.dashboard-orders,
+.dashboard-shortcuts,
+.command-summary,
+.transfer-command,
+.operation-note{
+  border-radius:var(--ui-radius-lg)!important;
+}
+
+.panel-title,
+.workspace-header,
+.page-head{
+  min-width:0!important;
+}
+
+.panel-title h3,
+.page-head h2,
+.workspace-header h2{
+  font-weight:900!important;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-warning,
+.btn-danger,
+.btn-action,
+.btn-custom{
+  min-height:var(--ui-control-h)!important;
+  border-radius:var(--ui-radius-sm)!important;
+  font-family:inherit!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+}
+
+.btn-primary i,
+.btn-secondary i,
+.btn-warning i,
+.btn-danger i,
+.btn-action i,
+.btn-custom i{
+  flex:0 0 auto;
+}
+
+.compact-input,
+.form-control,
+select.compact-input,
+input.compact-input,
+textarea.form-control{
+  min-height:var(--ui-control-h)!important;
+  border-radius:var(--ui-radius-sm)!important;
+  font-family:inherit!important;
+  font-weight:700!important;
+  font-size:.88rem!important;
+}
+
+.compact-input:focus,
+.form-control:focus{
+  outline:none!important;
+  border-color:rgba(21,156,255,.58)!important;
+  box-shadow:0 0 0 3px var(--ui-focus)!important;
+}
+
+.table-wrap{
+  border-radius:var(--ui-radius-md)!important;
+}
+
+.table-wrap table{
+  border-collapse:separate!important;
+  border-spacing:0!important;
+}
+
+.table-wrap th{
+  font-weight:900!important;
+  letter-spacing:.05px!important;
+}
+
+.table-wrap td{
+  font-variant-numeric:tabular-nums;
+}
+
+.status-badge,
+.platform-status-badge,
+.order-status-badge{
+  font-weight:900!important;
+}
+
+/* Platform identity is always recognizable without relying on text color. */
+.platform-badge{
+  border-radius:11px!important;
+  font-weight:900!important;
+}
+
+.platform-badge.platform-playstation{
+  border-color:rgba(47,128,237,.55)!important;
+  background:rgba(47,128,237,.12)!important;
+  color:#7eb8ff!important;
+}
+
+.platform-badge.platform-xbox{
+  border-color:rgba(34,197,94,.55)!important;
+  background:rgba(34,197,94,.12)!important;
+  color:#70e49a!important;
+}
+
+.platform-badge.platform-pc{
+  border-color:rgba(239,68,68,.55)!important;
+  background:rgba(239,68,68,.12)!important;
+  color:#ff8a94!important;
+}
+
+.platform-status-badge.platform-playstation{
+  background:#2f80ed!important;
+  border-color:#2f80ed!important;
+  color:#fff!important;
+}
+.platform-status-badge.platform-xbox{
+  background:#22c55e!important;
+  border-color:#22c55e!important;
+  color:#fff!important;
+}
+.platform-status-badge.platform-pc{
+  background:#ef4444!important;
+  border-color:#ef4444!important;
+  color:#fff!important;
+}
+
+/* Search and header controls share the same height and radius. */
+.global-search{
+  min-height:var(--ui-control-h)!important;
+  border-radius:12px!important;
+}
+
+.global-search input{
+  font-family:inherit!important;
+  font-size:.84rem!important;
+  font-weight:700!important;
+}
+
+/* Date / time chips */
+#liveDatetime .admin-time-box,
+#liveDatetime .admin-date-box{
+  font-variant-numeric:tabular-nums!important;
+  white-space:nowrap!important;
+}
+
+.last-update-stack,
+.order-price-stack{
+  font-variant-numeric:tabular-nums!important;
+}
+
+/* Modals */
+.modal-overlay{
+  padding:14px!important;
+}
+
+.modal-card{
+  border-radius:20px!important;
+  overflow:auto!important;
+}
+
+.modal-header{
+  min-height:48px!important;
+}
+
+.modal-close-btn{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  border-radius:11px!important;
+  font-size:1.25rem!important;
+}
+
+#orderDetailModal .order-modal{
+  border-radius:22px!important;
+}
+
+#orderDetailModal .order-detail-section{
+  border-radius:16px!important;
+}
+
+#orderDetailModal .order-basic-price,
+#orderDetailModal .detail-order-amount{
+  border-radius:14px!important;
+}
+
+/* Status/message cards */
+.status-message-card,
+.status-messages-grid>*{
+  border-radius:14px!important;
+}
+
+.status-message-card textarea,
+#settingsTab textarea{
+  line-height:1.65!important;
+}
+
+/* Keep destructive actions visually distinct without changing their behavior. */
+.btn-danger{
+  box-shadow:0 5px 16px rgba(239,68,68,.12)!important;
+}
+
+/* Store state: green when open, red when explicitly closed. */
+.store-status-mobile{
+  border-color:rgba(34,197,94,.24)!important;
+}
+.store-status-mobile.is-closed,
+.store-status-mobile.closed{
+  border-color:rgba(239,68,68,.34)!important;
+  background:rgba(239,68,68,.07)!important;
+}
+.store-status-mobile.is-closed b,
+.store-status-mobile.closed b{
+  color:#ff6b76!important;
+}
+
+/* Prevent long Arabic labels / references from creating accidental horizontal
+   overflow on any non-tablet screen. */
+.workspace-header,
+.page-head,
+.panel-title,
+.order-section-heading{
+  overflow-wrap:anywhere;
+}
+
+@media (min-width:601px){
+  .workspace-header,
+  .page-head{
+    align-items:center!important;
+  }
+
+  .workspace-actions,
+  .head-tools{
+    flex-shrink:0!important;
+  }
+
+  .table-wrap{
+    scrollbar-width:thin;
+  }
+
+  #ordersTab .orders-panel,
+  #withdrawTab>.panel,
+  #transferAlertsTab>.panel,
+  #customerProfileTab>.panel,
+  #reviewsTab>.panel,
+  #purgeTab>.panel{
+    overflow:hidden!important;
+  }
+}
+
+@media (max-width:600px){
+  .panel,
+  .orders-panel,
+  .dashboard-orders,
+  .dashboard-shortcuts,
+  .command-summary,
+  .transfer-command,
+  .operation-note{
+    border-radius:17px!important;
+  }
+
+  .panel-title h3,
+  .page-head h2,
+  .workspace-header h2{
+    font-size:1.12rem!important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-warning,
+  .btn-danger,
+  .btn-action,
+  .btn-custom{
+    min-height:42px!important;
+  }
+
+  .compact-input,
+  .form-control,
+  select.compact-input,
+  input.compact-input,
+  textarea.form-control{
+    min-height:44px!important;
+    font-size:.84rem!important;
+  }
+
+  .global-search{
+    min-height:42px!important;
+  }
+
+  .modal-overlay{
+    padding:6px!important;
+  }
+
+  .modal-card{
+    width:calc(100vw - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+    border-radius:18px!important;
+  }
+
+  .modal-close-btn{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+  }
+
+  /* Keep primary actions full-width only where the surrounding card is already
+     a mobile single-column workflow. */
+  #settingsTab .status-messages-save-row .btn-primary,
+  #settingsTab .panel-title .btn-secondary,
+  #purgeTab .btn-danger{
+    width:100%!important;
+  }
+
+  /* Phone values must remain readable and never become an ellipsis. */
+  .phone-value,
+  #clientsTableBody .phone-value,
+  #transferAlertsTab td:nth-child(3) span{
+    white-space:nowrap!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+  }
+}
+
+@media (max-width:360px){
+  .panel-title h3,
+  .page-head h2,
+  .workspace-header h2{
+    font-size:1.04rem!important;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-warning,
+  .btn-danger,
+  .btn-action,
+  .btn-custom{
+    font-size:.68rem!important;
+    padding-inline:8px!important;
+  }
+}
