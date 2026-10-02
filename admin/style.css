@@ -759,3 +759,90 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   .status-editor-controls{display:grid!important;grid-template-columns:1fr!important}
   .status-editor-controls select{min-width:0!important;width:100%!important}
 }
+
+
+/* Targeted fixes: store switch, issue-primary status, coin inputs */
+.store-status-control{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  padding:6px 10px;
+  border:1px solid rgba(0,230,118,.25);
+  border-radius:14px;
+  background:rgba(0,230,118,.08);
+  color:var(--text);
+  cursor:pointer;
+  transition:.2s ease;
+}
+.store-status-control:hover{transform:translateY(-1px)}
+.store-status-control.is-open{
+  border-color:rgba(0,230,118,.35);
+  background:rgba(0,230,118,.09);
+}
+.store-status-control.is-closed{
+  border-color:rgba(239,68,68,.35);
+  background:rgba(239,68,68,.09);
+}
+.store-switch-track{
+  position:relative;
+  width:42px;
+  height:24px;
+  flex:0 0 42px;
+  border-radius:999px;
+  background:#334155;
+  border:1px solid rgba(255,255,255,.12);
+  transition:.2s ease;
+}
+.store-switch-thumb{
+  position:absolute;
+  top:3px;
+  right:3px;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 2px 7px rgba(0,0,0,.35);
+  transition:.2s ease;
+}
+.store-status-control.is-open .store-switch-track{
+  background:#00e676;
+  border-color:#00e676;
+}
+.store-status-control.is-open .store-switch-thumb{right:21px}
+.store-status-control.is-closed .store-switch-track{
+  background:#ef4444;
+  border-color:#ef4444;
+}
+.store-status-control.is-closed .store-switch-thumb{right:3px}
+.store-status-copy{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-weight:800;
+  white-space:nowrap;
+}
+.badge-issue-primary{
+  display:inline-flex!important;
+  align-items:center;
+  gap:5px;
+  background:rgba(239,68,68,.12)!important;
+  color:#ff8585!important;
+  border:1px solid rgba(239,68,68,.3)!important;
+}
+.base-status-hint{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:.68rem;
+  font-weight:500;
+}
+#psMin,#psMax,#pcMin,#pcMax,#editQuantity,#modalWithdrawnQuantity{
+  direction:ltr;
+  text-align:left;
+  font-variant-numeric:tabular-nums;
+}
+@media(max-width:600px){
+  .store-status-control{min-height:40px;padding:5px 8px}
+  .store-status-copy{font-size:.72rem}
+}
