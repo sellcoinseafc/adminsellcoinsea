@@ -6222,23 +6222,23 @@ function updateStoreStatusUI(
       "storeStatusText"
     );
 
-  if (
-    !btn ||
-    !text
-  ) {
-    return;
+  if (btn && text) {
+    btn.className =
+      "store-status-control" +
+      (isOpen ? " is-open" : " is-closed");
+    btn.setAttribute("aria-pressed", isOpen ? "true" : "false");
+    text.innerText = isOpen ? "مفتوح" : "مغلق";
   }
 
-  btn.className =
-    "store-status-control" +
-    (isOpen ? " is-open" : " is-closed");
-  btn.setAttribute("aria-pressed", isOpen ? "true" : "false");
-
-  text.innerText = isOpen ? "مفتوح" : "مغلق";
-
   const dashboardState = document.getElementById("dashboardStoreState");
+  const mobileState = document.getElementById("dashboardStoreStateMobile");
+
   if (dashboardState) {
     dashboardState.innerText = isOpen ? "مفتوح" : "مغلق";
+  }
+
+  if (mobileState) {
+    mobileState.innerText = isOpen ? "مفتوح" : "مغلق";
   }
 }
 
