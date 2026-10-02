@@ -3,6 +3,7 @@ const STATUS_VALUES = new Set([
   "review",
   "progress",
   "finished",
+  "pending_transfer",
   "transferred",
   "completed",
   "archived"
@@ -12,7 +13,8 @@ export const ALLOWED_STATUS_TRANSITIONS = {
   new: new Set(["new", "review", "progress"]),
   review: new Set(["review", "progress"]),
   progress: new Set(["progress", "finished"]),
-  finished: new Set(["finished", "transferred"]),
+  finished: new Set(["finished", "pending_transfer"]),
+  pending_transfer: new Set(["pending_transfer", "transferred"]),
   transferred: new Set(["transferred", "completed"]),
   completed: new Set(["completed"]),
   archived: new Set(["archived"])
