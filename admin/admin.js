@@ -134,6 +134,7 @@ let unsubscribeAdmins = null;
 let unsubscribeAudit = null;
 
 let liveClockTimer = null;
+let ordersRefreshTimer = null;
 
 let lastOrdersCount = null;
 let lastReviewsCount = null;
@@ -750,9 +751,15 @@ function startLiveClock() {
       timeZone: "Asia/Riyadh",
       weekday: "long"
     }).format(now);
-    clockEl.innerHTML = `<span class="clock-stack"><b>${time}</b><span>${dateText}</span><small>${weekday}</small></span>`;
-  };
+    const { dayClass } = getAdminDateMeta(now);
 
+    clockEl.innerHTML = `
+      <span class="clock-stack ${dayClass}">
+        <b class="admin-date-box admin-time-box">${time}</b>
+        <span class="admin-date-box admin-calendar-box">${dateText}</span>
+        <small class="admin-date-box admin-weekday-box">${weekday}</small>
+      </span>`;
+  };
   updateClock();
 
   liveClockTimer =
@@ -1084,13 +1091,52 @@ function getStockTrendMarkup(value) {
   return '<span class="stock-trend stock-trend-flat" title="المخزون يساوي 2 مليون"><i class="fa-solid fa-minus"></i></span>';
 }
 
+function getAdminDateMeta(date) {
+  const weekdayKey = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Riyadh",
+    weekday: "short"
+  }).format(date);
+
+  const dayColors = {
+    Sat: "day-saturday",
+    Sun: "day-sunday",
+    Mon: "day-monday",
+    Tue: "day-tuesday",
+    Wed: "day-wednesday",
+    Thu: "day-thursday",
+    Fri: "day-friday"
+  };
+
+  return { dayClass: dayColors[weekdayKey] || "day-default" };
+}
+
 function formatAdminDate(value) {
   const date = parseFirestoreDate(value);
   if (!date) return "---";
-  const time = date.toLocaleTimeString("en-GB", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const dateText = date.toLocaleDateString("en-GB", { timeZone: "Asia/Riyadh", day: "2-digit", month: "2-digit", year: "numeric" });
-  const weekday = new Intl.DateTimeFormat("ar", { timeZone: "Asia/Riyadh", weekday: "long" }).format(date);
-  return `<span class="admin-date-stack"><b>${time}</b><span>${dateText}</span><small>${weekday}</small></span>`;
+
+  const time = date.toLocaleTimeString("en-GB", {
+    timeZone: "Asia/Riyadh",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+  const dateText = date.toLocaleDateString("en-GB", {
+    timeZone: "Asia/Riyadh",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+  const weekday = new Intl.DateTimeFormat("ar", {
+    timeZone: "Asia/Riyadh",
+    weekday: "long"
+  }).format(date);
+  const { dayClass } = getAdminDateMeta(date);
+
+  return `<span class="admin-date-stack ${dayClass}">
+    <b class="admin-date-box admin-time-box">${time}</b>
+    <span class="admin-date-box admin-calendar-box">${dateText}</span>
+    <small class="admin-date-box admin-weekday-box">${weekday}</small>
+  </span>`;
 }
 
 function formatCoinsNumber(
@@ -1391,7 +1437,7 @@ function getDisplayPrice(
 
 function getDisplayPriceMarkup(order) {
   const amount = getSarAmount(order);
-  return `<span class="order-price-stack"><small>RS</small><strong>${amount.toFixed(2)}</strong></span>`;
+  return `<span class="order-price-stack"><small>ريال سعودي</small><strong>${amount.toFixed(2)}</strong></span>`;
 }
 
 function getSarAmount(
@@ -1706,15 +1752,34 @@ function initOrdersListener() {
   };
 
   loadOrders();
+  scheduleOrdersPeriodicRefresh();
   connect();
 
   return () => {
     stopped = true;
     clearTimeout(reconnectTimer);
+    clearTimeout(ordersRefreshTimer);
     if (controller) {
       try { controller.abort(); } catch {}
     }
   };
+}
+
+function scheduleOrdersPeriodicRefresh() {
+  clearTimeout(ordersRefreshTimer);
+  const minMs = 15 * 60 * 1000;
+  const maxMs = 60 * 60 * 1000;
+  const delay = Math.floor(minMs + Math.random() * (maxMs - minMs));
+
+  ordersRefreshTimer = setTimeout(async () => {
+    try {
+      await loadOrders();
+    } catch (error) {
+      console.error("Periodic orders refresh error:", error);
+    } finally {
+      scheduleOrdersPeriodicRefresh();
+    }
+  }, delay);
 }
 
 async function loadOrders() {
@@ -2225,7 +2290,15 @@ function buildActionButtonsHTML(order) {
   const refNum = order.referenceNumber || order.orderId || order.id;
   return `
     <div class="order-list-actions">
-      <button class="btn-action" style="color:var(--purple);border-color:var(--purple);" title="أرشفة"
+      <button class="btn-action order-details-action" title="التفاصيل"
+        onclick="openOrderModal('${escapeAttribute(order.id)}')">
+        <i class="fa-solid fa-eye"></i>
+      </button>
+      <button class="btn-action order-edit-action" title="تعديل الحالة"
+        onclick="openOrderStatusEditForm('${escapeAttribute(order.id)}')">
+        <i class="fa-solid fa-pen-to-square"></i>
+      </button>
+      <button class="btn-action order-archive-action" title="أرشفة"
         onclick="handleArchiveOrder('${escapeAttribute(order.id)}','${escapeAttribute(refNum)}')">
         <i class="fa-solid fa-box-archive"></i>
       </button>
@@ -2242,7 +2315,6 @@ function buildActionButtonsHTML(order) {
     </div>
   `;
 }
-
 function getStatusBadge(status) {
   const labels = {
     new: "طلب جديد",
@@ -2324,15 +2396,15 @@ window.renderOrdersTables =
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-value-box order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
           </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="order-value-box table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${getDisplayPriceMarkup(order)}</td>
+          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="آخر تحديث"><span class="last-update-value">${formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt)}</span></td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
@@ -2367,15 +2439,15 @@ window.renderRecentOrdersTable =
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-value-box order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
           </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="order-value-box recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${getDisplayPriceMarkup(order)}</td>
+          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
@@ -4639,6 +4711,45 @@ window.saveModalWithdrawnQuantity=async function(orderId){
 };
 
 window.copyModalStatusMessage=async function(orderId){const order=ordersData.find((item)=>item.id===orderId);if(order)await copyValue(getStatusMessage(order.status,order));};
+window.openOrderStatusEditForm=function(orderId){
+  const order=ordersData.find((item)=>item.id===orderId);
+  if(!order)return;
+  const body=document.getElementById("modalOrderBody");
+  const modal=document.getElementById("orderDetailModal");
+  const title=document.getElementById("modalOrderIdTitle");
+  if(!body||!modal)return;
+
+  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const locked=["finished","pending_transfer","transferred","completed","archived"].includes(order.status);
+  const lockedText=locked
+    ? "قسم سحب الكوينز مقفل لأن الطلب وصل إلى مرحلة ما بعد السحب."
+    : "يمكن تحديث كمية السحب من داخل التفاصيل ما دام الطلب في مرحلة السحب.";
+
+  if(title) title.innerText=`تعديل حالة الطلب #${escapeHtml(order.referenceNumber||order.orderId||order.id)}`;
+  body.innerHTML=`
+    <div class="order-status-edit-form">
+      <div class="order-section-heading">
+        <div><span class="eyebrow">EDIT STATUS</span><h4>تعديل حالة الطلب</h4></div>
+        <button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">فتح التفاصيل</button>
+      </div>
+      <div class="status-edit-current">
+        <span class="field-label">الحالة الحالية</span>
+        <strong class="order-status-badge status-${escapeAttribute(order.status||"unknown")}">${escapeHtml(STATUS_LABELS[order.status]||order.status||"---")}</strong>
+      </div>
+      <div class="status-editor-controls status-editor-controls-large">
+        <label class="field"><span>الحالة الجديدة</span>
+          <select id="modalOrderStatusSelect" class="form-control">${statusOptions}</select>
+        </label>
+        <button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button>
+      </div>
+      <div class="status-edit-lock-note ${locked?"is-locked":""}">
+        <i class="fa-solid ${locked?"fa-lock":"fa-unlock"}"></i>
+        <span>${lockedText}</span>
+      </div>
+    </div>`;
+  modal.classList.add("active");
+};
+
 window.openOrderEditForm=function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);if(!order)return;const body=document.getElementById("modalOrderBody");if(!body)return;
   body.innerHTML=`<div class="order-edit-form"><div class="order-section-heading"><div><span class="eyebrow">EDIT ORDER</span><h4>تعديل بيانات الطلب</h4></div><button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">إلغاء</button></div>
