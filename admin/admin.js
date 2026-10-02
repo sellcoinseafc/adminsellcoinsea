@@ -482,80 +482,31 @@ function initAuthGuard() {
       }
 
       try {
-        const adminRef =
-          doc(
-            db,
-            "admins",
-            user.uid
-          );
+        const response = await adminFetch("/api/admin/session");
+        const sessionData = await readJsonResponse(response);
 
-        const adminSnap =
-          await getDoc(
-            adminRef
-          );
-
-        if (!adminSnap.exists()) {
-          showToast(
-            "الحساب غير مصرح له بدخول لوحة الإدارة."
-          );
-
-          await signOut(auth);
-
-          if (loginOverlay) {
-            loginOverlay.classList.add(
-              "active"
-            );
-          }
-
+        if (await handleAdminAuthFailure(response, sessionData)) {
           return;
         }
 
-        const adminData =
-          adminSnap.data() ||
-          {};
-
-        if (
-          adminData.active ===
-          false
-        ) {
-          showToast(
-            "حساب الإدارة غير مفعل."
-          );
-
-          await signOut(auth);
-
-          if (loginOverlay) {
-            loginOverlay.classList.add(
-              "active"
-            );
-          }
-
-          return;
+        if (!sessionData?.success || !sessionData?.admin?.uid) {
+          throw new Error("ADMIN_SESSION_INVALID");
         }
 
         currentAdmin = {
-          uid: user.uid,
-
-          email:
-            user.email ||
-            adminData.email ||
-            "",
-
-          name:
-            adminData.name ||
-            "مشرف النظام",
-
+          uid: sessionData.admin.uid,
+          email: sessionData.admin.email || user.email || "",
+          name: sessionData.admin.name || "مشرف النظام",
           role: "admin"
         };
 
         /*
-         * Admin documents are intentionally read-only from the browser.
-         * Authentication/session activity is not written directly here.
+         * The backend is the authoritative admin gate.
+         * The login overlay is hidden only after the protected session
+         * endpoint confirms the Firebase ID token and admins/{uid}.
          */
         if (loginOverlay) {
-          loginOverlay.classList.remove(
-            "active"
-          );
+          loginOverlay.classList.remove("active");
         }
 
         updateSidebarAdminUI();
