@@ -1121,6 +1121,8 @@ function formatCoinInput(input) {
   } catch {}
 }
 
+window.formatCoinInput = formatCoinInput;
+
 function parseFirestoreDate(
   value
 ) {
@@ -2363,6 +2365,15 @@ function getStatusBadge(
   );
 }
 
+function getOrderStatusBadge(order) {
+  if (order?.issue) {
+    return '<span class="badge badge-issue-primary"><i class="fa-solid fa-triangle-exclamation"></i> ' +
+      escapeHtml(getIssueLabel(order.issue)) +
+      '</span>';
+  }
+  return getStatusBadge(order?.status);
+}
+
 window.renderOrdersTables =
   function () {
     const tbody =
@@ -2521,8 +2532,8 @@ window.renderOrdersTables =
                 </td>
 
                 <td>
-                  ${getStatusBadge(
-                    order.status
+                  ${getOrderStatusBadge(
+                    order
                   )}
                   ${getIssueBadge(
                     order.issue
@@ -2650,8 +2661,8 @@ window.renderRecentOrdersTable =
                 </td>
 
                 <td>
-                  ${getStatusBadge(
-                    order.status
+                  ${getOrderStatusBadge(
+                    order
                   )}
                 </td>
 
@@ -2835,8 +2846,8 @@ window.renderWithdrawOrdersTable =
                 </td>
 
                 <td>
-                  ${getStatusBadge(
-                    order.status
+                  ${getOrderStatusBadge(
+                    order
                   )}
                 </td>
 
@@ -4666,8 +4677,9 @@ window.openOrderModal = function (orderId) {
   const remaining=Math.max(0,total-withdrawn);
   const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
   const locked=["finished","pending_transfer","transferred","completed","archived"].includes(order.status);
-  const statusLabel=STATUS_LABELS[order.status]||order.status||"---";
-  const platform=String(order.platform||"").trim();
+  const baseStatusLabel=STATUS_LABELS[order.status]||order.status||"---";
+  const statusLabel=order.issue?(ISSUE_LABELS[order.issue]||getIssueLabel(order.issue)):baseStatusLabel;
+    const platform=String(order.platform||"").trim();
   const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
   const platformIcon=platform.toUpperCase()==="PLAYSTATION" ? "fa-brands fa-playstation" : platform.toUpperCase()==="XBOX" ? "fa-brands fa-xbox" : "fa-solid fa-desktop";
   const paymentCode=String(order.paymentMethod||"").toLowerCase();
@@ -4688,7 +4700,7 @@ window.openOrderModal = function (orderId) {
           <div class="copy-pill"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
         </div>
         <div class="order-status-editor">
-  <div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong></div>
+  <div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong>${order.issue?'<small class="base-status-hint">الحالة التشغيلية: '+escapeHtml(baseStatusLabel)+'</small>':''}</div>
   <div class="status-editor-controls"><select id="modalOrderStatusSelect" class="form-control"><option value="">تغيير الحالة</option>${statusOptions}</select><button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button></div>
 </div>
 <div class="order-issue-editor">
@@ -4737,8 +4749,12 @@ function syncOpenOrderModal(order) {
   const modal = document.getElementById("orderDetailModal");
   if (!modal || !modal.classList.contains("active")) return;
 
-  const statusLabel =
+  const baseStatusLabel =
     STATUS_LABELS[order.status] || order.status || "---";
+  const statusLabel =
+    order.issue
+      ? (ISSUE_LABELS[order.issue] || getIssueLabel(order.issue))
+      : baseStatusLabel;
 
   const total =
     Math.max(0, Number(order.totalQty || 0) || 0);
@@ -5167,7 +5183,7 @@ window.copyModalStatusMessage=async function(orderId){const order=ordersData.fin
 window.openOrderEditForm=function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);if(!order)return;const body=document.getElementById("modalOrderBody");if(!body)return;
   body.innerHTML=`<div class="order-edit-form"><div class="order-section-heading"><div><span class="eyebrow">EDIT ORDER</span><h4>تعديل بيانات الطلب</h4></div><button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">إلغاء</button></div>
-  <div class="form-grid"><label class="field"><span>اسم العميل</span><input id="editCustomerName" class="form-control" value="${escapeAttribute(order.name||"")}"></label><label class="field"><span>البريد الإلكتروني</span><input id="editCustomerEmail" class="form-control" value="${escapeAttribute(order.customerEmail||"")}"></label><label class="field"><span>رقم الجوال</span><input id="editPhone" class="form-control" dir="ltr" value="${escapeAttribute(order.phone||"")}"></label><label class="field"><span>المنصة</span><select id="editPlatform" class="form-control"><option value="PlayStation" ${String(order.platform).toUpperCase()==="PLAYSTATION"?"selected":""}>PlayStation</option><option value="Xbox" ${String(order.platform).toUpperCase()==="XBOX"?"selected":""}>Xbox</option><option value="PC" ${String(order.platform).toUpperCase()==="PC"?"selected":""}>PC</option></select></label><label class="field"><span>الكمية المباعة</span><input id="editQuantity" class="form-control" inputmode="numeric" value="${formatCoinsNumber(order.totalQty||0)}"></label></div>
+  <div class="form-grid"><label class="field"><span>اسم العميل</span><input id="editCustomerName" class="form-control" value="${escapeAttribute(order.name||"")}"></label><label class="field"><span>البريد الإلكتروني</span><input id="editCustomerEmail" class="form-control" value="${escapeAttribute(order.customerEmail||"")}"></label><label class="field"><span>رقم الجوال</span><input id="editPhone" class="form-control" dir="ltr" value="${escapeAttribute(order.phone||"")}"></label><label class="field"><span>المنصة</span><select id="editPlatform" class="form-control"><option value="PlayStation" ${String(order.platform).toUpperCase()==="PLAYSTATION"?"selected":""}>PlayStation</option><option value="Xbox" ${String(order.platform).toUpperCase()==="XBOX"?"selected":""}>Xbox</option><option value="PC" ${String(order.platform).toUpperCase()==="PC"?"selected":""}>PC</option></select></label><label class="field"><span>الكمية المباعة</span><input id="editQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(order.totalQty||0)}" oninput="formatCoinInput(this)"></label></div>
   <div class="edit-sensitive-note">الحقول الحساسة التالية اختيارية. تركها فارغة يعني إبقاء القيمة الحالية. عند حفظها، يرسلها النظام للسيرفر لتشفيرها.</div>
   <div class="form-grid"><label class="field"><span>EA Email</span><input id="editEaEmail" class="form-control" type="email" placeholder="قيمة جديدة فقط"></label><label class="field"><span>EA Password</span><input id="editEaPassword" class="form-control" type="password" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 1</span><input id="editCode1" class="form-control" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 2</span><input id="editCode2" class="form-control" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 3</span><input id="editCode3" class="form-control" placeholder="قيمة جديدة فقط"></label></div>
   <div class="edit-payment-card"><h4>بيانات الدفع — اختياري</h4><div class="form-grid"><label class="field"><span>Payment Method</span><select id="editPaymentMethod" class="form-control"><option value="">بدون تعديل</option><option value="bank">تحويل بنكي</option><option value="wallet">محفظة رقمية</option><option value="usd">USD / USDT</option><option value="paypal">PayPal</option><option value="western">Western Union</option></select></label><label class="field"><span>اسم البنك / المحفظة</span><input id="editPaymentName" class="form-control"></label><label class="field"><span>الاسم الكامل</span><input id="editPaymentFullName" class="form-control"></label><label class="field"><span>IBAN / Wallet Address</span><input id="editPaymentValue" class="form-control" dir="ltr"></label><label class="field"><span>Phone / PayPal Email</span><input id="editPaymentPhoneOrEmail" class="form-control" dir="ltr"></label><label class="field"><span>Country</span><input id="editPaymentCountry" class="form-control"></label></div></div>
@@ -6552,9 +6568,9 @@ function updateStoreStatusUI(
   }
 
   btn.className =
-    isOpen
-      ? "store-status-btn"
-      : "store-status-btn closed";
+    "store-status-control" +
+    (isOpen ? " is-open" : " is-closed");
+  btn.setAttribute("aria-pressed", isOpen ? "true" : "false");
 
   text.innerText =
     isOpen
