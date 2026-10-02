@@ -910,10 +910,7 @@ function renderAuditLogsTable() {
 
             <td>
               <span style="font-size:0.78rem;color:var(--text-muted);">
-                ${escapeHtml(
-                  log.timeString ||
-                    "---"
-                )}
+                ${log.timestamp ? formatAdminDate(log.timestamp) : escapeHtml(log.timeString || "---")}
               </span>
             </td>
 
