@@ -738,3 +738,85 @@ tbody tr:hover td{background:var(--v3-surface-2)!important}
  .order-section-heading .btn-secondary{font-size:.58rem;padding:7px}
  .secure-actions{flex-wrap:wrap;justify-content:flex-end}
 }
+
+
+/* ==========================================================================
+   SAMI COINS V3 — Order Controls Polish
+   - Live grouped issue control under order status
+   - Coin quantity input formats with thousands separators while typing
+   ========================================================================== */
+
+.order-issue-editor{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid var(--v3-border);
+  border-radius:14px;
+  background:var(--v3-surface-2);
+}
+
+.issue-editor-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:9px;
+}
+
+.issue-editor-head small{
+  display:block;
+  margin-top:4px;
+  color:var(--v3-muted);
+  font-size:.65rem;
+  line-height:1.6;
+}
+
+.issue-editor-state{
+  flex:0 0 auto;
+  padding:5px 9px;
+  border-radius:999px;
+  border:1px solid var(--v3-border);
+  color:var(--v3-muted);
+  font-size:.6rem;
+  font-weight:800;
+  background:var(--v3-surface);
+}
+
+.issue-editor-state.has-issue{
+  color:#ff8d8d;
+  border-color:rgba(239,68,68,.25);
+  background:rgba(239,68,68,.08);
+}
+
+.issue-editor-controls{
+  display:grid;
+  grid-template-columns:minmax(180px,.9fr) minmax(240px,1.6fr) auto;
+  gap:8px;
+  align-items:stretch;
+}
+
+.issue-editor-controls textarea{
+  resize:vertical;
+  min-height:42px;
+  line-height:1.7;
+}
+
+.issue-editor-controls textarea:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+#modalWithdrawnQuantity{
+  direction:ltr;
+  text-align:left;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+}
+
+@media(max-width:760px){
+  .issue-editor-controls{
+    grid-template-columns:1fr;
+  }
+  .issue-editor-controls .btn-secondary{
+    width:100%;
+  }
+}
