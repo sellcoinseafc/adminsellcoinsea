@@ -7855,3 +7855,358 @@ textarea.form-control{
     border:0!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE OPERATION LISTS V2
+   Orders / Recent Orders / Withdraw / Transfers
+   Each order is a single vertical card; every field occupies the full row.
+   ========================================================================== */
+.platform-badge-name{display:none;}
+
+@media (max-width:700px){
+  /* Page headings / list titles */
+  #ordersTab .workspace-header h2,
+  #withdrawTab .workspace-header h2,
+  #transferAlertsTab .workspace-header h2{
+    font-size:1.45rem!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+  }
+
+  #ordersTab .orders-toolbar strong,
+  #withdrawTab .orders-toolbar strong{
+    display:block!important;
+    font-size:1.02rem!important;
+    line-height:1.4!important;
+    color:#fff!important;
+  }
+  #ordersTab .orders-toolbar span,
+  #withdrawTab .orders-toolbar span{
+    display:block!important;
+    margin-top:4px!important;
+    font-size:.68rem!important;
+    line-height:1.7!important;
+  }
+
+  /* Completely replace the horizontal table layout with one field per row. */
+  #fullOrdersTableBody,
+  #recentOrdersTableBody,
+  #withdrawOrdersTableBody,
+  #transferAlertsTableBody{
+    display:block!important;
+    width:100%!important;
+  }
+
+  #fullOrdersTableBody tr,
+  #recentOrdersTableBody tr,
+  #withdrawOrdersTableBody tr,
+  #transferAlertsTableBody tr{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0 0 12px!important;
+    padding:8px 12px!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    border-radius:18px!important;
+    background:linear-gradient(155deg,rgba(13,27,45,.98),rgba(6,13,24,.98))!important;
+    box-shadow:0 12px 30px rgba(0,0,0,.20)!important;
+  }
+
+  #fullOrdersTableBody td,
+  #recentOrdersTableBody td,
+  #withdrawOrdersTableBody td,
+  #transferAlertsTableBody td{
+    display:flex!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    padding:13px 2px!important;
+    margin:0!important;
+    border:0!important;
+    border-bottom:1px solid rgba(255,255,255,.075)!important;
+    background:transparent!important;
+    text-align:right!important;
+    vertical-align:middle!important;
+    white-space:normal!important;
+  }
+
+  #fullOrdersTableBody td:last-child,
+  #recentOrdersTableBody td:last-child,
+  #withdrawOrdersTableBody td:last-child,
+  #transferAlertsTableBody td:last-child{
+    border-bottom:0!important;
+  }
+
+  /* Label is always on the right; value gets the remaining full row. */
+  #fullOrdersTableBody td .table-field-label,
+  #recentOrdersTableBody td .table-field-label,
+  #withdrawOrdersTableBody td .table-field-label,
+  #transferAlertsTableBody td .table-field-label{
+    display:block!important;
+    flex:0 0 92px!important;
+    margin:0!important;
+    color:#91a3b7!important;
+    font-size:.68rem!important;
+    font-weight:800!important;
+    line-height:1.45!important;
+  }
+
+  #fullOrdersTableBody td>*:not(.table-field-label),
+  #recentOrdersTableBody td>*:not(.table-field-label),
+  #withdrawOrdersTableBody td>*:not(.table-field-label),
+  #transferAlertsTableBody td>*:not(.table-field-label){
+    min-width:0!important;
+    max-width:calc(100% - 104px)!important;
+  }
+
+  /* Reference */
+  #fullOrdersTableBody .order-ref-stack,
+  #recentOrdersTableBody .order-ref-stack,
+  #withdrawOrdersTableBody .order-ref-stack,
+  #transferAlertsTableBody .order-ref-stack{
+    display:flex!important;
+    flex:1 1 auto!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+    min-width:0!important;
+  }
+  #fullOrdersTableBody .order-ref-stack small,
+  #recentOrdersTableBody .order-ref-stack small,
+  #withdrawOrdersTableBody .order-ref-stack small{
+    display:none!important;
+  }
+  #fullOrdersTableBody .order-reference-value,
+  #recentOrdersTableBody .order-reference-value,
+  #withdrawOrdersTableBody .order-reference-value,
+  #transferAlertsTableBody .order-reference-value{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    font-size:1.05rem!important;
+    line-height:1.3!important;
+    font-weight:900!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  /* Customer / phone */
+  #fullOrdersTableBody .table-primary-value,
+  #recentOrdersTableBody .table-primary-value,
+  #withdrawOrdersTableBody .table-primary-value,
+  #transferAlertsTableBody .table-primary-value{
+    flex:1 1 auto!important;
+    text-align:left!important;
+    font-size:.98rem!important;
+    font-weight:900!important;
+    color:#fff!important;
+    overflow-wrap:anywhere!important;
+  }
+  #fullOrdersTableBody .phone-value,
+  #recentOrdersTableBody .phone-value,
+  #withdrawOrdersTableBody .phone-value,
+  #transferAlertsTableBody .phone-value{
+    direction:ltr!important;
+    text-align:left!important;
+    font-variant-numeric:tabular-nums!important;
+    white-space:nowrap!important;
+  }
+
+  /* Platform: icon above name, still inside one complete row. */
+  #fullOrdersTableBody .platform-badge,
+  #recentOrdersTableBody .platform-badge,
+  #withdrawOrdersTableBody .platform-badge,
+  #transferAlertsTableBody .platform-badge{
+    width:68px!important;
+    min-width:68px!important;
+    height:auto!important;
+    min-height:56px!important;
+    display:grid!important;
+    grid-template-rows:30px auto!important;
+    place-items:center!important;
+    gap:3px!important;
+    padding:5px 7px!important;
+    border-radius:13px!important;
+    flex:0 0 68px!important;
+  }
+  #fullOrdersTableBody .platform-badge i,
+  #recentOrdersTableBody .platform-badge i,
+  #withdrawOrdersTableBody .platform-badge i,
+  #transferAlertsTableBody .platform-badge i{
+    font-size:1.25rem!important;
+  }
+  #fullOrdersTableBody .platform-badge-name,
+  #recentOrdersTableBody .platform-badge-name,
+  #withdrawOrdersTableBody .platform-badge-name,
+  #transferAlertsTableBody .platform-badge-name{
+    display:block!important;
+    font-size:.62rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    color:currentColor!important;
+  }
+
+  /* Quantities / money are the visual focal points. */
+  #fullOrdersTableBody .table-large-value,
+  #recentOrdersTableBody .table-large-value,
+  #withdrawOrdersTableBody .table-large-value,
+  #transferAlertsTableBody .table-large-value{
+    flex:1 1 auto!important;
+    text-align:left!important;
+    color:#fff!important;
+    font-size:1.18rem!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums!important;
+    direction:ltr!important;
+  }
+
+  #fullOrdersTableBody .recent-price,
+  #recentOrdersTableBody .recent-price{
+    text-align:left!important;
+  }
+
+  /* Currency label/value stack stays complete on its own row. */
+  #fullOrdersTableBody .order-price-stack,
+  #recentOrdersTableBody .order-price-stack{
+    flex:1 1 auto!important;
+    max-width:calc(100% - 104px)!important;
+    text-align:left!important;
+  }
+  #fullOrdersTableBody .order-price-stack small,
+  #recentOrdersTableBody .order-price-stack small{
+    display:block!important;
+    color:#91a3b7!important;
+    font-size:.62rem!important;
+    margin-bottom:2px!important;
+  }
+  #fullOrdersTableBody .order-price-stack strong,
+  #recentOrdersTableBody .order-price-stack strong{
+    display:block!important;
+    color:#fff!important;
+    font-size:1.35rem!important;
+    font-weight:900!important;
+  }
+
+  /* Status is always its own complete row. */
+  #fullOrdersTableBody td:nth-last-child(3),
+  #recentOrdersTableBody td:nth-last-child(2),
+  #withdrawOrdersTableBody td:nth-last-child(2){
+    align-items:center!important;
+  }
+  #fullOrdersTableBody .platform-status-badge,
+  #recentOrdersTableBody .platform-status-badge,
+  #withdrawOrdersTableBody .platform-status-badge{
+    flex:1 1 auto!important;
+    width:auto!important;
+    max-width:calc(100% - 104px)!important;
+    min-height:44px!important;
+    margin:0!important;
+  }
+
+  /* Actions also occupy the complete row. */
+  #fullOrdersTableBody .recent-actions-cell,
+  #recentOrdersTableBody .recent-actions-cell,
+  #withdrawOrdersTableBody .recent-actions-cell,
+  #transferAlertsTableBody .recent-actions-cell{
+    display:block!important;
+    padding:13px 2px 5px!important;
+  }
+  #fullOrdersTableBody .recent-actions-cell .table-field-label,
+  #recentOrdersTableBody .recent-actions-cell .table-field-label,
+  #withdrawOrdersTableBody .recent-actions-cell .table-field-label,
+  #transferAlertsTableBody .recent-actions-cell .table-field-label{
+    display:block!important;
+    margin-bottom:8px!important;
+  }
+  #fullOrdersTableBody .recent-order-actions,
+  #recentOrdersTableBody .recent-order-actions,
+  #withdrawOrdersTableBody .recent-order-actions{
+    width:100%!important;
+    max-width:none!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:7px!important;
+  }
+
+  /* Transfer payment/date/action fields */
+  #transferAlertsTableBody .transfer-payment-badge,
+  #transferAlertsTableBody .last-update-value{
+    flex:1 1 auto!important;
+    max-width:calc(100% - 104px)!important;
+    text-align:left!important;
+  }
+  #transferAlertsTableBody .transfer-action-button{
+    width:100%!important;
+    max-width:none!important;
+    min-height:44px!important;
+  }
+
+  /* Empty states should not inherit card row geometry. */
+  #fullOrdersTableBody .empty-row,
+  #recentOrdersTableBody .empty-row,
+  #withdrawOrdersTableBody .empty-row,
+  #transferAlertsTableBody .empty-row{
+    display:block!important;
+    width:100%!important;
+    border:0!important;
+    text-align:center!important;
+    padding:24px 10px!important;
+  }
+
+  /* The page-level table wrappers no longer scroll horizontally. */
+  #ordersTab .table-wrap,
+  #dashboardTab .dashboard-orders .table-wrap,
+  #withdrawTab .table-wrap,
+  #transferAlertsTab .table-wrap{
+    overflow:visible!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #ordersTab table,
+  #dashboardTab .dashboard-orders table,
+  #withdrawTab table,
+  #transferAlertsTab table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:auto!important;
+  }
+
+  #ordersTab thead,
+  #dashboardTab .dashboard-orders thead,
+  #withdrawTab thead,
+  #transferAlertsTab thead{
+    display:none!important;
+  }
+
+  /* Make the Orders KPI values readable and verify the withdrawal KPI visually. */
+  #ordersTab .order-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  #ordersTab .order-kpis>div{
+    min-height:78px!important;
+    padding:10px!important;
+  }
+  #ordersTab .order-kpis b{
+    display:block!important;
+    color:#fff!important;
+    font-size:1.45rem!important;
+    font-weight:900!important;
+  }
+  #ordersTab .order-kpis span{
+    display:block!important;
+    margin-top:5px!important;
+    font-size:.66rem!important;
+    line-height:1.35!important;
+  }
+}
