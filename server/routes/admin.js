@@ -1759,6 +1759,7 @@ const SETTINGS_ACTIONS = new Set([
   "delete_term",
   "toggle_terms_enabled",
   "update_issue_messages",
+  "update_status_messages",
   "toggle_store"
 ]);
 
@@ -1981,6 +1982,40 @@ router.post(
           );
           result = patch.issueMessages;
           break;
+
+        case "update_status_messages": {
+          const allowedStatuses = [
+            "new",
+            "review",
+            "progress",
+            "finished",
+            "transferred",
+            "completed",
+            "archived"
+          ];
+          const input =
+            req.body?.messages &&
+            typeof req.body.messages === "object" &&
+            !Array.isArray(req.body.messages)
+              ? req.body.messages
+              : {};
+          const currentMessages =
+            current.statusMessages &&
+            typeof current.statusMessages === "object" &&
+            !Array.isArray(current.statusMessages)
+              ? current.statusMessages
+              : {};
+          const nextMessages = { ...currentMessages };
+          for (const status of allowedStatuses) {
+            if (typeof input[status] === "string") {
+              const value = input[status].trim();
+              if (value) nextMessages[status] = value.slice(0, 4000);
+            }
+          }
+          patch.statusMessages = nextMessages;
+          result = nextMessages;
+          break;
+        }
 
         case "toggle_store":
           result =
