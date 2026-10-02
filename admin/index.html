@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003k">
+<link rel="stylesheet" href="style.css?v=20261003m">
 </head>
 <body>
 <div class="login-overlay active" id="loginOverlay"><div class="login-card-nextgen">
@@ -66,13 +66,17 @@
   <div class="command-main"><span class="live-dot">● النظام يعمل</span><strong>كل العمليات في مكان واحد</strong><p>ابدأ من الطلبات الجديدة، تابع السحب، ثم راجع التحويلات التي تحتاج إجراء.</p></div>
   <div class="command-side"><span>حالة المتجر</span><b id="dashboardStoreState">ONLINE</b><small>يتم تحديث البيانات من الخادم</small></div>
 </div>
-<div class="stats-grid">
-<article class="stat-card dashboard-status-card"><span>طلبات جديدة</span><strong id="dashStatNew">0</strong><i class="fa-solid fa-bell"></i></article>
-<article class="stat-card dashboard-status-card"><span>قيد التنفيذ</span><strong id="dashStatProgress">0</strong><i class="fa-solid fa-spinner"></i></article>
-<article class="stat-card dashboard-status-card"><span>بانتظار التحويل</span><strong id="dashStatPendingTransfer">0</strong><i class="fa-solid fa-money-bill-transfer"></i></article>
-<article class="stat-card dashboard-status-card"><span>مكتملة</span><strong id="dashStatCompleted">0</strong><i class="fa-solid fa-circle-check"></i></article>
-<article class="stat-card dashboard-stock-card stock-stat-card"><span>مخزون PS / Xbox</span><strong id="dashStockPS">0</strong><span id="dashStockPSTrend" class="stock-trend-wrap" aria-label="اتجاه المخزون"></span><i class="fa-brands fa-playstation"></i></article>
-<article class="stat-card dashboard-stock-card stock-stat-card"><span>مخزون PC</span><strong id="dashStockPC">0</strong><span id="dashStockPCTrend" class="stock-trend-wrap" aria-label="اتجاه المخزون"></span><i class="fa-solid fa-desktop"></i></article>
+<div class="stats-grid dashboard-stats-grid">
+  <div class="dashboard-status-group">
+    <article class="stat-card dashboard-status-card"><span>طلبات جديدة</span><strong id="dashStatNew">0</strong><i class="fa-solid fa-bell"></i></article>
+    <article class="stat-card dashboard-status-card"><span>قيد التنفيذ</span><strong id="dashStatProgress">0</strong><i class="fa-solid fa-spinner"></i></article>
+    <article class="stat-card dashboard-status-card"><span>بانتظار التحويل</span><strong id="dashStatPendingTransfer">0</strong><i class="fa-solid fa-money-bill-transfer"></i></article>
+    <article class="stat-card dashboard-status-card"><span>مكتملة</span><strong id="dashStatCompleted">0</strong><i class="fa-solid fa-circle-check"></i></article>
+  </div>
+  <div class="dashboard-stock-group">
+    <article class="stat-card dashboard-stock-card stock-stat-card"><div><span>مخزون PS / Xbox</span><i class="fa-brands fa-playstation" aria-hidden="true"></i><i class="fa-brands fa-xbox" aria-hidden="true"></i></div><strong id="dashStockPS">0</strong><span id="dashStockPSTrend" class="stock-trend-wrap" aria-label="اتجاه المخزون"></span></article>
+    <article class="stat-card dashboard-stock-card stock-stat-card"><div><span>مخزون PC</span><i class="fa-solid fa-desktop" aria-hidden="true"></i></div><strong id="dashStockPC">0</strong><span id="dashStockPCTrend" class="stock-trend-wrap" aria-label="اتجاه المخزون"></span></article>
+  </div>
 </div>
 <div class="dashboard-grid">
 <div class="panel dashboard-orders"><div class="panel-title"><div><span class="eyebrow">RECENT ACTIVITY</span><h3>آخر الطلبات</h3></div><button class="btn-secondary" onclick="switchTab('ordersTab',document.querySelector('.sidebar-link[onclick*="ordersTab"]'))">عرض الكل</button></div><div class="table-wrap"><table><thead><tr><th>الطلب</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="recentOrdersTableBody"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div></div>
@@ -147,14 +151,36 @@
 <div class="panel stats-audit-panel"><div class="panel-title"><div><span class="eyebrow">ACTIVITY</span><h3>آخر حركات النظام</h3></div></div><div class="table-wrap"><table><thead><tr><th>الوقت</th><th>المشرف</th><th>العملية</th><th>الطلب</th><th>التفاصيل</th></tr></thead><tbody id="stockLogsTableBody"></tbody></table></div></div>
 </section>
 
-<section id="inventoryTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">INVENTORY</span><h2>إدارة المخزون</h2></div></div><div class="inventory-grid"><article class="inventory-card"><i class="fa-brands fa-playstation"></i><span>PS / Xbox</span><strong id="invStockPS">0</strong></article><article class="inventory-card"><i class="fa-solid fa-desktop"></i><span>PC</span><strong id="invStockPC">0</strong></article></div><div class="panel"><p class="muted">آخر تحديث: <b id="invLastUpdate">—</b></p></div></section>
+<section id="inventoryTab" class="tab-content">
+  <div class="page-head"><div><span class="eyebrow">INVENTORY</span><h2>إدارة المخزون</h2></div></div>
+  <div class="inventory-grid inventory-grid-mobile-order">
+    <article class="inventory-card inventory-card-shared">
+      <div class="inventory-platform-icons" aria-label="PlayStation و Xbox"><i class="fa-brands fa-playstation"></i><i class="fa-brands fa-xbox"></i></div>
+      <span>PS / Xbox</span>
+      <strong id="invStockPS">0</strong>
+      <span id="invStockPSTrend" class="inventory-trend"></span>
+    </article>
+    <article class="inventory-card inventory-card-pc">
+      <i class="fa-solid fa-desktop"></i><span>PC</span><strong id="invStockPC">0</strong>
+      <span id="invStockPCTrend" class="inventory-trend"></span>
+    </article>
+  </div>
+  <div class="panel inventory-24h-panel">
+    <div class="panel-title"><div><span class="eyebrow">LAST 24 HOURS</span><h3>حركة الكمية خلال آخر 24 ساعة</h3><p class="muted">الكمية المضافة من الطلبات الجديدة والكمية المسحوبة فعليًا.</p></div></div>
+    <div class="inventory-movement-grid">
+      <article class="inventory-movement-card platform-playstation"><div><i class="fa-brands fa-playstation"></i><i class="fa-brands fa-xbox"></i><b>PS / Xbox</b></div><div><span>أضيفت</span><strong id="inv24hAddedShared">0</strong></div><div><span>انسحبت</span><strong id="inv24hWithdrawnShared">0</strong></div></article>
+      <article class="inventory-movement-card platform-pc"><div><i class="fa-solid fa-desktop"></i><b>PC</b></div><div><span>أضيفت</span><strong id="inv24hAddedPC">0</strong></div><div><span>انسحبت</span><strong id="inv24hWithdrawnPC">0</strong></div></article>
+    </div>
+    <p class="muted inventory-updated-line">آخر تحديث للبيانات: <b id="invLastUpdate">—</b></p>
+  </div>
+</section>
 
 <section id="customerProfileTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">CUSTOMERS</span><h2>ملف العملاء</h2></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>العميل</th><th>الجوال</th><th>عدد الطلبات</th><th>إجمالي الكمية</th><th>إجمالي المبلغ</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div></div></section>
 
 <section id="pricingTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">PRICING</span><h2>الأسعار والعروض</h2></div><button class="btn-primary" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button></div><div class="form-grid">
 <div class="panel"><h3>إعدادات المتجر</h3><div class="field"><label>اسم المتجر</label><input id="storeNameInput"  class="form-control store-setting-field"></div><div class="field"><label>اسم اللعبة</label><input id="gameName"  class="form-control store-setting-field"></div><div class="field"><label>الإصدار</label><input id="gameVersion"  class="form-control store-setting-field" type="number"></div><div class="field"><label>واتساب الدعم</label><input id="supportWhatsappInput"  class="form-control store-setting-field"></div></div>
-<div class="panel"><h3>PlayStation / Xbox</h3><div class="field"><label>السعر لكل مليون</label><input id="psRate"  class="form-control store-setting-field" type="number"></div><div class="two"><div class="field"><label>الحد الأدنى</label><input id="psMin"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div><div class="field"><label>الحد الأقصى</label><input id="psMax"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div></div><div class="two"><div class="field"><label>مدة السحب</label><input id="psWithdrawDuration"  class="form-control store-setting-field"></div><div class="field"><label>مدة التحويل</label><input id="psTransferDuration"  class="form-control store-setting-field"></div></div></div>
-<div class="panel"><h3>PC</h3><div class="field"><label>السعر لكل مليون</label><input id="pcRate"  class="form-control store-setting-field" type="number"></div><div class="two"><div class="field"><label>الحد الأدنى</label><input id="pcMin"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div><div class="field"><label>الحد الأقصى</label><input id="pcMax"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div></div><div class="two"><div class="field"><label>مدة السحب</label><input id="pcWithdrawDuration"  class="form-control store-setting-field"></div><div class="field"><label>مدة التحويل</label><input id="pcTransferDuration"  class="form-control store-setting-field"></div></div></div>
+<div class="panel pricing-platform-panel pricing-shared-panel"><h3><span class="pricing-platform-icons"><i class="fa-brands fa-playstation"></i><i class="fa-brands fa-xbox"></i></span><span>PlayStation / Xbox</span></h3><div class="field"><label>السعر لكل مليون</label><input id="psRate"  class="form-control store-setting-field" type="number"></div><div class="two"><div class="field"><label>الحد الأدنى</label><input id="psMin"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div><div class="field"><label>الحد الأقصى</label><input id="psMax"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div></div><div class="two"><div class="field"><label>مدة السحب</label><input id="psWithdrawDuration"  class="form-control store-setting-field"></div><div class="field"><label>مدة التحويل</label><input id="psTransferDuration"  class="form-control store-setting-field"></div></div></div>
+<div class="panel pricing-platform-panel pricing-pc-panel"><h3><span class="pricing-platform-icons"><i class="fa-solid fa-desktop"></i></span><span>PC</span></h3><div class="field"><label>السعر لكل مليون</label><input id="pcRate"  class="form-control store-setting-field" type="number"></div><div class="two"><div class="field"><label>الحد الأدنى</label><input id="pcMin"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div><div class="field"><label>الحد الأقصى</label><input id="pcMax"  class="form-control store-setting-field" inputmode="numeric" autocomplete="off" oninput="formatCoinInput(this)"></div></div><div class="two"><div class="field"><label>مدة السحب</label><input id="pcWithdrawDuration"  class="form-control store-setting-field"></div><div class="field"><label>مدة التحويل</label><input id="pcTransferDuration"  class="form-control store-setting-field"></div></div></div>
 <div class="panel"><h3>العروض</h3><div class="field"><label>العروض</label><select id="promoActiveSelect"  class="form-control store-setting-field"><option value="false">متوقف</option><option value="true">مفعل</option></select></div><div class="field"><label>نص العرض</label><textarea id="promoText"  class="form-control store-setting-field"></textarea></div></div></div></section>
 
 <section id="paymentsTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">PAYMENTS</span><h2>وسائل الدفع والحقول</h2><p>13 بنك + 6 محافظ رقمية + وسائل الدفع الدولية.</p></div></div><div class="payment-columns">
@@ -184,5 +210,5 @@
 <div class="modal-overlay" id="clientDetailModal"><div class="modal-card"><div class="modal-header"><h3 id="clientModalTitle">سجل العميل</h3><button class="modal-close-btn" onclick="closeClientModal()">×</button></div><div id="clientModalBody"></div></div></div>
 <div class="modal-overlay" id="purgeConfirmModal"><div class="modal-card confirm-modal"><div class="modal-header"><h3>تأكيد الإتلاف</h3><button class="modal-close-btn" onclick="closePurgeModal()">×</button></div><div class="confirm-body"><i class="fa-solid fa-skull-crossbones danger-icon"></i><p>سيتم إتلاف البيانات الحساسة نهائياً ولا يمكن استعادتها.</p><input type="hidden" id="purgeTargetOrderId"><div><button class="btn-secondary" onclick="closePurgeModal()">إلغاء</button><button class="btn-danger" onclick="confirmPurgeDataFinal()">إتلاف نهائي</button></div></div></div></div>
 <nav class="mobile-app-nav" id="mobileAppNav"><button class="mobile-app-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button><button class="mobile-app-nav-item" data-tab="ordersTab" onclick="switchTab('ordersTab',this)"><i class="fa-solid fa-box"></i><span>الطلبات</span><b id="mobileOrdersBadge">0</b></button><button class="mobile-app-nav-item" data-tab="customerProfileTab" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button><button class="mobile-app-nav-item" data-tab="paymentsTab" onclick="switchTab('paymentsTab',this)"><i class="fa-solid fa-wallet"></i><span>الدفع</span></button><button class="mobile-app-nav-item" data-tab="settingsTab" onclick="switchTab('settingsTab',this)"><i class="fa-solid fa-bars"></i><span>المزيد</span></button></nav>
-<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003k"></script>
+<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003m"></script>
 </body></html>
