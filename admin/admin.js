@@ -1080,6 +1080,47 @@ function formatCoinsNumber(
   });
 }
 
+
+function formatCoinInput(input) {
+  if (!input) return;
+
+  const raw = String(input.value || "");
+  const digits = raw.replace(/[^0-9]/g, "");
+
+  if (!digits) {
+    input.value = "";
+    return;
+  }
+
+  const cursor = typeof input.selectionStart === "number"
+    ? input.selectionStart
+    : raw.length;
+  const digitsBeforeCursor = raw
+    .slice(0, cursor)
+    .replace(/[^0-9]/g, "").length;
+
+  const formatted = Number(digits).toLocaleString("en-US", {
+    maximumFractionDigits: 0
+  });
+
+  input.value = formatted;
+
+  let newCursor = formatted.length;
+  if (digitsBeforeCursor < digits.length) {
+    let seen = 0;
+    newCursor = 0;
+    for (let i = 0; i < formatted.length; i += 1) {
+      if (/\d/.test(formatted[i])) seen += 1;
+      newCursor = i + 1;
+      if (seen >= digitsBeforeCursor) break;
+    }
+  }
+
+  try {
+    input.setSelectionRange(newCursor, newCursor);
+  } catch {}
+}
+
 function parseFirestoreDate(
   value
 ) {
@@ -4646,14 +4687,31 @@ window.openOrderModal = function (orderId) {
           <button class="copy-pill" onclick="copyValue('${escapeAttribute(order.name||"")}')"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong><small>نسخ</small></button>
           <div class="copy-pill"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
         </div>
-        <div class="order-status-editor"><div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong></div><div class="status-editor-controls"><select id="modalOrderStatusSelect" class="form-control"><option value="">تغيير الحالة</option>${statusOptions}</select><button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button></div></div>
+        <div class="order-status-editor">
+  <div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong></div>
+  <div class="status-editor-controls"><select id="modalOrderStatusSelect" class="form-control"><option value="">تغيير الحالة</option>${statusOptions}</select><button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button></div>
+</div>
+<div class="order-issue-editor">
+  <div class="issue-editor-head">
+    <div><span class="field-label">مشكلة الطلب</span><small id="orderIssueSummary">${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة مسجلة")}</small></div>
+    <span class="issue-editor-state ${order.issue ? "has-issue" : ""}">${order.issue ? "موجودة" : "بدون مشكلة"}</span>
+  </div>
+  <div class="issue-editor-controls">
+    <select id="orderIssueSelect" class="form-control" onchange="toggleOrderIssueEditor(this.value)">
+      <option value="">لا توجد مشكلة</option>
+      ${ISSUE_VALUES.map((value) => `<option value="${value}" ${value===order.issue?"selected":""}>${escapeHtml(ISSUE_LABELS[value] || value)}</option>`).join("")}
+    </select>
+    <textarea id="orderIssueMessageInput" class="form-control issue-message-input" rows="2" ${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
+    <button class="btn-secondary" onclick="saveOrderIssue('${escapeAttribute(order.id)}')">حفظ المشكلة</button>
+  </div>
+</div>
       </section>
 
       <section class="order-detail-section">
         <div class="order-section-heading"><div><span class="eyebrow">ORDER DATA</span><h4>المنصة والكمية</h4></div><button class="btn-secondary" onclick="openOrderEditForm('${escapeAttribute(order.id)}')"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</button></div>
         <div class="order-platform-row"><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
         <div class="quantity-grid"><div class="quantity-card"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div><div class="quantity-card"><span>الكمية المسحوبة</span><strong>${formatCoinsNumber(withdrawn)}</strong></div><div class="quantity-card"><span>الكمية المتبقية</span><strong>${formatCoinsNumber(remaining)}</strong></div></div>
-        <div class="withdraw-editor ${locked?"is-locked":""}"><div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة لأن الطلب وصل إلى مرحلة نهائية.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div><div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div><div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" value="${formatCoinsNumber(withdrawn)}" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div></div>
+        <div class="withdraw-editor ${locked?"is-locked":""}"><div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة لأن الطلب وصل إلى مرحلة نهائية.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div><div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div><div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div></div>
       </section>
 
       <section class="order-detail-section secure-section"><div class="order-section-heading"><div><span class="eyebrow">SENSITIVE DATA</span><h4>بيانات الحساب</h4></div><div class="secure-actions"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div></div><div class="secure-fields-grid">
@@ -4812,6 +4870,22 @@ function syncOpenOrderModal(order) {
     quantityButton.disabled = locked;
   }
 
+  const issueSelect = document.getElementById("orderIssueSelect");
+  const issueMessageInput = document.getElementById("orderIssueMessageInput");
+  const issueSummary = document.getElementById("orderIssueSummary");
+
+  if (issueSelect) issueSelect.value = order.issue || "";
+  if (issueMessageInput) {
+    issueMessageInput.value = order.issueMessage || (order.issue ? getIssueLabel(order.issue) : "");
+    issueMessageInput.disabled = !order.issue;
+  }
+  if (issueSummary) {
+    issueSummary.textContent = order.issue
+      ? (ISSUE_LABELS[order.issue] || order.issue)
+      : "لا توجد مشكلة مسجلة";
+    issueSummary.classList.toggle("has-issue", !!order.issue);
+  }
+
   const statusMessage =
     document.getElementById(
       "modalStatusMessagePreview"
@@ -4947,13 +5021,18 @@ window.saveModalOrderStatus=async function(orderId){
       order.lastUpdate = data.lastUpdate;
     }
 
-    await logAuditEvent(
-      "تعديل حالة الطلب",
-      order.referenceNumber,
-      "تم تغيير الحالة إلى: " + order.status
-    );
-
     refreshOrdersDerivedUI();
+    syncOpenOrderModal(order);
+
+    try {
+      await logAuditEvent(
+        "تعديل حالة الطلب",
+        order.referenceNumber,
+        "تم تغيير الحالة إلى: " + order.status
+      );
+    } catch (auditError) {
+      console.warn("Status audit logging failed after successful update:", auditError);
+    }
     syncOpenOrderModal(order);
 
     showToast("تم تحديث حالة الطلب.");
@@ -5054,15 +5133,18 @@ window.saveModalWithdrawnQuantity=async function(orderId){
         data.withdrawnUpdatedAt;
     }
 
-    await logAuditEvent(
-      "تحديث سحب الكوينز",
-      order.referenceNumber,
-      "تم تحديث الكمية المسحوبة إلى " +
-      order.withdrawnQuantity
-    );
-
     refreshOrdersDerivedUI();
     syncOpenOrderModal(order);
+
+    try {
+      await logAuditEvent(
+        "تحديث سحب الكوينز",
+        order.referenceNumber,
+        "تم تحديث الكمية المسحوبة إلى " + order.withdrawnQuantity
+      );
+    } catch (auditError) {
+      console.warn("Withdraw audit logging failed after successful update:", auditError);
+    }
 
     showToast("تم تحديث الكمية المسحوبة.");
   } catch (error) {
@@ -5203,182 +5285,100 @@ window.editOrderData = async function(orderId) {
 // 12) المشكلة — مستقلة عن الحالة
 // ==========================================================================
 
+window.toggleOrderIssueEditor = function (issue) {
+  const value = String(issue || "").trim();
+  const input = document.getElementById("orderIssueMessageInput");
+  const summary = document.getElementById("orderIssueSummary");
+  const state = document.querySelector(".issue-editor-state");
+
+  if (input) {
+    input.disabled = !value;
+    if (value && !input.value.trim()) input.value = getIssueLabel(value);
+  }
+
+  if (summary) {
+    summary.textContent = value
+      ? (ISSUE_LABELS[value] || value)
+      : "لا توجد مشكلة مسجلة";
+  }
+
+  if (state) {
+    state.textContent = value ? "موجودة" : "بدون مشكلة";
+    state.classList.toggle("has-issue", !!value);
+  }
+};
+
 window.saveOrderIssue =
-  async function (
-    orderId
-  ) {
-    const order =
-      ordersData.find(
-        (item) =>
-          item.id ===
-          orderId
-      );
-
+  async function (orderId) {
+    const order = ordersData.find((item) => item.id === orderId);
     if (!order) {
-      showToast(
-        "الطلب غير موجود."
-      );
-
+      showToast("الطلب غير موجود.");
       return;
     }
 
-    const select =
-      document.getElementById(
-        "orderIssueSelect"
-      );
+    const select = document.getElementById("orderIssueSelect");
+    const messageInput = document.getElementById("orderIssueMessageInput");
+    if (!select) return;
 
-    if (!select) {
+    const selectedIssue = String(select.value || "").trim().toLowerCase();
+    if (selectedIssue && !ISSUE_VALUES.includes(selectedIssue)) {
+      showToast("❌ نوع المشكلة غير صحيح.");
       return;
     }
 
-    const selectedIssue =
-      String(
-        select.value || ""
-      )
-        .trim()
-        .toLowerCase();
+    const issue = selectedIssue || null;
+    const issueMessage = issue
+      ? String(messageInput?.value || getIssueLabel(issue)).trim()
+      : "";
 
-    let issue =
-      null;
-
-    let issueMessage =
-      "";
-
-    if (selectedIssue) {
-      if (
-        !ISSUE_VALUES.includes(
-          selectedIssue
-        )
-      ) {
-        showToast(
-          "❌ نوع المشكلة غير صحيح."
-        );
-
-        return;
-      }
-
-      issue =
-        selectedIssue;
-
-      const configuredMessage =
-        getIssueLabel(
-          issue
-        );
-
-      const customMessage =
-        prompt(
-          "رسالة المشكلة التي ستظهر للعميل:\n\nاتركها فارغة لاستخدام الرسالة المحفوظة في إعدادات النظام.",
-          order.issueMessage ||
-            configuredMessage
-        );
-
-      if (
-        customMessage ===
-        null
-      ) {
-        return;
-      }
-
-      issueMessage =
-        customMessage.trim();
+    if (issue && !issueMessage) {
+      showToast("❌ اكتب رسالة المشكلة قبل الحفظ.");
+      return;
     }
 
     try {
-      const response =
-        await adminFetch(
-          "/api/orders/update-status",
-          {
-            method:
-              "POST",
+      const response = await adminFetch("/api/orders/update-status", {
+        method: "POST",
+        body: JSON.stringify({
+          orderId: order.id,
+          status: order.status,
+          issue,
+          issueMessage
+        })
+      });
 
-            body:
-              JSON.stringify({
-                orderId:
-                  order.id,
+      const data = await readJsonResponse(response);
+      if (await handleAdminAuthFailure(response, data)) return;
 
-                status:
-                  order.status,
-
-                issue,
-
-                issueMessage
-              })
-          }
-        );
-
-      const data =
-        await readJsonResponse(
-          response
-        );
-
-      if (
-        await handleAdminAuthFailure(
-          response,
-          data
-        )
-      ) {
+      if (!data.success) {
+        showToast("❌ فشل تحديث المشكلة: " + (data.message || ""));
         return;
       }
 
-      if (
-        !data.success
-      ) {
-        showToast(
-          "❌ فشل تحديث المشكلة: " +
-            (
-              data.message ||
-              ""
-            )
-        );
+      order.issue = data.issue ?? issue;
+      order.issueMessage = data.issueMessage ?? issueMessage;
+      if (data.lastUpdate) order.lastUpdate = data.lastUpdate;
 
-        return;
+      refreshOrdersDerivedUI();
+      syncOpenOrderModal(order);
+
+      try {
+        await logAuditEvent(
+          issue ? "تسجيل مشكلة للطلب" : "إزالة مشكلة من الطلب",
+          order.referenceNumber || order.id,
+          issue ? `المشكلة: ${issue}` : "تم اختيار: لا توجد مشكلة"
+        );
+      } catch (auditError) {
+        console.warn("Issue audit logging failed after successful update:", auditError);
       }
 
-      await logAuditEvent(
-        issue
-          ? "تسجيل مشكلة للطلب"
-          : "إزالة مشكلة من الطلب",
-        order.referenceNumber ||
-          order.id,
-        issue
-          ? `المشكلة: ${issue}`
-          : "تم اختيار: لا توجد مشكلة"
-      );
-
-      showToast(
-        issue
-          ? "✅ تم حفظ المشكلة بنجاح."
-          : "✅ تم إزالة المشكلة من الطلب."
-      );
-
-      await loadOrders();
-
-      const updatedOrder =
-        ordersData.find(
-          (item) =>
-            item.id ===
-            order.id
-        );
-
-      if (updatedOrder) {
-        openOrderModal(
-          updatedOrder.id
-        );
-      }
+      showToast(issue ? "✅ تم حفظ المشكلة بنجاح." : "✅ تم إزالة المشكلة من الطلب.");
     } catch (error) {
-      console.error(
-        "Save order issue error:",
-        error?.message ||
-          error
-      );
-
-      showToast(
-        "❌ تعذر تحديث مشكلة الطلب."
-      );
+      console.error("Save order issue error:", error?.message || error);
+      showToast("❌ تعذر تحديث مشكلة الطلب.");
     }
   };
 
-// ==========================================================================
 // 13) الإتلاف اليدوي بعد مرور 5 أيام
 // ==========================================================================
 
