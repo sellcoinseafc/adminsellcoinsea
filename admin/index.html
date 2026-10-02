@@ -92,9 +92,9 @@
 </div></section>
 
 <section id="withdrawTab" class="tab-content">
-<div class="workspace-header"><div><span class="eyebrow">COIN OPERATIONS</span><h2>السحب</h2><p>مساحة تشغيل مخصصة لمتابعة الكمية المطلوبة والمسحوبة والمتبقية.</p></div><select id="withdrawFilter" class="compact-input"><option value="all">كل الحالات</option><option value="new">جديدة</option><option value="review">مراجعة</option><option value="progress">جاري السحب</option><option value="finished">تم السحب</option></select></div>
+<div class="workspace-header"><div><span class="eyebrow">COIN OPERATIONS</span><h2>السحب</h2><p>مساحة تشغيل مخصصة لمتابعة الكمية المطلوبة والمسحوبة والمتبقية.</p></div><select id="withdrawFilter" class="compact-input" onchange="renderWithdrawOrdersTable()"><option value="all">كل الحالات</option><option value="new">جديدة</option><option value="review">مراجعة</option><option value="progress">جاري السحب</option></select></div>
 <div class="withdraw-command-grid"><div class="operation-note"><i class="fa-solid fa-circle-info"></i><div><b>طريقة العمل</b><span>حدّث المسحوب من داخل الطلب. عند اكتمال السحب ينتقل الطلب تلقائيًا لمسار التحويل حسب الحالة المعتمدة.</span></div></div></div>
-<div class="panel"><div class="orders-toolbar"><div><strong>طابور السحب</strong><span>الطلبات التي تحتاج إجراء على الكوينز</span></div></div><div class="table-wrap"><table><thead><tr><th>الطلب</th><th>العميل</th><th>المنصة</th><th>المطلوب</th><th>المسحوب</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="withdrawOrdersTableBody"></tbody></table></div></div></section>
+<div class="panel"><div class="orders-toolbar"><div><strong>طابور السحب</strong><span>الطلبات التي تحتاج إجراء على الكمية المسحوبة والمتبقية.</span></div></div><div class="table-wrap"><table><thead><tr><th>الطلب</th><th>العميل</th><th>المنصة</th><th>المطلوب</th><th>المسحوب</th><th>المتبقي</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="withdrawOrdersTableBody"></tbody></table></div></div></section>
 
 <section id="transferAlertsTab" class="tab-content">
 <div class="workspace-header"><div><span class="eyebrow">FINANCIAL OPERATIONS</span><h2>التحويلات</h2><p>طلبات انتهى سحبها وتنتظر تنفيذ التحويل المالي.</p></div><span id="transferHeaderBadge" class="badge">0</span></div>
@@ -103,11 +103,52 @@
 
 <section id="reviewsTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">REVIEWS</span><h2>إدارة التقييمات</h2></div><div class="head-tools"><input id="reviewSearchInput" class="compact-input" placeholder="بحث بالعميل أو المرجع"><select id="reviewStatusFilter" class="compact-input" onchange="renderReviewsTable()"><option value="all">كل التقييمات</option><option value="pending">بانتظار المراجعة</option><option value="published">منشورة</option><option value="archived">مؤرشفة</option></select></div></div><div class="stats-grid four"><article class="stat-card"><span>إجمالي التقييمات</span><strong id="statTotalReviews">0</strong><i class="fa-solid fa-star"></i></article><article class="stat-card"><span>متوسط التقييم</span><strong id="statAverageRating">0.0 ⭐</strong></article><article class="stat-card"><span>5 نجوم</span><strong id="statFiveStarReviews">0</strong></article><article class="stat-card"><span>بانتظار المراجعة</span><strong id="statPendingReviews">0</strong></article></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>العميل</th><th>المرجع</th><th>المنصة</th><th>الكمية</th><th>التقييم</th><th>التعليق</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead><tbody id="reviewsTableBody"></tbody></table></div><div id="reviewsEmptyState" class="empty">لا توجد تقييمات.</div></div></section>
 
-<section id="statsTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">ANALYTICS</span><h2>الإحصائيات</h2></div></div><div class="stats-grid"><article class="stat-card"><span>إجمالي الطلبات</span><strong id="statsTotalOrders">0</strong></article><article class="stat-card"><span>إجمالي الكوينز</span><strong id="statsTotalCoins">0</strong></article><article class="stat-card"><span>المسحوب</span><strong id="statsWithdrawnCoins">0</strong></article><article class="stat-card"><span>المتبقي</span><strong id="statsRemainingCoins">0</strong></article></div><div class="panel"><div class="panel-title"><h3>سجل المخزون</h3></div><div class="table-wrap"><table><thead><tr><th>المنصة</th><th>المخزون</th><th>آخر تحديث</th></tr></thead><tbody id="stockLogsTableBody"></tbody></table></div></div></section>
+<section id="statsTab" class="tab-content">
+<div class="page-head"><div><span class="eyebrow">ANALYTICS</span><h2>الإحصائيات</h2><p class="page-subtitle">ملخص فعلي للطلبات والكميات والسحب والتحويلات.</p></div></div>
+
+<div class="stats-grid stats-grid-ops">
+  <article class="stat-card"><span>إجمالي الطلبات</span><strong id="statsTotalOrders">0</strong><small id="statsTotalOrdersSub">0 عميل</small></article>
+  <article class="stat-card"><span>إجمالي الكمية</span><strong id="statsTotalCoins">0</strong><small>من جميع الطلبات</small></article>
+  <article class="stat-card"><span>الكمية المسحوبة</span><strong id="statsWithdrawnCoins">0</strong><small id="statsWithdrawnSub">من إجمالي الكمية</small></article>
+  <article class="stat-card"><span>الكمية المتبقية</span><strong id="statsRemainingCoins">0</strong><small>بعد خصم المسحوب</small></article>
+  <article class="stat-card"><span>المبالغ المحولة</span><strong id="statsTransferredMoney">0 ريال</strong><small id="statsTransferredSub">إجمالي المبالغ التي تم تحويلها</small></article>
+</div>
+
+<div class="stats-platform-grid">
+  <article class="stat-card platform-stat platform-stat-ps">
+    <div><span>PlayStation</span><i class="fa-brands fa-playstation"></i></div>
+    <strong id="statsPlayStationCoins">0</strong>
+    <small>إجمالي الكمية المطلوبة</small>
+  </article>
+  <article class="stat-card platform-stat platform-stat-xbox">
+    <div><span>Xbox</span><i class="fa-brands fa-xbox"></i></div>
+    <strong id="statsXboxCoins">0</strong>
+    <small>إجمالي الكمية المطلوبة</small>
+  </article>
+  <article class="stat-card platform-stat platform-stat-pc">
+    <div><span>PC</span><i class="fa-solid fa-desktop"></i></div>
+    <strong id="statsPCCoins">0</strong>
+    <small>إجمالي الكمية المطلوبة</small>
+  </article>
+</div>
+
+<div class="stats-stock-grid">
+  <article class="panel stats-stock-card">
+    <div><div><span class="eyebrow">STOCK</span><h3>مخزون PS / Xbox</h3></div><span id="statsStockPSTrend"></span></div>
+    <strong id="statsStockPSValue">0</strong>
+  </article>
+  <article class="panel stats-stock-card">
+    <div><div><span class="eyebrow">STOCK</span><h3>مخزون PC</h3></div><span id="statsStockPCTrend"></span></div>
+    <strong id="statsStockPCValue">0</strong>
+  </article>
+</div>
+
+<div class="panel stats-audit-panel"><div class="panel-title"><div><span class="eyebrow">ACTIVITY</span><h3>آخر حركات النظام</h3></div></div><div class="table-wrap"><table><thead><tr><th>الوقت</th><th>المشرف</th><th>العملية</th><th>الطلب</th><th>التفاصيل</th></tr></thead><tbody id="stockLogsTableBody"></tbody></table></div></div>
+</section>
 
 <section id="inventoryTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">INVENTORY</span><h2>إدارة المخزون</h2></div></div><div class="inventory-grid"><article class="inventory-card"><i class="fa-brands fa-playstation"></i><span>PS / Xbox</span><strong id="invStockPS">0</strong></article><article class="inventory-card"><i class="fa-solid fa-desktop"></i><span>PC</span><strong id="invStockPC">0</strong></article></div><div class="panel"><p class="muted">آخر تحديث: <b id="invLastUpdate">—</b></p></div></section>
 
-<section id="customerProfileTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">CUSTOMERS</span><h2>ملف العملاء</h2></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>العميل</th><th>الجوال</th><th>عدد الطلبات</th><th>آخر طلب</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div></div></section>
+<section id="customerProfileTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">CUSTOMERS</span><h2>ملف العملاء</h2></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>العميل</th><th>الجوال</th><th>عدد الطلبات</th><th>إجمالي الكمية</th><th>إجمالي المبلغ</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div></div></section>
 
 <section id="pricingTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">PRICING</span><h2>الأسعار والعروض</h2></div><button class="btn-primary" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button></div><div class="form-grid">
 <div class="panel"><h3>إعدادات المتجر</h3><div class="field"><label>اسم المتجر</label><input id="storeNameInput" class="form-control"></div><div class="field"><label>اسم اللعبة</label><input id="gameName" class="form-control"></div><div class="field"><label>الإصدار</label><input id="gameVersion" class="form-control" type="number"></div><div class="field"><label>واتساب الدعم</label><input id="supportWhatsappInput" class="form-control"></div></div>
