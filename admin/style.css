@@ -3762,3 +3762,20 @@ body.light-mode{
     font-size:1.35rem!important;
   }
 }
+
+
+#orderDetailModal .platform-order-playstation .order-basic-price,
+#orderDetailModal .platform-order-playstation .detail-order-amount{
+  border-color:rgba(47,128,237,.55)!important;
+  background:rgba(47,128,237,.08)!important;
+}
+#orderDetailModal .platform-order-xbox .order-basic-price,
+#orderDetailModal .platform-order-xbox .detail-order-amount{
+  border-color:rgba(34,197,94,.55)!important;
+  background:rgba(34,197,94,.08)!important;
+}
+#orderDetailModal .platform-order-pc .order-basic-price,
+#orderDetailModal .platform-order-pc .detail-order-amount{
+  border-color:rgba(239,68,68,.55)!important;
+  background:rgba(239,68,68,.08)!important;
+}
