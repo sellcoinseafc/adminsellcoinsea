@@ -46,8 +46,9 @@
 <button class="sidebar-link logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i><span>تسجيل الخروج</span></button>
 </div>
 </nav></aside>
+<div id="sidebarOverlay" class="sidebar-overlay" aria-hidden="true" onclick="closeSidebar()"></div>
 <main class="main-wrapper" id="mainWrapper">
-<header class="topbar"><div class="topbar-right"><button class="icon-btn mobile-only" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button><div><div class="eyebrow">SAMI COINS</div><h1 id="pageTitleHeading">الرئيسية</h1></div></div>
+<header class="topbar"><div class="topbar-right"><button id="sidebarMenuToggle" class="icon-btn mobile-only" type="button" aria-label="فتح القائمة" aria-expanded="false" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button><div><div class="eyebrow">SAMI COINS</div><h1 id="pageTitleHeading">الرئيسية</h1></div></div>
 <div class="topbar-left"><div class="global-search"><i class="fa-solid fa-magnifying-glass"></i><input id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="بحث بالمرجع، الجوال أو الاسم"></div><button id="storeStatusToggleBtn" class="store-status-control is-open" aria-pressed="true" onclick="toggleStoreStatus()">
   <span class="store-switch-track" aria-hidden="true"><span class="store-switch-thumb"></span></span>
   <span class="store-status-copy"><i class="fa-solid fa-store"></i><span id="storeStatusText">ONLINE</span></span>
