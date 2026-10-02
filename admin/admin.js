@@ -181,10 +181,16 @@ async function adminFetch(
     );
   }
 
-  return fetch(url, {
+  const requestOptions = {
     ...options,
     headers
-  });
+  };
+
+  if (requestOptions.body && typeof requestOptions.body !== "string") {
+    requestOptions.body = JSON.stringify(requestOptions.body);
+  }
+
+  return fetch(url, requestOptions);
 }
 
 async function readJsonResponse(
