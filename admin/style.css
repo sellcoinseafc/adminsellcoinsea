@@ -598,3 +598,39 @@ tbody tr:hover td{background:var(--v3-surface-2)!important}
  .stats-grid,.stats-grid.four,.inventory-grid{grid-template-columns:1fr!important}
  .hero-actions{grid-template-columns:1fr!important}
 }
+
+/* V3 operations dashboard components */
+.nav-group{display:grid;gap:4px;margin-bottom:12px}
+.nav-group-label{padding:4px 11px;color:var(--v3-muted);font-size:.59rem;font-weight:900;letter-spacing:.6px}
+.nav-group-security{margin-top:auto}
+.workspace-header{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:0 0 14px}
+.workspace-header h2{margin:4px 0;color:var(--v3-text);font-size:1.55rem}
+.workspace-header p{margin:0;color:var(--v3-muted);font-size:.78rem}
+.workspace-actions{display:flex;gap:8px}
+.command-summary{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:12px;margin-bottom:14px}
+.command-main,.command-side{border:1px solid var(--v3-border);background:var(--v3-surface);border-radius:18px;padding:19px;box-shadow:var(--v3-shadow)}
+.command-main strong{display:block;font-size:1.1rem;margin:7px 0;color:var(--v3-text)}
+.command-main p{margin:0;color:var(--v3-muted);font-size:.75rem;line-height:1.8}
+.command-side span,.command-side small{display:block;color:var(--v3-muted);font-size:.67rem}
+.command-side b{display:block;margin:7px 0;color:var(--v3-green);font-size:1rem}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(270px,.7fr);gap:14px}
+.quick-action{display:grid;grid-template-columns:40px 1fr 18px;align-items:center;gap:10px;width:100%;padding:12px 4px;border:0;border-bottom:1px solid var(--v3-border);background:transparent;color:var(--v3-text);text-align:right}
+.quick-action:last-child{border-bottom:0}
+.quick-action>span{width:38px;height:38px;display:grid;place-items:center;border-radius:11px;background:var(--v3-green-soft);color:var(--v3-green)}
+.quick-action b,.quick-action small{display:block}
+.quick-action b{font-size:.78rem}
+.quick-action small{margin-top:3px;color:var(--v3-muted);font-size:.64rem}
+.quick-action>i{color:var(--v3-muted);font-size:.65rem}
+@media(max-width:900px){
+ .workspace-header{display:block}
+ .workspace-actions{margin-top:12px}
+ .command-summary{grid-template-columns:1fr}
+ .dashboard-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+ .workspace-header h2{font-size:1.3rem}
+ .workspace-actions{display:grid;grid-template-columns:1fr 1fr}
+ .command-main,.command-side{padding:15px;border-radius:15px}
+ .dashboard-grid{gap:10px}
+ .nav-group-label{padding-right:8px}
+}
