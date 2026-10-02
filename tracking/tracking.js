@@ -1740,6 +1740,7 @@ function handleStatusState(
 
     if (
         status === "finished" ||
+        status === "pending_transfer" ||
         status === "transferred" ||
         status === "completed"
     ) {
