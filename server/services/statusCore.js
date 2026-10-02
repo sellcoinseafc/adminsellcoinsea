@@ -52,3 +52,29 @@ export function normalizeStoredStatus(value) {
 export function isValidStatus(value) {
   return normalizeStatus(value) !== "";
 }
+
+export function canTransitionStatus(fromValue, toValue) {
+  const from = normalizeStoredStatus(fromValue);
+  const to = normalizeStatus(toValue);
+
+  if (!from || !to) return false;
+  if (from === to) return true;
+
+  // الحالة المكتملة قابلة للإرجاع لأي حالة تشغيلية،
+  // بينما الأرشفة تبقى مسارًا منفصلًا ولا يمكن الرجوع منها.
+  if (from === "completed") {
+    return [
+      "new",
+      "review",
+      "progress",
+      "finished",
+      "pending_transfer",
+      "transferred",
+      "completed"
+    ].includes(to);
+  }
+
+  return Boolean(
+    ALLOWED_STATUS_TRANSITIONS[from]?.has(to)
+  );
+}
