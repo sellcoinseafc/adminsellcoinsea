@@ -7180,3 +7180,163 @@ textarea.form-control{
     font-size:.69rem!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE STEP 3: INVENTORY CARDS — 2026-10-03
+   ========================================================================== */
+@media (max-width:600px){
+  /* Inventory is a separate, clean vertical module below the 2x2 statuses. */
+  .dashboard-stock-group{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    margin:0!important;
+  }
+
+  .dashboard-stock-card{
+    width:100%!important;
+    min-width:0!important;
+    min-height:132px!important;
+    height:132px!important;
+    box-sizing:border-box!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:16px 52px!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    text-align:center!important;
+  }
+
+  .dashboard-stock-card>div{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    width:100%!important;
+    margin:0 0 8px!important;
+  }
+
+  .dashboard-stock-card>div span{
+    display:block!important;
+    width:auto!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:.76rem!important;
+    line-height:1.35!important;
+    color:#cbd5e1!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+  }
+
+  .dashboard-stock-card>div i{
+    position:static!important;
+    width:auto!important;
+    height:auto!important;
+    min-width:0!important;
+    display:inline!important;
+    font-size:1.15rem!important;
+    background:transparent!important;
+    border-radius:0!important;
+  }
+
+  .dashboard-stock-card>div i.fa-playstation{
+    color:#38aaff!important;
+  }
+  .dashboard-stock-card>div i.fa-xbox{
+    color:#22c55e!important;
+  }
+  .dashboard-stock-card>div i.fa-desktop{
+    color:#ef476f!important;
+  }
+
+  .dashboard-stock-card>strong{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:2rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    color:#fff!important;
+    font-variant-numeric:tabular-nums!important;
+    letter-spacing:-.6px!important;
+    text-align:center!important;
+  }
+
+  /* Trend indicator: always in the lower-left corner, isolated from the
+     stock number so the arrow can never cover digits. */
+  .dashboard-stock-card .stock-trend-wrap{
+    position:absolute!important;
+    left:12px!important;
+    bottom:12px!important;
+    top:auto!important;
+    right:auto!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:11px!important;
+    box-sizing:border-box!important;
+    z-index:2!important;
+    font-size:1rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    background:rgba(21,156,255,.10)!important;
+    border:1px solid rgba(21,156,255,.28)!important;
+    color:#38aaff!important;
+  }
+
+  .dashboard-stock-card .stock-trend-wrap.trend-down,
+  .dashboard-stock-card .stock-trend-wrap.down{
+    background:rgba(239,68,68,.10)!important;
+    border-color:rgba(239,68,68,.34)!important;
+    color:#ff5d68!important;
+  }
+
+  .dashboard-stock-card .stock-trend-wrap.trend-up,
+  .dashboard-stock-card .stock-trend-wrap.up{
+    background:rgba(34,197,94,.10)!important;
+    border-color:rgba(34,197,94,.34)!important;
+    color:#22c55e!important;
+  }
+
+  /* PS/Xbox combined card */
+  .dashboard-stock-card:nth-child(1){
+    border-color:rgba(56,170,255,.34)!important;
+    background:linear-gradient(145deg,rgba(8,28,50,.98),rgba(5,16,30,.98))!important;
+  }
+
+  /* PC card */
+  .dashboard-stock-card:nth-child(2){
+    border-color:rgba(239,68,68,.40)!important;
+    background:linear-gradient(145deg,rgba(45,10,18,.94),rgba(25,7,13,.98))!important;
+  }
+}
+
+@media (max-width:360px){
+  .dashboard-stock-card{
+    min-height:122px!important;
+    height:122px!important;
+    padding-inline:46px!important;
+  }
+  .dashboard-stock-card>strong{
+    font-size:1.82rem!important;
+  }
+  .dashboard-stock-card .stock-trend-wrap{
+    left:10px!important;
+    bottom:10px!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    min-height:32px!important;
+  }
+}
