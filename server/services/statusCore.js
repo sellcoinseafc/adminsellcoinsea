@@ -16,7 +16,16 @@ export const ALLOWED_STATUS_TRANSITIONS = {
   finished: new Set(["finished", "pending_transfer"]),
   pending_transfer: new Set(["pending_transfer", "transferred"]),
   transferred: new Set(["transferred", "completed"]),
-  completed: new Set(["completed"]),
+  // المكتمل يمكن إرجاعه لأي حالة تشغيلية، مع بقاء "archived" مسارًا منفصلًا.
+  completed: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
   archived: new Set(["archived"])
 };
 
