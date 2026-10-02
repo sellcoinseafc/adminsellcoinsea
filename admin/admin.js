@@ -1080,6 +1080,7 @@ function renderPlatformBadge(platform) {
   return `
     <span class="platform-badge ${meta.className}" title="${escapeAttribute(meta.label)}" aria-label="${escapeAttribute(meta.label)}">
       <i class="${meta.icon}" aria-hidden="true"></i>
+      <span class="platform-badge-name">${escapeHtml(meta.label)}</span>
     </span>
   `;
 }
@@ -2049,14 +2050,17 @@ function refreshOrdersDerivedUI() {
   sortOrdersByPriority();
 
   const totalOrders = ordersData.length;
+  const normalizedStatus = (item) =>
+    String(item?.status || "").trim().toLowerCase().replace(/\s+/g, "_");
+
   const needsReview = ordersData.filter((item) =>
-    ["new", "pending", "review"].includes(String(item.status || "").toLowerCase())
+    ["new", "pending", "review"].includes(normalizedStatus(item))
   ).length;
   const inProgress = ordersData.filter((item) =>
-    String(item.status || "").toLowerCase() === "progress"
+    normalizedStatus(item) === "progress"
   ).length;
   const completedOrders = ordersData.filter((item) =>
-    String(item.status || "").toLowerCase() === "completed"
+    normalizedStatus(item) === "completed"
   ).length;
 
   const kpis = {
@@ -2462,7 +2466,8 @@ window.renderOrdersTables =
               </b>
             </div>
           </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="order-value-box table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="ريال سعودي" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
@@ -2505,7 +2510,8 @@ window.renderRecentOrdersTable =
               </b>
             </div>
           </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="order-value-box recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="ريال سعودي" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
@@ -2618,7 +2624,9 @@ window.renderTransferAlertsTable =
             <div class="order-ref-stack"><span class="table-field-label">المرجع</span><b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b></div>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
+          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
+          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
+          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية المباعة</span><strong class="table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="table-large-value">${escapeHtml(amount)}</strong></td>
           <td data-label="طريقة الدفع" class="order-data-cell"><span class="table-field-label">طريقة الدفع</span><span class="badge badge-review transfer-payment-badge">${escapeHtml(order.paymentMethod || "---")}${order.bankName ? " - " + escapeHtml(order.bankName) : ""}</span></td>
           <td data-label="تاريخ الطلب" class="order-data-cell"><span class="table-field-label">تاريخ الطلب</span><span class="last-update-value">${escapeHtml(createdAt)}</span></td>
