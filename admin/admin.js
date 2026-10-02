@@ -2057,19 +2057,35 @@ function refreshOrdersDerivedUI() {
   renderPurgeOrdersTable();
   renderClientsTable(activeSearchQuery);
 
-  const newOrdersBadge =
-    document.getElementById("mobileOrdersBadge");
+  const newOrders =
+    ordersData.filter((item) =>
+      ["new", "review"].includes(item.status)
+    ).length;
 
-  if (newOrdersBadge) {
-    const newOrders =
-      ordersData.filter((item) =>
-        ["new", "review"].includes(item.status)
-      ).length;
+  const newOrdersBadges = [
+    document.getElementById("mobileOrdersBadge"),
+    document.getElementById("sidebarNewOrdersBadge")
+  ];
 
-    newOrdersBadge.textContent = String(newOrders);
-    newOrdersBadge.style.display =
-      newOrders > 0 ? "grid" : "none";
-  }
+  newOrdersBadges.forEach((badge) => {
+    if (!badge) return;
+    badge.textContent = String(newOrders);
+    badge.style.display = newOrders > 0 ? "grid" : "none";
+  });
+
+  const withdrawCount = ordersData.filter((item) =>
+    ["new", "pending", "review", "progress"].includes(item.status)
+  ).length;
+
+  const withdrawBadge = document.getElementById("withdrawBadgeCount");
+  if (withdrawBadge) withdrawBadge.textContent = String(withdrawCount);
+
+  const transferCount = ordersData.filter(
+    (item) => item.status === "pending_transfer"
+  ).length;
+
+  const transferBadge = document.getElementById("transferBadgeCount");
+  if (transferBadge) transferBadge.textContent = String(transferCount);
 }
 
 function sortOrdersByPriority() {
@@ -7617,6 +7633,15 @@ window.closeSidebar =
     }
     if (menuIcon) menuIcon.className = "fa-solid fa-bars";
   };
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar?.classList.contains("mobile-open")) {
+      closeSidebar();
+    }
+  }
+});
 
 window.toggleSidebar =
   function () {
