@@ -2006,9 +2006,9 @@ router.post(
             "review",
             "progress",
             "finished",
+            "pending_transfer",
             "transferred",
-            "completed",
-            "archived"
+            "completed"
           ];
           const input =
             req.body?.messages &&
