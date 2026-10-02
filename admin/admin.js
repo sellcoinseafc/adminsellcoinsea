@@ -4445,6 +4445,11 @@ function syncOpenOrderModal(order) {
   if (statusSelect) {
     statusSelect.value = order.status || ""; statusSelect.className = `modal-status-select status-${order.status || "unknown"}`;
   }
+  const statusDisplay=document.getElementById("modalOrderStatusDisplay");
+  if(statusDisplay){
+    statusDisplay.className="order-status-display status-"+(order.status||"unknown");
+    statusDisplay.textContent=STATUS_LABELS[order.status]||order.status||"---";
+  }
 
   const quantityValues =
     modal.querySelectorAll(
