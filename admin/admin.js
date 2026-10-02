@@ -7737,7 +7737,7 @@ window.toggleTheme =
 (function initThemePreference(){
   try {
     const saved = localStorage.getItem("samiCoinsTheme");
-    const light = saved !== "dark";
+    const light = saved === "light";
     document.body.classList.toggle("light-mode", light);
     const icon = document.querySelector("#themeToggleBtn i");
     if (icon) {
