@@ -4550,8 +4550,9 @@ window.openOrderModal = function (orderId) {
   const statusLabel=STATUS_LABELS[order.status]||order.status||"---";
   const platform=String(order.platform||"").trim();
   const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
-  const paymentMethod=String(order.paymentMethod||"");
+  const paymentCode=String(order.paymentMethod||"").toLowerCase();
   const paymentPreview=getPaymentPreviewText(order);
+  const paymentMethod = paymentCode === "bank" ? (order.bankName || order.paymentPreview?.bankName || "تحويل بنكي") : paymentCode === "wallet" ? (order.paymentPreview?.walletName || "محفظة رقمية") : paymentCode === "paypal" ? "PayPal" : paymentCode === "usd" || paymentCode === "usdt" ? "USD / USDT" : paymentCode === "western" ? "Western Union" : (order.paymentMethod || "");
   const whatsapp=String(order.phone||"").replace(/[^0-9+]/g,"").replace(/^00/,"+");
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}`:"#";
   const statusMessage=getStatusMessage(order.status,order);
