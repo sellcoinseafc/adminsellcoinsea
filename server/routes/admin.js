@@ -803,6 +803,23 @@ router.get(
   }
 );
 
+router.get(
+  "/session",
+  requireAdmin,
+  async (req, res) => {
+    return res.json({
+      success: true,
+      admin: {
+        uid: String(req.admin?.uid || ""),
+        email: String(req.admin?.email || ""),
+        name: String(req.admin?.name || "مشرف النظام"),
+        role: "admin",
+        active: req.admin?.active !== false
+      }
+    });
+  }
+);
+
 /**
  * ============================================================================
  * POST /api/admin/decrypt-order
