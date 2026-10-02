@@ -2436,16 +2436,17 @@ window.renderRecentOrdersTable =
 
       return `
         <tr class="recent-order-row">
-          <td data-label="الطلب">
+          <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
+              <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
           </td>
-          <td data-label="العميل"><strong class="recent-customer-name">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${escapeHtml(getDisplayPrice(order))}</strong></td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
@@ -2493,10 +2494,11 @@ window.renderWithdrawOrdersTable =
 
       return `
         <tr class="withdraw-order-row">
-          <td data-label="الطلب">
+          <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
+              <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(order.internalReference || order.orderId || order.id || "---")}</small>
-              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
+              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
             </div>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
