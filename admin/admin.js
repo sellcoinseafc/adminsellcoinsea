@@ -4252,7 +4252,7 @@ window.openOrderModal = function (orderId) {
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
   modalBody.innerHTML=`
-    <div class="order-detail-shell">
+    <div class="order-detail-shell platform-order-${platformClass}">
       <div class="order-detail-accordion">
         <section class="order-detail-accordion-item is-open">
           <button type="button" class="order-detail-accordion-trigger" aria-expanded="true" onclick="toggleOrderDetailSection(this)">
