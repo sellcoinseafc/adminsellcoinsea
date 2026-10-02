@@ -1011,10 +1011,15 @@ window.copyTrackingLink =
 
       
     } catch {
-      prompt(
-        "نسخ رابط التتبع المباشر:",
-        url
-      );
+      const area = document.createElement("textarea");
+      area.value = url;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
     }
   };
 
@@ -1795,32 +1800,40 @@ async function loadOrders() {
       ordersData.length ||
       previousCount;
 
-    const mobileOrdersBadge = document.getElementById("mobileOrdersBadge");
-    if (mobileOrdersBadge) {
-      const newOrders = ordersData.filter((item) => ["new","review"].includes(item.status)).length;
-      mobileOrdersBadge.textContent = String(newOrders);
-      mobileOrdersBadge.style.display = newOrders > 0 ? "grid" : "none";
-    }
-
-    sortOrdersByPriority();
-
-    renderInventoryUI(currentSettingsData);
-    renderDashboardQuickStats();
-    renderStatisticsPage();
-    renderOrdersTables();
-    renderWithdrawOrdersTable();
-    renderRecentOrdersTable();
-    renderTransferAlertsTable();
-    renderPurgeOrdersTable();
-    renderClientsTable(
-      activeSearchQuery
-    );
+    refreshOrdersDerivedUI();
   } catch (error) {
     console.error(
       "Load Orders Error:",
       error?.message ||
         error
     );
+  }
+}
+
+function refreshOrdersDerivedUI() {
+  sortOrdersByPriority();
+  renderInventoryUI(currentSettingsData);
+  renderDashboardQuickStats();
+  renderStatisticsPage();
+  renderOrdersTables();
+  renderWithdrawOrdersTable();
+  renderRecentOrdersTable();
+  renderTransferAlertsTable();
+  renderPurgeOrdersTable();
+  renderClientsTable(activeSearchQuery);
+
+  const newOrdersBadge =
+    document.getElementById("mobileOrdersBadge");
+
+  if (newOrdersBadge) {
+    const newOrders =
+      ordersData.filter((item) =>
+        ["new", "review"].includes(item.status)
+      ).length;
+
+    newOrdersBadge.textContent = String(newOrders);
+    newOrdersBadge.style.display =
+      newOrders > 0 ? "grid" : "none";
   }
 }
 
@@ -4590,6 +4603,186 @@ window.openOrderModal = function (orderId) {
   modal.classList.add("active");
 };
 
+function syncOpenOrderModal(order) {
+  if (!order) return;
+
+  const modal = document.getElementById("orderDetailModal");
+  if (!modal || !modal.classList.contains("active")) return;
+
+  const statusLabel =
+    STATUS_LABELS[order.status] || order.status || "---";
+
+  const total =
+    Math.max(0, Number(order.totalQty || 0) || 0);
+
+  const withdrawn =
+    Math.min(
+      total,
+      Math.max(
+        0,
+        Number(
+          order.withdrawnQuantity ??
+          order.drawnCoins ??
+          0
+        ) || 0
+      )
+    );
+
+  const remaining = Math.max(0, total - withdrawn);
+  const percent =
+    total > 0 ? Math.min(100, (withdrawn / total) * 100) : 0;
+
+  const locked =
+    [
+      "finished",
+      "pending_transfer",
+      "transferred",
+      "completed",
+      "archived"
+    ].includes(order.status);
+
+  const badge =
+    modal.querySelector(
+      ".order-summary-section .order-status-badge"
+    );
+
+  if (badge) badge.textContent = statusLabel;
+
+  const statusEditorLabel =
+    modal.querySelector(
+      ".order-status-editor > div:first-child strong"
+    );
+
+  if (statusEditorLabel) {
+    statusEditorLabel.textContent = statusLabel;
+  }
+
+  const statusSelect =
+    document.getElementById("modalOrderStatusSelect");
+
+  if (statusSelect) {
+    statusSelect.value = order.status || "";
+  }
+
+  const quantityValues =
+    modal.querySelectorAll(
+      ".quantity-grid .quantity-card strong"
+    );
+
+  if (quantityValues[0]) {
+    quantityValues[0].textContent =
+      formatCoinsNumber(total);
+  }
+
+  if (quantityValues[1]) {
+    quantityValues[1].textContent =
+      formatCoinsNumber(withdrawn);
+  }
+
+  if (quantityValues[2]) {
+    quantityValues[2].textContent =
+      formatCoinsNumber(remaining);
+  }
+
+  const withdrawEditor =
+    modal.querySelector(".withdraw-editor");
+
+  if (withdrawEditor) {
+    withdrawEditor.classList.toggle(
+      "is-locked",
+      locked
+    );
+
+    const helper =
+      withdrawEditor.querySelector(
+        ".withdraw-editor-top small"
+      );
+
+    if (helper) {
+      helper.textContent =
+        locked
+          ? "مقفلة لأن الطلب وصل إلى مرحلة نهائية."
+          : "أدخل الكمية المسحوبة الفعلية من الحساب.";
+    }
+  }
+
+  const progress =
+    modal.querySelector(
+      ".withdraw-editor .progress-track > span"
+    );
+
+  if (progress) {
+    progress.style.width =
+      percent.toFixed(2) + "%";
+  }
+
+  const percentLabel =
+    modal.querySelector(
+      ".withdraw-editor-top > strong"
+    );
+
+  if (percentLabel) {
+    percentLabel.textContent =
+      percent.toFixed(2) + "%";
+  }
+
+  const quantityInput =
+    document.getElementById("modalWithdrawnQuantity");
+
+  if (quantityInput) {
+    quantityInput.value =
+      formatCoinsNumber(withdrawn);
+    quantityInput.disabled = locked;
+  }
+
+  const quantityButton =
+    quantityInput?.parentElement?.querySelector("button");
+
+  if (quantityButton) {
+    quantityButton.disabled = locked;
+  }
+
+  const statusMessage =
+    document.getElementById(
+      "modalStatusMessagePreview"
+    );
+
+  if (statusMessage) {
+    statusMessage.textContent =
+      getStatusMessage(order.status, order);
+  }
+
+  const whatsappNumber =
+    String(
+      order.whatsapp || order.phone || ""
+    ).replace(/^\+/, "");
+
+  const whatsappLink =
+    modal.querySelector(
+      ".message-actions .btn-whatsapp"
+    );
+
+  if (whatsappLink) {
+    const message =
+      getStatusMessage(order.status, order);
+
+    if (whatsappNumber) {
+      whatsappLink.href =
+        "https://wa.me/" +
+        whatsappNumber +
+        "?text=" +
+        encodeURIComponent(message);
+
+      whatsappLink.classList.remove("disabled");
+      whatsappLink.onclick = null;
+    } else {
+      whatsappLink.href = "#";
+      whatsappLink.classList.add("disabled");
+      whatsappLink.onclick = () => false;
+    }
+  }
+}
+
 function getStatusMessage(status,order){
   const template=currentSettingsData.statusMessages?.[status]||DEFAULT_STATUS_MESSAGES[status]||"{customerName}، {status}";
   return template.replace(/\{customerName\}/g,order?.name||"").replace(/\{referenceNumber\}/g,order?.referenceNumber||"").replace(/\{status\}/g,STATUS_LABELS[status]||status||"");
@@ -4611,16 +4804,209 @@ window.copyValue=async function(value){
 };
 window.copyElementValue=function(id){const el=document.getElementById(id);if(!el||!el.textContent||/^•+$/.test(el.textContent.trim())){showToast("فك التشفير أولاً.");return;}copyValue(el.textContent.trim());};
 window.saveModalOrderStatus=async function(orderId){
-  const order=ordersData.find((item)=>item.id===orderId);const select=document.getElementById("modalOrderStatusSelect");if(!order||!select||!select.value)return;
-  const nextStatus=select.value;if(nextStatus===order.status){showToast("الحالة لم تتغير.");return;}
-  try{const response=await adminFetch("/api/orders/update-status",{method:"POST",body:JSON.stringify({orderId,status:nextStatus})});const data=await readJsonResponse(response);if(await handleAdminAuthFailure(response,data))return;if(!data.success){showToast("❌ "+(data.message||"تعذر تحديث الحالة."));return;}await logAuditEvent("تعديل حالة الطلب",order.referenceNumber,`تم تغيير الحالة إلى: ${nextStatus}`);showToast("تم تحديث حالة الطلب.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Modal status update:",error);showToast("❌ تعذر تحديث حالة الطلب.");}
+  const order =
+    ordersData.find((item) => item.id === orderId);
+
+  const select =
+    document.getElementById("modalOrderStatusSelect");
+
+  if (!order || !select || !select.value) return;
+
+  const nextStatus = select.value;
+
+  if (nextStatus === order.status) {
+    showToast("الحالة لم تتغير.");
+    return;
+  }
+
+  try {
+    const response = await adminFetch(
+      "/api/orders/update-status",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          orderId,
+          status: nextStatus
+        })
+      }
+    );
+
+    const data = await readJsonResponse(response);
+
+    if (await handleAdminAuthFailure(response, data)) return;
+
+    if (!data.success) {
+      showToast(
+        "❌ " +
+        (data.message || "تعذر تحديث حالة الطلب.")
+      );
+      return;
+    }
+
+    order.status = data.status || nextStatus;
+
+    if (data.issue !== undefined) {
+      order.issue = data.issue;
+    }
+
+    if (data.issueMessage !== undefined) {
+      order.issueMessage = data.issueMessage;
+    }
+
+    if (data.completedAt) {
+      order.completedAt = data.completedAt;
+    }
+
+    if (data.purgeDueAt) {
+      order.purgeDueAt = data.purgeDueAt;
+    }
+
+    if (data.transferredAt) {
+      order.transferredAt = data.transferredAt;
+    }
+
+    if (data.transferredBy) {
+      order.transferredBy = data.transferredBy;
+    }
+
+    if (data.transferCompleted !== undefined) {
+      order.transferCompleted = data.transferCompleted;
+    }
+
+    if (data.lastUpdate) {
+      order.lastUpdate = data.lastUpdate;
+    }
+
+    await logAuditEvent(
+      "تعديل حالة الطلب",
+      order.referenceNumber,
+      "تم تغيير الحالة إلى: " + order.status
+    );
+
+    refreshOrdersDerivedUI();
+    syncOpenOrderModal(order);
+
+    showToast("تم تحديث حالة الطلب.");
+  } catch (error) {
+    console.error("Modal status update:", error);
+    showToast("❌ تعذر تحديث حالة الطلب.");
+  }
 };
+
 window.saveModalWithdrawnQuantity=async function(orderId){
-  const order=ordersData.find((item)=>item.id===orderId);const input=document.getElementById("modalWithdrawnQuantity");if(!order||!input)return;
-  if(["finished","pending_transfer","transferred","completed","archived"].includes(order.status)){showToast("هذه الكمية مقفلة لهذه الحالة.");return;}
-  const value=Number(String(input.value||"").replace(/,/g,"").replace(/[^0-9]/g,""))||0;const total=Number(order.totalQty)||0;if(value<0||value>total){showToast(`❌ الكمية المسحوبة يجب أن تكون بين 0 و${formatCoinsNumber(total)}.`);return;}
-  try{const response=await adminFetch("/api/orders/update-drawn",{method:"POST",body:JSON.stringify({orderId,withdrawnQuantity:value})});const data=await readJsonResponse(response);if(await handleAdminAuthFailure(response,data))return;if(!data.success){showToast("❌ "+(data.message||"تعذر تحديث الكمية."));return;}await logAuditEvent("تحديث سحب الكوينز",order.referenceNumber,`تم تحديث الكمية المسحوبة إلى ${value}`);showToast("تم تحديث الكمية المسحوبة.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Withdrawn quantity update:",error);showToast("❌ تعذر تحديث الكمية المسحوبة.");}
+  const order =
+    ordersData.find((item) => item.id === orderId);
+
+  const input =
+    document.getElementById("modalWithdrawnQuantity");
+
+  if (!order || !input) return;
+
+  if (
+    [
+      "finished",
+      "pending_transfer",
+      "transferred",
+      "completed",
+      "archived"
+    ].includes(order.status)
+  ) {
+    showToast("هذه الكمية مقفلة لهذه الحالة.");
+    return;
+  }
+
+  const value =
+    Number(
+      String(input.value || "")
+        .replace(/,/g, "")
+        .replace(/[^0-9]/g, "")
+    ) || 0;
+
+  const total = Number(order.totalQty) || 0;
+
+  if (value < 0 || value > total) {
+    showToast(
+      "❌ الكمية المسحوبة يجب أن تكون بين 0 و" +
+      formatCoinsNumber(total) +
+      "."
+    );
+    return;
+  }
+
+  try {
+    const response = await adminFetch(
+      "/api/orders/update-drawn",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          orderId,
+          withdrawnQuantity: value
+        })
+      }
+    );
+
+    const data = await readJsonResponse(response);
+
+    if (await handleAdminAuthFailure(response, data)) return;
+
+    if (!data.success) {
+      showToast(
+        "❌ " +
+        (data.message || "تعذر تحديث الكمية.")
+      );
+      return;
+    }
+
+    order.withdrawnQuantity =
+      Number(data.withdrawnQuantity ?? value);
+
+    order.drawnCoins =
+      Number(
+        data.drawnCoins ??
+        order.withdrawnQuantity
+      );
+
+    order.remainingQuantity =
+      Number(
+        data.remainingQuantity ??
+        Math.max(
+          0,
+          total - order.withdrawnQuantity
+        )
+      );
+
+    if (data.lastUpdate) {
+      order.lastUpdate = data.lastUpdate;
+    }
+
+    if (data.withdrawnUpdatedAt) {
+      order.withdrawnUpdatedAt =
+        data.withdrawnUpdatedAt;
+    }
+
+    await logAuditEvent(
+      "تحديث سحب الكوينز",
+      order.referenceNumber,
+      "تم تحديث الكمية المسحوبة إلى " +
+      order.withdrawnQuantity
+    );
+
+    refreshOrdersDerivedUI();
+    syncOpenOrderModal(order);
+
+    showToast("تم تحديث الكمية المسحوبة.");
+  } catch (error) {
+    console.error(
+      "Withdrawn quantity update:",
+      error
+    );
+
+    showToast(
+      "❌ تعذر تحديث الكمية المسحوبة."
+    );
+  }
 };
+
 window.copyModalStatusMessage=async function(orderId){const order=ordersData.find((item)=>item.id===orderId);if(order)await copyValue(getStatusMessage(order.status,order));};
 window.openOrderEditForm=function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);if(!order)return;const body=document.getElementById("modalOrderBody");if(!body)return;
