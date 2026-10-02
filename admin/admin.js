@@ -733,23 +733,24 @@ function startLiveClock() {
   }
 
   const updateClock = () => {
-    const now =
-      new Date();
-
-    clockEl.innerText =
-      now.toLocaleString(
-        "en-GB",
-        {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          timeZone:
-            "Asia/Riyadh"
-        }
-      );
+    const now = new Date();
+    const time = now.toLocaleTimeString("en-GB", {
+      timeZone: "Asia/Riyadh",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+    const dateText = now.toLocaleDateString("en-GB", {
+      timeZone: "Asia/Riyadh",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+    const weekday = new Intl.DateTimeFormat("ar", {
+      timeZone: "Asia/Riyadh",
+      weekday: "long"
+    }).format(now);
+    clockEl.innerHTML = `<span class="clock-stack"><b>${time}</b><span>${dateText}</span><small>${weekday}</small></span>`;
   };
 
   updateClock();
@@ -4150,7 +4151,7 @@ window.openOrderModal = function (orderId) {
   modalBody.innerHTML=`
     <div class="order-detail-shell">
       <section class="order-detail-section order-summary-section">
-        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div><span class="order-status-badge">${escapeHtml(statusLabel)}</span></div>
+        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div>${`<span class="order-status-badge ${order.issue ? "status-problem" : `status-${order.status || "unknown"}`}`}>${escapeHtml(statusLabel)}</span>`}</div>
         <div class="order-identity-grid">
           <button class="copy-pill" onclick="copyTrackingLink('${escapeAttribute(ref)}')"><span>رقم المرجع</span><strong>#${escapeHtml(ref)}</strong><small>نسخ رابط التتبع</small></button>
           <button class="copy-pill" onclick="copyValue('${escapeAttribute(order.name||"")}')"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong><small>نسخ</small></button>
@@ -4247,7 +4248,10 @@ function syncOpenOrderModal(order) {
       ".order-summary-section .order-status-badge"
     );
 
-  if (badge) badge.textContent = statusLabel;
+  if (badge) {
+    badge.className = `order-status-badge ${order.issue ? "status-problem" : `status-${order.status || "unknown"}`}`;
+    badge.textContent = statusLabel;
+  }
 
   const statusEditorLabel =
     modal.querySelector(
