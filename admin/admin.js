@@ -4418,14 +4418,6 @@ function syncOpenOrderModal(order) {
 
   const locked = order.status !== "progress";
 
-  const badge =
-    modal.querySelector(".modal-status-select");
-
-  if (badge) {
-    badge.className = `order-status-badge ${order.issue ? "status-problem" : `status-${order.status || "unknown"}`}`;
-    badge.textContent = statusLabel;
-  }
-
   const statusSelect =
     document.getElementById("modalOrderStatusSelect");
 
