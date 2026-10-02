@@ -23,7 +23,10 @@ test("stored legacy pending status remains readable as new", () => {
 
 test("status transitions remain forward-only", () => {
   assert.equal(ALLOWED_STATUS_TRANSITIONS.new.has("progress"), true);
+  assert.equal(normalizeStatus("pending_transfer"), "pending_transfer");
   assert.equal(ALLOWED_STATUS_TRANSITIONS.new.has("completed"), false);
+  assert.equal(ALLOWED_STATUS_TRANSITIONS.finished.has("pending_transfer"), true);
+  assert.equal(ALLOWED_STATUS_TRANSITIONS.pending_transfer.has("transferred"), true);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.transferred.has("completed"), true);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.completed.has("progress"), false);
 });
