@@ -79,7 +79,7 @@ const DEFAULT_STATUS_MESSAGES = {
   review: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   progress: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   finished: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك.",
-  pending_transfer: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك، والطلب الآن بانتظار التحويل.",
+  pending_transfer: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
@@ -88,11 +88,11 @@ const DEFAULT_STATUS_MESSAGES = {
 const STATUS_LABELS = {
   new: "طلب جديد",
   review: "بانتظار المراجعة",
-  progress: "جاري سحب الكوين من حسابك",
-  finished: "تم الانتهاء من سحب الكوين من حسابك",
-  pending_transfer: "بانتظار التحويل",
-  transferred: "تم التحويل لحسابك",
-  completed: "مكتمل"
+  progress: "جاري سحب الكوينز من حسابك",
+  finished: "تم الانتهاء من سحب الكوينز من حسابك",
+  pending_transfer: "قيد التحويل",
+  transferred: "قيد التحويل",
+  completed: "تم التحويل — مكتمل"
 };
 
 const ISSUE_LABELS = {
@@ -1089,13 +1089,10 @@ function getStockTrendMarkup(value) {
 function formatAdminDate(value) {
   const date = parseFirestoreDate(value);
   if (!date) return "---";
-  return date.toLocaleString("en-GB", {
-    timeZone: "Asia/Riyadh",
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  const time = date.toLocaleTimeString("en-GB", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const dateText = date.toLocaleDateString("en-GB", { timeZone: "Asia/Riyadh", day: "2-digit", month: "2-digit", year: "numeric" });
+  const weekday = new Intl.DateTimeFormat("ar", { timeZone: "Asia/Riyadh", weekday: "long" }).format(date);
+  return `<span class="admin-date-stack"><b>${time}</b><span>${dateText}</span><small>${weekday}</small></span>`;
 }
 
 function formatCoinsNumber(
@@ -1392,6 +1389,11 @@ function getDisplayPrice(
   }
 
   return "0 ر.س";
+}
+
+function getDisplayPriceMarkup(order) {
+  const amount = getSarAmount(order);
+  return `<span class="order-price-stack"><small>RS</small><strong>${amount.toFixed(2)}</strong></span>`;
 }
 
 function getSarAmount(
@@ -2221,114 +2223,41 @@ window.handleGlobalSearch =
 // 6) جداول الطلبات
 // ==========================================================================
 
-function buildActionButtonsHTML(
-  order
-) {
-  const refNum =
-    order.referenceNumber ||
-    order.orderId ||
-    order.id;
-
+function buildActionButtonsHTML(order) {
+  const refNum = order.referenceNumber || order.orderId || order.id;
   return `
-    <div style="display:flex;gap:4px;flex-wrap:wrap;">
-
-      <button
-        class="btn-action"
-        title="معاينة والتفاصيل"
-        onclick="openOrderModal('${escapeAttribute(
-          order.id
-        )}')">
-        <i class="fa-solid fa-eye"></i>
-      </button>
-
-
-
-      <button
-        class="btn-action"
-        style="color:var(--purple);border-color:var(--purple);"
-        title="أرشفة"
-        onclick="handleArchiveOrder(
-          '${escapeAttribute(
-            order.id
-          )}',
-          '${escapeAttribute(
-            refNum
-          )}'
-        )">
+    <div class="order-list-actions">
+      <button class="btn-action" style="color:var(--purple);border-color:var(--purple);" title="أرشفة"
+        onclick="handleArchiveOrder('${escapeAttribute(order.id)}','${escapeAttribute(refNum)}')">
         <i class="fa-solid fa-box-archive"></i>
       </button>
-
       ${order.issue ? `
-      <button
-        class="btn-action"
-        style="color:#25D366;border-color:#25D366;"
-        title="إرسال رسالة المشكلة عبر واتساب"
-        onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')">
-        <i class="fa-brands fa-whatsapp"></i>
-      </button>
-      <button
-        class="btn-action"
-        style="color:#25D366;border-color:#25D366;"
-        title="إعادة إرسال آخر رسالة واتساب"
-        onclick="resendLastWhatsapp('${escapeAttribute(order.id)}')">
-        <i class="fa-solid fa-rotate-right"></i>
-      </button>
+      <button class="btn-action" style="color:#25D366;border-color:#25D366;" title="إرسال رسالة المشكلة عبر واتساب"
+        onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')"><i class="fa-brands fa-whatsapp"></i></button>
+      <button class="btn-action" style="color:#25D366;border-color:#25D366;" title="إعادة إرسال آخر رسالة واتساب"
+        onclick="resendLastWhatsapp('${escapeAttribute(order.id)}')"><i class="fa-solid fa-rotate-right"></i></button>
       ` : ""}
-      
-      <button
-        class="btn-action"
-        style="color:var(--danger);border-color:var(--danger);"
-        title="حذف الطلب"
-        onclick="handleDeleteOrder(
-          '${escapeAttribute(
-            order.id
-          )}',
-          '${escapeAttribute(
-            refNum
-          )}'
-        )">
+      <button class="btn-action" style="color:var(--danger);border-color:var(--danger);" title="حذف الطلب"
+        onclick="handleDeleteOrder('${escapeAttribute(order.id)}','${escapeAttribute(refNum)}')">
         <i class="fa-solid fa-trash"></i>
       </button>
-
     </div>
   `;
 }
 
-function getStatusBadge(
-  status
-) {
-  const badges = {
-    progress:
-      '<span class="badge badge-progress">جاري سحب الكوينز من حسابك</span>',
-
-    new:
-      '<span class="badge badge-new">طلب جديد</span>',
-
-    pending:
-      '<span class="badge badge-new">طلب جديد</span>',
-
-    review:
-      '<span class="badge badge-review">طلب بانتظار المراجعة</span>',
-
-    finished:
-      '<span class="badge badge-finished">تم الانتهاء من سحب الكوينز من حسابك</span>',
-
-    transferred:
-      '<span class="badge badge-transferred">تم تحويل المبلغ إلى حسابك</span>',
-
-    completed:
-      '<span class="badge badge-completed">مكتمل</span>',
-
-    archived:
-      '<span class="badge badge-archived">مؤرشف</span>'
+function getStatusBadge(status) {
+  const labels = {
+    new: "طلب جديد",
+    pending: "طلب جديد",
+    review: "بانتظار المراجعة",
+    progress: "جاري سحب الكوينز من حسابك",
+    finished: "تم الانتهاء من سحب الكوينز من حسابك",
+    pending_transfer: "قيد التحويل",
+    transferred: "قيد التحويل",
+    completed: "تم التحويل — مكتمل"
   };
-
-  return (
-    badges[status] ||
-    `<span class="badge">${escapeHtml(
-      status || "---"
-    )}</span>`
-  );
+  const key = status === "pending" ? "new" : status;
+  return `<span class="badge status-badge status-${key || "unknown"}">${escapeHtml(labels[key] || status || "---")}</span>`;
 }
 
 function getOrderStatusBadge(order) {
@@ -2392,7 +2321,7 @@ window.renderOrdersTables =
       const internalRef = order.internalReference || order.orderId || order.id || "---";
 
       return `
-        <tr class="full-order-row">
+        <tr class="full-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
@@ -2405,9 +2334,9 @@ window.renderOrdersTables =
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${getDisplayPriceMarkup(order)}</td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
-          <td data-label="آخر تحديث"><span class="last-update-value">${escapeHtml(formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt))}</span></td>
+          <td data-label="آخر تحديث"><span class="last-update-value">${formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt)}</span></td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
       `;
@@ -2435,7 +2364,7 @@ window.renderRecentOrdersTable =
       const internalRef = order.internalReference || order.orderId || order.id || "---";
 
       return `
-        <tr class="recent-order-row">
+        <tr class="recent-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
@@ -2448,7 +2377,7 @@ window.renderRecentOrdersTable =
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${getDisplayPriceMarkup(order)}</td>
           <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
@@ -2493,7 +2422,7 @@ window.renderWithdrawOrdersTable =
       const ref = order.referenceNumber || "---";
 
       return `
-        <tr class="withdraw-order-row">
+        <tr class="withdraw-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
@@ -3957,7 +3886,7 @@ function renderDecryptedPayment(payment = {}) {
     container.innerHTML = '<div class="payment-secure-empty">لا توجد بيانات تحويل قابلة للعرض.</div>';
     return;
   }
-  container.innerHTML = fields.map((field, index) => `<button class="payment-copy-field" onclick="copyValueByData(this)" data-copy-value="${escapeAttribute(field.value)}"><span>${escapeHtml(field.label)}</span><strong>${escapeHtml(field.value)}</strong><small>اضغط للنسخ</small></button>`).join("");
+  container.innerHTML = fields.map((field, index) => `<button class="payment-copy-field" onclick="copyValueByData(this)" data-copy-value="${escapeAttribute(field.value)}"><span>${escapeHtml(field.label)}</span><strong>${escapeHtml(field.value)}</strong></button>`).join("");
 }
 window.copyValueByData = function(el) {
   if (!el) return;
@@ -4255,14 +4184,14 @@ window.openOrderModal = function (orderId) {
       </section>
 
       <section class="order-detail-section secure-section"><div class="order-section-heading"><div><span class="eyebrow">SENSITIVE DATA</span><h4>بيانات الحساب</h4></div><div class="secure-actions"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div></div><div class="secure-fields-grid">
-        <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong><small>اضغط للنسخ</small></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong><small>اضغط للنسخ</small></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureCode1')"><span>Backup Code 1</span><strong id="secureCode1">••••••••</strong><small>اضغط للنسخ</small></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureCode2')"><span>Backup Code 2</span><strong id="secureCode2">••••••••</strong><small>اضغط للنسخ</small>
-        </button><button class="secure-copy-field" onclick="copyElementValue('secureCode3')"><span>Backup Code 3</span><strong id="secureCode3">••••••••</strong><small>اضغط للنسخ</small></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureCode1')"><span>Backup Code 1</span><strong id="secureCode1">••••••••</strong></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureCode2')"><span>Backup Code 2</span><strong id="secureCode2">••••••••</strong>
+        </button><button class="secure-copy-field" onclick="copyElementValue('secureCode3')"><span>Backup Code 3</span><strong id="secureCode3">••••••••</strong></button>
       </div></section>
 
-      <section class="order-detail-section"><div class="order-section-heading"><div><span class="eyebrow">PAYMENT & TRANSFER</span><h4>بيانات الدفع والتحويل</h4></div><span class="payment-method-pill">${escapeHtml(paymentMethod||"---")}</span></div><div id="securePaymentDetails" class="payment-secure-grid"><div class="payment-secure-empty">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض بيانات التحويل القابلة للنسخ.")}</div></div><div class="payment-total-row"><span>المبلغ الإجمالي</span><strong>${escapeHtml(getDisplayPrice(order))}</strong></div></section>
+      <section class="order-detail-section"><div class="order-section-heading"><div><span class="eyebrow">PAYMENT & TRANSFER</span><h4>بيانات الدفع والتحويل</h4></div><span class="payment-method-pill">${escapeHtml(paymentMethod||"---")}</span></div><div id="securePaymentDetails" class="payment-secure-grid"><div class="payment-secure-empty">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض بيانات التحويل القابلة للنسخ.")}</div></div><div class="payment-total-row"><span>المبلغ الإجمالي</span>${getDisplayPriceMarkup(order)}</div></section>
 
       ${order.issue?`<section class="order-detail-section issue-section"><div class="order-section-heading"><div><span class="eyebrow">ISSUE</span><h4>المشكلة الحالية</h4></div><span class="badge badge-danger">${escapeHtml(ISSUE_LABELS[order.issue]||order.issue)}</span></div><p>${escapeHtml(order.issueMessage||getIssueLabel(order.issue))}</p><div class="issue-actions"><button class="btn-secondary" onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')">WhatsApp</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','data_received')">تم استلام البيانات</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','resolved')">تم الحل</button></div></section>`:""}
 
@@ -5820,51 +5749,57 @@ function calculateLocalInventory() {
   };
 }
 
-function getInventory24hMovement() {
-  const since = Date.now() - 24 * 60 * 60 * 1000;
-  const result = {
-    sharedAdded: 0,
-    sharedWithdrawn: 0,
-    pcAdded: 0,
-    pcWithdrawn: 0
-  };
+function getInventoryPeriodRange() {
+  const value = document.getElementById("inventoryPeriodSelect")?.value || "24h";
+  const now = Date.now();
+  if (value === "custom") {
+    const from = document.getElementById("inventoryPeriodStart")?.value;
+    const to = document.getElementById("inventoryPeriodEnd")?.value;
+    if (!from || !to) return null;
+    const start = new Date(`${from}T00:00:00`);
+    const end = new Date(`${to}T23:59:59.999`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return null;
+    return { start: start.getTime(), end: end.getTime() };
+  }
+  const hours = { "24h":24, "48h":48, "72h":72, "7d":168, "30d":720, "90d":2160, "365d":8760 }[value] || 24;
+  return { start: now - hours * 60 * 60 * 1000, end: now };
+}
 
+function getInventoryMovementByPeriod() {
+  const range = getInventoryPeriodRange();
+  const result = { sharedAdded:0, sharedWithdrawn:0, pcAdded:0, pcWithdrawn:0 };
+  if (!range) return result;
   const groupFor = (platform) => String(platform || "").trim().toUpperCase() === "PC" ? "pc" : "shared";
   const dateOf = (value) => parseFirestoreDate(value) || (value ? new Date(value) : null);
-
   ordersData.forEach((order) => {
     const group = groupFor(order.platform);
     const created = dateOf(order.createdAt);
     const ordered = Math.max(0, Number(order.totalQty ?? order.quantity ?? 0) || 0);
-
-    if (created && !Number.isNaN(created.getTime()) && created.getTime() >= since) {
-      if (group === "pc") result.pcAdded += ordered;
-      else result.sharedAdded += ordered;
+    if (created && !Number.isNaN(created.getTime()) && created.getTime() >= range.start && created.getTime() <= range.end) {
+      if (group === "pc") result.pcAdded += ordered; else result.sharedAdded += ordered;
     }
-
-    const history = Array.isArray(order.history) ? [...order.history] : [];
-    const withdrawalEvents = history
+    const events = (Array.isArray(order.history) ? [...order.history] : [])
       .filter((item) => item && item.type === "withdrawn_quantity")
-      .map((item) => ({
-        value: Math.max(0, Number(item.value) || 0),
-        at: dateOf(item.at || item.timestamp || item.createdAt)
-      }))
+      .map((item) => ({ value:Math.max(0,Number(item.value)||0), at:dateOf(item.at||item.timestamp||item.createdAt) }))
       .filter((item) => item.at && !Number.isNaN(item.at.getTime()))
-      .sort((a, b) => a.at.getTime() - b.at.getTime());
-
+      .sort((a,b) => a.at.getTime()-b.at.getTime());
     let previous = 0;
-    withdrawalEvents.forEach((event) => {
+    events.forEach((event) => {
       const delta = Math.max(0, event.value - previous);
-      if (event.at.getTime() >= since) {
-        if (group === "pc") result.pcWithdrawn += delta;
-        else result.sharedWithdrawn += delta;
+      if (event.at.getTime() >= range.start && event.at.getTime() <= range.end) {
+        if (group === "pc") result.pcWithdrawn += delta; else result.sharedWithdrawn += delta;
       }
       previous = event.value;
     });
   });
-
   return result;
 }
+
+window.handleInventoryPeriodChange = function() {
+  const custom = document.getElementById("inventoryCustomPeriod");
+  if (custom) custom.hidden = document.getElementById("inventoryPeriodSelect")?.value !== "custom";
+  renderInventoryUI(currentSettingsData);
+};
 
 function renderInventoryUI(settings) {
   const inventory = calculateLocalInventory();
@@ -5879,7 +5814,7 @@ function renderInventoryUI(settings) {
   if (psTrend) psTrend.innerHTML = getStockTrendMarkup(inventory.shared.remaining);
   if (pcTrend) pcTrend.innerHTML = getStockTrendMarkup(inventory.pc.remaining);
 
-  const movement = getInventory24hMovement();
+  const movement = getInventoryMovementByPeriod();
   const set = (id, value) => {
     const el = document.getElementById(id);
     if (el) el.innerText = formatCoinsNumber(value);
@@ -6171,14 +6106,11 @@ function updateStoreStatusUI(
     (isOpen ? " is-open" : " is-closed");
   btn.setAttribute("aria-pressed", isOpen ? "true" : "false");
 
-  text.innerText =
-    isOpen
-      ? "ONLINE"
-      : "CLOSED";
+  text.innerText = isOpen ? "مفتوح" : "مغلق";
 
   const dashboardState = document.getElementById("dashboardStoreState");
   if (dashboardState) {
-    dashboardState.innerText = isOpen ? "ONLINE" : "CLOSED";
+    dashboardState.innerText = isOpen ? "مفتوح" : "مغلق";
   }
 }
 
@@ -7191,7 +7123,7 @@ function renderStatusMessages(settings = {}) {
   const container = document.getElementById("statusMessagesContainer");
   if (!container) return;
   const messages = { ...DEFAULT_STATUS_MESSAGES, ...(settings.statusMessages || {}) };
-  container.innerHTML = STATUS_VALUES.map((status) => `<div class="status-message-card"><div><span class="eyebrow">${escapeHtml(status)}</span><h4>${escapeHtml(STATUS_LABELS[status])}</h4></div><textarea id="statusMessage_${status}" class="form-control status-message-input" rows="4">${escapeHtml(messages[status] || "")}</textarea><div class="status-message-tokens">{customerName} · {referenceNumber} · {status}</div></div>`).join("");
+  container.innerHTML = STATUS_VALUES.map((status) => `<div class="status-message-card"><div><span class="status-template-icon" aria-hidden="true"><i class="fa-solid fa-pen"></i></span><span class="eyebrow">${escapeHtml(status)}</span><h4>${escapeHtml(STATUS_LABELS[status])}</h4></div><textarea id="statusMessage_${status}" class="form-control status-message-input" rows="4">${escapeHtml(messages[status] || "")}</textarea><div class="status-message-tokens">{customerName} · {referenceNumber} · {status}</div></div>`).join("");
 }
 window.saveStatusMessages = async function() {
   const messages = {};
