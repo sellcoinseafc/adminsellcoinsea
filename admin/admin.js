@@ -4471,6 +4471,19 @@ function syncOpenOrderModal(order) {
       formatCoinsNumber(remaining);
   }
 
+  const statusEditWithdrawn=document.getElementById("statusEditWithdrawnValue");
+  const statusEditRemaining=document.getElementById("statusEditRemainingValue");
+  const statusEditPercent=document.getElementById("statusEditProgressPercent");
+  const statusEditFill=document.getElementById("statusEditProgressFill");
+  if(statusEditWithdrawn) statusEditWithdrawn.textContent=formatCoinsNumber(withdrawn);
+  if(statusEditRemaining) statusEditRemaining.textContent=formatCoinsNumber(remaining);
+  if(statusEditPercent) statusEditPercent.textContent=percent.toFixed(2)+"%";
+  if(statusEditFill){
+    statusEditFill.style.width=percent.toFixed(2)+"%";
+    const fillText=statusEditFill.querySelector("b");
+    if(fillText) fillText.textContent=percent.toFixed(2)+"%";
+  }
+
   const withdrawEditor =
     modal.querySelector(".withdraw-editor");
 
@@ -4522,6 +4535,17 @@ function syncOpenOrderModal(order) {
     quantityInput.value =
       formatCoinsNumber(withdrawn);
     quantityInput.disabled = locked;
+  }
+
+  const statusEditForm=document.querySelector("#orderDetailModal .order-status-edit-form");
+  if(statusEditForm){
+    const statusEditInput=document.getElementById("modalWithdrawnQuantity");
+    if(statusEditInput){
+      statusEditInput.value=formatCoinsNumber(withdrawn);
+      statusEditInput.disabled=locked;
+    }
+    const statusEditSave=statusEditForm.querySelector(".status-edit-withdraw-input button");
+    if(statusEditSave) statusEditSave.disabled=locked;
   }
 
   const quantityButton =
