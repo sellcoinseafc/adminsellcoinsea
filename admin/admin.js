@@ -1808,6 +1808,7 @@ async function loadOrders() {
 
     sortOrdersByPriority();
 
+    renderInventoryUI(currentSettingsData);
     renderDashboardQuickStats();
     renderStatisticsPage();
     renderOrdersTables();
