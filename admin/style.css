@@ -494,9 +494,9 @@ body:not(.light-mode) .modal-overlay{background:rgba(0,0,0,.68)}
 }
 
 /* SAMI COINS V3.0 foundation */
-:root{--v3-bg:#f5f7f6;--v3-surface:#fff;--v3-surface-2:#f8faf9;--v3-border:#e3e9e5;--v3-text:#18221d;--v3-muted:#708078;--v3-green:#168a45;--v3-green-soft:#eaf6ee;--v3-shadow:0 6px 24px rgba(24,34,29,.055);--v3-radius:18px}
+:root{--v3-bg:#f5f7f6;--v3-surface:#fff;--v3-surface-2:#f8faf9;--v3-border:#e3e9e5;--v3-text:#18221d;--v3-muted:#708078;--v3-green:#00E676;--v3-green-soft:rgba(0,230,118,.10);--v3-gold:#FFC107;--v3-gold-soft:rgba(255,193,7,.12);--v3-blue:#0070D1;--v3-blue-soft:rgba(0,112,209,.10);--v3-shadow:0 6px 24px rgba(24,34,29,.055);--v3-radius:18px}
 body{background:var(--v3-bg);color:var(--v3-text);font-family:Tajawal,Arial,sans-serif}
-body:not(.light-mode){--v3-bg:#101512;--v3-surface:#171d19;--v3-surface-2:#1d2520;--v3-border:#2b342e;--v3-text:#eef5f0;--v3-muted:#9aaa9f;--v3-green:#39b86a;--v3-green-soft:#193225;--v3-shadow:0 8px 28px rgba(0,0,0,.2)}
+body:not(.light-mode){--v3-bg:#080C14;--v3-surface:rgba(13,22,38,.88);--v3-surface-2:rgba(8,14,25,.92);--v3-border:rgba(0,230,118,.15);--v3-text:#FFFFFF;--v3-muted:#8E9BAE;--v3-green:#00E676;--v3-green-soft:rgba(0,230,118,.12);--v3-gold:#FFC107;--v3-gold-soft:rgba(255,193,7,.12);--v3-blue:#0070D1;--v3-blue-soft:rgba(0,112,209,.12);--v3-shadow:0 8px 28px rgba(0,0,0,.28)}
 .sidebar{width:272px!important;background:var(--v3-surface)!important;border:0!important;border-left:1px solid var(--v3-border)!important;box-shadow:none!important;padding:18px 14px!important}
 [dir=rtl] .sidebar{border-left:1px solid var(--v3-border)!important}
 .sidebar-brand{border-bottom:1px solid var(--v3-border);padding:4px 7px 14px!important}
