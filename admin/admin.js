@@ -4228,6 +4228,16 @@ window.openOrderModal = function (orderId) {
   const locked=order.status!=="progress";
   const baseStatusLabel=STATUS_LABELS[order.status]||order.status||"---";
   const statusLabel=order.issue?(ISSUE_LABELS[order.issue]||getIssueLabel(order.issue)):baseStatusLabel;
+  const customerPhone=String(order.phone||"").trim();
+  const customerName=String(order.name||"").trim();
+  const customerOrders=ordersData.filter((item)=>{
+    const itemPhone=String(item.phone||"").trim();
+    const itemName=String(item.name||"").trim();
+    return customerPhone ? itemPhone===customerPhone : itemName===customerName;
+  });
+  const customerOrderCount=customerOrders.length||1;
+  const customerTotalQty=customerOrders.reduce((sum,item)=>sum+(Number(item.totalQty)||0),0)||total;
+  const customerTotalAmount=customerOrders.reduce((sum,item)=>sum+getSarAmount(item),0)||getSarAmount(order);
     const platform=String(order.platform||"").trim();
   const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
   const platformIcon=platform.toUpperCase()==="PLAYSTATION" ? "fa-brands fa-playstation" : platform.toUpperCase()==="XBOX" ? "fa-brands fa-xbox" : "fa-solid fa-desktop";
@@ -4243,21 +4253,6 @@ window.openOrderModal = function (orderId) {
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
   modalBody.innerHTML=`
     <div class="order-detail-shell">
-      <section class="order-detail-control-panel">
-        <div class="detail-control-heading">
-          <div><span class="eyebrow">ORDER STATUS</span><h4>حالة الطلب</h4></div>
-          <select id="modalOrderStatusSelect" class="modal-status-select status-${order.status || "unknown"}" onchange="saveModalOrderStatus('${escapeAttribute(order.id)}')">${statusOptions}</select>
-        </div>
-        <div class="detail-issue-control">
-          <div><span class="field-label">المشكلة</span><small id="orderIssueSummary">${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة")}</small></div>
-          <select id="orderIssueSelect" class="modal-issue-select" onchange="handleModalIssueChange('${escapeAttribute(order.id)}',this.value)">
-            <option value="">لا توجد مشكلة</option>
-            ${issueOptions}
-          </select>
-          <textarea id="orderIssueMessageInput" class="form-control issue-message-input detail-issue-message" rows="2" ${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
-        </div>
-      </section>
-
       <div class="order-detail-accordion">
         <section class="order-detail-accordion-item is-open">
           <button type="button" class="order-detail-accordion-trigger" aria-expanded="true" onclick="toggleOrderDetailSection(this)">
@@ -4274,6 +4269,30 @@ window.openOrderModal = function (orderId) {
           </div>
         </section>
 
+        <section class="order-detail-flat-item order-detail-status-item ${statusBadgeClass}">
+          <button type="button" class="order-detail-flat-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><small>ORDER STATUS</small><b>حالة الطلب</b></span>
+            <strong id="modalOrderStatusDisplay" class="order-status-display status-${escapeAttribute(order.status || "unknown")}">${escapeHtml(baseStatusLabel)}</strong>
+          </button>
+          <div class="order-detail-flat-content">
+            <select id="modalOrderStatusSelect" class="modal-status-select status-${order.status || "unknown"}" onchange="saveModalOrderStatus('${escapeAttribute(order.id)}')">${statusOptions}</select>
+          </div>
+        </section>
+
+        <section class="order-detail-flat-item order-detail-issue-item ${order.issue ? "has-issue" : ""}">
+          <button type="button" class="order-detail-flat-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><small>ORDER ISSUE</small><b>المشكلة</b></span>
+            <strong id="orderIssueSummary">${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة")}</strong>
+          </button>
+          <div class="order-detail-flat-content">
+            <select id="orderIssueSelect" class="modal-issue-select" onchange="handleModalIssueChange('${escapeAttribute(order.id)}',this.value)">
+              <option value="">لا توجد مشكلة</option>
+              ${issueOptions}
+            </select>
+            <textarea id="orderIssueMessageInput" class="form-control issue-message-input detail-issue-message" rows="2" ${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
+          </div>
+        </section>
+
         <section class="order-detail-accordion-item">
           <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
             <span><i class="fa-solid fa-list-check"></i><b>المعلومات العامة</b><small>بيانات العميل والطلب والدفع</small></span>
@@ -4282,9 +4301,11 @@ window.openOrderModal = function (orderId) {
           <div class="order-detail-accordion-content">
             <div class="general-info-grid">
               <div class="detail-info-card"><span>رقم الطلب</span><strong dir="ltr">#${escapeHtml(ref)}</strong></div>
-              <div class="detail-info-card"><span>حالة الطلب</span><strong class="detail-status-text">${escapeHtml(statusLabel)}</strong></div>
               <div class="detail-info-card"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong></div>
               <div class="detail-info-card"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
+              <div class="detail-info-card"><span>عدد الطلبات</span><strong>${customerOrderCount} طلبات</strong></div>
+              <div class="detail-info-card detail-total-quantity"><span>إجمالي الكمية</span><strong dir="ltr">${formatCoinsNumber(customerTotalQty)}</strong></div>
+              <div class="detail-info-card detail-total-amount"><span>إجمالي المبلغ</span><div class="customer-total-amount"><small>ريال سعودي</small><strong>${customerTotalAmount.toFixed(2)}</strong></div></div>
               <div class="detail-info-card"><span>المنصة</span><strong>${escapeHtml(platform||"---")}</strong></div>
               <div class="detail-info-card"><span>الكمية</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
               <div class="detail-info-card"><span>المبلغ</span><div>${getDisplayPriceMarkup(order)}</div></div>
@@ -4303,7 +4324,7 @@ window.openOrderModal = function (orderId) {
               <div class="detail-info-card"><span>طريقة الدفع</span><strong>${escapeHtml(paymentMethod||"---")}</strong></div>
               <div class="detail-info-card"><span>بيانات التحويل</span><strong id="securePaymentDetailsText">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض البيانات.")}</strong></div>
             </div>
-            <div class="payment-total-row"><span>المبلغ الإجمالي</span>${getDisplayPriceMarkup(order)}</div>
+            <div class="payment-total-row platform-total-${platformClass}"><span>المبلغ الإجمالي</span>${getDisplayPriceMarkup(order)}</div>
           </div>
         </section>
 
@@ -4362,13 +4383,13 @@ window.openOrderModal = function (orderId) {
 
 
 window.toggleOrderDetailSection = function(trigger){
-  const item = trigger?.closest(".order-detail-accordion-item");
+  const item = trigger?.closest(".order-detail-accordion-item, .order-detail-flat-item");
   if (!item) return;
   const isOpen = item.classList.contains("is-open");
-  document.querySelectorAll("#orderDetailModal .order-detail-accordion-item.is-open").forEach((openItem)=>{
+  document.querySelectorAll("#orderDetailModal .order-detail-accordion-item.is-open, #orderDetailModal .order-detail-flat-item.is-open").forEach((openItem)=>{
     if (openItem !== item) {
       openItem.classList.remove("is-open");
-      const openTrigger = openItem.querySelector(".order-detail-accordion-trigger");
+      const openTrigger = openItem.querySelector(".order-detail-accordion-trigger, .order-detail-flat-trigger");
       if (openTrigger) openTrigger.setAttribute("aria-expanded","false");
     }
   });
