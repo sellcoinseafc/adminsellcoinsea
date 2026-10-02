@@ -1369,6 +1369,72 @@ router.get(
 ========================================================================== */
 
 router.get(
+  "/events",
+  requireAdmin,
+  async (req, res) => {
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
+
+    let closed = false;
+    let unsubscribe = null;
+
+    const send = (event, payload) => {
+      if (closed) return;
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    const heartbeat = setInterval(() => {
+      if (!closed) res.write(": heartbeat\n\n");
+    }, 25_000);
+
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      clearInterval(heartbeat);
+      if (typeof unsubscribe === "function") {
+        try { unsubscribe(); } catch {}
+      }
+      if (!res.writableEnded) res.end();
+    };
+
+    req.on("close", close);
+
+    try {
+      const query = db.collection("orders").orderBy("createdAt", "desc");
+      unsubscribe = query.onSnapshot(
+        (snapshot) => {
+          for (const change of snapshot.docChanges()) {
+            const data = change.doc.data() || {};
+            send("order-update", {
+              type: change.type,
+              orderId: change.doc.id,
+              referenceNumber: String(data.referenceNumber || ""),
+              updatedAt: data.updatedAt || null
+            });
+          }
+        },
+        (error) => {
+          console.error("Orders SSE listener error:", error?.message || error);
+          send("error", { message: "تعذر استمرار المزامنة اللحظية." });
+          close();
+        }
+      );
+
+      send("connected", { success: true });
+    } catch (error) {
+      console.error("Orders SSE setup error:", error?.message || error);
+      send("error", { message: "تعذر بدء المزامنة اللحظية." });
+      close();
+    }
+  }
+);
+
+router.get(
   "/list",
   requireAdmin,
   async (_, res) => {
