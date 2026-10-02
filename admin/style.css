@@ -140,3 +140,355 @@
 .payment-columns{grid-template-columns:1fr 1fr}
 .payment-columns>.panel:last-child{grid-column:1/-1}
 }
+
+/* ==========================================================================
+   SAMI COINS V2.8 — LIGHT-FIRST ADMIN REDESIGN
+   Functional markup is preserved; this layer changes presentation only.
+   ========================================================================== */
+:root{
+  --bg:#f4f7f5;
+  --bg2:#ffffff;
+  --panel:#ffffff;
+  --panel2:#f7faf8;
+  --input:#f8faf9;
+  --line:#e2e8e4;
+  --line-strong:#d4ddd7;
+  --text:#17221c;
+  --muted:#68776f;
+  --primary:#16a34a;
+  --primary-strong:#12813b;
+  --primary-soft:#eaf7ee;
+  --blue:#2563eb;
+  --warning:#d97706;
+  --danger:#dc2626;
+  --success:#059669;
+  --shadow:0 8px 28px rgba(20,42,29,.06);
+  --shadow-lg:0 18px 50px rgba(20,42,29,.10);
+  --radius:16px;
+}
+html,body{
+  background:var(--bg);
+  color:var(--text);
+}
+body{
+  background:
+    radial-gradient(circle at 80% -10%,rgba(22,163,74,.055),transparent 28%),
+    var(--bg);
+}
+button,input,select,textarea{font-family:Tajawal,Arial,sans-serif}
+.sidebar{
+  width:258px;
+  padding:18px 12px;
+  background:rgba(255,255,255,.94);
+  border-left:1px solid var(--line);
+  box-shadow:8px 0 30px rgba(20,42,29,.025);
+  backdrop-filter:blur(18px);
+}
+.sidebar-brand{padding:5px 7px 18px}
+.brand-mark>span{
+  background:var(--primary-soft);
+  color:var(--primary-strong);
+  border:1px solid #cdebd7;
+}
+.brand-mark b{color:var(--text)}
+.brand-mark small{color:var(--muted)}
+.sidebar-user{
+  background:#f7faf8;
+  border-color:var(--line);
+}
+.user-avatar{
+  background:var(--primary-soft);
+  color:var(--primary-strong);
+}
+.sidebar-menu{gap:3px}
+.sidebar-link{
+  color:#53635a;
+  border-radius:11px;
+  padding:10px 11px;
+}
+.sidebar-link:hover{
+  background:#f4f8f5;
+  color:var(--text);
+}
+.sidebar-link.active{
+  color:var(--primary-strong);
+  background:var(--primary-soft);
+  border-color:#cdebd7;
+}
+.sidebar-link .nav-badge{
+  background:#fff3df;
+  color:#b45309;
+}
+.sidebar-link.logout{
+  color:#b91c1c;
+}
+.main-wrapper{
+  margin-right:258px;
+  padding:20px 28px 92px;
+}
+.topbar{
+  padding-bottom:4px;
+  border-bottom:1px solid transparent;
+}
+.eyebrow{
+  color:var(--primary-strong);
+  letter-spacing:1.4px;
+}
+.topbar h1{color:var(--text)}
+.global-search{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:0 2px 10px rgba(20,42,29,.025);
+}
+.global-search input{color:var(--text)}
+.store-pill{
+  background:var(--primary-soft);
+  border-color:#cdebd7;
+  color:var(--primary-strong);
+}
+.icon-btn{
+  background:#fff;
+  border-color:var(--line);
+  color:#53635a;
+  box-shadow:0 2px 10px rgba(20,42,29,.035);
+}
+.breadcrumb{color:var(--muted)}
+.breadcrumb b{color:var(--primary-strong)}
+.system-banner{
+  background:#eff8ff;
+  border-color:#cfe4f7;
+}
+.system-banner span{color:#63788a}
+.system-banner.urgent{
+  background:#fff7e8;
+  border-color:#f2d39d;
+}
+.hero{
+  padding:26px 28px;
+  border:1px solid #d8e8dc;
+  background:
+    radial-gradient(circle at 15% 10%,rgba(22,163,74,.08),transparent 35%),
+    linear-gradient(135deg,#fff,#f0f8f2);
+  box-shadow:var(--shadow);
+}
+.hero h2{color:#17221c}
+.hero p{color:#66756d}
+.live-dot{color:var(--primary-strong)}
+.btn-primary{
+  background:var(--primary);
+  color:#fff;
+  box-shadow:0 6px 16px rgba(22,163,74,.18);
+}
+.btn-primary:hover{background:var(--primary-strong)}
+.btn-secondary{
+  background:#fff;
+  color:#334139;
+  border:1px solid var(--line);
+}
+.btn-secondary:hover{
+  background:#f7faf8;
+  border-color:#cbd7d0;
+}
+.btn-warning{
+  background:#f59e0b;
+  color:#fff;
+}
+.panel{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:var(--shadow);
+}
+.panel-title h3,.page-head h2{color:var(--text)}
+.stat-card{
+  min-height:116px;
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:var(--shadow);
+}
+.stat-card:hover{
+  border-color:#cbdcd1;
+  box-shadow:0 12px 32px rgba(20,42,29,.09);
+}
+.stat-card span{color:var(--muted)}
+.stat-card strong{color:var(--text)}
+.stat-card>i{color:rgba(22,163,74,.20)}
+.order-kpis>div{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:var(--shadow);
+}
+.order-kpis b{color:var(--primary-strong)}
+.order-kpis span{color:var(--muted)}
+table{min-width:760px}
+th{
+  color:#64736b;
+  background:#f7faf8;
+  border-bottom:1px solid var(--line);
+}
+td{border-top:1px solid #edf1ee}
+tr:hover td{background:#f8fbf9}
+.badge{
+  background:#eef5f1;
+  border-color:#dce8e0;
+  color:#4d6257;
+}
+.compact-input,.form-control{
+  background:#fff;
+  border-color:var(--line);
+  color:var(--text);
+}
+.compact-input:focus,.form-control:focus{
+  border-color:#8bc9a1;
+  box-shadow:0 0 0 3px rgba(22,163,74,.08);
+}
+.inventory-card{
+  background:linear-gradient(145deg,#fff,#f4f9f6);
+  border-color:var(--line);
+  box-shadow:var(--shadow);
+}
+.inventory-card i{color:var(--primary)}
+.modal-overlay{background:rgba(15,25,19,.42)}
+.modal-card{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:var(--shadow-lg);
+}
+.modal-header{border-bottom-color:var(--line)}
+.modal-close-btn{
+  background:#f7faf8;
+  border-color:var(--line);
+  color:#45544b;
+}
+.order-detail-section{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:0 3px 14px rgba(20,42,29,.035);
+}
+.order-detail-system-section{
+  background:#f8faf9;
+  border-color:var(--line);
+}
+.order-status-editor{
+  background:#f7faf8;
+  border-color:var(--line);
+}
+.quantity-card{
+  background:#f8faf9;
+  border-color:var(--line);
+}
+.withdraw-editor{
+  background:var(--primary-soft);
+  border-color:#cdebd7;
+}
+.progress-track{background:#e5ebe7}
+.progress-track span{
+  background:linear-gradient(90deg,#16a34a,#4ade80);
+}
+.copy-pill,.secure-copy-field,.payment-copy-field{
+  background:#fff;
+  border-color:var(--line);
+}
+.copy-pill:hover,.secure-copy-field:hover,.payment-copy-field:hover{
+  background:#f5fbf7;
+  border-color:#9ac9aa;
+}
+.secure-timer{
+  background:#fff7e8;
+  border-color:#f1d29a;
+  color:#a16207;
+}
+.secure-box .btn-custom{
+  background:#2563eb;
+  color:#fff;
+}
+.btn-unlock{
+  background:#eff6ff;
+  border-color:#bfdbfe;
+  color:#1d4ed8;
+}
+.payment-total-row{
+  background:#fff8e9;
+  border-color:#f2d49d;
+}
+.payment-total-row strong{color:#b45309}
+.status-message-card{
+  background:#f8faf9;
+  border-color:var(--line);
+}
+.status-message-input{background:#fff}
+.status-message-tokens{color:var(--muted)}
+.mobile-app-nav{
+  background:rgba(255,255,255,.96);
+  border-color:var(--line);
+  box-shadow:0 8px 30px rgba(20,42,29,.12);
+}
+.mobile-app-nav-item{color:#68776f}
+.mobile-app-nav-item.active{
+  color:var(--primary-strong);
+  background:var(--primary-soft);
+}
+.login-overlay{background:rgba(239,244,241,.88)}
+.login-card-nextgen{
+  background:#fff;
+  border-color:var(--line);
+  box-shadow:var(--shadow-lg);
+}
+.login-header h2{color:var(--text)}
+.login-header p{color:var(--muted)}
+.login-card-nextgen label,.field label{color:#45544b}
+.input-wrap{
+  background:#f8faf9;
+  border-color:var(--line);
+}
+.input-wrap input{color:var(--text)}
+.login-divider{color:var(--muted)}
+.btn-google{
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(20,42,29,.04);
+}
+.alert-danger{
+  background:#fff1f1;
+  border-color:#fecaca;
+  color:#b91c1c;
+}
+
+/* Keep dark mode deliberate and comfortable rather than neon-heavy. */
+body:not(.light-mode){
+  --bg:#0f1411;
+  --bg2:#151b17;
+  --panel:#171e1a;
+  --panel2:#1c251f;
+  --input:#121914;
+  --line:#29342d;
+  --line-strong:#344138;
+  --text:#edf3ef;
+  --muted:#9aa9a0;
+  --primary:#22c55e;
+  --primary-strong:#4ade80;
+  --primary-soft:rgba(34,197,94,.11);
+  --shadow:0 12px 34px rgba(0,0,0,.20);
+}
+body:not(.light-mode) .sidebar{background:#121813}
+body:not(.light-mode) .panel,
+body:not(.light-mode) .stat-card,
+body:not(.light-mode) .order-kpis>div,
+body:not(.light-mode) .modal-card,
+body:not(.light-mode) .order-detail-section{background:var(--panel)}
+body:not(.light-mode) .hero{
+  background:linear-gradient(135deg,#17251c,#121a15);
+  border-color:#304236;
+}
+body:not(.light-mode) .mobile-app-nav{background:rgba(18,24,19,.96)}
+body:not(.light-mode) .modal-overlay{background:rgba(0,0,0,.68)}
+
+@media(max-width:900px){
+  .sidebar{width:280px}
+  .main-wrapper{margin-right:0;padding:16px 16px 92px}
+}
+@media(max-width:600px){
+  .main-wrapper{padding:12px 12px 88px}
+  .hero{padding:20px}
+  .stat-card{min-height:100px}
+  .panel{box-shadow:0 5px 20px rgba(20,42,29,.05)}
+}
