@@ -1348,7 +1348,7 @@ router.post(
         transaction.update(purgeRef, updateData);
         transaction.set(purgeAuditRef, {
           timestamp: FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          timeString: new Date().toLocaleString("en-GB", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "إتلاف البيانات الحساسة",
@@ -1501,7 +1501,7 @@ router.post(
 
         transaction.set(archiveAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          timeString: new Date().toLocaleString("en-GB", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "أرشفة طلب",
@@ -1561,7 +1561,7 @@ async function writeSecurityAudit({
 }) {
   await db.collection("audit_logs").add({
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    timeString: new Date().toLocaleString("ar-SA", {
+    timeString: new Date().toLocaleString("en-GB", {
       timeZone: "Asia/Riyadh"
     }),
     user: String(adminIdentity?.name || adminIdentity?.email || "مشرف").slice(0, 200),
@@ -1618,7 +1618,7 @@ router.post(
 
       await db.collection("audit_logs").add({
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        timeString: new Date().toLocaleString("ar-SA", {
+        timeString: new Date().toLocaleString("en-GB", {
           timeZone: "Asia/Riyadh"
         }),
         source: "admin-ui",
@@ -1736,7 +1736,7 @@ router.post(
 
       batch.set(auditRef,{
         timestamp:admin.firestore.FieldValue.serverTimestamp(),
-        timeString:new Date().toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}),
+        timeString: new Date().toLocaleString("en-GB",{timeZone:"Asia/Riyadh"}),
         user:actor,
         userId:String(req.admin?.uid||"").slice(0,200),
         action:note?"تحديث الملاحظة الإدارية":"حذف الملاحظة الإدارية",
@@ -2068,7 +2068,7 @@ router.post(
         settingsAuditRef,
         {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", {
+          timeString: new Date().toLocaleString("en-GB", {
             timeZone: "Asia/Riyadh"
           }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
@@ -2252,7 +2252,7 @@ router.post(
 
         transaction.set(reviewAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          timeString: new Date().toLocaleString("en-GB", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "تحديث حالة التقييم",
@@ -2330,7 +2330,7 @@ router.post(
         transaction.delete(publicRef);
         transaction.set(reviewDeleteAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" }),
+          timeString: new Date().toLocaleString("en-GB", { timeZone: "Asia/Riyadh" }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
           userId: String(req.admin?.uid || "").slice(0, 200),
           action: "حذف تقييم",
