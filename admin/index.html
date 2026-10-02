@@ -56,7 +56,9 @@
 
 <section id="dashboardTab" class="tab-content active">
 <div class="workspace-header">
-  <div><span class="eyebrow">OPERATIONS CENTER</span><h2>مركز التشغيل</h2><p>نظرة لحظية على الطلبات والسحب والتحويلات والمخزون.</p></div>
+  <div class="workspace-title-block"><span class="eyebrow">OPERATIONS CENTER</span><h2>مركز التشغيل</h2><p>نظرة لحظية على الطلبات والسحب والتحويلات والمخزون.</p>
+    <div class="store-status-mobile" aria-label="حالة المتجر"><span>حالة المتجر</span><b id="dashboardStoreStateMobile">مفتوح</b></div>
+  </div>
   <div class="workspace-actions"><button class="btn-primary" onclick="switchTab('ordersTab',document.querySelector('.sidebar-link[onclick*="ordersTab"]'))"><i class="fa-solid fa-boxes-stacked"></i> الطلبات</button><button class="btn-secondary" onclick="switchTab('transferAlertsTab',document.querySelector('.sidebar-link[onclick*="transferAlertsTab"]'))"><i class="fa-solid fa-money-bill-transfer"></i> التحويلات</button></div>
 </div>
 <div class="command-summary">
