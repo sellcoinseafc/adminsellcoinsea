@@ -2584,3 +2584,218 @@ body.light-mode{
   .secure-section .secure-copy-field:nth-child(1),.secure-section .secure-copy-field:nth-child(2){grid-column:1/-1}
   .secure-section .secure-copy-field:nth-child(3),.secure-section .secure-copy-field:nth-child(4),.secure-section .secure-copy-field:nth-child(5){grid-column:span 1}
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE ORDER + CUSTOMER CARD BALANCE PASS 2026-10-02
+   ========================================================================== */
+@media (max-width:600px){
+  /* Order identity: balanced reference/internal number and a guaranteed
+     single-line customer name. */
+  #fullOrdersTableBody .order-ref-stack,
+  #recentOrdersTableBody .order-ref-stack{
+    gap:4px!important;
+    min-width:0!important;
+  }
+  #fullOrdersTableBody .order-ref-stack small,
+  #recentOrdersTableBody .order-ref-stack small{
+    display:block!important;
+    font-size:.72rem!important;
+    line-height:1.15!important;
+    font-weight:800!important;
+    color:#9aa9bc!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    max-width:100%!important;
+  }
+  #fullOrdersTableBody .order-reference-value,
+  #recentOrdersTableBody .order-reference-value{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    font-size:1.02rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #fullOrdersTableBody .table-primary-value,
+  #recentOrdersTableBody .recent-customer-name{
+    font-size:1.02rem!important;
+    line-height:1.2!important;
+    min-height:38px!important;
+    display:flex!important;
+    align-items:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Quantity + amount share one row, each with its own platform-colored
+     value frame. The price remains vertically stacked inside its frame. */
+  #fullOrdersTableBody td:nth-child(4),
+  #fullOrdersTableBody td:nth-child(5),
+  #recentOrdersTableBody td:nth-child(4),
+  #recentOrdersTableBody td:nth-child(5){
+    grid-column:auto!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+  #fullOrdersTableBody td:nth-child(4),
+  #recentOrdersTableBody td:nth-child(4){
+    padding-inline-end:0!important;
+  }
+  #fullOrdersTableBody td:nth-child(5),
+  #recentOrdersTableBody td:nth-child(5){
+    padding-inline-start:0!important;
+  }
+  #fullOrdersTableBody td:nth-child(4) .order-value-box,
+  #fullOrdersTableBody td:nth-child(5) .order-value-box,
+  #recentOrdersTableBody td:nth-child(4) .order-value-box,
+  #recentOrdersTableBody td:nth-child(5) .order-value-box{
+    width:100%!important;
+    max-width:none!important;
+    min-height:62px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border:1px solid var(--order-platform-color,#3b82f6)!important;
+    border-radius:13px!important;
+    background:var(--order-platform-bg,rgba(59,130,246,.10))!important;
+    padding:8px 7px!important;
+    color:#fff!important;
+  }
+  #fullOrdersTableBody td:nth-child(4) .table-large-value,
+  #recentOrdersTableBody td:nth-child(4) .table-large-value{
+    font-size:1.3rem!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums;
+  }
+  #fullOrdersTableBody td:nth-child(5) .order-price-stack,
+  #recentOrdersTableBody td:nth-child(5) .order-price-stack{
+    width:100%!important;
+    min-width:0!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:baseline!important;
+    justify-content:center!important;
+    gap:5px!important;
+    white-space:nowrap!important;
+  }
+  #fullOrdersTableBody td:nth-child(5) .order-price-stack small,
+  #recentOrdersTableBody td:nth-child(5) .order-price-stack small{
+    font-size:.62rem!important;
+    line-height:1!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+  }
+  #fullOrdersTableBody td:nth-child(5) .order-price-stack strong,
+  #recentOrdersTableBody td:nth-child(5) .order-price-stack strong{
+    font-size:1.28rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* Customer cards: every key field gets a compact frame, while the
+     customer name/action areas remain full width. */
+  #clientsTableBody tr{
+    grid-template-columns:1fr 1fr!important;
+    gap:8px 10px!important;
+    padding:13px!important;
+  }
+  #clientsTableBody td{
+    padding:0!important;
+    min-width:0!important;
+  }
+  #clientsTableBody td:nth-child(1),
+  #clientsTableBody td:nth-child(2),
+  #clientsTableBody td:nth-child(3),
+  #clientsTableBody td:nth-child(4),
+  #clientsTableBody td:nth-child(5){
+    grid-column:auto!important;
+  }
+  #clientsTableBody td:nth-child(1),
+  #clientsTableBody td:nth-child(2),
+  #clientsTableBody td:nth-child(3),
+  #clientsTableBody td:nth-child(4),
+  #clientsTableBody td:nth-child(5){
+    border:1px solid rgba(56,189,248,.18)!important;
+    border-radius:13px!important;
+    background:rgba(7,15,26,.72)!important;
+    padding:9px 10px!important;
+    min-height:70px!important;
+    box-sizing:border-box!important;
+  }
+  #clientsTableBody td:nth-child(1) strong,
+  #clientsTableBody td:nth-child(2) .phone-value,
+  #clientsTableBody td:nth-child(3) .badge,
+  #clientsTableBody td:nth-child(4) strong,
+  #clientsTableBody td:nth-child(5) strong{
+    display:block!important;
+    width:100%!important;
+    color:#fff!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  #clientsTableBody td:nth-child(1) strong{
+    font-size:1.02rem!important;
+    line-height:1.25!important;
+  }
+  #clientsTableBody td:nth-child(2) .phone-value{
+    font-size:1.02rem!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums;
+  }
+  #clientsTableBody td:nth-child(3) .badge{
+    width:max-content!important;
+    max-width:100%!important;
+    margin-top:1px!important;
+    font-size:1.02rem!important;
+    line-height:1.2!important;
+    padding:7px 11px!important;
+    border-radius:999px!important;
+    white-space:nowrap!important;
+  }
+  #clientsTableBody td:nth-child(4) strong{
+    font-size:1.3rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums;
+  }
+  #clientsTableBody td:nth-child(5){
+    grid-column:1/-1!important;
+  }
+  #clientsTableBody td:nth-child(5) strong{
+    font-size:1.35rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums;
+  }
+  #clientsTableBody td:nth-child(6){
+    grid-column:1/-1!important;
+    border-top:0!important;
+    margin-top:0!important;
+    padding:0!important;
+  }
+  #clientsTableBody td::before{
+    margin-bottom:5px!important;
+    font-size:.68rem!important;
+    color:#91a1b5!important;
+  }
+  #clientsTableBody td:nth-child(6)::before{
+    display:none!important;
+  }
+  #clientsTableBody .btn-action{
+    min-height:46px!important;
+    width:100%!important;
+    border-radius:12px!important;
+  }
+}
