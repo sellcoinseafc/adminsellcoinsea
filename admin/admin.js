@@ -4501,6 +4501,8 @@ function syncOpenOrderModal(order) {
   if (progress) {
     progress.style.width =
       percent.toFixed(2) + "%";
+    const progressText=progress.querySelector("b");
+    if(progressText) progressText.textContent=percent.toFixed(2)+"%";
   }
 
   const percentLabel =
@@ -4678,7 +4680,6 @@ window.saveModalOrderStatus=async function(orderId){
     }
 
     refreshOrdersDerivedUI();
-    syncOpenOrderModal(order);
 
     try {
       await logAuditEvent(
@@ -4689,7 +4690,12 @@ window.saveModalOrderStatus=async function(orderId){
     } catch (auditError) {
       console.warn("Status audit logging failed after successful update:", auditError);
     }
-    syncOpenOrderModal(order);
+
+    if (document.querySelector("#orderDetailModal .order-status-edit-form")) {
+      openOrderStatusEditForm(orderId);
+    } else {
+      syncOpenOrderModal(order);
+    }
 
     showToast("تم تحديث حالة الطلب.");
   } catch (error) {
@@ -4811,43 +4817,125 @@ window.copyModalStatusMessage=async function(orderId){const order=ordersData.fin
 window.openOrderStatusEditForm=function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);
   if(!order)return;
+
   const body=document.getElementById("modalOrderBody");
   const modal=document.getElementById("orderDetailModal");
   const title=document.getElementById("modalOrderIdTitle");
   if(!body||!modal)return;
 
-  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const ref=order.referenceNumber||order.orderId||order.id;
+  const platform=String(order.platform||"").trim();
+  const platformKey=platform.toUpperCase();
+  const platformClass=platformKey==="PLAYSTATION"?"playstation":platformKey==="XBOX"?"xbox":"pc";
+  const platformLabel=platform||"---";
+  const platformIcon=platformKey==="PLAYSTATION"?"fa-brands fa-playstation":platformKey==="XBOX"?"fa-brands fa-xbox":"fa-solid fa-desktop";
+
+  const total=Math.max(0,Number(order.totalQty||0)||0);
+  const withdrawn=Math.min(total,Math.max(0,Number(order.withdrawnQuantity??order.drawnCoins??0)||0));
+  const remaining=Math.max(0,total-withdrawn);
+  const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
+
   const withdrawalUnlocked=order.status==="progress";
   const locked=!withdrawalUnlocked;
-  const lockedText=locked
-    ? "قسم سحب الكوينز مقفل. يصبح قابلًا للتعديل فقط عند وصول الطلب إلى حالة: جاري سحب الكوينز من حسابك."
-    : "قسم سحب الكوينز مفتوح لأن الطلب في مرحلة السحب.";
+  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const issueOptions=ISSUE_VALUES.map((value)=>'<option value="'+escapeAttribute(value)+'" '+(value===order.issue?"selected":"")+'>'+escapeHtml(ISSUE_LABELS[value]||value)+'</option>').join("");
 
-  if(title) title.innerText=`تعديل حالة الطلب #${escapeHtml(order.referenceNumber||order.orderId||order.id)}`;
+  const currentStatus=STATUS_LABELS[order.status]||order.status||"---";
+  const currentIssue=order.issue?(ISSUE_LABELS[order.issue]||order.issue):"لا توجد مشكلة";
+  const issueMessage=order.issueMessage|| (order.issue?getIssueLabel(order.issue):"");
+
+  if(title) title.innerText=`تعديل حالة الطلب #${escapeHtml(ref)}`;
+
   body.innerHTML=`
-    <div class="order-status-edit-form">
-      <div class="order-section-heading">
-        <div><span class="eyebrow">EDIT STATUS</span><h4>تعديل حالة الطلب</h4></div>
-        <button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">فتح التفاصيل</button>
+    <div class="order-status-edit-form platform-status-edit-${platformClass}">
+      <div class="order-status-edit-head">
+        <div>
+          <span class="eyebrow">EDIT STATUS</span>
+          <h4>تعديل حالة الطلب</h4>
+          <small>تعديل الحالة والمشكلة وبيانات السحب من شاشة واحدة.</small>
+        </div>
+        <button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">تفاصيل الطلب</button>
       </div>
-      <div class="status-edit-current">
-        <span class="field-label">الحالة الحالية</span>
-        <strong class="order-status-badge status-${escapeAttribute(order.status||"unknown")}">${escapeHtml(STATUS_LABELS[order.status]||order.status||"---")}</strong>
+
+      <div class="status-edit-current platform-frame">
+        <div>
+          <span class="field-label">الحالة الحالية</span>
+          <strong class="order-status-badge status-${escapeAttribute(order.status||"unknown")}">${escapeHtml(currentStatus)}</strong>
+        </div>
+        <span class="status-edit-platform">
+          <i class="${platformIcon}"></i>
+          ${escapeHtml(platformLabel)}
+        </span>
       </div>
-      <div class="status-editor-controls status-editor-controls-large">
-        <label class="field"><span>الحالة الجديدة</span>
-          <select id="modalOrderStatusSelect" class="form-control">${statusOptions}</select>
+
+      <div class="status-edit-section">
+        <div class="status-edit-section-title">
+          <div><span class="eyebrow">NEW STATUS</span><b>حالة الطلب الجديدة</b></div>
+          <span class="status-edit-step">01</span>
+        </div>
+        <label class="field status-edit-full-field">
+          <span>اختر الحالة الجديدة</span>
+          <select id="modalOrderStatusSelect" class="form-control status-edit-select status-${escapeAttribute(order.status||"unknown")}">${statusOptions}</select>
         </label>
-        <button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button>
+        <button class="btn-primary btn-wide status-edit-save-btn" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة الجديدة</button>
       </div>
-      <div class="status-edit-lock-note ${locked?"is-locked":""}">
-        <i class="fa-solid ${locked?"fa-lock":"fa-unlock"}"></i>
-        <span>${lockedText}</span>
+
+      <div class="status-edit-section issue-edit-section ${order.issue?"has-issue":""}">
+        <div class="status-edit-section-title">
+          <div><span class="eyebrow">ORDER ISSUE</span><b>مشاكل الطلب</b></div>
+          <span class="status-edit-step">02</span>
+        </div>
+        <label class="field status-edit-full-field">
+          <span>نوع المشكلة</span>
+          <select id="orderIssueSelect" class="form-control modal-issue-select">${'<option value="">لا توجد مشكلة</option>'+issueOptions}</select>
+        </label>
+        <label class="field status-edit-full-field">
+          <span>رسالة المشكلة للعميل</span>
+          <textarea id="orderIssueMessageInput" class="form-control detail-issue-message" rows="3" ${order.issue?"":"disabled"} placeholder="اكتب رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(issueMessage)}</textarea>
+        </label>
+        <button class="btn-secondary btn-wide issue-save-btn" onclick="handleModalIssueChange('${escapeAttribute(order.id)}',document.getElementById('orderIssueSelect')?.value||'')">حفظ المشكلة</button>
+        <div class="status-edit-current-issue"><span>الحالة الحالية للمشكلة</span><strong id="orderIssueSummary">${escapeHtml(currentIssue)}</strong></div>
+      </div>
+
+      <div class="status-edit-section withdrawal-edit-section platform-frame ${locked?"is-locked":""}">
+        <div class="status-edit-section-title">
+          <div><span class="eyebrow">COIN WITHDRAWAL</span><b>عملية سحب الكوينز</b><small>${locked?"تظهر للعرض فقط بعد انتهاء مرحلة السحب.":"يمكنك تعديل الكمية المسحوبة لأن الطلب في مرحلة السحب."}</small></div>
+          <span class="status-edit-lock"><i class="fa-solid ${locked?"fa-lock":"fa-lock-open"}"></i></span>
+        </div>
+
+        <div class="withdraw-summary-grid">
+          <div class="withdraw-summary-card sold"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div>
+          <div class="withdraw-summary-card withdrawn"><span>الكمية المسحوبة</span><strong id="statusEditWithdrawnValue">${formatCoinsNumber(withdrawn)}</strong></div>
+          <div class="withdraw-summary-card remaining"><span>الكمية المتبقية</span><strong id="statusEditRemainingValue">${formatCoinsNumber(remaining)}</strong></div>
+        </div>
+
+        <div class="status-edit-progress">
+          <div class="status-edit-progress-head"><span>نسبة السحب</span><strong id="statusEditProgressPercent">${percent.toFixed(2)}%</strong></div>
+          <div class="progress-track status-edit-progress-track"><span id="statusEditProgressFill" style="width:${percent.toFixed(2)}%"><b>${percent.toFixed(2)}%</b></span></div>
+        </div>
+
+        <div class="status-edit-withdraw-input">
+          <label class="field">
+            <span>تحديد الكمية المسحوبة</span>
+            <input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" ${locked?"disabled":""}>
+          </label>
+          <button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ كمية السحب</button>
+        </div>
+
+        <div class="status-edit-lock-note ${locked?"is-locked":""}">
+          <i class="fa-solid ${locked?"fa-lock":"fa-unlock"}"></i>
+          <span>${locked?"الكمية مقفلة في هذه الحالة. يمكن تعديلها فقط أثناء «جاري سحب الكوينز من حسابك».":"الكمية مفتوحة للتعديل لأن الحالة الحالية هي «جاري سحب الكوينز من حسابك»."}</span>
+        </div>
       </div>
     </div>`;
-  modal.classList.add("active");
-};
 
+  modal.classList.add("active");
+
+  const issueSelect=document.getElementById("orderIssueSelect");
+  if(issueSelect){
+    issueSelect.onchange=()=>window.toggleOrderIssueEditor(issueSelect.value);
+  }
+};
 window.openOrderEditForm=function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);if(!order)return;const body=document.getElementById("modalOrderBody");if(!body)return;
   body.innerHTML=`<div class="order-edit-form"><div class="order-section-heading"><div><span class="eyebrow">EDIT ORDER</span><h4>تعديل بيانات الطلب</h4></div><button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">إلغاء</button></div>
