@@ -4289,8 +4289,8 @@ window.openClientModal =
                       </td>
 
                       <td>
-                        ${getStatusBadge(
-                          order.status
+                        ${getOrderStatusBadge(
+                          order
                         )}
                       </td>
 
