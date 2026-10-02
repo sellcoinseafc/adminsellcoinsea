@@ -4264,7 +4264,7 @@ window.openOrderModal = function (orderId) {
               <div class="order-basic-card order-basic-reference"><span>رقم الطلب</span><strong dir="ltr">#${escapeHtml(ref)}</strong></div>
               <div class="order-basic-card order-basic-platform"><span>المنصة</span><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
               <div class="order-basic-card"><span>الكمية المباعة</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
-              <div class="order-basic-card"><span>سعر البيع</span>${getDisplayPriceMarkup(order)}</div>
+              <div class="order-basic-card order-basic-price"><span>سعر البيع</span>${getDisplayPriceMarkup(order)}</div>
             </div>
           </div>
         </section>
@@ -4308,7 +4308,7 @@ window.openOrderModal = function (orderId) {
               <div class="detail-info-card detail-total-amount"><span>إجمالي المبلغ</span><div class="customer-total-amount"><small>ريال سعودي</small><strong>${customerTotalAmount.toFixed(2)}</strong></div></div>
               <div class="detail-info-card"><span>المنصة</span><strong>${escapeHtml(platform||"---")}</strong></div>
               <div class="detail-info-card"><span>الكمية</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
-              <div class="detail-info-card"><span>المبلغ</span><div>${getDisplayPriceMarkup(order)}</div></div>
+              <div class="detail-info-card detail-order-amount"><span>المبلغ</span><div>${getDisplayPriceMarkup(order)}</div></div>
               <div class="detail-info-card"><span>طريقة الدفع</span><strong>${escapeHtml(paymentMethod||"---")}</strong></div>
             </div>
           </div>
