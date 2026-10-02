@@ -4550,6 +4550,7 @@ window.openOrderModal = function (orderId) {
   const statusLabel=STATUS_LABELS[order.status]||order.status||"---";
   const platform=String(order.platform||"").trim();
   const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+  const platformIcon=platform.toUpperCase()==="PLAYSTATION" ? "fa-brands fa-playstation" : platform.toUpperCase()==="XBOX" ? "fa-brands fa-xbox" : "fa-solid fa-desktop";
   const paymentCode=String(order.paymentMethod||"").toLowerCase();
   const paymentPreview=getPaymentPreviewText(order);
   const paymentMethod = paymentCode === "bank" ? (order.bankName || order.paymentPreview?.bankName || "تحويل بنكي") : paymentCode === "wallet" ? (order.paymentPreview?.walletName || "محفظة رقمية") : paymentCode === "paypal" ? "PayPal" : paymentCode === "usd" || paymentCode === "usdt" ? "USD / USDT" : paymentCode === "western" ? "Western Union" : (order.paymentMethod || "");
@@ -4572,7 +4573,7 @@ window.openOrderModal = function (orderId) {
 
       <section class="order-detail-section">
         <div class="order-section-heading"><div><span class="eyebrow">ORDER DATA</span><h4>المنصة والكمية</h4></div><button class="btn-secondary" onclick="openOrderEditForm('${escapeAttribute(order.id)}')"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</button></div>
-        <div class="order-platform-row"><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="fa-solid ${platform.toUpperCase()==="PC"?"fa-desktop":"fa-gamepad"}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
+        <div class="order-platform-row"><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
         <div class="quantity-grid"><div class="quantity-card"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div><div class="quantity-card"><span>الكمية المسحوبة</span><strong>${formatCoinsNumber(withdrawn)}</strong></div><div class="quantity-card"><span>الكمية المتبقية</span><strong>${formatCoinsNumber(remaining)}</strong></div></div>
         <div class="withdraw-editor ${locked?"is-locked":""}"><div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة لأن الطلب وصل إلى مرحلة نهائية.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div><div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div><div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" value="${formatCoinsNumber(withdrawn)}" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div></div>
       </section>
