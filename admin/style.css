@@ -1881,3 +1881,330 @@ table{
   #withdrawOrdersTableBody .order-data-cell,
   #recentOrdersTableBody .order-data-cell{display:block!important}
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE PASS 2026-10-02
+   Status colors, order cards, pricing, settings, inventory periods.
+   ========================================================================== */
+
+:root{
+  --status-new:#3B82F6;
+  --status-review:#F59E0B;
+  --status-progress:#F97316;
+  --status-finished:#22C55E;
+  --status-transfer:#8B5CF6;
+  --status-completed:#16A34A;
+  --status-problem:#EF4444;
+}
+
+/* Store state: explicit Arabic state instead of ambiguous ONLINE/CLOSED. */
+.store-status-copy{display:inline-flex;align-items:center;gap:8px}
+.store-status-control.is-open .store-status-copy{color:#fff!important}
+.store-status-control.is-closed .store-status-copy{color:#fff!important}
+
+/* Calm status palette — the status itself owns the color. */
+.platform-status-badge,
+.status-badge{
+  border:1px solid transparent!important;
+  color:#fff!important;
+  font-weight:900!important;
+}
+.platform-status-badge.status-new,.status-badge.status-new{
+  background:var(--status-new)!important;border-color:var(--status-new)!important;
+}
+.platform-status-badge.status-review,.status-badge.status-review{
+  background:var(--status-review)!important;border-color:var(--status-review)!important;
+}
+.platform-status-badge.status-progress,.status-badge.status-progress{
+  background:var(--status-progress)!important;border-color:var(--status-progress)!important;
+}
+.platform-status-badge.status-finished,.status-badge.status-finished{
+  background:var(--status-finished)!important;border-color:var(--status-finished)!important;
+}
+.platform-status-badge.status-pending_transfer,
+.platform-status-badge.status-transferred,
+.status-badge.status-pending_transfer,
+.status-badge.status-transferred{
+  background:var(--status-transfer)!important;border-color:var(--status-transfer)!important;
+}
+.platform-status-badge.status-completed,.status-badge.status-completed{
+  background:var(--status-completed)!important;border-color:var(--status-completed)!important;
+}
+.platform-status-badge.status-problem{
+  background:var(--status-problem)!important;border-color:var(--status-problem)!important;
+}
+
+/* Date/time is always a clear vertical stack. */
+.admin-date-stack{
+  display:inline-grid;
+  gap:2px;
+  line-height:1.25;
+  color:#fff;
+  text-align:center;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.admin-date-stack b{font-size:.84rem;color:#fff;font-weight:900}
+.admin-date-stack span{font-size:.76rem;color:#fff;font-weight:800}
+.admin-date-stack small{font-size:.7rem;color:#fff;font-weight:700}
+.last-update-value{display:inline-block;color:#fff!important}
+
+/* Order amount: RS above the numeric value. */
+.order-price-stack{
+  display:inline-grid;
+  justify-items:center;
+  line-height:1.05;
+  font-variant-numeric:tabular-nums;
+  color:#fff;
+}
+.order-price-stack small{
+  color:#fff;
+  font-size:.68rem;
+  font-weight:900;
+  letter-spacing:.4px;
+}
+.order-price-stack strong{
+  color:#fff!important;
+  font-size:1.16rem;
+  font-weight:900;
+}
+
+/* Total amount box in order details: dark green + white amount. */
+.payment-total-row{
+  background:#123b27!important;
+  border:1px solid rgba(34,197,94,.42)!important;
+  border-radius:16px!important;
+  color:#fff!important;
+}
+.payment-total-row span{color:rgba(255,255,255,.78)!important}
+.payment-total-row strong{color:#fff!important}
+
+/* Sensitive fields: remove visible copy instruction, and put the three codes on one row. */
+.secure-copy-field small{display:none!important}
+.secure-fields-grid{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.secure-copy-field:nth-child(1),
+.secure-copy-field:nth-child(2){grid-column:span 3}
+.secure-copy-field:nth-child(3),
+.secure-copy-field:nth-child(4),
+.secure-copy-field:nth-child(5){grid-column:span 2}
+.secure-copy-field{
+  min-width:0;
+}
+.secure-copy-field strong{
+  color:#fff!important;
+  font-size:1rem!important;
+}
+
+/* Status template pencil and save row. */
+.status-message-card{position:relative}
+.status-template-icon{
+  float:inline-end;
+  display:inline-grid;
+  place-items:center;
+  width:28px;
+  height:28px;
+  border-radius:9px;
+  color:var(--primary);
+  background:rgba(0,255,135,.08);
+  border:1px solid rgba(0,255,135,.16);
+  margin-inline-start:8px;
+}
+.status-messages-save-row{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:14px;
+  padding-top:14px;
+  border-top:1px solid var(--line);
+}
+.status-messages-save-row .btn-primary{min-width:190px}
+
+/* Inventory period selector. */
+.inventory-period-controls{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.inventory-period-controls>label{
+  display:grid;
+  gap:5px;
+  color:#fff;
+  font-size:.75rem;
+  font-weight:800;
+}
+.inventory-period-controls select{min-width:170px}
+.inventory-custom-period{
+  display:flex;
+  gap:8px;
+  align-items:flex-end;
+}
+.inventory-custom-period[hidden]{display:none!important}
+.inventory-custom-period label{
+  display:grid;
+  gap:5px;
+  color:#fff;
+  font-size:.75rem;
+  font-weight:800;
+}
+.inventory-custom-period input{
+  min-height:44px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--input);
+  color:#fff;
+  padding:8px 10px;
+}
+
+/* Payment/banks page: slightly larger mobile typography. */
+#paymentsTab .catalog-list,
+#paymentsTab .catalog-list span{
+  font-size:1rem!important;
+}
+#paymentsTab .panel h3{font-size:1.08rem!important}
+#paymentsTab .catalog-list{line-height:1.75}
+
+/* Pricing page: centered values and larger price. */
+#pricingTab .form-control,
+#pricingTab .store-setting-field{
+  text-align:center!important;
+}
+#pricingTab .field label{text-align:right}
+#pricingTab #psRate,
+#pricingTab #pcRate{
+  font-size:1.35rem!important;
+  font-weight:900!important;
+  text-align:center!important;
+}
+
+/* Audit/activity table: prevent long action/detail text from breaking the card. */
+.stats-audit-panel .table-wrap{overflow-x:auto}
+.stats-audit-panel td,
+.stats-audit-panel th{vertical-align:top}
+.stats-audit-panel td:last-child{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+
+/* Mobile order cards inherit the platform identity across the whole card. */
+@media(max-width:600px){
+  .secure-fields-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .secure-copy-field:nth-child(1),
+  .secure-copy-field:nth-child(2){
+    grid-column:1/-1;
+  }
+  .secure-copy-field:nth-child(3),
+  .secure-copy-field:nth-child(4),
+  .secure-copy-field:nth-child(5){
+    grid-column:span 1;
+  }
+
+  .platform-order-card.platform-playstation{
+    background:linear-gradient(145deg,rgba(47,128,237,.16),rgba(8,20,38,.96))!important;
+    border-color:rgba(47,128,237,.42)!important;
+  }
+  .platform-order-card.platform-xbox{
+    background:linear-gradient(145deg,rgba(34,197,94,.16),rgba(7,29,20,.96))!important;
+    border-color:rgba(34,197,94,.42)!important;
+  }
+  .platform-order-card.platform-pc{
+    background:linear-gradient(145deg,rgba(239,68,68,.16),rgba(35,12,15,.96))!important;
+    border-color:rgba(239,68,68,.42)!important;
+  }
+
+  .platform-order-card .order-reference-value,
+  .platform-order-card .table-large-value,
+  .platform-order-card .table-primary-value{
+    color:#fff!important;
+  }
+
+  .platform-order-card .order-reference-value{
+    font-size:1.25rem!important;
+    font-weight:900!important;
+  }
+  .platform-order-card .table-large-value{
+    font-size:1.3rem!important;
+  }
+  .platform-order-card .recent-customer-name,
+  .platform-order-card .table-primary-value{
+    font-size:1.12rem!important;
+    font-weight:900!important;
+  }
+
+  .platform-order-card .platform-status-badge{
+    width:100%!important;
+    min-height:54px!important;
+    padding:8px 12px!important;
+    white-space:normal!important;
+    line-height:1.35!important;
+    writing-mode:horizontal-tb!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+    text-align:center!important;
+  }
+
+  .order-price-stack small{font-size:.75rem}
+  .order-price-stack strong{font-size:1.45rem!important}
+
+  .inventory-period-controls{
+    display:grid;
+    grid-template-columns:1fr;
+    align-items:stretch;
+    width:100%;
+  }
+  .inventory-period-controls select{width:100%;min-width:0}
+  .inventory-custom-period{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .inventory-custom-period input{width:100%;min-width:0}
+
+  .status-messages-save-row{
+    justify-content:stretch;
+  }
+  .status-messages-save-row .btn-primary{width:100%}
+
+  #pricingTab #psRate,
+  #pricingTab #pcRate{
+    font-size:1.45rem!important;
+  }
+
+  .admin-date-stack{
+    min-width:72px;
+  }
+  .admin-date-stack b{font-size:.82rem}
+  .admin-date-stack span{font-size:.72rem}
+  .admin-date-stack small{font-size:.68rem}
+
+  /* The status is intentionally a vertical card, not a stack of broken words. */
+  #fullOrdersTableBody td:nth-child(6),
+  #recentOrdersTableBody td:nth-child(6){
+    display:block!important;
+  }
+  #fullOrdersTableBody td:nth-child(6) .table-field-label,
+  #recentOrdersTableBody td:nth-child(6) .table-field-label{
+    margin-bottom:7px!important;
+  }
+
+  /* Keep action controls compact after removing preview/edit. */
+  .order-list-actions{
+    display:flex!important;
+    gap:7px!important;
+    flex-wrap:wrap!important;
+  }
+}
+
+@media(min-width:601px){
+  .payment-total-row{
+    padding:14px 18px!important;
+  }
+  .order-price-stack{
+    display:inline-grid;
+  }
+}
