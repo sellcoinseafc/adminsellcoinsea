@@ -1008,10 +1008,7 @@ window.copyTrackingLink =
         url
       );
 
-      showToast(
-        "✅ تم نسخ رابط التتبع بنجاح:\n" +
-          url
-      );
+      
     } catch {
       prompt(
         "نسخ رابط التتبع المباشر:",
@@ -1072,11 +1069,9 @@ function formatCoinsNumber(
     return "0";
   }
 
-  return Number(
-    value
-  ).toLocaleString(
-    "en-US"
-  );
+  return Number(value).toLocaleString("en-US", {
+    maximumFractionDigits: 0
+  });
 }
 
 function parseFirestoreDate(
@@ -4602,8 +4597,18 @@ function getStatusMessage(status,order){
 }
 window.copyValue=async function(value){
   const textValue=String(value||""); if(!textValue)return;
-  try{await navigator.clipboard.writeText(textValue);}catch{const area=document.createElement("textarea");area.value=textValue;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();}
-  showToast("تم النسخ.");
+  try{await navigator.clipboard.writeText(textValue);}
+  catch{
+    const area=document.createElement("textarea");
+    area.value=textValue;
+    area.setAttribute("readonly","");
+    area.style.position="fixed";
+    area.style.opacity="0";
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+  }
 };
 window.copyElementValue=function(id){const el=document.getElementById(id);if(!el||!el.textContent||/^•+$/.test(el.textContent.trim())){showToast("فك التشفير أولاً.");return;}copyValue(el.textContent.trim());};
 window.saveModalOrderStatus=async function(orderId){
