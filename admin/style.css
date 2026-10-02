@@ -7340,3 +7340,289 @@ textarea.form-control{
     min-height:32px!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE STEP 4: ORDER LIST CARDS — 2026-10-03
+   Each order field occupies a full row for fast scanning and no crowding.
+   ========================================================================== */
+@media (max-width:600px){
+  #ordersTab .orders-panel{
+    width:100%!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab .table-wrap{
+    width:100%!important;
+    overflow:visible!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  #ordersTab table{
+    width:100%!important;
+    display:block!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  #ordersTab table thead{
+    display:none!important;
+  }
+
+  #fullOrdersTableBody{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #fullOrdersTableBody tr{
+    width:100%!important;
+    min-width:0!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:1px solid rgba(56,189,248,.16)!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,rgba(8,25,43,.98),rgba(5,15,27,.98))!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
+  }
+
+  #fullOrdersTableBody tr>td{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    padding:11px 12px!important;
+    margin:0!important;
+    border:0!important;
+    border-bottom:1px solid rgba(255,255,255,.055)!important;
+    text-align:right!important;
+    direction:rtl!important;
+    background:transparent!important;
+  }
+
+  #fullOrdersTableBody tr>td:last-child{
+    border-bottom:0!important;
+  }
+
+  /* One compact label + one value, but the row itself always spans the card. */
+  #fullOrdersTableBody tr>td::before{
+    flex:0 0 92px!important;
+    width:92px!important;
+    color:#8ea0b7!important;
+    font-size:.69rem!important;
+    line-height:1.35!important;
+    font-weight:800!important;
+    text-align:right!important;
+    white-space:nowrap!important;
+  }
+
+  #fullOrdersTableBody tr>td:nth-child(1)::before{content:"المرجع";}
+  #fullOrdersTableBody tr>td:nth-child(2)::before{content:"العميل";}
+  #fullOrdersTableBody tr>td:nth-child(3)::before{content:"المنصة";}
+  #fullOrdersTableBody tr>td:nth-child(4)::before{content:"الكمية";}
+  #fullOrdersTableBody tr>td:nth-child(5)::before{content:"المبلغ الإجمالي";}
+  #fullOrdersTableBody tr>td:nth-child(6)::before{content:"الحالة";}
+  #fullOrdersTableBody tr>td:nth-child(7)::before{content:"آخر تحديث";}
+  #fullOrdersTableBody tr>td:nth-child(8)::before{content:"الإجراءات";}
+
+  #fullOrdersTableBody tr>td>*{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  /* Reference: visually prominent and kept on one line. */
+  #fullOrdersTableBody tr>td:nth-child(1) .order-reference-value{
+    display:block!important;
+    width:auto!important;
+    max-width:calc(100% - 8px)!important;
+    padding:5px 8px!important;
+    border-radius:8px!important;
+    font-size:.82rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #fullOrdersTableBody tr>td:nth-child(1) .order-ref-stack{
+    width:auto!important;
+    min-width:0!important;
+    max-width:calc(100% - 104px)!important;
+    flex:1 1 auto!important;
+    align-items:flex-start!important;
+  }
+
+  /* Customer name gets a little less visual weight than the reference. */
+  #fullOrdersTableBody tr>td:nth-child(2) .recent-customer-name,
+  #fullOrdersTableBody tr>td:nth-child(2) .customer-name{
+    max-width:calc(100% - 104px)!important;
+    min-width:0!important;
+    font-size:.78rem!important;
+    line-height:1.3!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    color:#fff!important;
+  }
+
+  /* Platform is a compact logo/badge only. */
+  #fullOrdersTableBody tr>td:nth-child(3){
+    min-height:48px!important;
+  }
+
+  #fullOrdersTableBody tr>td:nth-child(3) .platform-badge{
+    margin-right:auto!important;
+  }
+
+  /* Quantity: bigger than customer/reference metadata. */
+  #fullOrdersTableBody tr>td:nth-child(4){
+    min-height:52px!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(4) strong,
+  #fullOrdersTableBody tr>td:nth-child(4) .table-primary-value,
+  #fullOrdersTableBody tr>td:nth-child(4) .order-quantity-value{
+    font-size:1.12rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    color:#fff!important;
+    font-variant-numeric:tabular-nums!important;
+    white-space:nowrap!important;
+  }
+
+  /* Total: Arabic currency label above the dominant number. */
+  #fullOrdersTableBody tr>td:nth-child(5){
+    min-height:66px!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(5) .order-price-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-end!important;
+    justify-content:center!important;
+    gap:2px!important;
+    margin-right:auto!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(5) .order-price-stack small{
+    display:block!important;
+    font-size:.62rem!important;
+    line-height:1!important;
+    color:#b7c2d0!important;
+    white-space:nowrap!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(5) .order-price-stack strong{
+    display:block!important;
+    font-size:1.28rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    color:#fff!important;
+    font-variant-numeric:tabular-nums!important;
+    white-space:nowrap!important;
+  }
+
+  /* External status presentation: compact icon + short label. */
+  #fullOrdersTableBody tr>td:nth-child(6){
+    min-height:52px!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(6) .order-status-badge{
+    margin-right:auto!important;
+    max-width:calc(100% - 100px)!important;
+    min-height:36px!important;
+    padding:6px 10px!important;
+    border-radius:10px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    font-size:.72rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Last update remains compact and readable. */
+  #fullOrdersTableBody tr>td:nth-child(7){
+    min-height:52px!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(7) .last-update-stack{
+    margin-right:auto!important;
+    min-width:0!important;
+    text-align:left!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(7) .last-update-stack b{
+    display:block!important;
+    font-size:.76rem!important;
+    color:#fff!important;
+    white-space:nowrap!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(7) .last-update-stack span{
+    display:block!important;
+    font-size:.66rem!important;
+    color:#8ea0b7!important;
+    white-space:nowrap!important;
+  }
+
+  /* Actions occupy a complete final row. */
+  #fullOrdersTableBody tr>td:nth-child(8){
+    min-height:56px!important;
+    justify-content:flex-start!important;
+    flex-wrap:nowrap!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(8) .order-list-actions{
+    width:auto!important;
+    margin-right:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    flex-wrap:nowrap!important;
+    gap:7px!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(8) .btn-action{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    display:inline-grid!important;
+    place-items:center!important;
+    border-radius:10px!important;
+  }
+}
+
+@media (max-width:360px){
+  #fullOrdersTableBody tr>td{
+    padding:10px!important;
+    gap:8px!important;
+  }
+  #fullOrdersTableBody tr>td::before{
+    flex-basis:82px!important;
+    width:82px!important;
+    font-size:.64rem!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(2) .recent-customer-name,
+  #fullOrdersTableBody tr>td:nth-child(2) .customer-name{
+    max-width:calc(100% - 94px)!important;
+    font-size:.74rem!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(4) strong,
+  #fullOrdersTableBody tr>td:nth-child(4) .table-primary-value,
+  #fullOrdersTableBody tr>td:nth-child(4) .order-quantity-value{
+    font-size:1.04rem!important;
+  }
+  #fullOrdersTableBody tr>td:nth-child(5) .order-price-stack strong{
+    font-size:1.18rem!important;
+  }
+}
