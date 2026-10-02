@@ -4873,6 +4873,7 @@ function syncOpenOrderModal(order) {
   const issueSelect = document.getElementById("orderIssueSelect");
   const issueMessageInput = document.getElementById("orderIssueMessageInput");
   const issueSummary = document.getElementById("orderIssueSummary");
+  const issueState = modal.querySelector(".issue-editor-state");
 
   if (issueSelect) issueSelect.value = order.issue || "";
   if (issueMessageInput) {
@@ -4883,7 +4884,10 @@ function syncOpenOrderModal(order) {
     issueSummary.textContent = order.issue
       ? (ISSUE_LABELS[order.issue] || order.issue)
       : "لا توجد مشكلة مسجلة";
-    issueSummary.classList.toggle("has-issue", !!order.issue);
+  }
+  if (issueState) {
+    issueState.textContent = order.issue ? "موجودة" : "بدون مشكلة";
+    issueState.classList.toggle("has-issue", !!order.issue);
   }
 
   const statusMessage =
