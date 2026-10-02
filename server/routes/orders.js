@@ -3219,7 +3219,40 @@ router.post(
             ? updateData.issue
             : normalizeIssue(
                 current.issue
-              )
+              ),
+
+        issueMessage:
+          updateData.issueMessage !==
+          undefined
+            ? updateData.issueMessage
+            : String(current.issueMessage || ""),
+
+        completedAt:
+          updateData.completedAt ||
+          current.completedAt ||
+          null,
+
+        purgeDueAt:
+          updateData.purgeDueAt ||
+          current.purgeDueAt ||
+          null,
+
+        transferredAt:
+          updateData.transferredAt ||
+          current.transferredAt ||
+          null,
+
+        transferredBy:
+          updateData.transferredBy ||
+          current.transferredBy ||
+          "",
+
+        transferCompleted:
+          updateData.transferCompleted === true ||
+          current.transferCompleted === true,
+
+        lastUpdate:
+          updateData.lastUpdate || new Date()
       });
     } catch (error) {
       console.error(
@@ -3381,7 +3414,13 @@ router.post(
           committedDrawn.value,
 
         remainingQuantity:
-          committedDrawn.remainingQuantity
+          committedDrawn.remainingQuantity,
+
+        lastUpdate:
+          new Date(),
+
+        withdrawnUpdatedAt:
+          new Date()
       });
     } catch (error) {
       console.error(
