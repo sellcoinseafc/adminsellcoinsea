@@ -1896,9 +1896,7 @@ function renderDashboardQuickStats() {
 
   const countTransferPending =
     ordersData.filter(
-      (o) =>
-        o.status ===
-        "finished"
+      (o) => o.status === "pending_transfer"
     ).length;
 
   const purgeCount =
