@@ -1417,7 +1417,7 @@ table{
   background:rgba(239,68,68,.08)!important;
 }
 .store-status-control.is-closed .store-switch-track{background:#ef4444!important}
-.store-status-control.is-closed .store-switch-thumb{transform:translateX(-18px)}
+.store-status-control.is-closed .store-switch-thumb{transform:none}
 #dashboardStoreState{font-weight:900}
 .dashboard-stats-grid{
   display:block!important;
@@ -1869,4 +1869,15 @@ table{
   .store-status-control{padding-inline:9px!important}
   .store-status-copy{font-size:.78rem}
   .platform-status-badge{font-size:.76rem}
+}
+
+.dashboard-status-card,.dashboard-stock-card{position:relative}
+.dashboard-status-card>i{position:absolute;inset-inline-start:14px;bottom:12px}
+@media(max-width:600px){
+  #fullOrdersTableBody td::before,
+  #withdrawOrdersTableBody td::before,
+  #recentOrdersTableBody td::before{content:none!important;display:none!important}
+  #fullOrdersTableBody .order-data-cell,
+  #withdrawOrdersTableBody .order-data-cell,
+  #recentOrdersTableBody .order-data-cell{display:block!important}
 }
