@@ -7515,42 +7515,14 @@ window.toggleSidebar =
     if (menuIcon) menuIcon.className = "fa-solid fa-xmark";
   };
 
-window.toggleTheme =
-  function () {
-    const light =
-      !document.body.classList.contains("light-mode");
-
-    document.body.classList.toggle("light-mode", light);
-
-    try {
-      localStorage.setItem(
-        "samiCoinsTheme",
-        light ? "light" : "dark"
-      );
-    } catch (_) {}
-
-    const themeIcon =
-      document.querySelector("#themeToggleBtn i");
-
-    if (!themeIcon) return;
-
-    themeIcon.className =
-      light
-        ? "fa-regular fa-sun"
-        : "fa-regular fa-moon";
-  };
+window.toggleTheme = function(){
+  document.body.classList.remove("light-mode");
+  try { localStorage.setItem("samiCoinsTheme","dark"); } catch (_) {}
+};
 
 (function initThemePreference(){
-  try {
-    const saved = localStorage.getItem("samiCoinsTheme");
-    const light = saved === "light";
-    document.body.classList.toggle("light-mode", light);
-    const icon = document.querySelector("#themeToggleBtn i");
-    if (icon) {
-      icon.className =
-        light ? "fa-regular fa-sun" : "fa-regular fa-moon";
-    }
-  } catch (_) {}
+  document.body.classList.remove("light-mode");
+  try { localStorage.setItem("samiCoinsTheme","dark"); } catch (_) {}
 })();
 
 // ==========================================================================
