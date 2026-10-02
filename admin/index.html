@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003m">
+<link rel="stylesheet" href="style.css?v=20261003n">
 </head>
 <body>
 <div class="login-overlay active" id="loginOverlay"><div class="login-card-nextgen">
@@ -51,7 +51,7 @@
 <header class="topbar"><div class="topbar-right"><button id="sidebarMenuToggle" class="icon-btn mobile-only" type="button" aria-label="فتح القائمة" aria-expanded="false" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button><div><div class="eyebrow">SAMI COINS</div><h1 id="pageTitleHeading">الرئيسية</h1></div></div>
 <div class="topbar-left"><div class="global-search"><i class="fa-solid fa-magnifying-glass"></i><input id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="بحث بالمرجع، الجوال أو الاسم"></div><button id="storeStatusToggleBtn" class="store-status-control is-open" aria-pressed="true" onclick="toggleStoreStatus()">
   <span class="store-switch-track" aria-hidden="true"><span class="store-switch-thumb"></span></span>
-  <span class="store-status-copy"><i class="fa-solid fa-store"></i><span id="storeStatusText">ONLINE</span></span>
+  <span class="store-status-copy"><i class="fa-solid fa-store"></i><span id="storeStatusText">مفتوح</span></span>
 </button><span id="liveDatetime" class="clock">--</span><button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()"><i class="fa-regular fa-moon"></i></button></div></header>
 <div id="systemNotificationBanner" class="system-banner" style="display:none"><div><b id="notificationBannerTitle">إشعار النظام</b><span id="notificationBannerText"></span></div><button id="notificationBannerAction" class="btn-secondary">استعراض</button></div>
 <div id="urgentTransferBanner" class="system-banner urgent" style="display:none"><div><b>تنبيه للتحويلات</b><span id="bannerTransferText"></span></div><button class="btn-warning" onclick="switchTab('transferAlertsTab',document.querySelector('.sidebar-link[onclick*="transferAlertsTab"]'))">عرض</button></div>
@@ -64,7 +64,7 @@
 </div>
 <div class="command-summary">
   <div class="command-main"><span class="live-dot">● النظام يعمل</span><strong>كل العمليات في مكان واحد</strong><p>ابدأ من الطلبات الجديدة، تابع السحب، ثم راجع التحويلات التي تحتاج إجراء.</p></div>
-  <div class="command-side"><span>حالة المتجر</span><b id="dashboardStoreState">ONLINE</b><small>يتم تحديث البيانات من الخادم</small></div>
+  <div class="command-side"><span>حالة المتجر</span><b id="dashboardStoreState">مفتوح</b><small>يتم تحديث البيانات من الخادم</small></div>
 </div>
 <div class="stats-grid dashboard-stats-grid">
   <div class="dashboard-status-group">
@@ -166,7 +166,26 @@
     </article>
   </div>
   <div class="panel inventory-24h-panel">
-    <div class="panel-title"><div><span class="eyebrow">LAST 24 HOURS</span><h3>حركة الكمية خلال آخر 24 ساعة</h3><p class="muted">الكمية المضافة من الطلبات الجديدة والكمية المسحوبة فعليًا.</p></div></div>
+    <div class="panel-title"><div><span class="eyebrow">QUANTITY MOVEMENT</span><h3>حركة الكمية حسب الفترة</h3><p class="muted">الكمية المضافة من الطلبات الجديدة والكمية المسحوبة فعليًا.</p></div>
+      <div class="inventory-period-controls" aria-label="فترة حركة الكمية">
+        <label for="inventoryPeriodSelect">الفترة
+          <select id="inventoryPeriodSelect" class="compact-input" onchange="handleInventoryPeriodChange()">
+            <option value="24h">24 ساعة</option>
+            <option value="48h">48 ساعة</option>
+            <option value="72h">72 ساعة</option>
+            <option value="7d">أسبوع</option>
+            <option value="30d">شهر</option>
+            <option value="90d">3 أشهر</option>
+            <option value="365d">سنة</option>
+            <option value="custom">تحديد فترة مخصصة</option>
+          </select>
+        </label>
+        <div id="inventoryCustomPeriod" class="inventory-custom-period" hidden>
+          <label>من <input id="inventoryPeriodStart" type="date" onchange="handleInventoryPeriodChange()"></label>
+          <label>إلى <input id="inventoryPeriodEnd" type="date" onchange="handleInventoryPeriodChange()"></label>
+        </div>
+      </div>
+    </div>
     <div class="inventory-movement-grid">
       <article class="inventory-movement-card platform-playstation"><div><i class="fa-brands fa-playstation"></i><i class="fa-brands fa-xbox"></i><b>PS / Xbox</b></div><div><span>أضيفت</span><strong id="inv24hAddedShared">0</strong></div><div><span>انسحبت</span><strong id="inv24hWithdrawnShared">0</strong></div></article>
       <article class="inventory-movement-card platform-pc"><div><i class="fa-solid fa-desktop"></i><b>PC</b></div><div><span>أضيفت</span><strong id="inv24hAddedPC">0</strong></div><div><span>انسحبت</span><strong id="inv24hWithdrawnPC">0</strong></div></article>
@@ -193,8 +212,9 @@
 <section id="settingsTab" class="tab-content">
   <div class="page-head"><div><span class="eyebrow">SYSTEM</span><h2>الإعدادات العامة</h2></div></div>
   <div class="panel status-messages-panel">
-    <div class="panel-title"><div><span class="eyebrow">WHATSAPP TEMPLATES</span><h3>رسائل حالات الطلبات</h3><p class="muted">قوالب داخلية فقط. لا يتم الإرسال تلقائيًا. استخدم المتغيرات: {customerName} و {referenceNumber} و {status}.</p></div><button class="btn-primary" onclick="saveStatusMessages()">حفظ رسائل الحالات</button></div>
+    <div class="panel-title"><div><span class="eyebrow">WHATSAPP TEMPLATES</span><h3>رسائل حالات الطلبات</h3><p class="muted">قوالب داخلية فقط ليتم الإرسال.</p></div></div>
     <div id="statusMessagesContainer" class="status-messages-grid"></div>
+    <div class="status-messages-save-row"><button class="btn-primary" onclick="saveStatusMessages()"><i class="fa-solid fa-floppy-disk"></i> حفظ رسائل الحالات</button></div>
   </div>
   <div class="panel">
     <div class="panel-title"><div><span class="eyebrow">ISSUES</span><h3>رسائل المشاكل</h3></div><button class="btn-secondary" onclick="saveIssueMessages()">حفظ رسائل المشاكل</button></div>
@@ -210,5 +230,5 @@
 <div class="modal-overlay" id="clientDetailModal"><div class="modal-card"><div class="modal-header"><h3 id="clientModalTitle">سجل العميل</h3><button class="modal-close-btn" onclick="closeClientModal()">×</button></div><div id="clientModalBody"></div></div></div>
 <div class="modal-overlay" id="purgeConfirmModal"><div class="modal-card confirm-modal"><div class="modal-header"><h3>تأكيد الإتلاف</h3><button class="modal-close-btn" onclick="closePurgeModal()">×</button></div><div class="confirm-body"><i class="fa-solid fa-skull-crossbones danger-icon"></i><p>سيتم إتلاف البيانات الحساسة نهائياً ولا يمكن استعادتها.</p><input type="hidden" id="purgeTargetOrderId"><div><button class="btn-secondary" onclick="closePurgeModal()">إلغاء</button><button class="btn-danger" onclick="confirmPurgeDataFinal()">إتلاف نهائي</button></div></div></div></div>
 <nav class="mobile-app-nav" id="mobileAppNav"><button class="mobile-app-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button><button class="mobile-app-nav-item" data-tab="ordersTab" onclick="switchTab('ordersTab',this)"><i class="fa-solid fa-box"></i><span>الطلبات</span><b id="mobileOrdersBadge">0</b></button><button class="mobile-app-nav-item" data-tab="customerProfileTab" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button><button class="mobile-app-nav-item" data-tab="paymentsTab" onclick="switchTab('paymentsTab',this)"><i class="fa-solid fa-wallet"></i><span>الدفع</span></button><button class="mobile-app-nav-item" data-tab="settingsTab" onclick="switchTab('settingsTab',this)"><i class="fa-solid fa-bars"></i><span>المزيد</span></button></nav>
-<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003m"></script>
+<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003n"></script>
 </body></html>
