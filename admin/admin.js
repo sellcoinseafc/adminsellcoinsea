@@ -2047,6 +2047,29 @@ async function loadOrders() {
 
 function refreshOrdersDerivedUI() {
   sortOrdersByPriority();
+
+  const totalOrders = ordersData.length;
+  const needsReview = ordersData.filter((item) =>
+    ["new", "pending", "review"].includes(String(item.status || "").toLowerCase())
+  ).length;
+  const inProgress = ordersData.filter((item) =>
+    String(item.status || "").toLowerCase() === "progress"
+  ).length;
+  const completedOrders = ordersData.filter((item) =>
+    String(item.status || "").toLowerCase() === "completed"
+  ).length;
+
+  const kpis = {
+    ordersTotalCount: totalOrders,
+    ordersNewCount: needsReview,
+    ordersProgressCount: inProgress,
+    ordersCompletedCount: completedOrders
+  };
+
+  Object.entries(kpis).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = String(value);
+  });
   renderInventoryUI(currentSettingsData);
   renderDashboardQuickStats();
   renderStatisticsPage();
@@ -2552,181 +2575,59 @@ window.renderWithdrawOrdersTable =
 
 window.renderTransferAlertsTable =
   function () {
-    const tbody =
-      document.getElementById(
-        "transferAlertsTableBody"
-      );
+    const tbody = document.getElementById("transferAlertsTableBody");
+    const banner = document.getElementById("urgentTransferBanner");
+    const bannerText = document.getElementById("bannerTransferText");
 
-    const banner =
-      document.getElementById(
-        "urgentTransferBanner"
-      );
+    const transferOrders = ordersData.filter(
+      (order) => order.status === "pending_transfer"
+    );
 
-    const bannerText =
-      document.getElementById(
-        "bannerTransferText"
-      );
+    const badgeCount = document.getElementById("transferBadgeCount");
+    if (badgeCount) badgeCount.innerText = String(transferOrders.length);
 
-    const transferOrders =
-      ordersData.filter(
-        (order) =>
-          order.status === "pending_transfer"
-      );
-
-    const badgeCount =
-      document.getElementById(
-        "transferBadgeCount"
-      );
-
-    if (badgeCount) {
-      badgeCount.innerText =
-        transferOrders.length;
-    }
-
-    const headerBadge =
-      document.getElementById(
-        "transferHeaderBadge"
-      );
-
-    if (headerBadge) {
-      headerBadge.innerText =
-        `${transferOrders.length} طلبات بحاجة للتحويل`;
-    }
+    const headerBadge = document.getElementById("transferHeaderBadge");
+    if (headerBadge) headerBadge.innerText = `${transferOrders.length} طلبات بحاجة للتحويل`;
 
     if (banner) {
-      banner.style.display =
-        transferOrders.length >
-        0
-          ? "flex"
-          : "none";
-
-      if (
-        bannerText &&
-        transferOrders.length >
-          0
-      ) {
-        bannerText.innerText =
-          `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
+      banner.style.display = transferOrders.length > 0 ? "flex" : "none";
+      if (bannerText && transferOrders.length > 0) {
+        bannerText.innerText = `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
       }
     }
 
     if (!tbody) return;
 
-    if (
-      transferOrders.length ===
-      0
-    ) {
+    if (transferOrders.length === 0) {
       tbody.innerHTML = `
-        <tr>
-          <td colspan="7"
-              style="text-align:center;color:var(--text-muted);padding:20px;">
-            لا توجد طلبات بحاجة للتحويل حالياً.
-          </td>
-        </tr>
+        <tr><td colspan="7" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
       `;
-
       return;
     }
 
-    tbody.innerHTML =
-      transferOrders
-        .map(
-          (order) => {
-            const ref =
-              order.referenceNumber ||
-              "";
+    tbody.innerHTML = transferOrders.map((order) => {
+      const ref = order.referenceNumber || "---";
+      const amount = getDisplayPrice(order);
+      const createdAt = order.createdAt
+        ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
+        : "---";
 
-            return `
-              <tr>
-
-                <td>
-                  <b
-                    style="color:var(--primary);font-family:monospace;cursor:pointer;"
-                    onclick="copyTrackingLink('${escapeAttribute(
-                      ref
-                    )}')">
-                    ${escapeHtml(
-                      ref || "---"
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.name ||
-                      "---"
-                  )}
-                </td>
-
-                <td>
-                  <span style="font-family:monospace;">
-                    ${escapeHtml(
-                      order.phone ||
-                        "---"
-                    )}
-                  </span>
-                </td>
-
-                <td>
-                  <b style="color:#f59e0b;">
-                    ${escapeHtml(
-                      getDisplayPrice(
-                        order
-                      )
-                    )}
-                  </b>
-                </td>
-
-                <td>
-                  <span class="badge badge-review">
-                    ${escapeHtml(
-                      order.paymentMethod ||
-                        "---"
-                    )}
-                    ${
-                      order.bankName
-                        ? " - " +
-                          escapeHtml(
-                            order.bankName
-                          )
-                        : ""
-                    }
-                  </span>
-                </td>
-
-                <td>
-                  ${escapeHtml(
-                    order.createdAt
-                      ? order.createdAt.toLocaleString(
-                          "en-GB",
-                          {
-                            timeZone:
-                              "Asia/Riyadh"
-                          }
-                        )
-                      : "---"
-                  )}
-                </td>
-
-                <td>
-                  <button
-                    class="btn-custom"
-                    style="background:#f59e0b;color:#fff;font-size:0.75rem;padding:6px 12px;"
-                    onclick="openOrderModal('${escapeAttribute(
-                      order.id
-                    )}')">
-                    معاينة وإتمام التحويل
-                  </button>
-                </td>
-
-              </tr>
-            `;
-          }
-        )
-        .join("");
+      return `
+        <tr class="transfer-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
+          <td data-label="المرجع" class="order-data-cell">
+            <div class="order-ref-stack"><span class="table-field-label">المرجع</span><b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b></div>
+          </td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
+          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="table-large-value">${escapeHtml(amount)}</strong></td>
+          <td data-label="طريقة الدفع" class="order-data-cell"><span class="table-field-label">طريقة الدفع</span><span class="badge badge-review transfer-payment-badge">${escapeHtml(order.paymentMethod || "---")}${order.bankName ? " - " + escapeHtml(order.bankName) : ""}</span></td>
+          <td data-label="تاريخ الطلب" class="order-data-cell"><span class="table-field-label">تاريخ الطلب</span><span class="last-update-value">${escapeHtml(createdAt)}</span></td>
+          <td data-label="الإجراء" class="recent-actions-cell"><span class="table-field-label">الإجراء</span><button class="btn-custom transfer-action-button" onclick="openOrderModal('${escapeAttribute(order.id)}')">معاينة وإتمام التحويل</button></td>
+        </tr>
+      `;
+    }).join("");
   };
 
-// ==========================================================================
 // 7) قسم الإتلاف — بعد 5 أيام من completedAt
 // ==========================================================================
 
