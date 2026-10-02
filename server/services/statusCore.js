@@ -10,13 +10,60 @@ const STATUS_VALUES = new Set([
 ]);
 
 export const ALLOWED_STATUS_TRANSITIONS = {
-  new: new Set(["new", "review", "progress"]),
-  review: new Set(["review", "progress"]),
-  progress: new Set(["progress", "finished"]),
-  finished: new Set(["finished", "pending_transfer"]),
-  pending_transfer: new Set(["pending_transfer", "transferred"]),
-  transferred: new Set(["transferred", "completed"]),
-  // المكتمل يمكن إرجاعه لأي حالة تشغيلية، مع بقاء "archived" مسارًا منفصلًا.
+  new: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  review: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  progress: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  finished: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  pending_transfer: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  transferred: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
   completed: new Set([
     "new",
     "review",
@@ -58,23 +105,15 @@ export function canTransitionStatus(fromValue, toValue) {
   const to = normalizeStatus(toValue);
 
   if (!from || !to) return false;
-  if (from === to) return true;
 
-  // الحالة المكتملة قابلة للإرجاع لأي حالة تشغيلية،
-  // بينما الأرشفة تبقى مسارًا منفصلًا ولا يمكن الرجوع منها.
-  if (from === "completed") {
-    return [
-      "new",
-      "review",
-      "progress",
-      "finished",
-      "pending_transfer",
-      "transferred",
-      "completed"
-    ].includes(to);
+  // أي حالة تشغيلية يمكن تغييرها إلى أي حالة تشغيلية أخرى.
+  // اختيار المشرف للحالة ثم الضغط على حفظ هو المصدر المعتمد.
+  if (
+    from !== "archived" &&
+    to !== "archived"
+  ) {
+    return true;
   }
 
-  return Boolean(
-    ALLOWED_STATUS_TRANSITIONS[from]?.has(to)
-  );
+  return from === "archived" && to === "archived";
 }
