@@ -1065,14 +1065,29 @@ function normalizeStatus(status) {
         "انتظار المراجعة":
             "review",
 
+        "جاري سحب الكوين من حسابك":
+            "progress",
+
         "جاري سحب الكوينز من حسابك":
             "progress",
 
         "تم الانتهاء من سحب الكوينز بحسابك":
             "finished",
 
+        "تم الانتهاء من سحب الكوين بحسابك":
+            "finished",
+
+        "تم الانتهاء من سحب الكوين من حسابك":
+            "finished",
+
         "تم الانتهاء من سحب الكوينز من حسابك":
             "finished",
+
+        "بانتظار التحويل":
+            "pending_transfer",
+
+        "تم التحويل لحسابك":
+            "transferred",
 
         "تم تحويل المبلغ إلى حسابك":
             "transferred",
@@ -1716,6 +1731,7 @@ function handleStatusState(
     if (
         status === "progress" ||
         status === "finished" ||
+        status === "pending_transfer" ||
         status === "transferred" ||
         status === "completed"
     ) {
