@@ -2246,3 +2246,72 @@ table{
     overflow-wrap:anywhere;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — DESKTOP/TABLET ORDERS PASS 2026-10-02
+   Computer/tablet only. Mobile layout is intentionally left for the next pass.
+   ========================================================================== */
+@media (min-width:601px){
+  .order-data-cell>.table-field-label{display:none!important;}
+  .order-value-box{
+    display:inline-flex!important;align-items:center;justify-content:center;min-height:44px;min-width:82px;
+    padding:8px 12px;border:1px solid var(--order-platform-color,rgba(34,197,94,.34));border-radius:12px;
+    background:var(--order-platform-bg,rgba(16,34,25,.28));box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);
+    color:#fff!important;box-sizing:border-box;
+  }
+  .platform-order-card.platform-playstation{--order-platform-color:var(--platform-ps);--order-platform-bg:rgba(47,128,237,.10);}
+  .platform-order-card.platform-xbox{--order-platform-color:var(--platform-xbox);--order-platform-bg:rgba(34,197,94,.10);}
+  .platform-order-card.platform-pc{--order-platform-color:var(--platform-pc);--order-platform-bg:rgba(239,68,68,.10);}
+  .order-ref-stack{display:grid;justify-items:end;gap:5px;}
+  .order-ref-stack>small{color:var(--muted);font-size:.66rem;font-weight:700;}
+  .order-reference-value{cursor:pointer;font-size:1.05rem!important;font-weight:900!important;white-space:nowrap;}
+  .order-reference-value i{font-size:.68rem;opacity:.7;}
+  .platform-order-card .table-primary-value{font-size:1.08rem!important;font-weight:900!important;white-space:nowrap;}
+  .platform-order-card .table-large-value{font-size:1.16rem!important;font-weight:900!important;white-space:nowrap;}
+  .platform-order-card .order-value-box{width:100%;max-width:190px;}
+  .platform-order-card .order-ref-stack .order-reference-value{width:auto;max-width:180px;}
+  .platform-order-card td:nth-child(2) .order-value-box{max-width:220px;}
+  .platform-order-card td:nth-child(4) .order-value-box{min-width:125px;}
+  .platform-order-card td:nth-child(5) .order-value-box{min-width:125px;}
+  .order-price-stack{min-width:100px;gap:4px;}
+  .order-price-stack small{font-size:.68rem!important;color:#fff!important;font-weight:900;}
+  .order-price-stack strong{font-size:1.28rem!important;color:#fff!important;}
+  .recent-order-actions,.order-list-actions{display:flex!important;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+  .order-list-actions .btn-action{width:40px;height:40px;min-width:40px;padding:0;display:inline-grid;place-items:center;border-radius:11px;}
+  .order-details-action{color:#60a5fa!important;border-color:#60a5fa!important;}
+  .order-edit-action{color:#facc15!important;border-color:#facc15!important;}
+  .order-archive-action{color:var(--purple)!important;border-color:var(--purple)!important;}
+  .clock-stack{display:grid!important;grid-template-columns:repeat(3,minmax(72px,auto));gap:5px;align-items:stretch;text-align:center;color:#fff;}
+  .admin-date-stack{display:grid!important;grid-template-columns:repeat(3,minmax(58px,auto));gap:4px;align-items:stretch;text-align:center;white-space:nowrap;}
+  .admin-date-box{
+    display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:5px 8px;border-radius:9px;
+    border:1px solid color-mix(in srgb,var(--date-accent,#3b82f6) 55%,transparent);
+    background:color-mix(in srgb,var(--date-accent,#3b82f6) 13%,#09101d);color:#fff!important;box-sizing:border-box;font-variant-numeric:tabular-nums;
+  }
+  .clock-stack .admin-date-box{min-height:38px;}
+  .admin-time-box{font-size:.78rem!important;font-weight:900!important;}
+  .admin-calendar-box{font-size:.72rem!important;font-weight:800!important;}
+  .admin-weekday-box{font-size:.7rem!important;font-weight:800!important;}
+  .day-saturday{--date-accent:#3b82f6}.day-sunday{--date-accent:#6366f1}.day-monday{--date-accent:#8b5cf6}
+  .day-tuesday{--date-accent:#c026d3}.day-wednesday{--date-accent:#f97316}.day-thursday{--date-accent:#84cc16}.day-friday{--date-accent:#22c55e}.day-default{--date-accent:#3b82f6}
+  .order-status-edit-form{display:grid;gap:18px;}
+  .status-edit-current{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border:1px solid var(--line);border-radius:14px;background:var(--panel2);}
+  .status-editor-controls-large{align-items:end;}
+  .status-editor-controls-large .field{flex:1;}
+  .status-edit-lock-note{display:flex;align-items:center;gap:10px;padding:13px 15px;border:1px solid rgba(34,197,94,.22);border-radius:13px;background:rgba(34,197,94,.07);color:#fff;font-weight:700;}
+  .status-edit-lock-note.is-locked{border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07);}
+  .withdraw-editor.is-locked{position:relative;opacity:.72;filter:saturate(.65);}
+  .withdraw-editor.is-locked::after{
+    content:"\f023";font-family:"Font Awesome 6 Free";font-weight:900;position:absolute;inset-inline-end:14px;top:14px;width:30px;height:30px;
+    display:grid;place-items:center;border-radius:9px;color:#fff;background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.32);
+  }
+}
+@media (min-width:601px) and (max-width:1100px){
+  .clock-stack{grid-template-columns:repeat(3,minmax(62px,1fr));}
+  .admin-date-stack{grid-template-columns:repeat(3,minmax(52px,1fr));}
+  .order-list-actions .btn-action{width:36px;height:36px;min-width:36px;}
+  .platform-order-card .order-value-box{min-width:70px;padding-inline:8px;}
+  .platform-order-card .table-primary-value{font-size:1rem!important;}
+  .platform-order-card .table-large-value{font-size:1.05rem!important;}
+}
