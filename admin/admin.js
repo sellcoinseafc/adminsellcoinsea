@@ -6096,8 +6096,13 @@ function updateStoreStatusUI(
 
   text.innerText =
     isOpen
-      ? "المتجر مفتوح"
-      : "المتجر مغلق";
+      ? "ONLINE"
+      : "CLOSED";
+
+  const dashboardState = document.getElementById("dashboardStoreState");
+  if (dashboardState) {
+    dashboardState.innerText = isOpen ? "ONLINE" : "CLOSED";
+  }
 }
 
 window.toggleStoreStatus =
