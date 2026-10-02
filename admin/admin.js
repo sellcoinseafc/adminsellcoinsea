@@ -7230,8 +7230,7 @@ window.switchTab =
       );
     }
 
-    const sidebar = document.getElementById("sidebar");
-    if (sidebar) sidebar.classList.remove("mobile-open");
+    closeSidebar();
 
     document
       .querySelectorAll(".mobile-app-nav-item")
@@ -7268,18 +7267,50 @@ window.switchTab =
     }
   };
 
+window.closeSidebar =
+  function () {
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebarOverlay");
+    const menuButton = document.getElementById("sidebarMenuToggle");
+    const menuIcon = menuButton?.querySelector("i");
+
+    if (sidebar) sidebar.classList.remove("mobile-open");
+    if (overlay) {
+      overlay.classList.remove("is-visible");
+      overlay.setAttribute("aria-hidden", "true");
+    }
+    if (menuButton) {
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "فتح القائمة");
+    }
+    if (menuIcon) menuIcon.className = "fa-solid fa-bars";
+  };
+
 window.toggleSidebar =
   function () {
-    const sidebar =
-      document.getElementById(
-        "sidebar"
-      );
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
 
-    if (sidebar) {
-      sidebar.classList.toggle(
-        "mobile-open"
-      );
+    const isOpen = sidebar.classList.contains("mobile-open");
+    if (isOpen) {
+      closeSidebar();
+      return;
     }
+
+    const overlay = document.getElementById("sidebarOverlay");
+    const menuButton = document.getElementById("sidebarMenuToggle");
+    const menuIcon = menuButton?.querySelector("i");
+
+    sidebar.classList.add("mobile-open");
+    if (overlay) {
+      overlay.classList.add("is-visible");
+      overlay.setAttribute("aria-hidden", "false");
+    }
+    if (menuButton) {
+      menuButton.setAttribute("aria-expanded", "true");
+      menuButton.setAttribute("aria-label", "إغلاق القائمة");
+    }
+    if (menuIcon) menuIcon.className = "fa-solid fa-xmark";
   };
 
 window.toggleTheme =
