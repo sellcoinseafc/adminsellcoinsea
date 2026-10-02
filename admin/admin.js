@@ -1564,9 +1564,79 @@ function getPaymentPreviewText(
 // ==========================================================================
 
 function initOrdersListener() {
-  loadOrders();
+  let stopped = false;
+  let controller = null;
+  let reconnectTimer = null;
 
-  return () => {};
+  const connect = async () => {
+    if (stopped) return;
+
+    try {
+      const token = await getAdminToken();
+      if (!token || stopped) return;
+
+      controller = new AbortController();
+
+      const response = await fetch("/api/orders/events", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "text/event-stream"
+        },
+        signal: controller.signal,
+        cache: "no-store"
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`Orders SSE failed: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (!stopped) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const frames = buffer.split("\n\n");
+        buffer = frames.pop() || "";
+
+        for (const frame of frames) {
+          if (!frame.includes("event: order-update")) continue;
+
+          try {
+            await loadOrders();
+          } catch (error) {
+            console.error("Live orders refresh error:", error);
+          }
+        }
+      }
+    } catch (error) {
+      if (!stopped && error?.name !== "AbortError") {
+        console.error("Orders live stream error:", error);
+      }
+    } finally {
+      controller = null;
+
+      if (!stopped) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connect, 3000);
+      }
+    }
+  };
+
+  loadOrders();
+  connect();
+
+  return () => {
+    stopped = true;
+    clearTimeout(reconnectTimer);
+    if (controller) {
+      try { controller.abort(); } catch {}
+    }
+  };
 }
 
 async function loadOrders() {
