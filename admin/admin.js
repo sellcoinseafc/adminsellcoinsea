@@ -4241,20 +4241,20 @@ window.openOrderModal = function (orderId) {
   if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
-  modalBody.innerHTML=\`
+  modalBody.innerHTML=`
     <div class="order-detail-shell">
       <section class="order-detail-control-panel">
         <div class="detail-control-heading">
           <div><span class="eyebrow">ORDER STATUS</span><h4>حالة الطلب</h4></div>
-          <select id="modalOrderStatusSelect" class="modal-status-select status-\${order.status || "unknown"}" onchange="saveModalOrderStatus('\${escapeAttribute(order.id)}')">\${statusOptions}</select>
+          <select id="modalOrderStatusSelect" class="modal-status-select status-${order.status || "unknown"}" onchange="saveModalOrderStatus('${escapeAttribute(order.id)}')">${statusOptions}</select>
         </div>
         <div class="detail-issue-control">
-          <div><span class="field-label">المشكلة</span><small id="orderIssueSummary">\${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة")}</small></div>
-          <select id="orderIssueSelect" class="modal-issue-select" onchange="handleModalIssueChange('\${escapeAttribute(order.id)}',this.value)">
+          <div><span class="field-label">المشكلة</span><small id="orderIssueSummary">${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة")}</small></div>
+          <select id="orderIssueSelect" class="modal-issue-select" onchange="handleModalIssueChange('${escapeAttribute(order.id)}',this.value)">
             <option value="">لا توجد مشكلة</option>
-            \${issueOptions}
+            ${issueOptions}
           </select>
-          <textarea id="orderIssueMessageInput" class="form-control issue-message-input detail-issue-message" rows="2" \${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">\${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
+          <textarea id="orderIssueMessageInput" class="form-control issue-message-input detail-issue-message" rows="2" ${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
         </div>
       </section>
 
@@ -4266,10 +4266,10 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="order-basic-grid">
-              <div class="order-basic-card order-basic-reference"><span>رقم الطلب</span><strong dir="ltr">#\${escapeHtml(ref)}</strong></div>
-              <div class="order-basic-card order-basic-platform"><span>المنصة</span><div class="platform-pill platform-\${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="\${platformIcon}"></i></span><strong>\${escapeHtml(platform||"---")}</strong></div></div>
-              <div class="order-basic-card"><span>الكمية المباعة</span><strong dir="ltr">\${formatCoinsNumber(total)}</strong></div>
-              <div class="order-basic-card"><span>سعر البيع</span>\${getDisplayPriceMarkup(order)}</div>
+              <div class="order-basic-card order-basic-reference"><span>رقم الطلب</span><strong dir="ltr">#${escapeHtml(ref)}</strong></div>
+              <div class="order-basic-card order-basic-platform"><span>المنصة</span><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
+              <div class="order-basic-card"><span>الكمية المباعة</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
+              <div class="order-basic-card"><span>سعر البيع</span>${getDisplayPriceMarkup(order)}</div>
             </div>
           </div>
         </section>
@@ -4281,14 +4281,14 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="general-info-grid">
-              <div class="detail-info-card"><span>رقم الطلب</span><strong dir="ltr">#\${escapeHtml(ref)}</strong></div>
-              <div class="detail-info-card"><span>حالة الطلب</span><strong class="detail-status-text">\${escapeHtml(statusLabel)}</strong></div>
-              <div class="detail-info-card"><span>اسم العميل</span><strong>\${escapeHtml(order.name||"---")}</strong></div>
-              <div class="detail-info-card"><span>رقم الجوال</span><strong dir="ltr">\${escapeHtml(order.phone||"---")}</strong></div>
-              <div class="detail-info-card"><span>المنصة</span><strong>\${escapeHtml(platform||"---")}</strong></div>
-              <div class="detail-info-card"><span>الكمية</span><strong dir="ltr">\${formatCoinsNumber(total)}</strong></div>
-              <div class="detail-info-card"><span>المبلغ</span><div>\${getDisplayPriceMarkup(order)}</div></div>
-              <div class="detail-info-card"><span>طريقة الدفع</span><strong>\${escapeHtml(paymentMethod||"---")}</strong></div>
+              <div class="detail-info-card"><span>رقم الطلب</span><strong dir="ltr">#${escapeHtml(ref)}</strong></div>
+              <div class="detail-info-card"><span>حالة الطلب</span><strong class="detail-status-text">${escapeHtml(statusLabel)}</strong></div>
+              <div class="detail-info-card"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong></div>
+              <div class="detail-info-card"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
+              <div class="detail-info-card"><span>المنصة</span><strong>${escapeHtml(platform||"---")}</strong></div>
+              <div class="detail-info-card"><span>الكمية</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
+              <div class="detail-info-card"><span>المبلغ</span><div>${getDisplayPriceMarkup(order)}</div></div>
+              <div class="detail-info-card"><span>طريقة الدفع</span><strong>${escapeHtml(paymentMethod||"---")}</strong></div>
             </div>
           </div>
         </section>
@@ -4300,10 +4300,10 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="transfer-detail-grid">
-              <div class="detail-info-card"><span>طريقة الدفع</span><strong>\${escapeHtml(paymentMethod||"---")}</strong></div>
-              <div class="detail-info-card"><span>بيانات التحويل</span><strong id="securePaymentDetailsText">\${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض البيانات.")}</strong></div>
+              <div class="detail-info-card"><span>طريقة الدفع</span><strong>${escapeHtml(paymentMethod||"---")}</strong></div>
+              <div class="detail-info-card"><span>بيانات التحويل</span><strong id="securePaymentDetailsText">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض البيانات.")}</strong></div>
             </div>
-            <div class="payment-total-row"><span>المبلغ الإجمالي</span>\${getDisplayPriceMarkup(order)}</div>
+            <div class="payment-total-row"><span>المبلغ الإجمالي</span>${getDisplayPriceMarkup(order)}</div>
           </div>
         </section>
 
@@ -4313,7 +4313,7 @@ window.openOrderModal = function (orderId) {
             <i class="fa-solid fa-chevron-down accordion-chevron"></i>
           </button>
           <div class="order-detail-accordion-content">
-            <div class="secure-section-toolbar"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('\${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div>
+            <div class="secure-section-toolbar"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div>
             <div class="secure-fields-grid">
               <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong></button>
               <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong></button>
@@ -4331,14 +4331,14 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="quantity-grid">
-              <div class="quantity-card"><span>الكمية المباعة</span><strong>\${formatCoinsNumber(total)}</strong></div>
-              <div class="quantity-card"><span>الكمية المسحوبة</span><strong>\${formatCoinsNumber(withdrawn)}</strong></div>
-              <div class="quantity-card"><span>الكمية المتبقية</span><strong>\${formatCoinsNumber(remaining)}</strong></div>
+              <div class="quantity-card"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div>
+              <div class="quantity-card"><span>الكمية المسحوبة</span><strong>${formatCoinsNumber(withdrawn)}</strong></div>
+              <div class="quantity-card"><span>الكمية المتبقية</span><strong>${formatCoinsNumber(remaining)}</strong></div>
             </div>
-            <div class="withdraw-editor \${locked?"is-locked":""}">
-              <div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>\${locked?"مقفلة. التعديل متاح فقط أثناء حالة جاري سحب الكوينز من حسابك.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>\${percent.toFixed(2)}%</strong></div>
-              <div class="progress-track"><span style="width:\${percent.toFixed(2)}%"></span></div>
-              <div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="\${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" \${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('\${escapeAttribute(order.id)}')" \${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div>
+            <div class="withdraw-editor ${locked?"is-locked":""}">
+              <div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة. التعديل متاح فقط أثناء حالة جاري سحب الكوينز من حسابك.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div>
+              <div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div>
+              <div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div>
             </div>
           </div>
         </section>
@@ -4350,12 +4350,12 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="message-token-hint">{customerName} · {status}</div>
-            <div class="status-message-preview" id="modalStatusMessagePreview">\${escapeHtml(statusMessage)}</div>
-            <div class="message-actions"><button class="btn-secondary" onclick="copyModalStatusMessage('\${escapeAttribute(order.id)}')">نسخ الرسالة</button><a class="btn-whatsapp \${whatsapp?"":"disabled"}" href="\${whatsapp?waUrl:"#"}" target="_blank" rel="noopener" onclick="\${whatsapp?"":"return false;"}"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>
+            <div class="status-message-preview" id="modalStatusMessagePreview">${escapeHtml(statusMessage)}</div>
+            <div class="message-actions"><button class="btn-secondary" onclick="copyModalStatusMessage('${escapeAttribute(order.id)}')">نسخ الرسالة</button><a class="btn-whatsapp ${whatsapp?"":"disabled"}" href="${whatsapp?waUrl:"#"}" target="_blank" rel="noopener" onclick="${whatsapp?"":"return false;"}"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>
           </div>
         </section>
       </div>
-    </div>\`;
+    </div>`;
 
   modal.classList.add("active");
 };
