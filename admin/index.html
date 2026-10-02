@@ -23,20 +23,28 @@
 <aside class="sidebar" id="sidebar"><div class="sidebar-brand"><div class="brand-mark small"><span>SC</span><div><b>SAMI COINS</b><small>ADMIN</small></div></div><button class="sidebar-close-btn" onclick="toggleSidebar()">×</button></div>
 <div class="sidebar-user"><div class="user-avatar" id="userAvatarText">س</div><div><strong id="sidebarUserName">مشرف النظام</strong><small id="sidebarUserRole">Admin</small></div></div>
 <nav class="sidebar-menu">
-<button class="sidebar-link active" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button>
+<div class="nav-group"><span class="nav-group-label">التشغيل</span>
+<button class="sidebar-link active" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-grid-2"></i><span>الرئيسية</span></button>
 <button class="sidebar-link" onclick="switchTab('ordersTab',this)"><i class="fa-solid fa-boxes-stacked"></i><span>الطلبات</span><b id="sidebarNewOrdersBadge" class="nav-badge" style="display:none">0</b></button>
 <button class="sidebar-link" onclick="switchTab('withdrawTab',this)"><i class="fa-solid fa-coins"></i><span>السحب</span><b id="withdrawBadgeCount" class="nav-badge">0</b></button>
 <button class="sidebar-link" onclick="switchTab('transferAlertsTab',this)"><i class="fa-solid fa-money-bill-transfer"></i><span>التحويلات</span><b id="transferBadgeCount" class="nav-badge">0</b></button>
+</div>
+<div class="nav-group"><span class="nav-group-label">الإدارة</span>
+<button class="sidebar-link" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button>
+<button class="sidebar-link" onclick="switchTab('inventoryTab',this)"><i class="fa-solid fa-cubes-stacked"></i><span>المخزون</span></button>
 <button class="sidebar-link" onclick="switchTab('reviewsTab',this)"><i class="fa-solid fa-star"></i><span>التقييمات</span><b id="sidebarReviewsBadge" class="nav-badge" style="display:none">0</b></button>
 <button class="sidebar-link" onclick="switchTab('statsTab',this)"><i class="fa-solid fa-chart-line"></i><span>الإحصائيات</span></button>
-<button class="sidebar-link" onclick="switchTab('inventoryTab',this)"><i class="fa-solid fa-cubes-stacked"></i><span>المخزون</span></button>
-<button class="sidebar-link" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button>
+</div>
+<div class="nav-group"><span class="nav-group-label">إعدادات المتجر</span>
 <button class="sidebar-link" onclick="switchTab('pricingTab',this)"><i class="fa-solid fa-tags"></i><span>الأسعار</span></button>
 <button class="sidebar-link" onclick="switchTab('paymentsTab',this)"><i class="fa-solid fa-wallet"></i><span>الدفع</span></button>
 <button class="sidebar-link" onclick="switchTab('termsTab',this)"><i class="fa-solid fa-file-contract"></i><span>الشروط</span></button>
 <button class="sidebar-link" onclick="switchTab('settingsTab',this)"><i class="fa-solid fa-sliders"></i><span>الإعدادات</span></button>
+</div>
+<div class="nav-group nav-group-security"><span class="nav-group-label">الأمان</span>
 <button class="sidebar-link" onclick="switchTab('purgeTab',this)"><i class="fa-solid fa-shield-halved"></i><span>الإتلاف الآمن</span><b id="purgeBadgeCount" class="nav-badge">0</b></button>
 <button class="sidebar-link logout" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i><span>تسجيل الخروج</span></button>
+</div>
 </nav></aside>
 <main class="main-wrapper" id="mainWrapper">
 <header class="topbar"><div class="topbar-right"><button class="icon-btn mobile-only" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button><div><div class="eyebrow">SAMI COINS</div><h1 id="pageTitleHeading">الرئيسية</h1></div></div>
@@ -45,9 +53,32 @@
 <div id="urgentTransferBanner" class="system-banner urgent" style="display:none"><div><b>تنبيه للتحويلات</b><span id="bannerTransferText"></span></div><button class="btn-warning" onclick="switchTab('transferAlertsTab',document.querySelectorAll('.sidebar-link')[3])">عرض</button></div>
 <div class="breadcrumb">لوحة التحكم <span>/</span> <b id="breadcrumbActive">الرئيسية</b></div>
 
-<section id="dashboardTab" class="tab-content active"><div class="hero"><div><span class="live-dot">● مركز التشغيل المباشر</span><h2>مرحباً بك في لوحة SAMI COINS</h2><p>مركز موحد لإدارة الطلبات، السحب، التحويلات، الأسعار، العملاء وبيانات التشغيل.</p></div><div class="hero-actions"><button class="btn-primary" onclick="switchTab('ordersTab',document.querySelectorAll('.sidebar-link')[1])"><i class="fa-solid fa-box"></i> إدارة الطلبات</button><button class="btn-secondary" onclick="switchTab('paymentsTab',document.querySelectorAll('.sidebar-link')[9])"><i class="fa-solid fa-wallet"></i> وسائل الدفع</button></div></div>
-<div class="stats-grid"><article class="stat-card"><span>طلبات جديدة</span><strong id="dashStatNew">0</strong><i class="fa-solid fa-bell"></i></article><article class="stat-card"><span>قيد التنفيذ</span><strong id="dashStatProgress">0</strong><i class="fa-solid fa-spinner"></i></article><article class="stat-card"><span>مكتملة</span><strong id="dashStatCompleted">0</strong><i class="fa-solid fa-circle-check"></i></article><article class="stat-card"><span>بانتظار التحويل</span><strong id="dashStatPendingTransfer">0</strong><i class="fa-solid fa-money-bill-transfer"></i></article><article class="stat-card"><span>مخزون PS / Xbox</span><strong id="dashStockPS">0</strong><i class="fa-brands fa-playstation"></i></article><article class="stat-card"><span>مخزون PC</span><strong id="dashStockPC">0</strong><i class="fa-solid fa-desktop"></i></article></div>
-<div class="panel"><div class="panel-title"><div><span class="eyebrow">LIVE</span><h3>أحدث الطلبات</h3></div><button class="btn-secondary" onclick="switchTab('ordersTab',document.querySelectorAll('.sidebar-link')[1])">كل الطلبات</button></div><div class="table-wrap"><table><thead><tr><th>رقم التتبع</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th></th></tr></thead><tbody id="recentOrdersTableBody"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div></div></section>
+<section id="dashboardTab" class="tab-content active">
+<div class="workspace-header">
+  <div><span class="eyebrow">OPERATIONS CENTER</span><h2>مركز التشغيل</h2><p>نظرة لحظية على الطلبات والسحب والتحويلات والمخزون.</p></div>
+  <div class="workspace-actions"><button class="btn-primary" onclick="switchTab('ordersTab',document.querySelectorAll('.sidebar-link')[1])"><i class="fa-solid fa-boxes-stacked"></i> الطلبات</button><button class="btn-secondary" onclick="switchTab('transferAlertsTab',document.querySelectorAll('.sidebar-link')[3])"><i class="fa-solid fa-money-bill-transfer"></i> التحويلات</button></div>
+</div>
+<div class="command-summary">
+  <div class="command-main"><span class="live-dot">● النظام يعمل</span><strong>كل العمليات في مكان واحد</strong><p>ابدأ من الطلبات الجديدة، تابع السحب، ثم راجع التحويلات التي تحتاج إجراء.</p></div>
+  <div class="command-side"><span>حالة المتجر</span><b id="dashboardStoreState">متجر مفتوح</b><small>يتم تحديث البيانات من الخادم</small></div>
+</div>
+<div class="stats-grid">
+<article class="stat-card"><span>طلبات جديدة</span><strong id="dashStatNew">0</strong><i class="fa-solid fa-bell"></i></article>
+<article class="stat-card"><span>قيد التنفيذ</span><strong id="dashStatProgress">0</strong><i class="fa-solid fa-spinner"></i></article>
+<article class="stat-card"><span>بانتظار التحويل</span><strong id="dashStatPendingTransfer">0</strong><i class="fa-solid fa-money-bill-transfer"></i></article>
+<article class="stat-card"><span>مكتملة</span><strong id="dashStatCompleted">0</strong><i class="fa-solid fa-circle-check"></i></article>
+<article class="stat-card"><span>مخزون PS / Xbox</span><strong id="dashStockPS">0</strong><i class="fa-brands fa-playstation"></i></article>
+<article class="stat-card"><span>مخزون PC</span><strong id="dashStockPC">0</strong><i class="fa-solid fa-desktop"></i></article>
+</div>
+<div class="dashboard-grid">
+<div class="panel dashboard-orders"><div class="panel-title"><div><span class="eyebrow">RECENT ACTIVITY</span><h3>آخر الطلبات</h3></div><button class="btn-secondary" onclick="switchTab('ordersTab',document.querySelectorAll('.sidebar-link')[1])">عرض الكل</button></div><div class="table-wrap"><table><thead><tr><th>رقم التتبع</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th></th></tr></thead><tbody id="recentOrdersTableBody"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div></div>
+<div class="panel dashboard-shortcuts"><div class="panel-title"><div><span class="eyebrow">QUICK ACCESS</span><h3>الوصول السريع</h3></div></div>
+<button class="quick-action" onclick="switchTab('withdrawTab',document.querySelectorAll('.sidebar-link')[2])"><span><i class="fa-solid fa-coins"></i></span><div><b>طلبات السحب</b><small>متابعة الطلبات قيد السحب</small></div><i class="fa-solid fa-chevron-left"></i></button>
+<button class="quick-action" onclick="switchTab('transferAlertsTab',document.querySelectorAll('.sidebar-link')[3])"><span><i class="fa-solid fa-money-bill-transfer"></i></span><div><b>التحويلات</b><small>طلبات جاهزة للتحويل</small></div><i class="fa-solid fa-chevron-left"></i></button>
+<button class="quick-action" onclick="switchTab('inventoryTab',document.querySelectorAll('.sidebar-link')[5])"><span><i class="fa-solid fa-cubes-stacked"></i></span><div><b>المخزون</b><small>PS / Xbox و PC</small></div><i class="fa-solid fa-chevron-left"></i></button>
+<button class="quick-action" onclick="switchTab('customerProfileTab',document.querySelectorAll('.sidebar-link')[4])"><span><i class="fa-solid fa-users"></i></span><div><b>العملاء</b><small>سجل الطلبات والعملاء</small></div><i class="fa-solid fa-chevron-left"></i></button>
+</div></div>
+</section>
 
 <section id="ordersTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">ORDERS</span><h2>إدارة الطلبات</h2><p>التحكم في دورة الطلب ومتابعة بياناته.</p></div><div class="head-tools"><input id="orderStatusFilter" class="compact-input" placeholder="فلترة الحالة" list="statusOptions"><datalist id="statusOptions"><option value="new"><option value="review"><option value="progress"><option value="finished"><option value="pending_transfer"><option value="transferred"><option value="completed"></datalist><button class="btn-secondary" onclick="renderOrdersTables()">تحديث</button></div></div>
 <div class="order-kpis"><div><b id="mobileOrdersBadge">0</b><span>إجمالي الطلبات</span></div><div><b id="ordersNewCount">0</b><span>جديدة</span></div><div><b id="ordersProgressCount">0</b><span>قيد السحب</span></div><div><b id="ordersCompletedCount">0</b><span>مكتملة</span></div></div>
