@@ -739,6 +739,12 @@ body, .tracking-page-body {
     box-shadow: 0 0 15px rgba(156, 39, 176, 0.45);
 }
 
+.step-gold.step-active .step-icon {
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 15px var(--gold-glow);
+}
+
 .step-green.step-active .step-icon {
     border-color: #00E676;
     color: #00E676;
