@@ -5430,3 +5430,613 @@ body.light-mode{
     -webkit-tap-highlight-color:transparent;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — PHASE 3 / CORE OPERATIONS VISUAL QA
+   Orders • Withdrawal • Transfers • Order detail • Tablet polish
+   No data/business logic changes.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   TABLET / SMALL DESKTOP
+   -------------------------------------------------------------------------- */
+@media (min-width:601px) and (max-width:1100px){
+  .main-wrapper{
+    padding:18px 20px 34px!important;
+  }
+
+  .topbar{
+    align-items:center!important;
+    gap:12px!important;
+  }
+
+  .topbar-left{
+    min-width:0!important;
+    flex:1!important;
+    justify-content:flex-end!important;
+  }
+
+  .global-search{
+    width:min(320px,42vw)!important;
+  }
+
+  .workspace-header{
+    gap:12px!important;
+    align-items:flex-start!important;
+  }
+
+  .workspace-header>div:first-child{
+    min-width:0!important;
+  }
+
+  .workspace-actions{
+    flex-wrap:wrap!important;
+    justify-content:flex-end!important;
+  }
+
+  .order-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+
+  #ordersTab .orders-toolbar{
+    align-items:flex-start!important;
+  }
+
+  #ordersTab .orders-panel,
+  #withdrawTab>.panel,
+  #transferAlertsTab>.panel,
+  .dashboard-orders{
+    overflow:hidden!important;
+  }
+
+  #ordersTab table,
+  #withdrawTab table,
+  #transferAlertsTab table,
+  .dashboard-orders table{
+    min-width:720px!important;
+  }
+
+  #ordersTab th,#withdrawTab th,#transferAlertsTab th,
+  .dashboard-orders th{
+    font-size:.68rem!important;
+    padding:10px 8px!important;
+  }
+
+  #ordersTab td,#withdrawTab td,#transferAlertsTab td,
+  .dashboard-orders td{
+    padding:10px 8px!important;
+    font-size:.76rem!important;
+  }
+
+  .recent-order-actions{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:5px!important;
+  }
+
+  .recent-order-actions .btn-action,
+  .recent-order-actions .btn-custom{
+    min-width:34px!important;
+    min-height:34px!important;
+  }
+
+  #orderDetailModal .order-modal{
+    width:calc(100vw - 34px)!important;
+    max-width:1120px!important;
+    max-height:91vh!important;
+  }
+
+  #orderDetailModal .modal-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:3!important;
+    background:#071321!important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE CORE OPERATION CARDS
+   -------------------------------------------------------------------------- */
+@media (max-width:600px){
+
+  /* Orders: keep the customer-facing reference visible.
+     The platform badge anchors the card; the remaining fields read in a
+     predictable top-to-bottom hierarchy. */
+  #ordersTab tbody tr.full-order-row,
+  .dashboard-orders tbody tr.recent-order-row{
+    grid-template-columns:48px minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "platform ref amount"
+      "platform customer amount"
+      "platform quantity status"
+      "platform updated updated"
+      "actions actions actions"!important;
+    gap:7px 8px!important;
+    padding:10px!important;
+    border-radius:17px!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td,
+  .dashboard-orders tbody tr.recent-order-row>td{
+    min-width:0!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(1),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(1){
+    display:flex!important;
+    grid-area:ref!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(2),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(2){
+    grid-area:customer!important;
+    display:flex!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(3),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(3){
+    grid-area:platform!important;
+    grid-row:auto!important;
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(4),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(4){
+    grid-area:quantity!important;
+    display:flex!important;
+    align-items:center!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(5),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(5){
+    grid-area:amount!important;
+    grid-row:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    text-align:right!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(6),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(6){
+    grid-area:status!important;
+    grid-row:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(7){
+    grid-area:updated!important;
+    grid-row:auto!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    font-size:.56rem!important;
+  }
+
+  #ordersTab tbody tr.full-order-row>td:nth-child(8),
+  .dashboard-orders tbody tr.recent-order-row>td:nth-child(7){
+    grid-area:actions!important;
+    grid-row:auto!important;
+    display:flex!important;
+    width:100%!important;
+    padding-top:7px!important;
+    border-top:1px solid rgba(63,190,255,.10)!important;
+  }
+
+  .order-ref-stack{
+    width:100%!important;
+    min-width:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:2px!important;
+  }
+
+  .order-ref-stack .table-field-label{
+    display:none!important;
+  }
+
+  .order-ref-stack small{
+    color:#8294aa!important;
+    font-size:.55rem!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    max-width:100%!important;
+  }
+
+  .order-ref-stack .order-reference-value{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    max-width:100%!important;
+    padding:3px 6px!important;
+    border-radius:7px!important;
+    color:#fff!important;
+    font-size:.72rem!important;
+    font-weight:900!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .platform-order-card.platform-playstation .order-reference-value{
+    border:1px solid rgba(47,128,237,.48)!important;
+    background:rgba(47,128,237,.10)!important;
+  }
+
+  .platform-order-card.platform-xbox .order-reference-value{
+    border:1px solid rgba(34,197,94,.48)!important;
+    background:rgba(34,197,94,.10)!important;
+  }
+
+  .platform-order-card.platform-pc .order-reference-value{
+    border:1px solid rgba(239,68,68,.48)!important;
+    background:rgba(239,68,68,.10)!important;
+  }
+
+  .dashboard-orders tbody tr.recent-order-row .recent-customer-name,
+  #ordersTab tbody tr.full-order-row .table-primary-value{
+    color:#fff!important;
+    font-size:.80rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #ordersTab tbody tr.full-order-row .table-large-value,
+  .dashboard-orders tbody tr.recent-order-row .table-large-value{
+    color:#fff!important;
+    font-size:.82rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+  }
+
+  #ordersTab tbody tr.full-order-row .recent-quantity,
+  .dashboard-orders tbody tr.recent-order-row .recent-quantity{
+    color:#00e88a!important;
+    font-size:.86rem!important;
+  }
+
+  #ordersTab tbody tr.full-order-row .recent-price,
+  .dashboard-orders tbody tr.recent-order-row .recent-price{
+    font-size:.92rem!important;
+  }
+
+  #ordersTab tbody tr.full-order-row .table-field-label,
+  .dashboard-orders tbody tr.recent-order-row .table-field-label{
+    color:#71849b!important;
+    font-size:.54rem!important;
+    font-weight:800!important;
+    margin-left:5px!important;
+  }
+
+  #ordersTab tbody tr.full-order-row .status-badge,
+  .dashboard-orders tbody tr.recent-order-row .status-badge{
+    width:auto!important;
+    min-width:74px!important;
+    max-width:112px!important;
+    min-height:27px!important;
+    padding:4px 7px!important;
+    border-radius:8px!important;
+    font-size:.58rem!important;
+    line-height:1.25!important;
+    white-space:normal!important;
+    text-align:center!important;
+  }
+
+  .recent-order-actions{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:5px!important;
+  }
+
+  .recent-order-actions .btn-action,
+  .recent-order-actions .btn-custom{
+    width:100%!important;
+    min-width:0!important;
+    min-height:37px!important;
+    padding:6px 5px!important;
+    border-radius:10px!important;
+    font-size:.62rem!important;
+  }
+
+  /* Withdrawal queue: all three quantities remain visible and color-coded. */
+  #withdrawTab tbody tr.withdraw-order-row{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:
+      "ref platform"
+      "customer status"
+      "required withdrawn"
+      "remaining remaining"
+      "actions actions"!important;
+    gap:7px!important;
+    padding:11px!important;
+    border-radius:17px!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row>td{
+    display:flex!important;
+    min-width:0!important;
+    align-items:center!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(1){grid-area:ref!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(2){grid-area:customer!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(3){grid-area:platform!important;justify-content:flex-end!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(4){grid-area:required!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(5){grid-area:withdrawn!important;justify-content:flex-end!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(6){grid-area:remaining!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(7){grid-area:status!important;justify-content:flex-end!important}
+  #withdrawTab tbody tr.withdraw-order-row>td:nth-child(8){
+    grid-area:actions!important;
+    width:100%!important;
+    padding-top:7px!important;
+    border-top:1px solid rgba(63,190,255,.10)!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row .order-reference-value{
+    color:#fff!important;
+    font-size:.76rem!important;
+    font-weight:900!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row .table-primary-value{
+    color:#fff!important;
+    font-size:.78rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row .table-field-label{
+    color:#71849b!important;
+    font-size:.54rem!important;
+    font-weight:800!important;
+    margin-left:5px!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row .table-large-value{
+    font-size:.82rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+  }
+
+  #withdrawTab tbody tr.withdraw-order-row .recent-quantity{color:#fff!important}
+  #withdrawTab tbody tr.withdraw-order-row .withdrawn-value{color:#ffbd20!important}
+  #withdrawTab tbody tr.withdraw-order-row .remaining-value{color:#ff5b68!important}
+
+  /* Transfers: convert the financial queue to readable cards instead of a
+     horizontally-scrolling table. */
+  #transferAlertsTab .table-wrap{
+    overflow:visible!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #transferAlertsTab table{
+    display:block!important;
+    min-width:0!important;
+    width:100%!important;
+  }
+
+  #transferAlertsTab thead{display:none!important}
+
+  #transferAlertsTab tbody{
+    display:grid!important;
+    gap:8px!important;
+  }
+
+  #transferAlertsTab tbody tr{
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+    padding:11px!important;
+    border:1px solid rgba(245,158,11,.20)!important;
+    border-radius:17px!important;
+    background:linear-gradient(145deg,rgba(37,25,9,.96),rgba(10,15,22,.98))!important;
+  }
+
+  #transferAlertsTab tbody td{
+    display:flex!important;
+    align-items:center!important;
+    min-width:0!important;
+    padding:0!important;
+    border:0!important;
+    color:#fff!important;
+    font-size:.72rem!important;
+  }
+
+  #transferAlertsTab tbody td::before{
+    content:"";
+    color:#71849b!important;
+    font-size:.55rem!important;
+    font-weight:800!important;
+    margin-left:6px!important;
+    flex:0 0 auto!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(1)::before{content:"المرجع"}
+  #transferAlertsTab tbody td:nth-child(2)::before{content:"العميل"}
+  #transferAlertsTab tbody td:nth-child(3)::before{content:"الجوال"}
+  #transferAlertsTab tbody td:nth-child(4)::before{content:"المبلغ"}
+  #transferAlertsTab tbody td:nth-child(5)::before{content:"الدفع"}
+  #transferAlertsTab tbody td:nth-child(6)::before{content:"اكتمل السحب"}
+  #transferAlertsTab tbody td:nth-child(7){
+    grid-column:1/-1!important;
+    padding-top:7px!important;
+    border-top:1px solid rgba(245,158,11,.12)!important;
+  }
+  #transferAlertsTab tbody td:nth-child(7)::before{display:none!important}
+
+  #transferAlertsTab tbody td:nth-child(1) b{
+    color:#fff!important;
+    font-size:.75rem!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(3) span{
+    direction:ltr!important;
+    unicode-bidi:plaintext!important;
+    white-space:nowrap!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(4) b{
+    color:#ffbd20!important;
+    font-size:.90rem!important;
+    white-space:nowrap!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(5) .badge{
+    max-width:100%!important;
+    white-space:normal!important;
+    font-size:.58rem!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(7) .btn-custom{
+    width:100%!important;
+    min-height:40px!important;
+    border-radius:11px!important;
+  }
+
+  /* Order detail: make the critical status/action area easy to operate with
+     one hand; keep the withdrawal summary visually dominant. */
+  #orderDetailModal .order-modal{
+    width:calc(100vw - 12px)!important;
+    max-width:calc(100vw - 12px)!important;
+    max-height:95vh!important;
+    padding:12px!important;
+    border-radius:22px 22px 14px 14px!important;
+  }
+
+  #orderDetailModal .modal-header{
+    position:sticky!important;
+    top:-12px!important;
+    z-index:5!important;
+    margin:-12px -12px 10px!important;
+    padding:10px 12px!important;
+    background:rgba(7,19,33,.98)!important;
+    backdrop-filter:blur(14px)!important;
+  }
+
+  #orderDetailModal .modal-header h3{
+    font-size:1.00rem!important;
+  }
+
+  #orderDetailModal .order-detail-shell{
+    min-width:0!important;
+  }
+
+  #orderDetailModal .order-detail-shell .status-badge{
+    width:100%!important;
+    max-width:none!important;
+    justify-content:center!important;
+    min-height:39px!important;
+  }
+
+  #orderDetailModal .withdraw-summary-grid,
+  #orderDetailModal .withdraw-summary-cards{
+    grid-template-columns:1fr!important;
+  }
+
+  #orderDetailModal .withdraw-summary-card{
+    min-height:72px!important;
+    padding:10px!important;
+  }
+
+  #orderDetailModal .status-edit-actions,
+  #orderDetailModal .status-edit-controls{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:7px!important;
+  }
+
+  #orderDetailModal .status-edit-actions button,
+  #orderDetailModal .status-edit-controls button{
+    width:100%!important;
+    min-height:43px!important;
+  }
+
+  #orderDetailModal .issue-controls,
+  #orderDetailModal .issue-options{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:7px!important;
+  }
+
+  #orderDetailModal .backup-codes,
+  #orderDetailModal .backup-codes-section{
+    width:100%!important;
+  }
+
+  #orderDetailModal .secure-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  #orderDetailModal .order-basic-price,
+  #orderDetailModal .detail-order-amount{
+    width:100%!important;
+    min-height:76px!important;
+  }
+
+  /* Keep the app nav above every modal/action layer and prevent content
+     from being hidden behind it. */
+  body{
+    padding-bottom:98px!important;
+  }
+
+  .mobile-app-nav{
+    z-index:300!important;
+  }
+
+  .modal-overlay{
+    z-index:500!important;
+  }
+
+  /* Slightly tighten very small screens without collapsing labels. */
+  .dashboard-orders tbody tr.recent-order-row,
+  #ordersTab tbody tr.full-order-row,
+  #withdrawTab tbody tr.withdraw-order-row{
+    padding:9px!important;
+  }
+}
+
+@media (max-width:360px){
+  #ordersTab tbody tr.full-order-row,
+  .dashboard-orders tbody tr.recent-order-row{
+    grid-template-columns:43px minmax(0,1fr) auto!important;
+  }
+
+  .recent-order-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  #transferAlertsTab tbody tr{
+    grid-template-columns:1fr!important;
+  }
+
+  #transferAlertsTab tbody td:nth-child(7){
+    grid-column:1!important;
+  }
+
+  #orderDetailModal .order-modal{
+    width:calc(100vw - 8px)!important;
+    max-width:calc(100vw - 8px)!important;
+  }
+}
