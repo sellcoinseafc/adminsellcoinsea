@@ -3779,3 +3779,722 @@ body.light-mode{
   border-color:rgba(239,68,68,.55)!important;
   background:rgba(239,68,68,.08)!important;
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE APP SHELL / APPROVED DESIGN
+   Rebuilds the phone experience as an app-like interface while preserving
+   existing data, IDs, actions and desktop/tablet markup.
+   ========================================================================== */
+@media (max-width:600px){
+  :root{
+    --mobile-bg:#030914;
+    --mobile-panel:#071321;
+    --mobile-panel-2:#091827;
+    --mobile-line:rgba(63,190,255,.18);
+    --mobile-text:#f5f8fc;
+    --mobile-muted:#8294aa;
+    --mobile-green:#00e88a;
+    --mobile-blue:#159cff;
+    --mobile-yellow:#ffbd20;
+    --mobile-purple:#8b7cff;
+    --mobile-red:#ff4d5e;
+  }
+
+  html,body{
+    width:100%;
+    min-width:0!important;
+    background:
+      radial-gradient(circle at 50% -12%,rgba(0,255,135,.09),transparent 34%),
+      radial-gradient(circle at 100% 30%,rgba(21,156,255,.07),transparent 28%),
+      var(--mobile-bg)!important;
+  }
+
+  body{
+    overflow-x:hidden!important;
+    padding-bottom:92px!important;
+  }
+
+  .main-wrapper{
+    width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0 10px 18px!important;
+  }
+
+  /* App header */
+  .topbar{
+    position:sticky!important;
+    top:0!important;
+    z-index:90!important;
+    width:calc(100% + 20px)!important;
+    margin:0 -10px 8px!important;
+    padding:10px 12px 12px!important;
+    min-height:70px!important;
+    border:0!important;
+    border-bottom:1px solid rgba(63,190,255,.10)!important;
+    border-radius:0 0 22px 22px!important;
+    background:rgba(3,9,20,.94)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    box-shadow:0 10px 30px rgba(0,0,0,.20)!important;
+  }
+
+  .topbar-right{
+    width:auto!important;
+    min-width:0!important;
+    gap:9px!important;
+  }
+
+  .topbar-right>div{
+    min-width:0!important;
+  }
+
+  .topbar-right .eyebrow{
+    color:var(--mobile-green)!important;
+    font-size:.63rem!important;
+    letter-spacing:2.6px!important;
+    font-weight:900!important;
+    line-height:1!important;
+  }
+
+  #pageTitleHeading{
+    margin:4px 0 0!important;
+    font-size:1.28rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+  }
+
+  #sidebarMenuToggle{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    border-radius:14px!important;
+    border:1px solid rgba(21,156,255,.35)!important;
+    background:rgba(7,24,42,.90)!important;
+    color:#fff!important;
+  }
+
+  .topbar-left{
+    width:auto!important;
+    min-width:0!important;
+    margin-inline-start:auto!important;
+  }
+
+  .global-search,.breadcrumb{
+    display:none!important;
+  }
+
+  #liveDatetime{
+    display:block!important;
+    width:auto!important;
+    min-width:76px!important;
+  }
+
+  #liveDatetime .clock-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:3px!important;
+  }
+
+  #liveDatetime .admin-time-box,
+  #liveDatetime .admin-date-box{
+    min-height:22px!important;
+    padding:3px 7px!important;
+    border-radius:7px!important;
+    font-size:.58rem!important;
+    line-height:1!important;
+  }
+
+  /* Workspace heading becomes the app section heading */
+  .tab-content{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .workspace-header,
+  .page-head{
+    display:flex!important;
+    align-items:flex-start!important;
+    gap:8px!important;
+    margin:10px 2px 12px!important;
+    padding:0!important;
+  }
+
+  .workspace-header>div:first-child,
+  .page-head>div:first-child{
+    min-width:0!important;
+    flex:1!important;
+  }
+
+  .workspace-header .eyebrow,
+  .page-head .eyebrow{
+    display:none!important;
+  }
+
+  .workspace-header h2,
+  .page-head h2{
+    margin:0!important;
+    font-size:1.28rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+  }
+
+  .workspace-header p,
+  .page-subtitle{
+    margin:4px 0 0!important;
+    font-size:.70rem!important;
+    line-height:1.5!important;
+    color:var(--mobile-muted)!important;
+  }
+
+  .workspace-actions{
+    display:none!important;
+  }
+
+  .store-status-mobile{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    margin-top:9px!important;
+    padding:8px 10px!important;
+    border:1px solid rgba(0,232,138,.20)!important;
+    border-radius:11px!important;
+    background:rgba(0,232,138,.055)!important;
+    font-size:.72rem!important;
+  }
+
+  .store-status-mobile b{
+    color:var(--mobile-green)!important;
+    font-size:.76rem!important;
+  }
+
+  .command-summary{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:8px!important;
+    margin:0 0 10px!important;
+    padding:11px!important;
+    border:1px solid rgba(21,156,255,.14)!important;
+    border-radius:18px!important;
+    background:linear-gradient(145deg,rgba(7,22,38,.96),rgba(4,14,25,.96))!important;
+  }
+
+  .command-main{
+    min-width:0!important;
+  }
+
+  .command-main strong{
+    display:block!important;
+    margin-top:4px!important;
+    font-size:.85rem!important;
+  }
+
+  .command-main p,
+  .command-side small{
+    display:none!important;
+  }
+
+  .command-side{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    min-height:34px!important;
+    padding-top:7px!important;
+    border-top:1px solid rgba(255,255,255,.06)!important;
+  }
+
+  .command-side span{
+    font-size:.68rem!important;
+    color:var(--mobile-muted)!important;
+  }
+
+  .command-side b{
+    color:var(--mobile-green)!important;
+    font-size:.76rem!important;
+  }
+
+  /* Status KPIs: compact app tiles, two columns */
+  .stats-grid.dashboard-stats-grid{
+    display:block!important;
+    margin:0!important;
+  }
+
+  .dashboard-status-group{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin-bottom:10px!important;
+  }
+
+  .dashboard-status-card{
+    position:relative!important;
+    min-width:0!important;
+    min-height:104px!important;
+    padding:13px 11px!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,rgba(8,25,43,.98),rgba(5,15,27,.98))!important;
+  }
+
+  .dashboard-status-card span{
+    display:block!important;
+    padding-left:2px!important;
+    font-size:.72rem!important;
+    line-height:1.35!important;
+    color:#c9d4e0!important;
+    font-weight:800!important;
+  }
+
+  .dashboard-status-card strong{
+    display:block!important;
+    margin-top:10px!important;
+    font-size:1.70rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:-.5px!important;
+  }
+
+  .dashboard-status-card i{
+    position:absolute!important;
+    top:11px!important;
+    left:11px!important;
+    width:30px!important;
+    height:30px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    font-size:.75rem!important;
+    background:rgba(21,156,255,.14)!important;
+    color:var(--mobile-blue)!important;
+  }
+
+  .dashboard-status-card:nth-child(1){border-color:rgba(21,156,255,.30)!important}
+  .dashboard-status-card:nth-child(1) strong{color:#38aaff!important}
+  .dashboard-status-card:nth-child(2){border-color:rgba(255,189,32,.28)!important}
+  .dashboard-status-card:nth-child(2) strong{color:#ffbd20!important}
+  .dashboard-status-card:nth-child(3){border-color:rgba(139,124,255,.28)!important}
+  .dashboard-status-card:nth-child(3) strong{color:#a99dff!important}
+  .dashboard-status-card:nth-child(4){border-color:rgba(0,232,138,.28)!important}
+  .dashboard-status-card:nth-child(4) strong{color:var(--mobile-green)!important}
+
+  /* Inventory section: app panel */
+  .dashboard-stock-group{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin-bottom:10px!important;
+    padding:11px!important;
+    border:1px solid rgba(21,156,255,.12)!important;
+    border-radius:20px!important;
+    background:linear-gradient(145deg,rgba(6,20,34,.98),rgba(4,13,24,.98))!important;
+  }
+
+  .dashboard-stock-card{
+    min-width:0!important;
+    min-height:132px!important;
+    padding:12px 9px!important;
+    border-radius:17px!important;
+    text-align:center!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+  }
+
+  .dashboard-stock-card>div{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    flex-wrap:wrap!important;
+  }
+
+  .dashboard-stock-card>div span{
+    width:100%!important;
+    order:2!important;
+    font-size:.65rem!important;
+    color:#b9c7d7!important;
+  }
+
+  .dashboard-stock-card>div i{
+    order:1!important;
+    font-size:1.55rem!important;
+  }
+
+  .dashboard-stock-card strong{
+    font-size:1.20rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+  }
+
+  .dashboard-stock-card:nth-child(1){
+    grid-column:1/-1!important;
+    border-color:rgba(21,156,255,.42)!important;
+    background:linear-gradient(145deg,rgba(8,34,62,.98),rgba(4,18,33,.98))!important;
+  }
+
+  .dashboard-stock-card:nth-child(1) i:first-of-type{color:#159cff!important}
+  .dashboard-stock-card:nth-child(1) i:nth-of-type(2){color:#22c55e!important}
+  .dashboard-stock-card:nth-child(2){
+    border-color:rgba(239,68,68,.40)!important;
+    background:linear-gradient(145deg,rgba(58,16,23,.90),rgba(24,10,15,.98))!important;
+  }
+  .dashboard-stock-card:nth-child(2) i{color:#ff4d5e!important}
+
+  .stock-trend-wrap{
+    width:100%!important;
+    min-height:28px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:9px!important;
+    font-size:.68rem!important;
+    font-weight:900!important;
+  }
+
+  /* Dashboard sections */
+  .dashboard-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    gap:10px!important;
+    margin:0!important;
+  }
+
+  .dashboard-shortcuts{
+    order:1!important;
+    padding:12px!important;
+    border-radius:20px!important;
+    background:linear-gradient(145deg,rgba(6,20,34,.98),rgba(4,13,24,.98))!important;
+  }
+
+  .dashboard-orders{
+    order:2!important;
+    padding:12px!important;
+    border-radius:20px!important;
+  }
+
+  .dashboard-shortcuts .panel-title,
+  .dashboard-orders .panel-title{
+    margin-bottom:10px!important;
+  }
+
+  .panel-title h3{
+    font-size:1.02rem!important;
+    font-weight:900!important;
+  }
+
+  .quick-action{
+    min-height:62px!important;
+    margin:6px 0!important;
+    padding:9px!important;
+    border-radius:15px!important;
+  }
+
+  .quick-action>span{
+    width:42px!important;
+    height:42px!important;
+    border-radius:13px!important;
+  }
+
+  .quick-action b{font-size:.78rem!important}
+  .quick-action small{font-size:.62rem!important}
+
+  /* Recent orders become compact app cards rather than a squeezed desktop table */
+  .dashboard-orders .table-wrap,
+  .orders-panel .table-wrap,
+  #withdrawTab .table-wrap,
+  #transferAlertsTab .table-wrap{
+    overflow:visible!important;
+  }
+
+  .dashboard-orders table,
+  #ordersTab table,
+  #withdrawTab table,
+  #transferAlertsTab table{
+    display:block!important;
+    width:100%!important;
+  }
+
+  .dashboard-orders thead,
+  #ordersTab thead,
+  #withdrawTab thead,
+  #transferAlertsTab thead{
+    display:none!important;
+  }
+
+  .dashboard-orders tbody,
+  #ordersTab tbody,
+  #withdrawTab tbody,
+  #transferAlertsTab tbody{
+    display:grid!important;
+    gap:7px!important;
+  }
+
+  .dashboard-orders tbody tr,
+  #ordersTab tbody tr,
+  #withdrawTab tbody tr,
+  #transferAlertsTab tbody tr{
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) auto!important;
+    gap:8px!important;
+    align-items:center!important;
+    min-width:0!important;
+    padding:9px!important;
+    border:1px solid rgba(63,190,255,.13)!important;
+    border-radius:15px!important;
+    background:linear-gradient(145deg,rgba(7,24,40,.98),rgba(5,15,27,.98))!important;
+  }
+
+  .dashboard-orders tbody td,
+  #ordersTab tbody td,
+  #withdrawTab tbody td,
+  #transferAlertsTab tbody td{
+    display:block!important;
+    min-width:0!important;
+    padding:0!important;
+    border:0!important;
+  }
+
+  /* Keep the platform/logo cell visually dominant */
+  .dashboard-orders tbody td:nth-child(3),
+  #ordersTab tbody td:nth-child(3){
+    grid-column:1!important;
+    grid-row:1 / span 2!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(2),
+  #ordersTab tbody td:nth-child(2){
+    grid-column:2!important;
+    grid-row:1!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(4),
+  #ordersTab tbody td:nth-child(4){
+    grid-column:2!important;
+    grid-row:2!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(5),
+  #ordersTab tbody td:nth-child(5){
+    grid-column:3!important;
+    grid-row:1 / span 2!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(6),
+  #ordersTab tbody td:nth-child(6){
+    grid-column:2!important;
+    grid-row:3!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(7),
+  #ordersTab tbody td:nth-child(7){
+    grid-column:3!important;
+    grid-row:3!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(1),
+  #ordersTab tbody td:nth-child(1){
+    display:none!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(3) .platform-badge,
+  #ordersTab tbody td:nth-child(3) .platform-badge{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    border-radius:13px!important;
+    display:grid!important;
+    place-items:center!important;
+    font-size:1.15rem!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(2) *,
+  #ordersTab tbody td:nth-child(2) *{
+    max-width:100%!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(4) *,
+  #ordersTab tbody td:nth-child(4) *{
+    font-size:.78rem!important;
+    font-weight:900!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(5) *,
+  #ordersTab tbody td:nth-child(5) *{
+    text-align:left!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(5) strong,
+  #ordersTab tbody td:nth-child(5) strong{
+    font-size:1.00rem!important;
+    font-weight:900!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(6) .status-badge,
+  #ordersTab tbody td:nth-child(6) .status-badge{
+    width:100%!important;
+    max-width:none!important;
+    min-height:30px!important;
+    padding:5px 7px!important;
+    border-radius:9px!important;
+    font-size:.64rem!important;
+    line-height:1.25!important;
+    white-space:normal!important;
+  }
+
+  .dashboard-orders tbody td:nth-child(7),
+  #ordersTab tbody td:nth-child(7){
+    text-align:left!important;
+    font-size:.56rem!important;
+    color:#72859b!important;
+  }
+
+  /* Bottom app navigation */
+  .mobile-app-nav{
+    position:fixed!important;
+    right:8px!important;
+    left:8px!important;
+    bottom:8px!important;
+    z-index:200!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,1fr)!important;
+    gap:3px!important;
+    padding:7px!important;
+    border:1px solid rgba(63,190,255,.16)!important;
+    border-radius:22px!important;
+    background:rgba(3,10,19,.94)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    box-shadow:0 18px 45px rgba(0,0,0,.45)!important;
+  }
+
+  .mobile-app-nav-item{
+    position:relative!important;
+    min-width:0!important;
+    min-height:58px!important;
+    padding:7px 3px!important;
+    border:0!important;
+    border-radius:16px!important;
+    background:transparent!important;
+    color:#91a2b8!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    font-family:inherit!important;
+    font-weight:800!important;
+  }
+
+  .mobile-app-nav-item i{
+    font-size:1.02rem!important;
+  }
+
+  .mobile-app-nav-item span{
+    font-size:.59rem!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+
+  .mobile-app-nav-item.active{
+    color:var(--mobile-green)!important;
+    background:linear-gradient(145deg,rgba(0,232,138,.15),rgba(0,232,138,.055))!important;
+    box-shadow:inset 0 0 0 1px rgba(0,232,138,.14)!important;
+  }
+
+  .mobile-app-nav-item b{
+    position:absolute!important;
+    top:4px!important;
+    left:50%!important;
+    transform:translateX(13px)!important;
+    min-width:17px!important;
+    height:17px!important;
+    padding:0 4px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:20px!important;
+    background:#ff9d00!important;
+    color:#111!important;
+    font-size:.53rem!important;
+    font-weight:900!important;
+  }
+
+  /* Other pages inherit the same app shell and spacing. */
+  #ordersTab .order-kpis{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    margin-bottom:9px!important;
+  }
+
+  #ordersTab .order-kpis>div{
+    min-height:72px!important;
+    padding:9px!important;
+    border-radius:15px!important;
+  }
+
+  #ordersTab .orders-workspace{
+    margin-top:0!important;
+  }
+
+  #ordersTab .orders-toolbar{
+    padding:9px 2px!important;
+    gap:6px!important;
+  }
+
+  #ordersTab .orders-toolbar strong{
+    font-size:.88rem!important;
+  }
+
+  #ordersTab .orders-toolbar span{
+    font-size:.61rem!important;
+  }
+
+  #ordersTab .orders-legend{
+    display:none!important;
+  }
+
+  .orders-panel,.panel{
+    border-radius:20px!important;
+  }
+
+  /* Avoid desktop min-widths leaking into app width. */
+  .panel,
+  .stat-card,
+  .workspace-header,
+  .orders-workspace,
+  .orders-toolbar,
+  .dashboard-grid{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  /* Modals remain app-native and nearly full screen. */
+  .modal-overlay{
+    padding:8px!important;
+    align-items:flex-end!important;
+  }
+
+  .modal-card{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:92vh!important;
+    border-radius:22px 22px 16px 16px!important;
+  }
+}
+
+@media (max-width:360px){
+  .main-wrapper{padding-inline:8px!important}
+  .topbar{width:calc(100% + 16px)!important;margin-inline:-8px!important}
+  .dashboard-status-card{min-height:96px!important;padding:11px 9px!important}
+  .dashboard-status-card strong{font-size:1.48rem!important}
+  .dashboard-stock-card{min-height:120px!important}
+  .dashboard-stock-card strong{font-size:1.02rem!important}
+  .mobile-app-nav{right:5px!important;left:5px!important;bottom:5px!important}
+  .mobile-app-nav-item{min-height:54px!important}
+  .mobile-app-nav-item span{font-size:.54rem!important}
+}
