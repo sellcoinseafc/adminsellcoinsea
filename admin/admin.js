@@ -4145,13 +4145,14 @@ window.openOrderModal = function (orderId) {
   const paymentMethod = paymentCode === "bank" ? (order.bankName || order.paymentPreview?.bankName || "تحويل بنكي") : paymentCode === "wallet" ? (order.paymentPreview?.walletName || "محفظة رقمية") : paymentCode === "paypal" ? "PayPal" : paymentCode === "usd" || paymentCode === "usdt" ? "USD / USDT" : paymentCode === "western" ? "Western Union" : (order.paymentMethod || "");
   const whatsapp=String(order.phone||"").replace(/[^0-9+]/g,"").replace(/^00/,"+");
   const statusMessage=getStatusMessage(order.status,order);
+  const statusBadgeClass = order.issue ? "status-problem" : "status-" + (order.status || "unknown");
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
   if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   modalBody.innerHTML=`
     <div class="order-detail-shell">
       <section class="order-detail-section order-summary-section">
-        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div>${`<span class="order-status-badge ${order.issue ? "status-problem" : `status-${order.status || "unknown"}`}`}>${escapeHtml(statusLabel)}</span>`}</div>
+        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div><span class="order-status-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></div>
         <div class="order-identity-grid">
           <button class="copy-pill" onclick="copyTrackingLink('${escapeAttribute(ref)}')"><span>رقم المرجع</span><strong>#${escapeHtml(ref)}</strong><small>نسخ رابط التتبع</small></button>
           <button class="copy-pill" onclick="copyValue('${escapeAttribute(order.name||"")}')"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong><small>نسخ</small></button>
