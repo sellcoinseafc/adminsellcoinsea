@@ -74,7 +74,7 @@
 <article class="stat-card"><span>مخزون PC</span><strong id="dashStockPC">0</strong><i class="fa-solid fa-desktop"></i></article>
 </div>
 <div class="dashboard-grid">
-<div class="panel dashboard-orders"><div class="panel-title"><div><span class="eyebrow">RECENT ACTIVITY</span><h3>آخر الطلبات</h3></div><button class="btn-secondary" onclick="switchTab('ordersTab',document.querySelector('.sidebar-link[onclick*="ordersTab"]'))">عرض الكل</button></div><div class="table-wrap"><table><thead><tr><th>رقم التتبع</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>السعر</th><th>الحالة</th><th></th></tr></thead><tbody id="recentOrdersTableBody"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div></div>
+<div class="panel dashboard-orders"><div class="panel-title"><div><span class="eyebrow">RECENT ACTIVITY</span><h3>آخر الطلبات</h3></div><button class="btn-secondary" onclick="switchTab('ordersTab',document.querySelector('.sidebar-link[onclick*="ordersTab"]'))">عرض الكل</button></div><div class="table-wrap"><table><thead><tr><th>الطلب</th><th>العميل</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="recentOrdersTableBody"><tr><td colspan="7" class="empty">جاري التحميل...</td></tr></tbody></table></div></div>
 <div class="panel dashboard-shortcuts"><div class="panel-title"><div><span class="eyebrow">QUICK ACCESS</span><h3>الوصول السريع</h3></div></div>
 <button class="quick-action" onclick="switchTab('withdrawTab',document.querySelector('.sidebar-link[onclick*="withdrawTab"]'))"><span><i class="fa-solid fa-coins"></i></span><div><b>طلبات السحب</b><small>متابعة الطلبات قيد السحب</small></div><i class="fa-solid fa-chevron-left"></i></button>
 <button class="quick-action" onclick="switchTab('transferAlertsTab',document.querySelector('.sidebar-link[onclick*="transferAlertsTab"]'))"><span><i class="fa-solid fa-money-bill-transfer"></i></span><div><b>التحويلات</b><small>طلبات جاهزة للتحويل</small></div><i class="fa-solid fa-chevron-left"></i></button>
@@ -108,7 +108,7 @@
 
 <div class="stats-grid stats-grid-ops">
   <article class="stat-card"><span>إجمالي الطلبات</span><strong id="statsTotalOrders">0</strong><small id="statsTotalOrdersSub">0 عميل</small></article>
-  <article class="stat-card"><span>إجمالي الكمية</span><strong id="statsTotalCoins">0</strong><small>من جميع الطلبات</small></article>
+  <article class="stat-card"><span>إجمالي الكوينز</span><strong id="statsTotalCoins">0</strong><small>من جميع الطلبات</small></article>
   <article class="stat-card"><span>الكمية المسحوبة</span><strong id="statsWithdrawnCoins">0</strong><small id="statsWithdrawnSub">من إجمالي الكمية</small></article>
   <article class="stat-card"><span>الكمية المتبقية</span><strong id="statsRemainingCoins">0</strong><small>بعد خصم المسحوب</small></article>
   <article class="stat-card"><span>المبالغ المحولة</span><strong id="statsTransferredMoney">0 ريال</strong><small id="statsTransferredSub">إجمالي المبالغ التي تم تحويلها</small></article>
