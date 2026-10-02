@@ -3243,6 +3243,7 @@ router.post(
           transactionUpdateData.purgeDueAt =
             new Date(completedAt.getTime() + PURGE_DELAY_MS);
         } else if (nextStatus !== "completed") {
+          // الرجوع من المكتمل يلغي دورة الإتلاف القديمة حتى لا تبقى مرتبطة بطلب غير مكتمل.
           delete transactionUpdateData.completedAt;
           delete transactionUpdateData.purgeDueAt;
         }
@@ -3255,6 +3256,11 @@ router.post(
             req.admin?.uid ||
             "Admin";
           transactionUpdateData.transferCompleted = true;
+        } else {
+          // إذا رجع الطلب قبل التحويل، لا تبقى بيانات تحويل قديمة معلقة على الطلب.
+          delete transactionUpdateData.transferredAt;
+          delete transactionUpdateData.transferredBy;
+          transactionUpdateData.transferCompleted = false;
         }
 
         transaction.update(found.ref, transactionUpdateData);
@@ -3294,28 +3300,45 @@ router.post(
             : String(current.issueMessage || ""),
 
         completedAt:
-          updateData.completedAt ||
-          current.completedAt ||
-          null,
+          nextStatus === "completed"
+            ? (
+                updateData.completedAt ||
+                current.completedAt ||
+                null
+              )
+            : null,
 
         purgeDueAt:
-          updateData.purgeDueAt ||
-          current.purgeDueAt ||
-          null,
+          nextStatus === "completed"
+            ? (
+                updateData.purgeDueAt ||
+                current.purgeDueAt ||
+                null
+              )
+            : null,
 
         transferredAt:
-          updateData.transferredAt ||
-          current.transferredAt ||
-          null,
+          nextStatus === "transferred"
+            ? (
+                updateData.transferredAt ||
+                current.transferredAt ||
+                null
+              )
+            : null,
 
         transferredBy:
-          updateData.transferredBy ||
-          current.transferredBy ||
-          "",
+          nextStatus === "transferred"
+            ? (
+                updateData.transferredBy ||
+                current.transferredBy ||
+                ""
+              )
+            : "",
 
         transferCompleted:
-          updateData.transferCompleted === true ||
-          current.transferCompleted === true,
+          nextStatus === "transferred"
+            ? true
+            : false,
 
         lastUpdate:
           updateData.lastUpdate || new Date()
