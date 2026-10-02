@@ -4358,7 +4358,7 @@ window.openOrderModal = function (orderId) {
             </div>
             <div class="withdraw-editor ${locked?"is-locked":""}">
               <div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة. التعديل متاح فقط أثناء حالة جاري سحب الكوينز من حسابك.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div>
-              <div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div>
+              <div class="progress-track"><span style="width:${percent.toFixed(2)}%"><b>${percent.toFixed(2)}%</b></span></div>
               <div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div>
             </div>
           </div>
