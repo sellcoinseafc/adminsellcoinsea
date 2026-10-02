@@ -1324,3 +1324,62 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
     font-size:.95rem!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — TABLET DRAWER / PORTRAIT FOUNDATION
+   Keep desktop sidebar on wide screens, but treat tablet portrait as a
+   full-width workspace with the sidebar as a drawer.
+   ========================================================================== */
+.sidebar-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:4990;
+  background:rgba(0,0,0,.58);
+  backdrop-filter:blur(2px);
+}
+.sidebar-overlay.is-visible{display:block}
+
+@media(max-width:1300px){
+  .sidebar,
+  [dir=rtl] .sidebar{
+    position:fixed!important;
+    top:0!important;
+    right:0!important;
+    left:auto!important;
+    width:min(82vw,330px)!important;
+    height:100vh!important;
+    margin:0!important;
+    z-index:5000!important;
+    transform:translateX(110%)!important;
+    transition:transform .22s ease!important;
+    box-shadow:-20px 0 50px rgba(0,0,0,.38)!important;
+  }
+  .sidebar.mobile-open,
+  [dir=rtl] .sidebar.mobile-open{
+    transform:translateX(0)!important;
+  }
+  .main-wrapper,
+  [dir=rtl] .main-wrapper{
+    width:100%!important;
+    margin-right:0!important;
+    margin-left:0!important;
+  }
+  .mobile-only{
+    display:inline-grid!important;
+    place-items:center;
+  }
+  .sidebar-close-btn{
+    display:grid!important;
+    place-items:center;
+  }
+  .sidebar-overlay.is-visible{display:block}
+}
+
+@media(min-width:1301px){
+  #sidebarMenuToggle,
+  .sidebar-overlay{
+    display:none!important;
+  }
+}
