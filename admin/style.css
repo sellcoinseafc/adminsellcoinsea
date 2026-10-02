@@ -634,3 +634,30 @@ tbody tr:hover td{background:var(--v3-surface-2)!important}
  .dashboard-grid{gap:10px}
  .nav-group-label{padding-right:8px}
 }
+
+/* V3 order / withdrawal / transfer workspaces */
+.orders-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:12px}
+.orders-toolbar strong{display:block;color:var(--v3-text);font-size:.86rem}
+.orders-toolbar span{display:block;color:var(--v3-muted);font-size:.65rem;margin-top:3px}
+.orders-legend{display:flex;gap:10px;color:var(--v3-muted);font-size:.64rem}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:4px;background:var(--v3-green)}
+.dot-new{background:#2c9ee8}.dot-progress{background:#7c58d6}.dot-transfer{background:#d98a20}
+.orders-panel{padding:10px!important}
+.withdraw-command-grid{margin-bottom:14px}
+.operation-note,.transfer-command{
+ display:flex;align-items:flex-start;gap:12px;padding:15px 17px;
+ border:1px solid var(--v3-border);border-radius:15px;
+ background:var(--v3-surface);box-shadow:var(--v3-shadow);
+}
+.operation-note>i,.transfer-command>i{color:var(--v3-green);font-size:1.1rem;margin-top:2px}
+.operation-note b,.operation-note span,.transfer-command b,.transfer-command span{display:block}
+.operation-note b,.transfer-command b{color:var(--v3-text);font-size:.76rem}
+.operation-note span,.transfer-command span{color:var(--v3-muted);font-size:.67rem;line-height:1.8;margin-top:3px}
+.transfer-command{margin-bottom:14px;background:var(--v3-green-soft);border-color:#cfe6d7}
+.transfer-command>i{color:var(--v3-green)}
+@media(max-width:600px){
+ .orders-toolbar{display:block}
+ .orders-legend{margin-top:8px}
+ .orders-panel{padding:7px!important}
+ .operation-note,.transfer-command{padding:13px}
+}
