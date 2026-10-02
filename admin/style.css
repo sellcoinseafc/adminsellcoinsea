@@ -7626,3 +7626,232 @@ textarea.form-control{
     font-size:1.18rem!important;
   }
 }
+
+/* ==========================================================================
+   STEP 4 FINAL — ONE FIELD PER ROW FOR ALL ORDER OPERATIONS
+   Orders / Recent Orders / Withdrawal / Transfers use one consistent mobile card.
+   ========================================================================== */
+@media(max-width:600px){
+  #fullOrdersTableBody,
+  #recentOrdersTableBody,
+  #withdrawOrdersTableBody,
+  #transferAlertsTableBody{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  #fullOrdersTableBody tr,
+  #recentOrdersTableBody tr,
+  #withdrawOrdersTableBody tr,
+  #transferAlertsTableBody tr{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    width:100%!important;
+    gap:0!important;
+    margin:0!important;
+    padding:8px 14px!important;
+    border:1px solid var(--line)!important;
+    border-radius:18px!important;
+    background:#fff!important;
+    box-shadow:0 5px 18px rgba(20,42,29,.06)!important;
+    overflow:hidden!important;
+  }
+
+  #fullOrdersTableBody td,
+  #recentOrdersTableBody td,
+  #withdrawOrdersTableBody td,
+  #transferAlertsTableBody td{
+    display:block!important;
+    grid-column:1/-1!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:12px 2px!important;
+    margin:0!important;
+    border:0!important;
+    border-bottom:1px solid var(--line)!important;
+    text-align:right!important;
+  }
+
+  #fullOrdersTableBody td:last-child,
+  #recentOrdersTableBody td:last-child,
+  #withdrawOrdersTableBody td:last-child,
+  #transferAlertsTableBody td:last-child{
+    border-bottom:0!important;
+  }
+
+  #fullOrdersTableBody td::before,
+  #recentOrdersTableBody td::before,
+  #withdrawOrdersTableBody td::before,
+  #transferAlertsTableBody td::before{
+    display:none!important;
+  }
+
+  #fullOrdersTableBody .table-field-label,
+  #recentOrdersTableBody .table-field-label,
+  #withdrawOrdersTableBody .table-field-label,
+  #transferAlertsTableBody .table-field-label{
+    display:block!important;
+    width:100%!important;
+    margin:0 0 6px!important;
+    color:#68776f!important;
+    font-size:.72rem!important;
+    font-weight:800!important;
+    line-height:1.4!important;
+  }
+
+  #fullOrdersTableBody .order-ref-stack,
+  #recentOrdersTableBody .order-ref-stack,
+  #withdrawOrdersTableBody .order-ref-stack,
+  #transferAlertsTableBody .order-ref-stack{
+    display:block!important;
+    width:100%!important;
+  }
+
+  #fullOrdersTableBody .order-reference-value,
+  #recentOrdersTableBody .order-reference-value,
+  #withdrawOrdersTableBody .order-reference-value,
+  #transferAlertsTableBody .order-reference-value{
+    display:block!important;
+    width:100%!important;
+    color:#17221c!important;
+    font-size:1.2rem!important;
+    font-weight:900!important;
+    line-height:1.35!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #fullOrdersTableBody .order-ref-stack small,
+  #recentOrdersTableBody .order-ref-stack small{
+    display:block!important;
+    margin:0 0 4px!important;
+    color:#68776f!important;
+    font-size:.66rem!important;
+  }
+
+  #fullOrdersTableBody .table-primary-value,
+  #recentOrdersTableBody .table-primary-value,
+  #withdrawOrdersTableBody .table-primary-value,
+  #transferAlertsTableBody .table-primary-value{
+    display:block!important;
+    width:100%!important;
+    color:#17221c!important;
+    font-size:1rem!important;
+    font-weight:900!important;
+    line-height:1.5!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #fullOrdersTableBody .table-large-value,
+  #recentOrdersTableBody .table-large-value,
+  #withdrawOrdersTableBody .table-large-value,
+  #transferAlertsTableBody .table-large-value{
+    display:block!important;
+    width:100%!important;
+    color:#17221c!important;
+    font-size:1.25rem!important;
+    font-weight:900!important;
+    line-height:1.35!important;
+    direction:ltr!important;
+    text-align:right!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  #fullOrdersTableBody .platform-badge,
+  #recentOrdersTableBody .platform-badge,
+  #withdrawOrdersTableBody .platform-badge{
+    width:52px!important;
+    height:44px!important;
+    margin:0!important;
+  }
+
+  #fullOrdersTableBody .platform-status-badge,
+  #recentOrdersTableBody .platform-status-badge,
+  #withdrawOrdersTableBody .platform-status-badge{
+    display:flex!important;
+    width:100%!important;
+    min-height:50px!important;
+    justify-content:center!important;
+    align-items:center!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere!important;
+    text-align:center!important;
+    line-height:1.45!important;
+  }
+
+  #fullOrdersTableBody .recent-order-actions,
+  #recentOrdersTableBody .recent-order-actions,
+  #withdrawOrdersTableBody .recent-order-actions{
+    display:flex!important;
+    width:100%!important;
+    justify-content:flex-start!important;
+    align-items:center!important;
+    gap:8px!important;
+    flex-wrap:wrap!important;
+  }
+
+  #fullOrdersTableBody .recent-order-actions .btn-action,
+  #recentOrdersTableBody .recent-order-actions .btn-action,
+  #withdrawOrdersTableBody .recent-order-actions .btn-action{
+    min-width:44px!important;
+    min-height:44px!important;
+  }
+
+  #fullOrdersTableBody .withdrawn-value{
+    color:#d97706!important;
+  }
+
+  #fullOrdersTableBody .remaining-value,
+  #withdrawOrdersTableBody .remaining-value{
+    color:#dc2626!important;
+  }
+
+  #withdrawOrdersTableBody .withdrawn-value{
+    color:#d97706!important;
+    font-size:1.25rem!important;
+  }
+
+  #withdrawOrdersTableBody .remaining-value{
+    color:#dc2626!important;
+    font-size:1.25rem!important;
+  }
+
+  #transferAlertsTableBody .phone-value{
+    display:block!important;
+    direction:ltr!important;
+    text-align:right!important;
+    color:#17221c!important;
+    font-variant-numeric:tabular-nums!important;
+    white-space:nowrap!important;
+  }
+
+  #transferAlertsTableBody .transfer-payment-badge{
+    display:inline-flex!important;
+    max-width:100%!important;
+    white-space:normal!important;
+    line-height:1.5!important;
+  }
+
+  #transferAlertsTableBody .transfer-action-button{
+    width:100%!important;
+    min-height:46px!important;
+    background:#d97706!important;
+    color:#fff!important;
+    border-color:#d97706!important;
+  }
+
+  #fullOrdersTableBody .empty-row,
+  #recentOrdersTableBody .empty-row,
+  #withdrawOrdersTableBody .empty-row,
+  #transferAlertsTableBody .empty-row{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+    padding:22px 10px!important;
+    border:0!important;
+  }
+}
