@@ -2661,7 +2661,7 @@ window.renderTransferAlertsTable =
                   ${escapeHtml(
                     order.createdAt
                       ? order.createdAt.toLocaleString(
-                          "ar-SA",
+                          "en-GB",
                           {
                             timeZone:
                               "Asia/Riyadh"
@@ -2808,7 +2808,7 @@ window.renderPurgeOrdersTable =
                           ) ||
                             order.completedAt
                         ).toLocaleString(
-                          "ar-SA",
+                          "en-GB",
                           {
                             timeZone:
                               "Asia/Riyadh"
@@ -2941,7 +2941,7 @@ function initReviewsListener() {
                   ? data.createdAt
                       .toDate()
                       .toLocaleDateString(
-                        "ar-SA",
+                        "en-GB",
                         {
                           timeZone:
                             "Asia/Riyadh"
@@ -4980,7 +4980,7 @@ window.openPurgeModal =
       showToast(
         dueDate
           ? `لم يحِن موعد الإتلاف بعد.\nالموعد: ${dueDate.toLocaleString(
-              "ar-SA",
+              "en-GB",
               {
                 timeZone:
                   "Asia/Riyadh"
