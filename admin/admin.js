@@ -40,9 +40,9 @@ const STATUS_VALUES = [
   "review",
   "progress",
   "finished",
+  "pending_transfer",
   "transferred",
-  "completed",
-  "archived"
+  "completed"
 ];
 
 const ISSUE_VALUES = [
@@ -78,7 +78,8 @@ const DEFAULT_STATUS_MESSAGES = {
   new: "مرحبًا {customerName}، تم استلام طلبك وأصبح في حالة: {status}.",
   review: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   progress: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
-  finished: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  finished: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك.",
+  pending_transfer: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك، والطلب الآن بانتظار التحويل.",
   transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
@@ -86,12 +87,12 @@ const DEFAULT_STATUS_MESSAGES = {
 
 const STATUS_LABELS = {
   new: "طلب جديد",
-  review: "طلب بانتظار المراجعة",
-  progress: "جاري سحب الكوينز من حسابك",
-  finished: "تم الانتهاء من سحب الكوينز من حسابك",
-  transferred: "تم تحويل المبلغ إلى حسابك",
-  completed: "مكتمل",
-  archived: "مؤرشف"
+  review: "بانتظار المراجعة",
+  progress: "جاري سحب الكوين من حسابك",
+  finished: "تم الانتهاء من سحب الكوين من حسابك",
+  pending_transfer: "بانتظار التحويل",
+  transferred: "تم التحويل لحسابك",
+  completed: "مكتمل"
 };
 
 const ISSUE_LABELS = {
@@ -1830,9 +1831,10 @@ function sortOrdersByPriority() {
     pending: 2,
     review: 3,
     finished: 4,
-    transferred: 5,
-    completed: 6,
-    archived: 7
+    pending_transfer: 5,
+    transferred: 6,
+    completed: 7,
+    archived: 8
   };
 
   ordersData.sort(
@@ -2753,8 +2755,7 @@ window.renderTransferAlertsTable =
     const transferOrders =
       ordersData.filter(
         (order) =>
-          order.status ===
-          "finished"
+          order.status === "pending_transfer"
       );
 
     const badgeCount =
@@ -4542,7 +4543,7 @@ window.openOrderModal = function (orderId) {
   const withdrawn=Math.min(total,Math.max(0,Number(order.withdrawnQuantity??order.drawnCoins??0)||0));
   const remaining=Math.max(0,total-withdrawn);
   const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
-  const locked=["finished","transferred","completed","archived"].includes(order.status);
+  const locked=["finished","pending_transfer","transferred","completed","archived"].includes(order.status);
   const statusLabel=STATUS_LABELS[order.status]||order.status||"---";
   const platform=String(order.platform||"").trim();
   const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
@@ -4618,7 +4619,7 @@ window.saveModalOrderStatus=async function(orderId){
 };
 window.saveModalWithdrawnQuantity=async function(orderId){
   const order=ordersData.find((item)=>item.id===orderId);const input=document.getElementById("modalWithdrawnQuantity");if(!order||!input)return;
-  if(["finished","transferred","completed","archived"].includes(order.status)){showToast("هذه الكمية مقفلة لهذه الحالة.");return;}
+  if(["finished","pending_transfer","transferred","completed","archived"].includes(order.status)){showToast("هذه الكمية مقفلة لهذه الحالة.");return;}
   const value=Number(String(input.value||"").replace(/,/g,"").replace(/[^0-9]/g,""))||0;const total=Number(order.totalQty)||0;if(value<0||value>total){showToast(`❌ الكمية المسحوبة يجب أن تكون بين 0 و${formatCoinsNumber(total)}.`);return;}
   try{const response=await adminFetch("/api/orders/update-drawn",{method:"POST",body:JSON.stringify({orderId,withdrawnQuantity:value})});const data=await readJsonResponse(response);if(await handleAdminAuthFailure(response,data))return;if(!data.success){showToast("❌ "+(data.message||"تعذر تحديث الكمية."));return;}await logAuditEvent("تحديث سحب الكوينز",order.referenceNumber,`تم تحديث الكمية المسحوبة إلى ${value}`);showToast("تم تحديث الكمية المسحوبة.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Withdrawn quantity update:",error);showToast("❌ تعذر تحديث الكمية المسحوبة.");}
 };
@@ -5223,11 +5224,11 @@ window.promptEditOrder =
         "أدخل الحالة الجديدة:\n\n" +
           "new = طلب جديد\n" +
           "review = انتظار المراجعة\n" +
-          "progress = جاري سحب الكوينز\n" +
+          "progress = جاري سحب الكوين\n" +
           "finished = تم الانتهاء من السحب\n" +
-          "transferred = تم تحويل المبلغ\n" +
-          "completed = مكتمل\n" +
-          "archived = مؤرشف",
+          "pending_transfer = بانتظار التحويل\n" +
+          "transferred = تم التحويل لحسابك\n" +
+          "completed = مكتمل",
         order.status
       );
 
