@@ -2473,3 +2473,114 @@ table{
     font-size:1.28rem!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — FINAL DESKTOP/TABLET ORDER DETAILS + DARK LOGIN 2026-10-02
+   ========================================================================== */
+body.light-mode{
+  --bg:#050b16!important;--bg2:#07111f!important;--panel:#0b1424!important;--panel2:#0e1a2d!important;
+  --input:#070f1c!important;--line:rgba(56,189,248,.14)!important;--text:#f7fbff!important;--muted:#8ea0b7!important;
+  background:radial-gradient(circle at 12% 0%,rgba(34,197,94,.07),transparent 30%),radial-gradient(circle at 90% 12%,rgba(59,130,246,.08),transparent 28%),#050b16!important;color:var(--text)!important;
+}
+#themeToggleBtn{display:none!important}
+.login-overlay{
+  background:radial-gradient(circle at 50% 10%,rgba(0,255,135,.12),transparent 34%),radial-gradient(circle at 15% 85%,rgba(47,128,237,.10),transparent 30%),rgba(2,6,14,.94)!important;
+  padding:24px!important;
+}
+.login-card-nextgen{
+  width:min(470px,100%)!important;padding:34px!important;border:1px solid rgba(0,255,135,.16)!important;border-radius:26px!important;
+  background:linear-gradient(145deg,rgba(14,28,46,.98),rgba(5,13,24,.99))!important;
+  box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 0 1px rgba(56,189,248,.04)!important;position:relative;overflow:hidden;
+}
+.login-card-nextgen::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(0,255,135,.055),transparent 36%,rgba(47,128,237,.045))}
+.login-card-nextgen>*{position:relative;z-index:1}
+.login-card-nextgen .brand-mark{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid rgba(255,255,255,.07)}
+.login-card-nextgen .brand-mark>span{width:54px!important;height:54px!important;border-radius:16px!important;background:linear-gradient(145deg,#00ff87,#20d879)!important;box-shadow:0 12px 30px rgba(0,255,135,.14)}
+.login-card-nextgen .brand-mark b{font-size:1.18rem!important;letter-spacing:.2px}
+.login-card-nextgen .brand-mark small{color:#6f849d!important}
+.login-header h2{font-size:1.7rem!important;color:#fff!important}
+.login-header p{font-size:.82rem!important;color:#8ea0b7!important}
+.login-card-nextgen form{margin-top:24px!important}
+.login-card-nextgen label{font-size:.82rem!important;color:#d7e2ed!important}
+.login-card-nextgen .input-wrap{min-height:52px!important;margin-bottom:16px!important;background:#070f1c!important;border-color:rgba(56,189,248,.14)!important;border-radius:14px!important;box-shadow:inset 0 0 18px rgba(0,0,0,.12)}
+.login-card-nextgen .input-wrap:focus-within{border-color:rgba(0,255,135,.45)!important;box-shadow:0 0 0 3px rgba(0,255,135,.07),inset 0 0 18px rgba(0,0,0,.12)!important}
+.login-card-nextgen .input-wrap i{color:#6f849d!important}
+.login-card-nextgen .input-wrap input{font-size:.95rem!important;color:#fff!important}
+.login-card-nextgen .input-wrap input::placeholder{color:#51647a!important}
+.login-card-nextgen .btn-primary{min-height:52px!important;border-radius:14px!important;font-size:.95rem!important;box-shadow:0 12px 30px rgba(0,255,135,.13)!important}
+.login-card-nextgen .btn-google{min-height:50px!important;border-radius:14px!important;background:#111c2b!important;color:#f5f8fb!important;border:1px solid rgba(255,255,255,.09)!important}
+.login-card-nextgen .login-divider{margin:20px 0!important;color:#64778e!important}
+.login-card-nextgen .login-divider:before,.login-card-nextgen .login-divider:after{background:rgba(255,255,255,.07)!important}
+
+#orderDetailModal{z-index:300!important}
+#orderDetailModal .order-modal{width:min(1120px,calc(100vw - 48px))!important;max-height:92vh!important;padding:22px!important;background:linear-gradient(150deg,#0a1423,#060d18)!important;border:1px solid rgba(56,189,248,.15)!important}
+#orderDetailModal .modal-header{margin-bottom:18px!important;padding-bottom:16px!important}
+#orderDetailModal .modal-header h3{font-size:1.35rem!important;color:#fff!important}
+#orderDetailModal .modal-header .modal-close-btn{width:44px!important;height:44px!important;border-radius:13px!important;background:#f3f6f4!important;color:#1b2630!important;border:0!important}
+.order-detail-shell{display:grid;gap:14px;min-width:0}
+.order-detail-control-panel{display:grid;gap:14px;padding:18px;border:1px solid rgba(0,255,135,.15);border-radius:18px;background:linear-gradient(145deg,rgba(13,28,45,.96),rgba(7,16,28,.96))}
+.detail-control-heading{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,420px);align-items:center;gap:18px}
+.detail-control-heading h4{margin:3px 0 0;font-size:1.15rem;color:#fff}
+.modal-status-select{width:100%;min-height:52px;padding:10px 42px 10px 14px;border-radius:14px;border:1px solid transparent;color:#fff;font-weight:900;font-size:.92rem;background:#172334;outline:0;cursor:pointer}
+.modal-status-select.status-new{background:#0ea5e9;border-color:#38bdf8}
+.modal-status-select.status-review{background:#f59e0b;border-color:#fbbf24;color:#171005}
+.modal-status-select.status-progress{background:#f97316;border-color:#fb923c}
+.modal-status-select.status-finished{background:#22c55e;border-color:#4ade80;color:#03160a}
+.modal-status-select.status-pending_transfer,.modal-status-select.status-transferred{background:#8b5cf6;border-color:#a78bfa}
+.modal-status-select.status-completed{background:#16a34a;border-color:#4ade80}
+.detail-issue-control{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,360px);gap:10px;align-items:center;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
+.detail-issue-control>div{min-width:0}
+.detail-issue-control small{display:block;margin-top:4px;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-issue-select{width:100%;min-height:46px;padding:9px 12px;border:1px solid rgba(239,68,68,.28);border-radius:12px;background:#0a1320;color:#fff;font-weight:800;outline:0}
+.detail-issue-message{grid-column:1/-1;min-height:70px!important;resize:vertical!important}
+.order-detail-accordion{display:grid;gap:10px}
+.order-detail-accordion-item{overflow:hidden;border:1px solid rgba(56,189,248,.13);border-radius:17px;background:linear-gradient(145deg,rgba(11,21,36,.98),rgba(7,15,26,.98))}
+.order-detail-accordion-item.is-open{border-color:rgba(0,255,135,.18);box-shadow:0 12px 35px rgba(0,0,0,.16)}
+.order-detail-accordion-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 19px;border:0;background:transparent;color:#fff;text-align:right}
+.order-detail-accordion-trigger>span{display:grid;grid-template-columns:auto auto;align-items:center;gap:0 10px;min-width:0}
+.order-detail-accordion-trigger>span>i{grid-row:span 2;color:var(--primary);font-size:1rem}
+.order-detail-accordion-trigger b{font-size:1rem;line-height:1.2}
+.order-detail-accordion-trigger small{grid-column:2;color:#8192a8;font-size:.7rem;margin-top:4px}
+.accordion-chevron{color:#8192a8;transition:transform .18s ease}
+.order-detail-accordion-item.is-open .accordion-chevron{transform:rotate(180deg);color:var(--primary)}
+.order-detail-accordion-content{display:none;padding:0 18px 18px;border-top:1px solid rgba(255,255,255,.055)}
+.order-detail-accordion-item.is-open .order-detail-accordion-content{display:block;padding-top:16px}
+.order-basic-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.order-basic-card,.detail-info-card{min-width:0;padding:15px;border:1px solid rgba(56,189,248,.13);border-radius:14px;background:#08111e}
+.order-basic-card>span,.detail-info-card>span{display:block;color:#8293a8;font-size:.72rem;margin-bottom:8px}
+.order-basic-card>strong,.detail-info-card>strong{display:block;color:#fff;font-size:1rem;font-weight:900;overflow-wrap:anywhere}
+.order-basic-reference strong{font-size:1.15rem;letter-spacing:.3px}
+.order-basic-platform .platform-pill{width:max-content;max-width:100%;margin:0}
+.general-info-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.detail-status-text{color:var(--primary)!important}
+.detail-info-card .order-price-stack{justify-items:start;text-align:right}
+.detail-info-card .order-price-stack strong{font-size:1.2rem!important}
+.transfer-detail-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:12px}
+.payment-total-row{margin-top:12px!important;display:flex!important;align-items:center;justify-content:space-between;gap:20px}
+.secure-section .order-detail-accordion-content{padding-top:14px!important}
+.secure-section-toolbar{display:flex;justify-content:flex-start;align-items:center;gap:10px;margin-bottom:12px}
+.secure-section .secure-fields-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+.secure-section .secure-copy-field:nth-child(1),.secure-section .secure-copy-field:nth-child(2){grid-column:span 3}
+.secure-section .secure-copy-field:nth-child(3),.secure-section .secure-copy-field:nth-child(4),.secure-section .secure-copy-field:nth-child(5){grid-column:span 2}
+.secure-copy-field{min-height:72px!important;text-align:right!important}
+.secure-copy-field span{font-size:.7rem!important}
+.secure-copy-field strong{font-size:1rem!important;color:#fff!important}
+.quantity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.issue-actions,.message-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap;margin-top:12px}
+.message-token-hint{color:#71839a;font-size:.7rem;margin-bottom:8px}
+@media (min-width:601px) and (max-width:1100px){
+  #orderDetailModal .order-modal{width:min(980px,calc(100vw - 30px))!important;padding:18px!important}
+  .detail-control-heading{grid-template-columns:1fr 1fr}
+  .order-basic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .general-info-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .transfer-detail-grid{grid-template-columns:1fr 1fr}
+}
+@media (max-width:600px){
+  .login-overlay{padding:14px!important}.login-card-nextgen{padding:24px!important;border-radius:22px!important}
+  .detail-control-heading,.detail-issue-control{grid-template-columns:1fr}
+  .order-basic-grid,.general-info-grid,.transfer-detail-grid,.quantity-grid{grid-template-columns:1fr}
+  .secure-section .secure-fields-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .secure-section .secure-copy-field:nth-child(1),.secure-section .secure-copy-field:nth-child(2){grid-column:1/-1}
+  .secure-section .secure-copy-field:nth-child(3),.secure-section .secure-copy-field:nth-child(4),.secure-section .secure-copy-field:nth-child(5){grid-column:span 1}
+}
