@@ -1087,6 +1087,18 @@ function getStockTrendMarkup(value) {
   return '<span class="stock-trend stock-trend-flat" title="المخزون يساوي 2 مليون"><i class="fa-solid fa-minus"></i></span>';
 }
 
+function formatAdminDate(value) {
+  const date = parseFirestoreDate(value);
+  if (!date) return "---";
+  return date.toLocaleString("ar-SA", {
+    timeZone: "Asia/Riyadh",
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function formatCoinsNumber(
   value
 ) {
@@ -2383,7 +2395,7 @@ window.renderOrdersTables =
           <td data-label="الكمية"><strong class="recent-quantity">${formatCoinsNumber(order.totalQty)}</strong></td>
           <td data-label="المبلغ"><strong class="recent-price">${escapeHtml(getDisplayPrice(order))}</strong></td>
           <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
-          <td data-label="آخر تحديث"><span class="last-update-value">${escapeHtml(formatDate(order.lastUpdate || order.updatedAt || order.createdAt))}</span></td>
+          <td data-label="آخر تحديث"><span class="last-update-value">${escapeHtml(formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt))}</span></td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
       `;
