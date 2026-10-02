@@ -846,3 +846,17 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   .store-status-control{min-height:40px;padding:5px 8px}
   .store-status-copy{font-size:.72rem}
 }
+
+
+/* Numeric input readability */
+#psMin,#psMax,#pcMin,#pcMax,#editQuantity,#modalWithdrawnQuantity{
+  font-size:1.08rem!important;
+  font-weight:700!important;
+  line-height:1.35!important;
+  letter-spacing:.01em;
+}
+@media(max-width:600px){
+  #psMin,#psMax,#pcMin,#pcMax,#editQuantity,#modalWithdrawnQuantity{
+    font-size:1.12rem!important;
+  }
+}
