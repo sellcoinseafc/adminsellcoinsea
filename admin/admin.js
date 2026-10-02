@@ -4556,8 +4556,8 @@ window.openOrderModal = function (orderId) {
   const paymentPreview=getPaymentPreviewText(order);
   const paymentMethod = paymentCode === "bank" ? (order.bankName || order.paymentPreview?.bankName || "تحويل بنكي") : paymentCode === "wallet" ? (order.paymentPreview?.walletName || "محفظة رقمية") : paymentCode === "paypal" ? "PayPal" : paymentCode === "usd" || paymentCode === "usdt" ? "USD / USDT" : paymentCode === "western" ? "Western Union" : (order.paymentMethod || "");
   const whatsapp=String(order.phone||"").replace(/[^0-9+]/g,"").replace(/^00/,"+");
-  const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}`:"#";
   const statusMessage=getStatusMessage(order.status,order);
+  const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
   if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   modalBody.innerHTML=`
