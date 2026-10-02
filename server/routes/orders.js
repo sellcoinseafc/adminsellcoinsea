@@ -10,7 +10,7 @@ import { requireAdmin } from "../middleware/auth.js";
 import {
   normalizeStatus,
   normalizeStoredStatus,
-  ALLOWED_STATUS_TRANSITIONS
+  canTransitionStatus
 } from "../services/statusCore.js";
 
 import { createRateLimiter } from "../middleware/rateLimit.js";
@@ -3171,11 +3171,7 @@ router.post(
       const previousStatus =
         normalizeStoredStatus(current.status);
 
-      const allowedNextStatuses =
-        ALLOWED_STATUS_TRANSITIONS[previousStatus] ||
-        new Set([previousStatus]);
-
-      if (!allowedNextStatuses.has(nextStatus)) {
+      if (!canTransitionStatus(previousStatus, nextStatus)) {
         return res.status(400).json({
           success: false,
           message:
@@ -3205,11 +3201,7 @@ router.post(
         transactionPreviousStatus =
           normalizeStoredStatus(freshData.status);
 
-        const freshAllowedNextStatuses =
-          ALLOWED_STATUS_TRANSITIONS[transactionPreviousStatus] ||
-          new Set([transactionPreviousStatus]);
-
-        if (!freshAllowedNextStatuses.has(nextStatus)) {
+        if (!canTransitionStatus(transactionPreviousStatus, nextStatus)) {
           const error = new Error("STALE_OR_INVALID_STATUS_TRANSITION");
           error.code = "STALE_OR_INVALID_STATUS_TRANSITION";
           throw error;
