@@ -1073,9 +1073,8 @@ function getPlatformMeta(platform) {
 function renderPlatformBadge(platform) {
   const meta = getPlatformMeta(platform);
   return `
-    <span class="platform-badge ${meta.className}" title="${escapeAttribute(meta.label)}">
+    <span class="platform-badge ${meta.className}" title="${escapeAttribute(meta.label)}" aria-label="${escapeAttribute(meta.label)}">
       <i class="${meta.icon}" aria-hidden="true"></i>
-      <strong>${escapeHtml(meta.label)}</strong>
     </span>
   `;
 }
@@ -2185,7 +2184,7 @@ function renderStatisticsPage() {
   setText("statsPCCoins", formatCoinsNumber(pcCoins));
   setText(
     "statsTransferredMoney",
-    transferredMoneySar.toLocaleString("ar-SA", { maximumFractionDigits: 2 }) + " ريال"
+    transferredMoneySar.toLocaleString("en-US", { maximumFractionDigits: 2 }) + " ريال"
   );
 
   const stockPs = document.getElementById("statsStockPSTrend");
@@ -2333,12 +2332,24 @@ function getStatusBadge(
 }
 
 function getOrderStatusBadge(order) {
-  if (order?.issue) {
-    return '<span class="badge badge-issue-primary"><i class="fa-solid fa-triangle-exclamation"></i> ' +
-      escapeHtml(getIssueLabel(order.issue)) +
-      '</span>';
-  }
-  return getStatusBadge(order?.status);
+  const meta = getPlatformMeta(order?.platform);
+  const status = String(order?.status || "").trim().toLowerCase();
+  const labels = {
+    new: "طلب جديد",
+    pending: "طلب جديد",
+    review: "طلب بانتظار المراجعة",
+    progress: "جاري سحب الكوينز من حسابك",
+    finished: "تم الانتهاء من سحب الكوينز من حسابك",
+    pending_transfer: "بانتظار التحويل",
+    transferred: "تم تحويل المبلغ إلى حسابك",
+    completed: "مكتمل",
+    archived: "مؤرشف"
+  };
+  const label = order?.issue
+    ? getIssueLabel(order.issue)
+    : (labels[status] || status || "---");
+  const icon = order?.issue ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>' : '';
+  return `<span class="badge platform-status-badge ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
 }
 
 window.renderOrdersTables =
@@ -2382,19 +2393,20 @@ window.renderOrdersTables =
 
       return `
         <tr class="full-order-row">
-          <td data-label="الطلب">
+          <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
+              <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
           </td>
-          <td data-label="العميل"><strong>${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية"><strong class="recent-quantity">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="المبلغ"><strong class="recent-price">${escapeHtml(getDisplayPrice(order))}</strong></td>
-          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
+          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="آخر تحديث"><span class="last-update-value">${escapeHtml(formatAdminDate(order.lastUpdate || order.updatedAt || order.createdAt))}</span></td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
@@ -2434,9 +2446,9 @@ window.renderRecentOrdersTable =
           </td>
           <td data-label="العميل"><strong class="recent-customer-name">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية"><strong class="recent-quantity">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="السعر"><strong class="recent-price">${escapeHtml(getDisplayPrice(order))}</strong></td>
-          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
+          <td data-label="السعر" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="recent-price table-large-value">${escapeHtml(getDisplayPrice(order))}</strong></td>
+          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
       `;
@@ -2487,12 +2499,12 @@ window.renderWithdrawOrdersTable =
               <b onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
             </div>
           </td>
-          <td data-label="العميل"><strong>${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="المنصة">${renderPlatformBadge(order.platform)}</td>
-          <td data-label="المطلوب"><strong class="recent-quantity">${formatCoinsNumber(total)}</strong></td>
-          <td data-label="المسحوب"><strong class="withdrawn-value">${formatCoinsNumber(withdrawn)}</strong></td>
-          <td data-label="المتبقي"><strong class="remaining-value">${formatCoinsNumber(remaining)}</strong></td>
-          <td data-label="الحالة">${getOrderStatusBadge(order)}</td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
+          <td data-label="المطلوب" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(total)}</strong></td>
+          <td data-label="المسحوب" class="order-data-cell"><span class="table-field-label">المسحوب</span><strong class="withdrawn-value table-large-value">${formatCoinsNumber(withdrawn)}</strong></td>
+          <td data-label="المتبقي" class="order-data-cell"><span class="table-field-label">المتبقي</span><strong class="remaining-value table-large-value">${formatCoinsNumber(remaining)}</strong></td>
+          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
           <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
         </tr>
       `;
@@ -3675,7 +3687,7 @@ window.renderClientsTable =
         <td data-label="الجوال"><span class="phone-value" dir="ltr">${escapeHtml(client.phone)}</span></td>
         <td data-label="عدد الطلبات"><span class="badge badge-new">${client.orderCount} طلبات</span></td>
         <td data-label="إجمالي الكمية"><strong>${formatCoinsNumber(client.totalCoins)}</strong></td>
-        <td data-label="إجمالي المبلغ"><strong class="recent-price">${client.totalMoneySar.toLocaleString("ar-SA",{maximumFractionDigits:2})} ريال</strong></td>
+        <td data-label="إجمالي المبلغ"><strong class="recent-price table-large-value">${client.totalMoneySar.toLocaleString("en-US",{maximumFractionDigits:2})} ريال</strong></td>
         <td data-label="الإجراء"><button class="btn-action client-history-btn" onclick="openClientModal('${encodeURIComponent(client.phone)}')">سجل الطلبات</button></td>
       </tr>
     `).join("");
@@ -3818,15 +3830,7 @@ window.openClientModal =
 
                       <td>
                         ${
-                          order.createdAt
-                            ? order.createdAt.toLocaleDateString(
-                                "ar-SA",
-                                {
-                                  timeZone:
-                                    "Asia/Riyadh"
-                                }
-                              )
-                            : "---"
+                          order.createdAt ? formatAdminDate(order.createdAt) : "---"
                         }
                       </td>
 
@@ -5814,14 +5818,85 @@ function calculateLocalInventory() {
   };
 }
 
+function getInventory24hMovement() {
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+  const result = {
+    sharedAdded: 0,
+    sharedWithdrawn: 0,
+    pcAdded: 0,
+    pcWithdrawn: 0
+  };
+
+  const groupFor = (platform) => String(platform || "").trim().toUpperCase() === "PC" ? "pc" : "shared";
+  const dateOf = (value) => parseFirestoreDate(value) || (value ? new Date(value) : null);
+
+  ordersData.forEach((order) => {
+    const group = groupFor(order.platform);
+    const created = dateOf(order.createdAt);
+    const ordered = Math.max(0, Number(order.totalQty ?? order.quantity ?? 0) || 0);
+
+    if (created && !Number.isNaN(created.getTime()) && created.getTime() >= since) {
+      if (group === "pc") result.pcAdded += ordered;
+      else result.sharedAdded += ordered;
+    }
+
+    const history = Array.isArray(order.history) ? [...order.history] : [];
+    const withdrawalEvents = history
+      .filter((item) => item && item.type === "withdrawn_quantity")
+      .map((item) => ({
+        value: Math.max(0, Number(item.value) || 0),
+        at: dateOf(item.at || item.timestamp || item.createdAt)
+      }))
+      .filter((item) => item.at && !Number.isNaN(item.at.getTime()))
+      .sort((a, b) => a.at.getTime() - b.at.getTime());
+
+    let previous = 0;
+    withdrawalEvents.forEach((event) => {
+      const delta = Math.max(0, event.value - previous);
+      if (event.at.getTime() >= since) {
+        if (group === "pc") result.pcWithdrawn += delta;
+        else result.sharedWithdrawn += delta;
+      }
+      previous = event.value;
+    });
+  });
+
+  return result;
+}
+
 function renderInventoryUI(settings) {
   const inventory = calculateLocalInventory();
   const psStock = document.getElementById("invStockPS");
   const pcStock = document.getElementById("invStockPC");
+  const psTrend = document.getElementById("invStockPSTrend");
+  const pcTrend = document.getElementById("invStockPCTrend");
   const lastUpdate = document.getElementById("invLastUpdate");
+
   if (psStock) psStock.innerText = formatCoinsNumber(inventory.shared.remaining);
   if (pcStock) pcStock.innerText = formatCoinsNumber(inventory.pc.remaining);
-  if (lastUpdate) lastUpdate.innerText = "محسوب مباشرة من الطلبات";
+  if (psTrend) psTrend.innerHTML = getStockTrendMarkup(inventory.shared.remaining);
+  if (pcTrend) pcTrend.innerHTML = getStockTrendMarkup(inventory.pc.remaining);
+
+  const movement = getInventory24hMovement();
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.innerText = formatCoinsNumber(value);
+  };
+  set("inv24hAddedShared", movement.sharedAdded);
+  set("inv24hWithdrawnShared", movement.sharedWithdrawn);
+  set("inv24hAddedPC", movement.pcAdded);
+  set("inv24hWithdrawnPC", movement.pcWithdrawn);
+
+  if (lastUpdate) {
+    lastUpdate.innerText = new Date().toLocaleString("en-GB", {
+      timeZone: "Asia/Riyadh",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
 }
 
 
