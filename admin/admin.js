@@ -4312,6 +4312,43 @@ function clearDecryptState() {
   }
 }
 
+function renderDecryptedPayment(payment = {}) {
+  const container = document.getElementById("securePaymentDetails");
+  if (!container) return;
+  const method = String(payment.method || "").toLowerCase();
+  const fields = [];
+  const add = (label, value) => {
+    if (value !== undefined && value !== null && String(value).trim()) {
+      fields.push({label, value:String(value)});
+    }
+  };
+  if (method === "bank") {
+    add("Bank", payment.bankName);
+    add("Full Name", payment.fullName || payment.recipientName);
+    add("IBAN", payment.iban);
+  } else if (method === "wallet") {
+    add("Wallet", payment.walletName);
+    add("Phone Number", payment.walletPhone);
+  } else if (method === "usdt") {
+    add("Wallet Address", payment.walletAddress);
+    add("Network", payment.network);
+  } else if (method === "paypal") {
+    add("PayPal Email", payment.paypalEmail);
+  } else if (method === "western") {
+    add("Full Name", payment.fullNameEnglish);
+    add("Country", payment.country);
+  }
+  if (!fields.length) {
+    container.innerHTML = '<div class="payment-secure-empty">لا توجد بيانات تحويل قابلة للعرض.</div>';
+    return;
+  }
+  container.innerHTML = fields.map((field, index) => `<button class="payment-copy-field" onclick="copyValueByData(this)" data-copy-value="${escapeAttribute(field.value)}"><span>${escapeHtml(field.label)}</span><strong>${escapeHtml(field.value)}</strong><small>اضغط للنسخ</small></button>`).join("");
+}
+window.copyValueByData = function(el) {
+  if (!el) return;
+  copyValue(el.getAttribute("data-copy-value") || "");
+};
+
 async function decryptOrder(
   orderId
 ) {
@@ -4424,14 +4461,7 @@ async function decryptOrder(
         "securePaymentDetails"
       );
 
-    if (paymentDetailsEl) {
-      paymentDetailsEl.textContent =
-        JSON.stringify(
-          payment,
-          null,
-          2
-        );
-    }
+    if (paymentDetailsEl) renderDecryptedPayment(payment);
 
     startDecryptTimer(
       Number(
