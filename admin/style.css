@@ -2208,3 +2208,41 @@ table{
     display:inline-grid;
   }
 }
+
+
+/* Final mobile alignment refinements. */
+.clock-stack{
+  display:inline-grid;
+  gap:2px;
+  line-height:1.2;
+  text-align:center;
+  color:#fff;
+  font-variant-numeric:tabular-nums;
+}
+.clock-stack b{font-size:.82rem;color:#fff;font-weight:900}
+.clock-stack span{font-size:.7rem;color:#fff;font-weight:800}
+.clock-stack small{font-size:.66rem;color:#fff;font-weight:700}
+
+@media(max-width:600px){
+  .platform-order-card .order-reference-value,
+  .platform-order-card .table-large-value{
+    font-size:1.3rem!important;
+  }
+  #pricingTab .field,
+  #pricingTab .field>label{
+    text-align:center!important;
+  }
+  #pricingTab .panel h3{
+    justify-content:center!important;
+    text-align:center!important;
+  }
+  .stats-audit-panel .table-wrap table{
+    min-width:0!important;
+  }
+  .stats-audit-panel .table-wrap tbody tr{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .stats-audit-panel .table-wrap td{
+    overflow-wrap:anywhere;
+  }
+}
