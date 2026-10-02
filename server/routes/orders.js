@@ -1337,7 +1337,7 @@ function buildOrderAuditEntry({
 }) {
   return {
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    timeString: new Date().toLocaleString("ar-SA", {
+    timeString: new Date().toLocaleString("en-GB", {
       timeZone: "Asia/Riyadh"
     }),
     user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
@@ -2944,7 +2944,7 @@ router.post(
 
         transaction.set(editAuditRef, {
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          timeString: new Date().toLocaleString("ar-SA", {
+          timeString: new Date().toLocaleString("en-GB", {
             timeZone: "Asia/Riyadh"
           }),
           user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
