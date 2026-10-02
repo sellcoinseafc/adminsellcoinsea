@@ -7013,3 +7013,170 @@ textarea.form-control{
     display:none!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE STEP 2: OPERATION STATUS CARDS — 2026-10-03
+   ========================================================================== */
+@media (max-width:600px){
+  .stats-grid.dashboard-stats-grid{
+    width:100%!important;
+    display:block!important;
+    margin:0!important;
+  }
+
+  .dashboard-status-group{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:minmax(112px,auto)!important;
+    gap:10px!important;
+    margin:0 0 12px!important;
+  }
+
+  .dashboard-status-card{
+    width:100%!important;
+    min-width:0!important;
+    min-height:112px!important;
+    height:112px!important;
+    box-sizing:border-box!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:flex-end!important;
+    padding:14px!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    text-align:right!important;
+    direction:rtl!important;
+  }
+
+  /* Status title: always on the right, with enough room away from the icon. */
+  .dashboard-status-card span{
+    display:block!important;
+    width:calc(100% - 38px)!important;
+    max-width:calc(100% - 38px)!important;
+    min-width:0!important;
+    margin:0 0 7px auto!important;
+    padding:0!important;
+    font-size:.74rem!important;
+    line-height:1.35!important;
+    font-weight:800!important;
+    color:#d8e1eb!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:right!important;
+  }
+
+  /* Count: large, isolated, and aligned with the Arabic title. */
+  .dashboard-status-card strong{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    font-size:1.95rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:-.5px!important;
+    text-align:right!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  /* Icon sits in its own fixed zone on the opposite side. */
+  .dashboard-status-card i{
+    position:absolute!important;
+    top:12px!important;
+    left:12px!important;
+    right:auto!important;
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    border-radius:50%!important;
+    font-size:.76rem!important;
+    background:rgba(21,156,255,.14)!important;
+    color:#38aaff!important;
+    z-index:1!important;
+  }
+
+  /* A subtle status-specific glow keeps the four cards distinguishable. */
+  .dashboard-status-card:nth-child(1){
+    border-color:rgba(56,170,255,.34)!important;
+    box-shadow:inset 0 1px 0 rgba(56,170,255,.08),0 8px 24px rgba(0,0,0,.16)!important;
+  }
+  .dashboard-status-card:nth-child(1) strong{color:#38aaff!important}
+  .dashboard-status-card:nth-child(1) i{
+    background:rgba(56,170,255,.13)!important;
+    color:#38aaff!important;
+  }
+
+  .dashboard-status-card:nth-child(2){
+    border-color:rgba(255,189,32,.34)!important;
+    box-shadow:inset 0 1px 0 rgba(255,189,32,.07),0 8px 24px rgba(0,0,0,.16)!important;
+  }
+  .dashboard-status-card:nth-child(2) strong{color:#ffbd20!important}
+  .dashboard-status-card:nth-child(2) i{
+    background:rgba(255,189,32,.13)!important;
+    color:#ffbd20!important;
+  }
+
+  .dashboard-status-card:nth-child(3){
+    border-color:rgba(139,92,246,.34)!important;
+    box-shadow:inset 0 1px 0 rgba(139,92,246,.07),0 8px 24px rgba(0,0,0,.16)!important;
+  }
+  .dashboard-status-card:nth-child(3) strong{color:#9b82ff!important}
+  .dashboard-status-card:nth-child(3) i{
+    background:rgba(139,92,246,.13)!important;
+    color:#9b82ff!important;
+  }
+
+  .dashboard-status-card:nth-child(4){
+    border-color:rgba(0,230,118,.34)!important;
+    box-shadow:inset 0 1px 0 rgba(0,230,118,.07),0 8px 24px rgba(0,0,0,.16)!important;
+  }
+  .dashboard-status-card:nth-child(4) strong{color:#00e676!important}
+  .dashboard-status-card:nth-child(4) i{
+    background:rgba(0,230,118,.13)!important;
+    color:#00e676!important;
+  }
+
+  /* Keep the stock module visually separate from the status module. */
+  .dashboard-stock-group{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+    margin:0!important;
+  }
+}
+
+@media (max-width:360px){
+  .dashboard-status-group{
+    gap:8px!important;
+  }
+  .dashboard-status-card{
+    min-height:106px!important;
+    height:106px!important;
+    padding:12px!important;
+  }
+  .dashboard-status-card span{
+    font-size:.69rem!important;
+    width:calc(100% - 34px)!important;
+    max-width:calc(100% - 34px)!important;
+  }
+  .dashboard-status-card strong{
+    font-size:1.78rem!important;
+  }
+  .dashboard-status-card i{
+    top:10px!important;
+    left:10px!important;
+    width:29px!important;
+    height:29px!important;
+    min-width:29px!important;
+    font-size:.69rem!important;
+  }
+}
