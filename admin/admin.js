@@ -4240,57 +4240,147 @@ window.openOrderModal = function (orderId) {
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
   if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
-  modalBody.innerHTML=`
+  const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
+  modalBody.innerHTML=\`
     <div class="order-detail-shell">
-      <section class="order-detail-section order-summary-section">
-        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div><span class="order-status-badge ${statusBadgeClass}">${escapeHtml(statusLabel)}</span></div>
-        <div class="order-identity-grid">
-          <button class="copy-pill" onclick="copyTrackingLink('${escapeAttribute(ref)}')"><span>رقم المرجع</span><strong>#${escapeHtml(ref)}</strong><small>نسخ رابط التتبع</small></button>
-          <button class="copy-pill" onclick="copyValue('${escapeAttribute(order.name||"")}')"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong><small>نسخ</small></button>
-          <div class="copy-pill"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
+      <section class="order-detail-control-panel">
+        <div class="detail-control-heading">
+          <div><span class="eyebrow">ORDER STATUS</span><h4>حالة الطلب</h4></div>
+          <select id="modalOrderStatusSelect" class="modal-status-select status-\${order.status || "unknown"}" onchange="saveModalOrderStatus('\${escapeAttribute(order.id)}')">\${statusOptions}</select>
         </div>
-        <div class="order-status-editor">
-  <div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong>${order.issue?'<small class="base-status-hint">الحالة التشغيلية: '+escapeHtml(baseStatusLabel)+'</small>':''}</div>
-  <div class="status-editor-controls"><select id="modalOrderStatusSelect" class="form-control"><option value="">تغيير الحالة</option>${statusOptions}</select><button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button></div>
-</div>
-<div class="order-issue-editor">
-  <div class="issue-editor-head">
-    <div><span class="field-label">مشكلة الطلب</span><small id="orderIssueSummary">${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة مسجلة")}</small></div>
-    <span class="issue-editor-state ${order.issue ? "has-issue" : ""}">${order.issue ? "موجودة" : "بدون مشكلة"}</span>
-  </div>
-  <div class="issue-editor-controls">
-    <select id="orderIssueSelect" class="form-control" onchange="toggleOrderIssueEditor(this.value)">
-      <option value="">لا توجد مشكلة</option>
-      ${ISSUE_VALUES.map((value) => `<option value="${value}" ${value===order.issue?"selected":""}>${escapeHtml(ISSUE_LABELS[value] || value)}</option>`).join("")}
-    </select>
-    <textarea id="orderIssueMessageInput" class="form-control issue-message-input" rows="2" ${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
-    <button class="btn-secondary" onclick="saveOrderIssue('${escapeAttribute(order.id)}')">حفظ المشكلة</button>
-  </div>
-</div>
+        <div class="detail-issue-control">
+          <div><span class="field-label">المشكلة</span><small id="orderIssueSummary">\${escapeHtml(order.issue ? (ISSUE_LABELS[order.issue] || order.issue) : "لا توجد مشكلة")}</small></div>
+          <select id="orderIssueSelect" class="modal-issue-select" onchange="handleModalIssueChange('\${escapeAttribute(order.id)}',this.value)">
+            <option value="">لا توجد مشكلة</option>
+            \${issueOptions}
+          </select>
+          <textarea id="orderIssueMessageInput" class="form-control issue-message-input detail-issue-message" rows="2" \${order.issue ? "" : "disabled"} placeholder="رسالة المشكلة التي ستظهر للعميل...">\${escapeHtml(order.issueMessage || (order.issue ? getIssueLabel(order.issue) : ""))}</textarea>
+        </div>
       </section>
 
-      <section class="order-detail-section">
-        <div class="order-section-heading"><div><span class="eyebrow">ORDER DATA</span><h4>المنصة والكمية</h4></div><button class="btn-secondary" onclick="openOrderEditForm('${escapeAttribute(order.id)}')"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</button></div>
-        <div class="order-platform-row"><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
-        <div class="quantity-grid"><div class="quantity-card"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div><div class="quantity-card"><span>الكمية المسحوبة</span><strong>${formatCoinsNumber(withdrawn)}</strong></div><div class="quantity-card"><span>الكمية المتبقية</span><strong>${formatCoinsNumber(remaining)}</strong></div></div>
-        <div class="withdraw-editor ${locked?"is-locked":""}"><div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة لأن الطلب وصل إلى مرحلة نهائية.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div><div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div><div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div></div>
-      </section>
+      <div class="order-detail-accordion">
+        <section class="order-detail-accordion-item is-open">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="true" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-solid fa-circle-info"></i><b>معلومات الطلب</b><small>الطلب والمنصة والكمية والمبلغ</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="order-basic-grid">
+              <div class="order-basic-card order-basic-reference"><span>رقم الطلب</span><strong dir="ltr">#\${escapeHtml(ref)}</strong></div>
+              <div class="order-basic-card order-basic-platform"><span>المنصة</span><div class="platform-pill platform-\${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="\${platformIcon}"></i></span><strong>\${escapeHtml(platform||"---")}</strong></div></div>
+              <div class="order-basic-card"><span>الكمية المباعة</span><strong dir="ltr">\${formatCoinsNumber(total)}</strong></div>
+              <div class="order-basic-card"><span>سعر البيع</span>\${getDisplayPriceMarkup(order)}</div>
+            </div>
+          </div>
+        </section>
 
-      <section class="order-detail-section secure-section"><div class="order-section-heading"><div><span class="eyebrow">SENSITIVE DATA</span><h4>بيانات الحساب</h4></div><div class="secure-actions"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div></div><div class="secure-fields-grid">
-        <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureCode1')"><span>Backup Code 1</span><strong id="secureCode1">••••••••</strong></button>
-        <button class="secure-copy-field" onclick="copyElementValue('secureCode2')"><span>Backup Code 2</span><strong id="secureCode2">••••••••</strong>
-        </button><button class="secure-copy-field" onclick="copyElementValue('secureCode3')"><span>Backup Code 3</span><strong id="secureCode3">••••••••</strong></button>
-      </div></section>
+        <section class="order-detail-accordion-item">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-solid fa-list-check"></i><b>المعلومات العامة</b><small>بيانات العميل والطلب والدفع</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="general-info-grid">
+              <div class="detail-info-card"><span>رقم الطلب</span><strong dir="ltr">#\${escapeHtml(ref)}</strong></div>
+              <div class="detail-info-card"><span>حالة الطلب</span><strong class="detail-status-text">\${escapeHtml(statusLabel)}</strong></div>
+              <div class="detail-info-card"><span>اسم العميل</span><strong>\${escapeHtml(order.name||"---")}</strong></div>
+              <div class="detail-info-card"><span>رقم الجوال</span><strong dir="ltr">\${escapeHtml(order.phone||"---")}</strong></div>
+              <div class="detail-info-card"><span>المنصة</span><strong>\${escapeHtml(platform||"---")}</strong></div>
+              <div class="detail-info-card"><span>الكمية</span><strong dir="ltr">\${formatCoinsNumber(total)}</strong></div>
+              <div class="detail-info-card"><span>المبلغ</span><div>\${getDisplayPriceMarkup(order)}</div></div>
+              <div class="detail-info-card"><span>طريقة الدفع</span><strong>\${escapeHtml(paymentMethod||"---")}</strong></div>
+            </div>
+          </div>
+        </section>
 
-      <section class="order-detail-section"><div class="order-section-heading"><div><span class="eyebrow">PAYMENT & TRANSFER</span><h4>بيانات الدفع والتحويل</h4></div><span class="payment-method-pill">${escapeHtml(paymentMethod||"---")}</span></div><div id="securePaymentDetails" class="payment-secure-grid"><div class="payment-secure-empty">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض بيانات التحويل القابلة للنسخ.")}</div></div><div class="payment-total-row"><span>المبلغ الإجمالي</span>${getDisplayPriceMarkup(order)}</div></section>
+        <section class="order-detail-accordion-item">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-solid fa-money-bill-transfer"></i><b>بيانات التحويل</b><small>طريقة الدفع ومبلغ الاستلام وبيانات التحويل</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="transfer-detail-grid">
+              <div class="detail-info-card"><span>طريقة الدفع</span><strong>\${escapeHtml(paymentMethod||"---")}</strong></div>
+              <div class="detail-info-card"><span>بيانات التحويل</span><strong id="securePaymentDetailsText">\${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض البيانات.")}</strong></div>
+            </div>
+            <div class="payment-total-row"><span>المبلغ الإجمالي</span>\${getDisplayPriceMarkup(order)}</div>
+          </div>
+        </section>
 
-      ${order.issue?`<section class="order-detail-section issue-section"><div class="order-section-heading"><div><span class="eyebrow">ISSUE</span><h4>المشكلة الحالية</h4></div><span class="badge badge-danger">${escapeHtml(ISSUE_LABELS[order.issue]||order.issue)}</span></div><p>${escapeHtml(order.issueMessage||getIssueLabel(order.issue))}</p><div class="issue-actions"><button class="btn-secondary" onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')">WhatsApp</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','data_received')">تم استلام البيانات</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','resolved')">تم الحل</button></div></section>`:""}
+        <section class="order-detail-accordion-item secure-section">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-solid fa-shield-halved"></i><b>البيانات الحساسة</b><small>البريد وكلمة المرور والأكواد الاحتياطية</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="secure-section-toolbar"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('\${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div>
+            <div class="secure-fields-grid">
+              <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong></button>
+              <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong></button>
+              <button class="secure-copy-field" onclick="copyElementValue('secureCode1')"><span>Backup Code 1</span><strong id="secureCode1">••••••••</strong></button>
+              <button class="secure-copy-field" onclick="copyElementValue('secureCode2')"><span>Backup Code 2</span><strong id="secureCode2">••••••••</strong></button>
+              <button class="secure-copy-field" onclick="copyElementValue('secureCode3')"><span>Backup Code 3</span><strong id="secureCode3">••••••••</strong></button>
+            </div>
+          </div>
+        </section>
 
-      <section class="order-detail-section message-section"><div class="order-section-heading"><div><span class="eyebrow">WHATSAPP MESSAGE</span><h4>رسالة الحالة</h4></div><span class="message-token-hint">{customerName} · {status}</span></div><div class="status-message-preview" id="modalStatusMessagePreview">${escapeHtml(statusMessage)}</div><div class="message-actions"><button class="btn-secondary" onclick="copyModalStatusMessage('${escapeAttribute(order.id)}')">نسخ الرسالة</button><a class="btn-whatsapp ${whatsapp?"":"disabled"}" href="${whatsapp?waUrl:"#"} target="_blank" rel="noopener" onclick="${whatsapp?"":"return false;"}><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div></section>
-    </div>`;
+        <section class="order-detail-accordion-item">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-solid fa-coins"></i><b>بيانات السحب</b><small>الكمية المباعة والمسحوبة والمتبقية</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="quantity-grid">
+              <div class="quantity-card"><span>الكمية المباعة</span><strong>\${formatCoinsNumber(total)}</strong></div>
+              <div class="quantity-card"><span>الكمية المسحوبة</span><strong>\${formatCoinsNumber(withdrawn)}</strong></div>
+              <div class="quantity-card"><span>الكمية المتبقية</span><strong>\${formatCoinsNumber(remaining)}</strong></div>
+            </div>
+            <div class="withdraw-editor \${locked?"is-locked":""}">
+              <div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>\${locked?"مقفلة. التعديل متاح فقط أثناء حالة جاري سحب الكوينز من حسابك.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>\${percent.toFixed(2)}%</strong></div>
+              <div class="progress-track"><span style="width:\${percent.toFixed(2)}%"></span></div>
+              <div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" autocomplete="off" value="\${formatCoinsNumber(withdrawn)}" oninput="formatCoinInput(this)" \${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('\${escapeAttribute(order.id)}')" \${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="order-detail-accordion-item">
+          <button type="button" class="order-detail-accordion-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
+            <span><i class="fa-brands fa-whatsapp"></i><b>رسالة الحالة</b><small>الرسالة الجاهزة للعميل</small></span>
+            <i class="fa-solid fa-chevron-down accordion-chevron"></i>
+          </button>
+          <div class="order-detail-accordion-content">
+            <div class="message-token-hint">{customerName} · {status}</div>
+            <div class="status-message-preview" id="modalStatusMessagePreview">\${escapeHtml(statusMessage)}</div>
+            <div class="message-actions"><button class="btn-secondary" onclick="copyModalStatusMessage('\${escapeAttribute(order.id)}')">نسخ الرسالة</button><a class="btn-whatsapp \${whatsapp?"":"disabled"}" href="\${whatsapp?waUrl:"#"}" target="_blank" rel="noopener" onclick="\${whatsapp?"":"return false;"}"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div>
+          </div>
+        </section>
+      </div>
+    </div>\`;
+
   modal.classList.add("active");
+};
+
+
+window.toggleOrderDetailSection = function(trigger){
+  const item = trigger?.closest(".order-detail-accordion-item");
+  if (!item) return;
+  const isOpen = item.classList.contains("is-open");
+  document.querySelectorAll("#orderDetailModal .order-detail-accordion-item.is-open").forEach((openItem)=>{
+    if (openItem !== item) {
+      openItem.classList.remove("is-open");
+      const openTrigger = openItem.querySelector(".order-detail-accordion-trigger");
+      if (openTrigger) openTrigger.setAttribute("aria-expanded","false");
+    }
+  });
+  item.classList.toggle("is-open", !isOpen);
+  trigger.setAttribute("aria-expanded", String(!isOpen));
+};
+
+window.handleModalIssueChange = async function(orderId, value){
+  window.toggleOrderIssueEditor(value);
+  const input = document.getElementById("orderIssueMessageInput");
+  if (value && input && !input.value.trim()) input.value = getIssueLabel(value);
+  await window.saveOrderIssue(orderId);
 };
 
 function syncOpenOrderModal(order) {
@@ -4326,39 +4416,21 @@ function syncOpenOrderModal(order) {
   const percent =
     total > 0 ? Math.min(100, (withdrawn / total) * 100) : 0;
 
-  const locked =
-    [
-      "finished",
-      "pending_transfer",
-      "transferred",
-      "completed",
-      "archived"
-    ].includes(order.status);
+  const locked = order.status !== "progress";
 
   const badge =
-    modal.querySelector(
-      ".order-summary-section .order-status-badge"
-    );
+    modal.querySelector(".modal-status-select");
 
   if (badge) {
     badge.className = `order-status-badge ${order.issue ? "status-problem" : `status-${order.status || "unknown"}`}`;
     badge.textContent = statusLabel;
   }
 
-  const statusEditorLabel =
-    modal.querySelector(
-      ".order-status-editor > div:first-child strong"
-    );
-
-  if (statusEditorLabel) {
-    statusEditorLabel.textContent = statusLabel;
-  }
-
   const statusSelect =
     document.getElementById("modalOrderStatusSelect");
 
   if (statusSelect) {
-    statusSelect.value = order.status || "";
+    statusSelect.value = order.status || ""; statusSelect.className = `modal-status-select status-${order.status || "unknown"}`;
   }
 
   const quantityValues =
@@ -4442,8 +4514,6 @@ function syncOpenOrderModal(order) {
   const issueSelect = document.getElementById("orderIssueSelect");
   const issueMessageInput = document.getElementById("orderIssueMessageInput");
   const issueSummary = document.getElementById("orderIssueSummary");
-  const issueState = modal.querySelector(".issue-editor-state");
-
   if (issueSelect) issueSelect.value = order.issue || "";
   if (issueMessageInput) {
     issueMessageInput.value = order.issueMessage || (order.issue ? getIssueLabel(order.issue) : "");
@@ -4454,11 +4524,6 @@ function syncOpenOrderModal(order) {
       ? (ISSUE_LABELS[order.issue] || order.issue)
       : "لا توجد مشكلة مسجلة";
   }
-  if (issueState) {
-    issueState.textContent = order.issue ? "موجودة" : "بدون مشكلة";
-    issueState.classList.toggle("has-issue", !!order.issue);
-  }
-
   const statusMessage =
     document.getElementById(
       "modalStatusMessagePreview"
