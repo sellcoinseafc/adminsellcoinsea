@@ -2799,3 +2799,367 @@ body.light-mode{
     border-radius:12px!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — ROUND 2 DESKTOP/TABLET ORDER + DASHBOARD REFINEMENT
+   ========================================================================== */
+
+/* Dashboard: quick access is a dedicated vertical rail beside recent orders.
+   The table is allowed to shrink instead of forcing overlap. */
+.dashboard-grid{
+  grid-template-columns:minmax(250px,300px) minmax(0,1fr)!important;
+  gap:14px!important;
+  align-items:stretch!important;
+}
+.dashboard-shortcuts{
+  grid-column:1!important;
+  grid-row:1!important;
+  min-width:0!important;
+}
+.dashboard-orders{
+  grid-column:2!important;
+  grid-row:1!important;
+  min-width:0!important;
+}
+.dashboard-shortcuts .quick-action{
+  width:100%!important;
+  min-height:58px!important;
+  margin-bottom:9px!important;
+  box-sizing:border-box!important;
+}
+.dashboard-orders .table-wrap{
+  min-width:0!important;
+  overflow-x:auto!important;
+}
+.dashboard-orders table{
+  min-width:0!important;
+  width:100%!important;
+  table-layout:fixed!important;
+}
+.dashboard-orders th,
+.dashboard-orders td{
+  overflow:hidden!important;
+}
+.dashboard-orders th:nth-child(1){width:17%}
+.dashboard-orders th:nth-child(2){width:17%}
+.dashboard-orders th:nth-child(3){width:10%}
+.dashboard-orders th:nth-child(4){width:15%}
+.dashboard-orders th:nth-child(5){width:14%}
+.dashboard-orders th:nth-child(6){width:18%}
+.dashboard-orders th:nth-child(7){width:9%}
+
+@media (min-width:601px) and (max-width:1050px){
+  .dashboard-grid{
+    grid-template-columns:minmax(210px,260px) minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .dashboard-orders th:nth-child(1){width:15%}
+  .dashboard-orders th:nth-child(2){width:15%}
+  .dashboard-orders th:nth-child(3){width:9%}
+  .dashboard-orders th:nth-child(4){width:15%}
+  .dashboard-orders th:nth-child(5){width:14%}
+  .dashboard-orders th:nth-child(6){width:22%}
+  .dashboard-orders th:nth-child(7){width:10%}
+}
+
+/* Order details: one coherent vertical flow. Status and issue are below
+   "معلومات الطلب", not in a competing side column. */
+#orderDetailModal .order-detail-shell{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:12px!important;
+}
+#orderDetailModal .order-detail-control-panel{
+  display:none!important;
+}
+#orderDetailModal .order-detail-accordion{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:10px!important;
+}
+#orderDetailModal .order-detail-flat-item{
+  overflow:hidden;
+  border:1px solid rgba(56,189,248,.14);
+  border-radius:17px;
+  background:linear-gradient(145deg,rgba(11,21,36,.98),rgba(7,15,26,.98));
+}
+#orderDetailModal .order-detail-flat-item.is-open{
+  border-color:rgba(0,255,135,.22);
+  box-shadow:0 12px 35px rgba(0,0,0,.16);
+}
+#orderDetailModal .order-detail-flat-trigger{
+  width:100%;
+  min-height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:14px 18px;
+  border:0;
+  background:transparent;
+  color:#fff;
+  text-align:right;
+  cursor:pointer;
+}
+#orderDetailModal .order-detail-flat-trigger>span{
+  display:grid;
+  gap:4px;
+  min-width:0;
+}
+#orderDetailModal .order-detail-flat-trigger small{
+  color:#72859c;
+  font-size:.62rem;
+  font-weight:900;
+  letter-spacing:1.2px;
+}
+#orderDetailModal .order-detail-flat-trigger b{
+  color:#fff;
+  font-size:1rem;
+}
+#orderDetailModal .order-status-display{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:58%;
+  min-height:40px;
+  padding:7px 14px;
+  border-radius:12px;
+  color:#fff;
+  font-size:.82rem;
+  font-weight:900;
+  line-height:1.3;
+  text-align:center;
+}
+#orderDetailModal .order-status-display.status-new{background:#0ea5e9;border:1px solid #38bdf8}
+#orderDetailModal .order-status-display.status-review{background:#f59e0b;border:1px solid #fbbf24;color:#171005}
+#orderDetailModal .order-status-display.status-progress{background:#f97316;border:1px solid #fb923c}
+#orderDetailModal .order-status-display.status-finished{background:#22c55e;border:1px solid #4ade80;color:#03160a}
+#orderDetailModal .order-status-display.status-pending_transfer,
+#orderDetailModal .order-status-display.status-transferred{background:#8b5cf6;border:1px solid #a78bfa}
+#orderDetailModal .order-status-display.status-completed{background:#16a34a;border:1px solid #4ade80}
+#orderDetailModal .order-detail-issue-item.has-issue{
+  border-color:rgba(239,68,68,.28);
+}
+#orderDetailModal .order-detail-issue-item .order-detail-flat-trigger>strong{
+  color:#aebdcd;
+  font-size:.88rem;
+  font-weight:800;
+  max-width:58%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#orderDetailModal .order-detail-issue-item.has-issue .order-detail-flat-trigger>strong{
+  color:#ff8a8a;
+}
+#orderDetailModal .order-detail-flat-content{
+  display:none;
+  padding:0 18px 18px;
+  border-top:1px solid rgba(255,255,255,.055);
+}
+#orderDetailModal .order-detail-flat-item.is-open .order-detail-flat-content{
+  display:grid;
+  gap:10px;
+  padding-top:15px;
+}
+#orderDetailModal .order-detail-flat-item .modal-status-select{
+  min-height:50px;
+}
+#orderDetailModal .order-detail-flat-item .detail-issue-message{
+  min-height:88px!important;
+}
+
+/* General information: first row is the five customer-level values requested. */
+#orderDetailModal .general-info-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#orderDetailModal .general-info-grid .detail-info-card{
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#orderDetailModal .general-info-grid .detail-info-card>span{
+  margin-bottom:7px!important;
+  color:#8192a8!important;
+}
+#orderDetailModal .general-info-grid .detail-info-card>strong,
+#orderDetailModal .general-info-grid .detail-info-card .order-price-stack{
+  color:#fff!important;
+  font-size:1rem;
+  font-weight:900;
+}
+#orderDetailModal .general-info-grid .detail-total-quantity strong{
+  font-size:1.28rem!important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailModal .general-info-grid .detail-total-amount{
+  background:rgba(0,255,135,.055)!important;
+  border-color:rgba(0,255,135,.20)!important;
+}
+#orderDetailModal .customer-total-amount{
+  display:grid;
+  gap:2px;
+  line-height:1.05;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailModal .customer-total-amount small{
+  color:#fff!important;
+  font-size:.64rem!important;
+  font-weight:800;
+}
+#orderDetailModal .customer-total-amount strong{
+  color:#fff!important;
+  font-size:1.28rem!important;
+  font-weight:900;
+}
+
+/* Total transfer amount follows the platform identity. */
+#orderDetailModal .payment-total-row{
+  color:#fff!important;
+  border-radius:16px!important;
+}
+#orderDetailModal .payment-total-row.platform-total-playstation{
+  background:rgba(47,128,237,.16)!important;
+  border-color:rgba(47,128,237,.48)!important;
+}
+#orderDetailModal .payment-total-row.platform-total-xbox{
+  background:rgba(34,197,94,.16)!important;
+  border-color:rgba(34,197,94,.48)!important;
+}
+#orderDetailModal .payment-total-row.platform-total-pc{
+  background:rgba(239,68,68,.16)!important;
+  border-color:rgba(239,68,68,.48)!important;
+}
+#orderDetailModal .payment-total-row span,
+#orderDetailModal .payment-total-row strong{
+  color:#fff!important;
+}
+
+/* Withdrawal section uses the same card hierarchy as the orders page. */
+#orderDetailModal .quantity-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+#orderDetailModal .quantity-card{
+  min-height:92px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+#orderDetailModal .quantity-card strong{
+  font-size:1.32rem!important;
+  color:#fff!important;
+  font-variant-numeric:tabular-nums;
+}
+#orderDetailModal .withdraw-editor{
+  margin-top:10px!important;
+  border-radius:16px!important;
+}
+
+/* Date/time/day is always rendered as a compact three-part stack. */
+#liveDatetime{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:128px!important;
+}
+#liveDatetime .clock-stack{
+  display:grid!important;
+  grid-template-columns:auto auto auto!important;
+  align-items:center!important;
+  gap:6px!important;
+  width:max-content!important;
+}
+#liveDatetime .admin-date-box{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:38px!important;
+  padding:7px 10px!important;
+  border-radius:10px!important;
+  border:1px solid rgba(0,230,118,.34)!important;
+  color:#fff!important;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap!important;
+}
+#liveDatetime .admin-time-box{background:rgba(0,230,118,.08)!important}
+#liveDatetime .admin-calendar-box{background:rgba(0,230,118,.06)!important}
+#liveDatetime .admin-weekday-box{background:rgba(0,230,118,.04)!important}
+#liveDatetime .admin-date-stack b,
+#liveDatetime .admin-date-stack span,
+#liveDatetime .admin-date-stack small{
+  color:#fff!important;
+}
+@media (min-width:601px){
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(1),
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(2),
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(3),
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(4),
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(5){
+    grid-row:1;
+  }
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(n+6){
+    grid-row:2;
+  }
+}
+@media (min-width:601px) and (max-width:1100px){
+  #orderDetailModal .general-info-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(n){
+    grid-row:auto;
+  }
+  #orderDetailModal .general-info-grid .detail-total-quantity strong,
+  #orderDetailModal .customer-total-amount strong{
+    font-size:1.12rem!important;
+  }
+}
+@media (max-width:600px){
+  #liveDatetime{
+    min-width:0!important;
+    width:100%!important;
+  }
+  #liveDatetime .clock-stack{
+    grid-template-columns:1fr!important;
+    width:100%!important;
+    gap:4px!important;
+  }
+  #liveDatetime .admin-date-box{
+    min-height:32px!important;
+    padding:5px 8px!important;
+    border-radius:9px!important;
+  }
+  #orderDetailModal .order-detail-flat-trigger{
+    min-height:62px;
+    padding:12px 13px;
+  }
+  #orderDetailModal .order-status-display{
+    max-width:60%;
+    font-size:.74rem;
+    padding:6px 9px;
+  }
+  #orderDetailModal .order-detail-issue-item .order-detail-flat-trigger>strong{
+    max-width:60%;
+    font-size:.74rem;
+  }
+  #orderDetailModal .general-info-grid{
+    grid-template-columns:1fr 1fr!important;
+  }
+  #orderDetailModal .general-info-grid .detail-info-card:nth-child(n){
+    grid-row:auto;
+  }
+  #orderDetailModal .general-info-grid .detail-total-quantity,
+  #orderDetailModal .general-info-grid .detail-total-amount{
+    grid-column:1/-1!important;
+  }
+  #orderDetailModal .general-info-grid .detail-total-quantity strong,
+  #orderDetailModal .customer-total-amount strong{
+    font-size:1.2rem!important;
+  }
+  #orderDetailModal .quantity-grid{
+    grid-template-columns:1fr!important;
+  }
+}
