@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261001">
+<link rel="stylesheet" href="style.css?v=20261002">
 </head>
 <body>
 <div class="login-overlay active" id="loginOverlay"><div class="login-card-nextgen">
@@ -78,7 +78,17 @@
 
 <section id="termsTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">LEGAL</span><h2>الشروط والأحكام</h2></div><button class="btn-secondary" onclick="toggleTermsEnabled()"><span id="termsEnabledText">الشروط والأحكام مفعلة</span></button></div><div class="panel"><div class="inline-add"><input id="newTermInput" class="form-control" placeholder="أضف شرطاً جديداً"><button class="btn-primary" onclick="addNewTerm()">إضافة</button></div><div id="termsListContainer" class="catalog-list"></div></div></section>
 
-<section id="settingsTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">SYSTEM</span><h2>الإعدادات العامة</h2></div><button class="btn-primary" onclick="saveIssueMessages()">حفظ الرسائل</button></div><div class="panel"><h3>رسائل حالات المشاكل</h3><div id="issueMessagesContainer"></div></div></section>
+<section id="settingsTab" class="tab-content">
+  <div class="page-head"><div><span class="eyebrow">SYSTEM</span><h2>الإعدادات العامة</h2></div></div>
+  <div class="panel status-messages-panel">
+    <div class="panel-title"><div><span class="eyebrow">WHATSAPP TEMPLATES</span><h3>رسائل حالات الطلبات</h3><p class="muted">قوالب داخلية فقط. لا يتم الإرسال تلقائيًا. استخدم المتغيرات: {customerName} و {referenceNumber} و {status}.</p></div><button class="btn-primary" onclick="saveStatusMessages()">حفظ رسائل الحالات</button></div>
+    <div id="statusMessagesContainer" class="status-messages-grid"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><div><span class="eyebrow">ISSUES</span><h3>رسائل المشاكل</h3></div><button class="btn-secondary" onclick="saveIssueMessages()">حفظ رسائل المشاكل</button></div>
+    <div id="issueMessagesContainer"></div>
+  </div>
+</section>
 
 <section id="purgeTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">SECURITY</span><h2>الإتلاف الآمن</h2><p>الإتلاف النهائي للبيانات الحساسة بعد اكتمال الطلب والمدة المحددة.</p></div><span id="purgeHeaderBadge" class="badge">0</span></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>الطلب</th><th>العميل</th><th>المنصة</th><th>الإكمال</th><th>موعد الإتلاف</th><th>الحالة</th><th></th></tr></thead><tbody id="purgeOrdersTableBody"></tbody></table></div></div></section>
 </main>
@@ -88,5 +98,5 @@
 <div class="modal-overlay" id="clientDetailModal"><div class="modal-card"><div class="modal-header"><h3 id="clientModalTitle">سجل العميل</h3><button class="modal-close-btn" onclick="closeClientModal()">×</button></div><div id="clientModalBody"></div></div></div>
 <div class="modal-overlay" id="purgeConfirmModal"><div class="modal-card confirm-modal"><div class="modal-header"><h3>تأكيد الإتلاف</h3><button class="modal-close-btn" onclick="closePurgeModal()">×</button></div><div class="confirm-body"><i class="fa-solid fa-skull-crossbones danger-icon"></i><p>سيتم إتلاف البيانات الحساسة نهائياً ولا يمكن استعادتها.</p><input type="hidden" id="purgeTargetOrderId"><div><button class="btn-secondary" onclick="closePurgeModal()">إلغاء</button><button class="btn-danger" onclick="confirmPurgeDataFinal()">إتلاف نهائي</button></div></div></div></div>
 <nav class="mobile-app-nav" id="mobileAppNav"><button class="mobile-app-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button><button class="mobile-app-nav-item" data-tab="ordersTab" onclick="switchTab('ordersTab',this)"><i class="fa-solid fa-box"></i><span>الطلبات</span><b id="mobileOrdersBadge">0</b></button><button class="mobile-app-nav-item" data-tab="customerProfileTab" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button><button class="mobile-app-nav-item" data-tab="paymentsTab" onclick="switchTab('paymentsTab',this)"><i class="fa-solid fa-wallet"></i><span>الدفع</span></button><button class="mobile-app-nav-item" data-tab="settingsTab" onclick="switchTab('settingsTab',this)"><i class="fa-solid fa-bars"></i><span>المزيد</span></button></nav>
-<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261001"></script>
+<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261002"></script>
 </body></html>
