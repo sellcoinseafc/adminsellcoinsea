@@ -74,6 +74,16 @@ const DEFAULT_ISSUE_MESSAGES = {
     "يرجى التواصل معنا عبر الواتساب بشكل عاجل"
 };
 
+const DEFAULT_STATUS_MESSAGES = {
+  new: "مرحبًا {customerName}، تم استلام طلبك وأصبح في حالة: {status}.",
+  review: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  progress: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  finished: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
+};
+
 const STATUS_LABELS = {
   new: "طلب جديد",
   review: "طلب بانتظار المراجعة",
@@ -1998,23 +2008,9 @@ function renderDashboardQuickStats() {
         : "none";
   }
 
-  setText(
-    "dashStockPS",
-    formatCoinsNumber(
-      currentSettingsData.psStock ||
-        0
-    ) +
-      " كوينز"
-  );
-
-  setText(
-    "dashStockPC",
-    formatCoinsNumber(
-      currentSettingsData.pcStock ||
-        0
-    ) +
-      " كوينز"
-  );
+  const inventory = calculateLocalInventory();
+  setText("dashStockPS", formatCoinsNumber(inventory.shared.remaining));
+  setText("dashStockPC", formatCoinsNumber(inventory.pc.remaining));
 }
 
 function renderStatisticsPage() {
@@ -2200,15 +2196,7 @@ function buildActionButtonsHTML(
         <i class="fa-solid fa-eye"></i>
       </button>
 
-      <button
-        class="btn-action"
-        style="color:var(--warning);border-color:var(--warning);"
-        title="تعديل الطلب"
-        onclick="promptEditOrder('${escapeAttribute(
-          order.id
-        )}')">
-        <i class="fa-solid fa-pen"></i>
-      </button>
+
 
       <button
         class="btn-action"
@@ -4285,7 +4273,10 @@ function clearDecryptState() {
     "secureEmail",
     "secureEaEmail",
     "secureEaPass",
-    "secureCodes"
+    "secureCodes",
+    "secureCode1",
+    "secureCode2",
+    "secureCode3"
   ].forEach(
     (id) => {
       const element =
@@ -4393,10 +4384,10 @@ async function decryptOrder(
         "secureEaPass"
       );
 
-    const codesEl =
-      document.getElementById(
-        "secureCodes"
-      );
+    const codesEl = document.getElementById("secureCodes");
+    const code1El = document.getElementById("secureCode1");
+    const code2El = document.getElementById("secureCode2");
+    const code3El = document.getElementById("secureCode3");
 
     if (phoneEl) {
       phoneEl.textContent =
@@ -4422,17 +4413,11 @@ async function decryptOrder(
         "-";
     }
 
-    if (codesEl) {
-      codesEl.textContent =
-        Array.isArray(
-          account.backupCodes
-        )
-          ? account.backupCodes.join(
-              " | "
-            )
-          : account.backupCodes ||
-            "-";
-    }
+    if (codesEl) codesEl.textContent = Array.isArray(account.backupCodes) ? account.backupCodes.join(" | ") : account.backupCodes || "-";
+    const codes = Array.isArray(account.backupCodes) ? account.backupCodes : [];
+    if (code1El) code1El.textContent = codes[0] || "-";
+    if (code2El) code2El.textContent = codes[1] || "-";
+    if (code3El) code3El.textContent = codes[2] || "-";
 
     const paymentDetailsEl =
       document.getElementById(
@@ -4561,799 +4546,105 @@ document.addEventListener(
 // 11) تفاصيل الطلب
 // ==========================================================================
 
-window.openOrderModal =
-  function (orderId) {
-    clearDecryptState();
-
-    const modal =
-      document.getElementById(
-        "orderDetailModal"
-      );
-
-    const modalTitle =
-      document.getElementById(
-        "modalOrderIdTitle"
-      );
-
-    const modalBody =
-      document.getElementById(
-        "modalOrderBody"
-      );
-
-    if (
-      !modal ||
-      !modalBody
-    ) {
-      return;
-    }
-
-    const order =
-      ordersData.find(
-        (item) =>
-          item.id ===
-            orderId ||
-          item.referenceNumber ===
-            orderId ||
-          item.orderId ===
-            orderId
-      );
-
-    if (!order) {
-      showToast(
-        "لم يتم العثور على بيانات الطلب المطلوب."
-      );
-
-      return;
-    }
-
-    const refNum =
-      order.referenceNumber ||
-      order.orderId ||
-      order.id;
-
-    if (modalTitle) {
-      modalTitle.innerText =
-        `تفاصيل الطلب رقم: #${refNum}`;
-    }
-
-    const showTransferBtn =
-      order.status ===
-      "finished";
-
-    const isTransferred =
-      order.status ===
-        "transferred" ||
-      order.status ===
-        "completed";
-
-    const transferInfo =
-      order.transferData ||
-      {};
-
-    const purgeDue =
-      isPurgeDue(order);
-
-    const paymentPreviewText =
-      getPaymentPreviewText(
-        order
-      );
-
-    const historyHTML =
-      Array.isArray(order.history) && order.history.length
-        ? `
-          <div style="background:rgba(255,255,255,.03);padding:16px;border-radius:14px;border:1px solid var(--card-border);margin-bottom:20px;">
-            <h4 style="margin:0 0 12px;">سجل الطلب</h4>
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              ${order.history.slice(-20).reverse().map((entry) => `
-                <div style="padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.03);">
-                  <b>${escapeHtml(entry.type || "تحديث")}</b>
-                  ${entry.status ? " — " + escapeHtml(entry.status) : ""}
-                  ${entry.to ? " → " + escapeHtml(entry.to) : ""}
-                  <small style="display:block;color:var(--text-muted);margin-top:3px;">
-                    ${escapeHtml(entry.actor || "")}
-                  </small>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `
-        : "";
-
-    const transferCardHTML =
-      isTransferred
-        ? `
-          <div style="background:rgba(16,185,129,0.08);padding:16px;border-radius:14px;border:1px solid rgba(16,185,129,0.3);margin-bottom:20px;">
-
-            <h4 style="color:var(--success);margin-bottom:10px;">
-              <i class="fa-solid fa-circle-check"></i>
-              تفاصيل التحويل المالي المكتمل
-            </h4>
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:0.88rem;">
-
-              <div>
-                <b>حالة التحويل:</b>
-                <span class="badge badge-transferred">
-                  تم التحويل بنجاح
-                </span>
-              </div>
-
-              <div>
-                <b>تاريخ التحويل:</b>
-                ${
-                  transferInfo.transferredAt
-                    ? escapeHtml(
-                        new Date(
-                          transferInfo.transferredAt
-                        ).toLocaleString(
-                          "ar-SA",
-                          {
-                            timeZone:
-                              "Asia/Riyadh"
-                          }
-                        )
-                      )
-                    : "---"
-                }
-              </div>
-
-              <div>
-                <b>تم التحويل بواسطة:</b>
-                ${escapeHtml(
-                  transferInfo.transferredBy ||
-                    "---"
-                )}
-              </div>
-
-            </div>
-          </div>
-        `
-        : "";
-
-    const issueHTML =
-      `
-        <div style="background:rgba(239,68,68,0.08);padding:16px;border-radius:14px;border:1px solid rgba(239,68,68,0.3);margin-bottom:20px;">
-
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-
-            <h4 style="color:#ef4444;margin:0;">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              المشكلة الحالية
-            </h4>
-
-            ${
-              order.issue
-                ? `
-                  <span
-                    class="badge"
-                    style="
-                      background:rgba(239,68,68,0.12);
-                      color:#ef4444;
-                      border:1px solid rgba(239,68,68,0.3);
-                    ">
-                    ${escapeHtml(
-                      ISSUE_LABELS[
-                        order.issue
-                      ] ||
-                        order.issue
-                    )}
-                  </span>
-                `
-                : `
-                  <span
-                    class="badge badge-completed">
-                    لا توجد مشكلة
-                  </span>
-                `
-            }
-
-          </div>
-
-          <p style="margin-bottom:12px;">
-            ${
-              order.issue
-                ? escapeHtml(
-                    order.issueMessage ||
-                      getIssueLabel(
-                        order.issue
-                      )
-                  )
-                : "لا توجد مشكلة مسجلة لهذا الطلب."
-            }
-          </p>
-
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-
-            <span class="badge">
-              ${order.issueState === "data_received"
-                ? "تم استلام البيانات"
-                : order.issueState === "resolved"
-                  ? "تم الحل"
-                  : "بانتظار إجراء العميل"}
-            </span>
-
-            <button
-              class="btn-custom"
-              onclick="setIssueState('${escapeAttribute(order.id)}','needs_customer_action')">
-              بانتظار العميل
-            </button>
-
-            <button
-              class="btn-custom"
-              onclick="setIssueState('${escapeAttribute(order.id)}','data_received')">
-              تم استلام البيانات
-            </button>
-
-            <button
-              class="btn-custom"
-              onclick="setIssueState('${escapeAttribute(order.id)}','resolved')">
-              تم الحل
-            </button>
-
-            <select
-              id="orderIssueSelect"
-              style="
-                flex:1;
-                min-width:220px;
-                padding:9px 10px;
-                border-radius:8px;
-                border:1px solid var(--card-border);
-                background:var(--card-bg);
-                color:var(--text-main);
-              ">
-
-              <option value="">
-                لا توجد مشكلة
-              </option>
-
-              ${ISSUE_VALUES.map(
-                (issue) => `
-                  <option
-                    value="${escapeAttribute(
-                      issue
-                    )}"
-                    ${
-                      order.issue ===
-                      issue
-                        ? "selected"
-                        : ""
-                    }>
-                    ${escapeHtml(
-                      ISSUE_LABELS[
-                        issue
-                      ]
-                    )}
-                  </option>
-                `
-              ).join("")}
-
-            </select>
-
-            <button
-              class="btn-custom"
-              style="background:#ef4444;color:#fff;"
-              onclick="saveOrderIssue('${escapeAttribute(
-                order.id
-              )}')">
-              حفظ المشكلة
-            </button>
-
-          </div>
-
+window.openOrderModal = function (orderId) {
+  clearDecryptState();
+  const modal=document.getElementById("orderDetailModal");
+  const modalTitle=document.getElementById("modalOrderIdTitle");
+  const modalBody=document.getElementById("modalOrderBody");
+  if(!modal||!modalBody)return;
+  const order=ordersData.find((item)=>item.id===orderId||item.referenceNumber===orderId||item.orderId===orderId);
+  if(!order){showToast("لم يتم العثور على الطلب.");return;}
+  const ref=order.referenceNumber||order.orderId||order.id;
+  const total=Math.max(0,Number(order.totalQty||0)||0);
+  const withdrawn=Math.min(total,Math.max(0,Number(order.withdrawnQuantity??order.drawnCoins??0)||0));
+  const remaining=Math.max(0,total-withdrawn);
+  const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
+  const locked=["finished","transferred","completed","archived"].includes(order.status);
+  const statusLabel=STATUS_LABELS[order.status]||order.status||"---";
+  const platform=String(order.platform||"").trim();
+  const platformClass=platform.toLowerCase().replace(/[^a-z0-9]+/g,"-");
+  const paymentMethod=String(order.paymentMethod||"");
+  const paymentPreview=getPaymentPreviewText(order);
+  const whatsapp=String(order.phone||"").replace(/[^0-9+]/g,"").replace(/^00/,"+");
+  const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\\+/,"")}`:"#";
+  const statusMessage=getStatusMessage(order.status,order);
+  if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
+  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  modalBody.innerHTML=`
+    <div class="order-detail-shell">
+      <section class="order-detail-section order-summary-section">
+        <div class="order-section-heading"><div><span class="eyebrow">ORDER</span><h4>معلومات الطلب</h4></div><span class="order-status-badge">${escapeHtml(statusLabel)}</span></div>
+        <div class="order-identity-grid">
+          <button class="copy-pill" onclick="copyTrackingLink('${escapeAttribute(ref)}')"><span>رقم المرجع</span><strong>#${escapeHtml(ref)}</strong><small>نسخ رابط التتبع</small></button>
+          <button class="copy-pill" onclick="copyValue('${escapeAttribute(order.name||"")}')"><span>اسم العميل</span><strong>${escapeHtml(order.name||"---")}</strong><small>نسخ</small></button>
+          <div class="copy-pill"><span>رقم الجوال</span><strong dir="ltr">${escapeHtml(order.phone||"---")}</strong></div>
         </div>
-      `;
+        <div class="order-status-editor"><div><span class="field-label">الحالة الحالية</span><strong>${escapeHtml(statusLabel)}</strong></div><div class="status-editor-controls"><select id="modalOrderStatusSelect" class="form-control"><option value="">تغيير الحالة</option>${statusOptions}</select><button class="btn-primary" onclick="saveModalOrderStatus('${escapeAttribute(order.id)}')">حفظ الحالة</button></div></div>
+      </section>
 
-    const purgeCardHTML =
-      order.status ===
-        "completed" &&
-      order.sensitivePurged !==
-        true
-        ? `
-          <div
-            style="
-              background:${
-                purgeDue
-                  ? "rgba(239,68,68,0.08)"
-                  : "rgba(245,158,11,0.08)"
-              };
-              padding:16px;
-              border-radius:14px;
-              border:1px solid ${
-                purgeDue
-                  ? "rgba(239,68,68,0.3)"
-                  : "rgba(245,158,11,0.3)"
-              };
-              margin-bottom:20px;
-            ">
+      <section class="order-detail-section">
+        <div class="order-section-heading"><div><span class="eyebrow">ORDER DATA</span><h4>المنصة والكمية</h4></div><button class="btn-secondary" onclick="openOrderEditForm('${escapeAttribute(order.id)}')"><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</button></div>
+        <div class="order-platform-row"><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="fa-solid ${platform.toUpperCase()==="PC"?"fa-desktop":"fa-gamepad"}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
+        <div class="quantity-grid"><div class="quantity-card"><span>الكمية المباعة</span><strong>${formatCoinsNumber(total)}</strong></div><div class="quantity-card"><span>الكمية المسحوبة</span><strong>${formatCoinsNumber(withdrawn)}</strong></div><div class="quantity-card"><span>الكمية المتبقية</span><strong>${formatCoinsNumber(remaining)}</strong></div></div>
+        <div class="withdraw-editor ${locked?"is-locked":""}"><div class="withdraw-editor-top"><div><span class="field-label">تحديث الكمية المسحوبة</span><small>${locked?"مقفلة لأن الطلب وصل إلى مرحلة نهائية.":"أدخل الكمية المسحوبة الفعلية من الحساب."}</small></div><strong>${percent.toFixed(2)}%</strong></div><div class="progress-track"><span style="width:${percent.toFixed(2)}%"></span></div><div class="withdraw-input-row"><input id="modalWithdrawnQuantity" class="form-control" inputmode="numeric" value="${formatCoinsNumber(withdrawn)}" ${locked?"disabled":""}><button class="btn-primary" onclick="saveModalWithdrawnQuantity('${escapeAttribute(order.id)}')" ${locked?"disabled":""}>حفظ الكمية المسحوبة</button></div></div>
+      </section>
 
-            <h4
-              style="
-                color:${
-                  purgeDue
-                    ? "#ef4444"
-                    : "#f59e0b"
-                };
-                margin-bottom:8px;
-              ">
-              <i class="fa-solid fa-clock"></i>
-              دورة حياة البيانات الحساسة
-            </h4>
+      <section class="order-detail-section secure-section"><div class="order-section-heading"><div><span class="eyebrow">SENSITIVE DATA</span><h4>بيانات الحساب</h4></div><div class="secure-actions"><span id="decryptTimer" class="secure-timer">مشفرة</span><button class="btn-unlock" onclick="decryptOrder('${escapeAttribute(order.id)}')"><i class="fa-solid fa-lock-open"></i> فك التشفير</button></div></div><div class="secure-fields-grid">
+        <button class="secure-copy-field" onclick="copyElementValue('secureEaEmail')"><span>EA Email</span><strong id="secureEaEmail">••••••••</strong><small>اضغط للنسخ</small></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureEaPass')"><span>EA Password</span><strong id="secureEaPass">••••••••</strong><small>اضغط للنسخ</small></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureCode1')"><span>Backup Code 1</span><strong id="secureCode1">••••••••</strong><small>اضغط للنسخ</small></button>
+        <button class="secure-copy-field" onclick="copyElementValue('secureCode2')"><span>Backup Code 2</span><strong id="secureCode2">••••••••</strong><small>اضغط للنسخ</small>
+        </button><button class="secure-copy-field" onclick="copyElementValue('secureCode3')"><span>Backup Code 3</span><strong id="secureCode3">••••••••</strong><small>اضغط للنسخ</small></button>
+      </div></section>
 
-            <p style="margin-bottom:8px;">
-              <b>تاريخ إكمال الطلب:</b>
-              ${
-                order.completedAt
-                  ? escapeHtml(
-                      new Date(
-                        parseFirestoreDate(
-                          order.completedAt
-                        ) ||
-                          order.completedAt
-                      ).toLocaleString(
-                        "ar-SA",
-                        {
-                          timeZone:
-                            "Asia/Riyadh"
-                        }
-                      )
-                    )
-                  : "---"
-              }
-            </p>
+      <section class="order-detail-section"><div class="order-section-heading"><div><span class="eyebrow">PAYMENT & TRANSFER</span><h4>بيانات الدفع والتحويل</h4></div><span class="payment-method-pill">${escapeHtml(paymentMethod||"---")}</span></div><div id="securePaymentDetails" class="payment-secure-grid"><div class="payment-secure-empty">${escapeHtml(paymentPreview||"اضغط «فك التشفير» لعرض بيانات التحويل القابلة للنسخ.")}</div></div><div class="payment-total-row"><span>المبلغ الإجمالي</span><strong>${escapeHtml(getDisplayPrice(order))}</strong></div></section>
 
-            <p style="margin-bottom:8px;">
-              <b>موعد الإتلاف:</b>
-              ${
-                getPurgeDueDate(
-                  order
-                )
-                  ? escapeHtml(
-                      getPurgeDueDate(
-                        order
-                      ).toLocaleString(
-                        "ar-SA",
-                        {
-                          timeZone:
-                            "Asia/Riyadh"
-                        }
-                      )
-                    )
-                  : "---"
-              }
-            </p>
+      ${order.issue?`<section class="order-detail-section issue-section"><div class="order-section-heading"><div><span class="eyebrow">ISSUE</span><h4>المشكلة الحالية</h4></div><span class="badge badge-danger">${escapeHtml(ISSUE_LABELS[order.issue]||order.issue)}</span></div><p>${escapeHtml(order.issueMessage||getIssueLabel(order.issue))}</p><div class="issue-actions"><button class="btn-secondary" onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')">WhatsApp</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','data_received')">تم استلام البيانات</button><button class="btn-secondary" onclick="setIssueState('${escapeAttribute(order.id)}','resolved')">تم الحل</button></div></section>`:""}
 
-            <p>
-              ${calculatePurgeCountdown(
-                order
-              )}
-            </p>
-
-          </div>
-        `
-        : order.sensitivePurged ===
-          true
-        ? `
-          <div
-            style="
-              background:rgba(16,185,129,0.08);
-              padding:16px;
-              border-radius:14px;
-              border:1px solid rgba(16,185,129,0.3);
-              margin-bottom:20px;
-            ">
-
-            <h4 style="color:var(--success);margin-bottom:8px;">
-              <i class="fa-solid fa-shield-halved"></i>
-              تم إتلاف بيانات الحساب الحساسة
-            </h4>
-
-            <p>
-              تم حذف بيانات EA وبيانات الدفع الحساسة نهائياً.
-            </p>
-
-          </div>
-        `
-        : "";
-
-    modalBody.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;">
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            رقم المرجع
-          </span>
-
-          <h4
-            style="color:var(--primary);font-family:monospace;margin-top:4px;cursor:pointer;"
-            onclick="copyTrackingLink('${escapeAttribute(
-              refNum
-            )}')">
-            ${escapeHtml(
-              refNum
-            )}
-            <i class="fa-solid fa-copy"></i>
-          </h4>
-        </div>
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            اسم العميل
-          </span>
-
-          <h4 style="color:var(--text-main);margin-top:4px;">
-            ${escapeHtml(
-              order.name ||
-                "---"
-            )}
-          </h4>
-        </div>
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            رقم الجوال
-          </span>
-
-          <h4 style="color:var(--text-main);font-family:monospace;margin-top:4px;">
-            ${escapeHtml(
-              order.phone ||
-                "---"
-            )}
-          </h4>
-        </div>
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            المنصة والكمية
-          </span>
-
-          <h4 style="color:var(--primary);margin-top:4px;">
-            ${escapeHtml(
-              order.platform ||
-                "---"
-            )}
-            -
-            ${formatCoinsNumber(
-              order.totalQty
-            )}
-            كوينز
-          </h4>
-        </div>
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            المبلغ الإجمالي
-          </span>
-
-          <h4 style="color:#f59e0b;margin-top:4px;">
-            ${escapeHtml(
-              getDisplayPrice(
-                order
-              )
-            )}
-          </h4>
-        </div>
-
-        <div style="background:var(--input-bg);padding:12px;border-radius:12px;border:1px solid var(--card-border);">
-          <span style="color:var(--text-muted);font-size:0.8rem;">
-            الحالة الحالية
-          </span>
-
-          <div style="margin-top:4px;">
-            ${getStatusBadge(
-              order.status
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      ${issueHTML}
-
-      ${transferCardHTML}
-
-      ${purgeCardHTML}
-
-      <div style="background:var(--input-bg);padding:16px;border-radius:14px;border:1px solid var(--card-border);margin-bottom:20px;">
-
-        <h4 style="color:var(--primary);margin-bottom:10px;">
-          <i class="fa-solid fa-credit-card"></i>
-          بيانات الدفع والتحويل
-        </h4>
-
-        <p style="margin-bottom:6px;">
-          <b>وسيلة الدفع:</b>
-          ${escapeHtml(
-            order.paymentMethod ||
-              "---"
-          )}
-        </p>
-
-        ${
-          paymentPreviewText
-            ? `
-              <p style="margin-bottom:6px;">
-                <b>بيانات الدفع الظاهرة:</b>
-                <span style="font-family:monospace;color:var(--primary);">
-                  ${escapeHtml(
-                    paymentPreviewText
-                  )}
-                </span>
-              </p>
-            `
-            : ""
-        }
-
-        <p style="margin-bottom:6px;">
-          <b>اسم البنك:</b>
-          ${escapeHtml(
-            order.bankName ||
-              "---"
-          )}
-        </p>
-
-        <p style="margin-bottom:6px;">
-          <b>رقم الآيبان:</b>
-          <span style="font-family:monospace;color:var(--primary);">
-            ${
-              order.accountIban
-                ? escapeHtml(
-                    order.accountIban
-                  )
-                : "مشفر — فك التشفير لعرض البيانات الحساسة"
-            }
-          </span>
-        </p>
-
-        <p style="margin-top:6px;">
-          <b>الكوينز المسحوبة:</b>
-          ${formatCoinsNumber(
-            order.drawnCoins ||
-              0
-          )}
-          /
-          ${formatCoinsNumber(
-            order.totalQty
-          )}
-        </p>
-
-      </div>
-
-      <div
-        class="secure-box"
-        style="background:var(--input-bg);padding:16px;border-radius:14px;border:1px solid var(--card-border);margin-bottom:20px;">
-
-        <div
-          class="secure-head"
-          style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:10px;">
-
-          <span style="color:#38bdf8;font-weight:700;font-size:1.05rem;">
-            <i class="fa-solid fa-key"></i>
-            البيانات الحساسة
-          </span>
-
-          <button
-            class="decrypt-btn btn-custom"
-            style="background:#38bdf8;color:#060913;font-size:0.78rem;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;"
-            onclick="decryptOrder('${escapeAttribute(
-              order.id
-            )}')">
-
-            <i class="fa-solid fa-lock-open"></i>
-            فك التشفير
-          </button>
-
-        </div>
-
-        <div
-          id="decryptTimer"
-          style="color:#f59e0b;font-weight:800;font-size:0.85rem;margin-bottom:12px;">
-          مشفرة
-        </div>
-
-        <div
-          class="secure-grid"
-          style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
-
-          <div>
-            الجوال:
-            <span id="securePhone">
-              ••••••••
-            </span>
-          </div>
-
-          <div>
-            البريد:
-            <span id="secureEmail">
-              ••••••••
-            </span>
-          </div>
-
-          <div>
-            إيميل EA:
-            <span id="secureEaEmail">
-              ••••••••
-            </span>
-          </div>
-
-          <div>
-            كلمة المرور:
-            <span id="secureEaPass">
-              ••••••••
-            </span>
-          </div>
-
-          <div>
-            الأكواد:
-            <span id="secureCodes">
-              ••••••••
-            </span>
-          </div>
-
-        </div>
-
-        <pre
-          id="securePaymentDetails"
-          style="display:none;"></pre>
-
-      </div>
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
-
-        ${
-          showTransferBtn
-            ? `
-              <button
-                class="btn-custom"
-                style="background:#f59e0b;color:#fff;"
-                onclick="handleMarkTransferred(
-                  '${escapeAttribute(
-                    order.id
-                  )}',
-                  '${escapeAttribute(
-                    refNum
-                  )}'
-                )">
-                <i class="fa-solid fa-money-bill-transfer"></i>
-                تم التحويل المالي
-              </button>
-            `
-            : ""
-        }
-
-        <button
-          class="btn-custom"
-          style="background:var(--primary);color:#000;"
-          onclick="editOrderData('${escapeAttribute(order.id)}')">
-          <i class="fa-solid fa-pen-to-square"></i>
-          تعديل بيانات الطلب
-        </button>
-
-        <button
-          class="btn-custom"
-          style="background:var(--primary);color:#000;"
-          onclick="updateDrawnCoinsPrompt(
-            '${escapeAttribute(
-              order.id
-            )}',
-            '${escapeAttribute(
-              refNum
-            )}',
-            ${Number(
-              order.drawnCoins ||
-                0
-            )},
-            ${Number(
-              order.totalQty ||
-                0
-            )}
-          )">
-          <i class="fa-solid fa-pen"></i>
-          تحديث الكوينز المسحوبة
-        </button>
-
-        ${
-          order.status ===
-            "completed" &&
-          order.sensitivePurged !==
-            true &&
-          purgeDue
-            ? `
-              <button
-                class="btn-custom"
-                style="background:#ef4444;color:#fff;"
-                onclick="openPurgeModal('${escapeAttribute(
-                  order.id
-                )}')">
-                <i class="fa-solid fa-skull-crossbones"></i>
-                إتلاف البيانات الحساسة
-              </button>
-            `
-            : ""
-        }
-
-        <button
-          class="btn-custom"
-          style="background:var(--input-bg);color:var(--text-main);border:1px solid var(--card-border);"
-          onclick="closeOrderModal()">
-          إغلاق
-        </button>
-
-      </div>
-    `;
-
-
-    /* V3: lifecycle timeline and history are visual projections of existing order data. */
-    const lifecycle = [
-      ["new","طلب جديد","fa-file-circle-plus"],
-      ["review","قيد المراجعة","fa-magnifying-glass"],
-      ["progress","جاري السحب","fa-gears"],
-      ["finished","تم السحب","fa-coins"],
-      ["transferred","تم التحويل","fa-money-bill-transfer"],
-      ["completed","مكتمل","fa-circle-check"]
-    ];
-    const currentIndex = Math.max(0, lifecycle.findIndex((item) => item[0] === order.status));
-    const timelineMarkup = lifecycle.map((item, index) => {
-      const done = index < currentIndex;
-      const current = index === currentIndex;
-      const stamp = current ? order.updatedAt : (index === 0 ? order.createdAt : "");
-      const stampText = stamp ? new Date(stamp).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}) : "";
-      return '<div class="order-timeline-step '+(done?'done ':'')+(current?'current':'')+'">'+
-        '<div class="order-timeline-dot"><i class="fa-solid '+item[2]+'"></i></div>'+
-        '<div class="order-timeline-label">'+escapeHtml(item[1])+'</div>'+
-        '<div class="order-timeline-time">'+escapeHtml(stampText)+'</div>'+
-      '</div>';
-    }).join("");
-    const historyMarkup = Array.isArray(order.history) && order.history.length
-      ? order.history.slice(-50).reverse().map((entry) => {
-          const at = entry.at ? (parseFirestoreDate(entry.at) || entry.at) : "";
-          const when = at ? new Date(at).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}) : "---";
-          return '<div class="order-history-system-item"><div class="field-label">'+escapeHtml(when)+'</div><div><strong>'+escapeHtml(entry.type || entry.status || "تحديث")+'</strong></div><div class="badge">'+escapeHtml(entry.actor || "النظام")+'</div></div>';
-        }).join("")
-      : '<div class="empty-state">لا توجد تحديثات مسجلة بعد.</div>';
-    modalBody.insertAdjacentHTML("afterbegin",
-      '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-route"></i> مراحل الطلب</span>'+getStatusBadge(order.status)+'</div><div class="order-timeline">'+timelineMarkup+'</div></section>'
-    );
-    const adminStatusNext = {
-      new: [["review","قيد المراجعة"],["progress","بدء السحب"]],
-      review: [["progress","بدء السحب"]],
-      progress: [["finished","تم إنهاء السحب"]],
-      finished: [["transferred","تسجيل التحويل المالي"]],
-      transferred: [["completed","إكمال الطلب"]],
-      completed: [],
-      archived: []
-    };
-    const nextControls = adminStatusNext[order.status] || [];
-    const statusControlsMarkup = nextControls.length
-      ? '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">الحالة الحالية: '+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><div style="display:flex;gap:8px;flex-wrap:wrap">'+nextControls.map(([status,label]) => '<button class="btn-primary" type="button" onclick="changeOrderStatusDirect(\''+escapeAttribute(order.id)+'\',\''+status+'\')">'+escapeHtml(label)+'</button>').join("")+'</div></section>'
-      : '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-shuffle"></i> التحكم في حالة الطلب</span><span class="badge">'+escapeHtml(STATUS_LABELS[order.status] || order.status)+'</span></div><p class="muted">لا توجد حالة انتقالية متاحة من الحالة الحالية.</p></section>';
-    modalBody.insertAdjacentHTML("beforeend", statusControlsMarkup);
-    modalBody.insertAdjacentHTML("beforeend",
-      '<section class="order-detail-system-section"><div class="order-detail-system-title"><span><i class="fa-solid fa-clock-rotate-left"></i> سجل تحديثات الطلب</span></div><div class="order-history-system">'+historyMarkup+'</div></section>'
-    );
-
-    modal.classList.add(
-      "active"
-    );
-  };
-
-window.changeOrderStatusDirect = async function(orderId, nextStatus) {
-  const order = ordersData.find((item) => item.id === orderId);
-  if (!order || !STATUS_VALUES.includes(nextStatus)) return;
-  const labels = {new:"طلب جديد",review:"طلب بانتظار المراجعة",progress:"جاري سحب الكوينز من حسابك",finished:"تم الانتهاء من سحب الكوينز من حسابك",transferred:"تم تحويل المبلغ إلى حسابك",completed:"مكتمل",archived:"مؤرشف"};
-  if (!confirm("تأكيد تغيير الحالة إلى: " + (labels[nextStatus] || nextStatus) + "؟")) return;
-  try {
-    const response = await adminFetch("/api/orders/update-status", {method:"POST", body:JSON.stringify({orderId:order.id,status:nextStatus})});
-    const data = await readJsonResponse(response);
-    if (await handleAdminAuthFailure(response, data)) return;
-    if (!data.success) { showToast("❌ " + (data.message || "تعذر تحديث الحالة.")); return; }
-    showToast("✅ تم تحديث حالة الطلب.");
-    await loadOrders();
-    openOrderModal(order.id);
-  } catch (error) {
-    console.error("Direct status update error:", error);
-    showToast("❌ تعذر تحديث حالة الطلب.");
-  }
+      <section class="order-detail-section message-section"><div class="order-section-heading"><div><span class="eyebrow">WHATSAPP MESSAGE</span><h4>رسالة الحالة</h4></div><span class="message-token-hint">{customerName} · {status}</span></div><div class="status-message-preview" id="modalStatusMessagePreview">${escapeHtml(statusMessage)}</div><div class="message-actions"><button class="btn-secondary" onclick="copyModalStatusMessage('${escapeAttribute(order.id)}')">نسخ الرسالة</button><a class="btn-whatsapp ${whatsapp?"":"disabled"}" href="${whatsapp?waUrl:"#"} target="_blank" rel="noopener" onclick="${whatsapp?"":"return false;"}><i class="fa-brands fa-whatsapp"></i> WhatsApp</a></div></section>
+    </div>`;
+  modal.classList.add("active");
 };
+
+function getStatusMessage(status,order){
+  const template=currentSettingsData.statusMessages?.[status]||DEFAULT_STATUS_MESSAGES[status]||"{customerName}، {status}";
+  return template.replace(/\{customerName\}/g,order?.name||"").replace(/\{referenceNumber\}/g,order?.referenceNumber||"").replace(/\{status\}/g,STATUS_LABELS[status]||status||"");
+}
+window.copyValue=async function(value){
+  const textValue=String(value||""); if(!textValue)return;
+  try{await navigator.clipboard.writeText(textValue);}catch{const area=document.createElement("textarea");area.value=textValue;area.setAttribute("readonly","");area.style.position="fixed";area.style.opacity="0";document.body.appendChild(area);area.select();document.execCommand("copy");area.remove();}
+  showToast("تم النسخ.");
+};
+window.copyElementValue=function(id){const el=document.getElementById(id);if(!el||!el.textContent||/^•+$/.test(el.textContent.trim())){showToast("فك التشفير أولاً.");return;}copyValue(el.textContent.trim());};
+window.saveModalOrderStatus=async function(orderId){
+  const order=ordersData.find((item)=>item.id===orderId);const select=document.getElementById("modalOrderStatusSelect");if(!order||!select||!select.value)return;
+  const nextStatus=select.value;if(nextStatus===order.status){showToast("الحالة لم تتغير.");return;}
+  try{const response=await adminFetch("/api/orders/update-status",{method:"POST",body:JSON.stringify({orderId,status:nextStatus})});const data=await readJsonResponse(response);if(await handleAdminAuthFailure(response,data))return;if(!data.success){showToast("❌ "+(data.message||"تعذر تحديث الحالة."));return;}await logAuditEvent("تعديل حالة الطلب",order.referenceNumber,`تم تغيير الحالة إلى: ${nextStatus}`);showToast("تم تحديث حالة الطلب.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Modal status update:",error);showToast("❌ تعذر تحديث حالة الطلب.");}
+};
+window.saveModalWithdrawnQuantity=async function(orderId){
+  const order=ordersData.find((item)=>item.id===orderId);const input=document.getElementById("modalWithdrawnQuantity");if(!order||!input)return;
+  if(["finished","transferred","completed","archived"].includes(order.status)){showToast("هذه الكمية مقفلة لهذه الحالة.");return;}
+  const value=Number(String(input.value||"").replace(/,/g,"").replace(/[^0-9]/g,""))||0;const total=Number(order.totalQty)||0;if(value<0||value>total){showToast(`❌ الكمية المسحوبة يجب أن تكون بين 0 و${formatCoinsNumber(total)}.`);return;}
+  try{const response=await adminFetch("/api/orders/update-drawn",{method:"POST",body:JSON.stringify({orderId,withdrawnQuantity:value})});const data=await readJsonResponse(response);if(await handleAdminAuthFailure(response,data))return;if(!data.success){showToast("❌ "+(data.message||"تعذر تحديث الكمية."));return;}await logAuditEvent("تحديث سحب الكوينز",order.referenceNumber,`تم تحديث الكمية المسحوبة إلى ${value}`);showToast("تم تحديث الكمية المسحوبة.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Withdrawn quantity update:",error);showToast("❌ تعذر تحديث الكمية المسحوبة.");}
+};
+window.copyModalStatusMessage=async function(orderId){const order=ordersData.find((item)=>item.id===orderId);if(order)await copyValue(getStatusMessage(order.status,order));};
+window.openOrderEditForm=function(orderId){
+  const order=ordersData.find((item)=>item.id===orderId);if(!order)return;const body=document.getElementById("modalOrderBody");if(!body)return;
+  body.innerHTML=`<div class="order-edit-form"><div class="order-section-heading"><div><span class="eyebrow">EDIT ORDER</span><h4>تعديل بيانات الطلب</h4></div><button class="btn-secondary" onclick="openOrderModal('${escapeAttribute(orderId)}')">إلغاء</button></div>
+  <div class="form-grid"><label class="field"><span>اسم العميل</span><input id="editCustomerName" class="form-control" value="${escapeAttribute(order.name||"")}"></label><label class="field"><span>البريد الإلكتروني</span><input id="editCustomerEmail" class="form-control" value="${escapeAttribute(order.customerEmail||"")}"></label><label class="field"><span>رقم الجوال</span><input id="editPhone" class="form-control" dir="ltr" value="${escapeAttribute(order.phone||"")}"></label><label class="field"><span>المنصة</span><select id="editPlatform" class="form-control"><option value="PlayStation" ${String(order.platform).toUpperCase()==="PLAYSTATION"?"selected":""}>PlayStation</option><option value="Xbox" ${String(order.platform).toUpperCase()==="XBOX"?"selected":""}>Xbox</option><option value="PC" ${String(order.platform).toUpperCase()==="PC"?"selected":""}>PC</option></select></label><label class="field"><span>الكمية المباعة</span><input id="editQuantity" class="form-control" inputmode="numeric" value="${formatCoinsNumber(order.totalQty||0)}"></label></div>
+  <div class="edit-sensitive-note">الحقول الحساسة التالية اختيارية. تركها فارغة يعني إبقاء القيمة الحالية. عند حفظها، يرسلها النظام للسيرفر لتشفيرها.</div>
+  <div class="form-grid"><label class="field"><span>EA Email</span><input id="editEaEmail" class="form-control" type="email" placeholder="قيمة جديدة فقط"></label><label class="field"><span>EA Password</span><input id="editEaPassword" class="form-control" type="password" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 1</span><input id="editCode1" class="form-control" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 2</span><input id="editCode2" class="form-control" placeholder="قيمة جديدة فقط"></label><label class="field"><span>Backup Code 3</span><input id="editCode3" class="form-control" placeholder="قيمة جديدة فقط"></label></div>
+  <div class="edit-payment-card"><h4>بيانات الدفع — اختياري</h4><div class="form-grid"><label class="field"><span>Payment Method</span><select id="editPaymentMethod" class="form-control"><option value="">بدون تعديل</option><option value="bank">تحويل بنكي</option><option value="wallet">محفظة رقمية</option><option value="usdt">USD / USDT</option><option value="paypal">PayPal</option><option value="western">Western Union</option></select></label><label class="field"><span>اسم البنك / المحفظة</span><input id="editPaymentName" class="form-control"></label><label class="field"><span>الاسم الكامل</span><input id="editPaymentFullName" class="form-control"></label><label class="field"><span>IBAN / Wallet Address</span><input id="editPaymentValue" class="form-control" dir="ltr"></label><label class="field"><span>Phone / PayPal Email</span><input id="editPaymentPhoneOrEmail" class="form-control" dir="ltr"></label><label class="field"><span>Country</span><input id="editPaymentCountry" class="form-control"></label></div></div>
+  <button class="btn-primary btn-wide" onclick="saveOrderEditForm('${escapeAttribute(orderId)}')">حفظ كل التعديلات</button></div>`;
+};
+window.saveOrderEditForm=async function(orderId){
+  const get=(id)=>document.getElementById(id)?.value??"";
+  const data={customerName:get("editCustomerName").trim(),phone:get("editPhone").trim(),customerEmail:get("editCustomerEmail").trim(),platform:get("editPlatform"),quantity:Number(get("editQuantity").replace(/,/g,""))};
+  const account={};if(get("editEaEmail").trim())account.eaEmail=get("editEaEmail").trim();if(get("editEaPassword"))account.eaPassword=get("editEaPassword");const codes=[get("editCode1").trim(),get("editCode2").trim(),get("editCode3").trim()].filter(Boolean);if(codes.length){if(codes.length!==3){showToast("❌ أدخل الأكواد الثلاثة كاملة.");return;}account.backupCodes=codes;}if(Object.keys(account).length)data.account=account;
+  const method=get("editPaymentMethod").trim();if(method){const payout={method};const n=get("editPaymentName").trim(),full=get("editPaymentFullName").trim(),val=get("editPaymentValue").trim(),extra=get("editPaymentPhoneOrEmail").trim(),country=get("editPaymentCountry").trim();if(method==="bank")Object.assign(payout,{bankName:n,fullName:full,iban:val});else if(method==="wallet")Object.assign(payout,{walletName:n,phone:extra});else if(method==="usdt")Object.assign(payout,{wallet:val,network:"TRC20"});else if(method==="paypal")Object.assign(payout,{email:extra});else if(method==="western")Object.assign(payout,{fullNameEnglish:full,country});data.payout=payout;}
+  try{const response=await adminFetch("/api/orders/update",{method:"POST",body:JSON.stringify({orderId,data})});const result=await readJsonResponse(response);if(await handleAdminAuthFailure(response,result))return;if(!result.success){showToast("❌ "+(result.message||"تعذر حفظ التعديلات."));return;}await logAuditEvent("تعديل بيانات الطلب",ordersData.find(o=>o.id===orderId)?.referenceNumber||orderId,"تم تعديل بيانات الطلب من داخل التفاصيل");showToast("تم حفظ التعديلات.");await loadOrders();openOrderModal(orderId);}catch(error){console.error("Order edit:",error);showToast("❌ تعذر حفظ التعديلات.");}
+};
+
 
 window.closeOrderModal =
   function () {
@@ -6512,46 +5803,35 @@ window.updateDrawnCoinsPrompt =
 // 16) إعدادات النظام والمخزون
 // ==========================================================================
 
-function renderInventoryUI(
-  settings
-) {
-  const psStock =
-    document.getElementById(
-      "invStockPS"
-    );
-
-  const pcStock =
-    document.getElementById(
-      "invStockPC"
-    );
-
-  const lastUpdate =
-    document.getElementById(
-      "invLastUpdate"
-    );
-
-  if (psStock) {
-    psStock.innerText =
-      formatCoinsNumber(
-        settings.psStock ||
-          0
-      );
-  }
-
-  if (pcStock) {
-    pcStock.innerText =
-      formatCoinsNumber(
-        settings.pcStock ||
-          0
-      );
-  }
-
-  if (lastUpdate) {
-    lastUpdate.innerText =
-      settings.lastStockUpdate ||
-      "تحديث تلقائي لحظي";
-  }
+function calculateLocalInventory() {
+  let sharedOrdered = 0, sharedWithdrawn = 0, pcOrdered = 0, pcWithdrawn = 0;
+  const orderedFor = (order) => Math.max(0, Number(order.totalQty ?? order.quantity ?? 0) || 0);
+  const withdrawnFor = (order) => Math.min(orderedFor(order), Math.max(0, Number(order.withdrawnQuantity ?? order.drawnCoins ?? 0) || 0));
+  ordersData.forEach((order) => {
+    const platform = String(order.platform || "").trim().toUpperCase();
+    const ordered = orderedFor(order);
+    const withdrawn = withdrawnFor(order);
+    if (platform === "PC") { pcOrdered += ordered; pcWithdrawn += withdrawn; }
+    else if (platform === "PLAYSTATION" || platform === "XBOX") { sharedOrdered += ordered; sharedWithdrawn += withdrawn; }
+  });
+  return {
+    shared:{ordered:sharedOrdered,withdrawn:sharedWithdrawn,remaining:Math.max(0,sharedOrdered-sharedWithdrawn)},
+    playstation:{ordered:sharedOrdered,withdrawn:sharedWithdrawn,remaining:Math.max(0,sharedOrdered-sharedWithdrawn)},
+    xbox:{ordered:sharedOrdered,withdrawn:sharedWithdrawn,remaining:Math.max(0,sharedOrdered-sharedWithdrawn)},
+    pc:{ordered:pcOrdered,withdrawn:pcWithdrawn,remaining:Math.max(0,pcOrdered-pcWithdrawn)}
+  };
 }
+
+function renderInventoryUI(settings) {
+  const inventory = calculateLocalInventory();
+  const psStock = document.getElementById("invStockPS");
+  const pcStock = document.getElementById("invStockPC");
+  const lastUpdate = document.getElementById("invLastUpdate");
+  if (psStock) psStock.innerText = formatCoinsNumber(inventory.shared.remaining);
+  if (pcStock) pcStock.innerText = formatCoinsNumber(inventory.pc.remaining);
+  if (lastUpdate) lastUpdate.innerText = "محسوب مباشرة من الطلبات";
+}
+
 
 /*
  * يحول أي قيمة واردة من Firestore إلى قائمة آمنة.
@@ -6789,10 +6069,8 @@ function initSystemSettingsListener() {
         settings
       );
 
-      renderIssueMessages(
-        settings.issueMessages ||
-          {}
-      );
+      renderIssueMessages(settings.issueMessages || {});
+      renderStatusMessages(settings);
 
       renderPurgeOrdersTable();
     }
@@ -7835,6 +7113,23 @@ window.toggleTermsEnabled =
   };
 
 
+function renderStatusMessages(settings = {}) {
+  const container = document.getElementById("statusMessagesContainer");
+  if (!container) return;
+  const messages = { ...DEFAULT_STATUS_MESSAGES, ...(settings.statusMessages || {}) };
+  container.innerHTML = STATUS_VALUES.map((status) => `<div class="status-message-card"><div><span class="eyebrow">${escapeHtml(status)}</span><h4>${escapeHtml(STATUS_LABELS[status])}</h4></div><textarea id="statusMessage_${status}" class="form-control status-message-input" rows="4">${escapeHtml(messages[status] || "")}</textarea><div class="status-message-tokens">{customerName} · {referenceNumber} · {status}</div></div>`).join("");
+}
+window.saveStatusMessages = async function() {
+  const messages = {};
+  STATUS_VALUES.forEach((status) => { const el = document.getElementById(`statusMessage_${status}`); if (el) messages[status] = el.value.trim(); });
+  try {
+    await adminSettingsAction("update_status_messages", { messages });
+    currentSettingsData = { ...currentSettingsData, statusMessages: messages };
+    showToast("تم حفظ رسائل الحالات.");
+    await logAuditEvent("تحديث رسائل الحالات", "الإعدادات", "تم تحديث قوالب رسائل حالات الطلبات");
+  } catch (error) { console.error("Save status messages:", error); showToast("❌ تعذر حفظ رسائل الحالات."); }
+};
+
 window.saveIssueMessages =
   async function () {
     const messages = {};
@@ -7911,6 +7206,9 @@ window.switchTab =
         "active"
       );
     }
+
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.classList.remove("mobile-open");
 
     document
       .querySelectorAll(".mobile-app-nav-item")
