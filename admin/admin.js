@@ -7641,29 +7641,41 @@ window.toggleSidebar =
 
 window.toggleTheme =
   function () {
-    document.body.classList.toggle(
-      "light-mode"
-    );
+    const light =
+      !document.body.classList.contains("light-mode");
+
+    document.body.classList.toggle("light-mode", light);
+
+    try {
+      localStorage.setItem(
+        "samiCoinsTheme",
+        light ? "light" : "dark"
+      );
+    } catch (_) {}
 
     const themeIcon =
-      document.querySelector(
-        "#themeToggleBtn i"
-      );
+      document.querySelector("#themeToggleBtn i");
 
     if (!themeIcon) return;
 
-    if (
-      document.body.classList.contains(
-        "light-mode"
-      )
-    ) {
-      themeIcon.className =
-        "fa-regular fa-sun";
-    } else {
-      themeIcon.className =
-        "fa-regular fa-moon";
-    }
+    themeIcon.className =
+      light
+        ? "fa-regular fa-sun"
+        : "fa-regular fa-moon";
   };
+
+(function initThemePreference(){
+  try {
+    const saved = localStorage.getItem("samiCoinsTheme");
+    const light = saved !== "dark";
+    document.body.classList.toggle("light-mode", light);
+    const icon = document.querySelector("#themeToggleBtn i");
+    if (icon) {
+      icon.className =
+        light ? "fa-regular fa-sun" : "fa-regular fa-moon";
+    }
+  } catch (_) {}
+})();
 
 // ==========================================================================
 // 19) التشغيل
