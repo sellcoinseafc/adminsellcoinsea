@@ -738,7 +738,7 @@ function startLiveClock() {
 
     clockEl.innerText =
       now.toLocaleString(
-        "ar-SA",
+        "en-GB",
         {
           year: "numeric",
           month: "2-digit",
@@ -1090,7 +1090,7 @@ function getStockTrendMarkup(value) {
 function formatAdminDate(value) {
   const date = parseFirestoreDate(value);
   if (!date) return "---";
-  return date.toLocaleString("ar-SA", {
+  return date.toLocaleString("en-GB", {
     timeZone: "Asia/Riyadh",
     day: "2-digit",
     month: "2-digit",
@@ -7121,6 +7121,32 @@ window.saveStatusMessages = async function() {
     await logAuditEvent("تحديث رسائل الحالات", "الإعدادات", "تم تحديث قوالب رسائل حالات الطلبات");
   } catch (error) { console.error("Save status messages:", error); showToast("❌ تعذر حفظ رسائل الحالات."); }
 };
+
+function renderIssueMessages(settings = {}) {
+  const container = document.getElementById("issueMessagesContainer");
+  if (!container) return;
+
+  const messages = {
+    ...DEFAULT_ISSUE_MESSAGES,
+    ...(settings.issueMessages || {})
+  };
+
+  container.innerHTML = ISSUE_VALUES.map((issue) => `
+    <div class="status-message-card issue-message-card">
+      <div>
+        <span class="eyebrow">ISSUE</span>
+        <h4>${escapeHtml(ISSUE_LABELS[issue] || issue)}</h4>
+      </div>
+      <textarea
+        id="issueMessage_${issue}"
+        class="form-control status-message-input"
+        rows="3"
+        placeholder="اكتب الرسالة الداخلية التي تستخدمها عند ظهور هذه المشكلة..."
+      >${escapeHtml(messages[issue] || "")}</textarea>
+      <div class="status-message-tokens">رسالة داخلية فقط — لا يتم إرسالها تلقائيًا</div>
+    </div>
+  `).join("");
+}
 
 window.saveIssueMessages =
   async function () {
