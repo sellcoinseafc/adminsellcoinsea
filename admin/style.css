@@ -1068,6 +1068,7 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   }
   .table-wrap tbody td[colspan]::before{display:none!important}
   .recent-order-row td:nth-child(7),
+  .full-order-row td:nth-child(8),
   .withdraw-order-row td:nth-child(8){
     grid-column:1/-1!important;
     border-top:1px solid var(--v-border)!important;
