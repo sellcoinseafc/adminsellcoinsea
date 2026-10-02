@@ -860,3 +860,267 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
     font-size:1.12rem!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE OPERATIONS POLISH
+   ========================================================================== */
+
+.platform-badge{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:34px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid currentColor!important;
+  background:rgba(255,255,255,.035)!important;
+  white-space:nowrap;
+  font-size:.7rem;
+  font-weight:800;
+}
+.platform-badge i{font-size:1rem}
+.platform-playstation{color:#0070D1!important;background:rgba(0,112,209,.10)!important;border-color:rgba(0,112,209,.35)!important}
+.platform-xbox{color:#8BC34A!important;background:rgba(139,195,74,.10)!important;border-color:rgba(139,195,74,.32)!important}
+.platform-pc{color:#B7C3D0!important;background:rgba(183,195,208,.08)!important;border-color:rgba(183,195,208,.24)!important}
+
+.badge-new{background:rgba(0,112,209,.13)!important;color:#64b5ff!important;border-color:rgba(0,112,209,.35)!important}
+.badge-review{background:rgba(255,193,7,.13)!important;color:#ffd45c!important;border-color:rgba(255,193,7,.35)!important}
+.badge-progress{background:rgba(255,193,7,.13)!important;color:#ffd45c!important;border-color:rgba(255,193,7,.35)!important}
+.badge-finished{background:rgba(0,230,118,.12)!important;color:#4dff9d!important;border-color:rgba(0,230,118,.35)!important}
+.badge-pending-transfer{background:rgba(0,112,209,.13)!important;color:#6cc0ff!important;border-color:rgba(0,112,209,.35)!important}
+.badge-transferred{background:rgba(0,230,118,.12)!important;color:#4dff9d!important;border-color:rgba(0,230,118,.35)!important}
+.badge-completed{background:rgba(0,230,118,.16)!important;color:#63ffad!important;border-color:rgba(0,230,118,.4)!important}
+.badge-archived{background:rgba(142,155,174,.10)!important;color:#aeb9c7!important;border-color:rgba(142,155,174,.25)!important}
+
+.stock-stat-card{
+  padding-left:58px!important;
+}
+.stock-trend-wrap{
+  position:absolute;
+  left:16px;
+  bottom:16px;
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+}
+.stock-trend{
+  display:grid;
+  place-items:center;
+  width:30px;
+  height:30px;
+  border-radius:10px;
+  font-size:.85rem;
+}
+.stock-trend-up{color:#00E676;background:rgba(0,230,118,.10);border:1px solid rgba(0,230,118,.24)}
+.stock-trend-down{color:#ff5d6c;background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.25)}
+.stock-trend-flat{color:#a0aec0;background:rgba(160,174,192,.08);border:1px solid rgba(160,174,192,.2)}
+
+.order-ref-stack{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+}
+.order-ref-stack small{
+  color:var(--v-muted);
+  font-size:.58rem;
+  line-height:1.2;
+  direction:ltr;
+  text-align:right;
+}
+.order-ref-stack b{
+  color:var(--v-green);
+  font-family:monospace;
+  font-size:.78rem;
+  cursor:pointer;
+  direction:ltr;
+  text-align:right;
+  white-space:nowrap;
+}
+.order-ref-stack b i{font-size:.62rem;opacity:.7;margin-right:3px}
+.recent-customer-name{font-size:.72rem}
+.recent-quantity{font-variant-numeric:tabular-nums}
+.recent-price{color:var(--v-green)!important;font-variant-numeric:tabular-nums}
+.recent-order-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+  width:max-content;
+}
+.recent-order-actions>div{
+  display:flex!important;
+  align-items:center;
+  flex-wrap:nowrap!important;
+  gap:5px!important;
+}
+.recent-order-actions .btn-action{
+  flex:0 0 36px;
+}
+.client-history-btn{white-space:nowrap!important}
+.phone-value{font-family:monospace;color:var(--v-sub)}
+
+.empty-row{
+  text-align:center!important;
+  padding:20px!important;
+  color:var(--v-muted)!important;
+}
+
+.stats-grid-ops{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+}
+.stats-grid-ops .stat-card small,
+.platform-stat small{
+  display:block;
+  margin-top:7px;
+  color:var(--v-muted);
+  font-size:.58rem;
+  line-height:1.6;
+}
+.stats-platform-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.platform-stat{
+  min-height:120px;
+}
+.platform-stat>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.platform-stat>div span{
+  color:var(--v-muted);
+  font-size:.68rem;
+  font-weight:800;
+}
+.platform-stat>div i{font-size:1.15rem}
+.platform-stat strong{
+  display:block;
+  margin-top:14px;
+  color:var(--v-white)!important;
+  font-size:1.35rem!important;
+  font-weight:900!important;
+  font-variant-numeric:tabular-nums;
+}
+.platform-stat-ps>div i{color:#0070D1}
+.platform-stat-xbox>div i{color:#8BC34A}
+.platform-stat-pc>div i{color:#B7C3D0}
+
+.stats-stock-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-top:10px;
+}
+.stats-stock-card{padding:14px!important}
+.stats-stock-card>div{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.stats-stock-card h3{margin:3px 0 0!important;font-size:.78rem!important}
+.stats-stock-card>strong{
+  display:block;
+  margin-top:14px;
+  color:var(--v-white);
+  font-size:1.35rem;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+}
+.stats-audit-panel{margin-top:10px}
+
+.table-wrap tbody td[data-label]::before{
+  content:attr(data-label)!important;
+}
+
+/* Mobile table rows are cards; each table now supplies its own semantic label. */
+@media(max-width:600px){
+  .table-wrap tbody tr{
+    grid-template-columns:1fr 1fr!important;
+    gap:0 10px!important;
+    padding:11px!important;
+  }
+  .table-wrap tbody td{
+    grid-template-columns:64px minmax(0,1fr)!important;
+    gap:6px!important;
+    align-items:center!important;
+    min-width:0!important;
+  }
+  .table-wrap tbody td::before{
+    content:attr(data-label)!important;
+    color:var(--v-muted)!important;
+    font-size:.61rem!important;
+    font-weight:700!important;
+    white-space:nowrap;
+  }
+  .table-wrap tbody td[colspan]{
+    grid-column:1/-1!important;
+    display:block!important;
+  }
+  .table-wrap tbody td[colspan]::before{display:none!important}
+  .recent-order-row td:nth-child(7),
+  .withdraw-order-row td:nth-child(8){
+    grid-column:1/-1!important;
+    border-top:1px solid var(--v-border)!important;
+    margin-top:5px;
+    padding-top:10px!important;
+  }
+  .recent-order-actions{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  .recent-order-actions>div{
+    width:100%!important;
+    justify-content:center!important;
+    flex-wrap:nowrap!important;
+  }
+  .recent-order-actions .btn-action{
+    min-width:38px!important;
+    min-height:38px!important;
+  }
+  .platform-badge{
+    min-height:31px!important;
+    padding:5px 8px!important;
+    font-size:.64rem!important;
+  }
+  .platform-badge strong{font-size:.64rem!important}
+  .order-ref-stack b{font-size:.72rem!important}
+  .order-ref-stack small{font-size:.53rem!important}
+  .stats-grid-ops{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .stats-grid-ops .stat-card{
+    min-height:104px!important;
+  }
+  .stats-platform-grid{
+    grid-template-columns:1fr!important;
+  }
+  .stats-stock-grid{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .stats-stock-card>strong{font-size:1.05rem}
+  .stock-stat-card{padding-left:48px!important}
+  .stock-trend-wrap{left:10px;bottom:10px}
+  .client-history-btn{width:100%!important}
+}
+
+@media(max-width:430px){
+  .stats-grid-ops .stat-card{
+    padding:12px!important;
+  }
+  .stats-grid-ops .stat-card strong{
+    font-size:1.08rem!important;
+  }
+  .stats-platform-grid .stat-card{
+    min-height:108px!important;
+  }
+}
