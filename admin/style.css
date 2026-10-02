@@ -105,3 +105,38 @@
   .mobile-app-nav{right:6px;left:6px}
   .mobile-app-nav-item{font-size:.58rem}
 }
+
+/* V2.7 mobile-first responsive operations */
+@media(max-width:600px){
+.table-wrap{overflow:visible;margin:0;padding:0}
+.table-wrap table{display:block;width:100%;min-width:0!important}
+.table-wrap thead{display:none}
+.table-wrap tbody{display:grid;gap:9px}
+.table-wrap tbody tr{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;padding:11px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(145deg,var(--panel),rgba(16,34,25,.38));box-shadow:0 7px 22px rgba(0,0,0,.1)}
+.table-wrap tbody td{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:7px;padding:7px 2px;border:0;min-width:0}
+.table-wrap tbody td::before{color:var(--muted);font-size:.64rem;font-weight:700}
+.table-wrap tbody td:nth-child(1)::before{content:"المرجع"}
+.table-wrap tbody td:nth-child(2)::before{content:"العميل"}
+.table-wrap tbody td:nth-child(3)::before{content:"المنصة"}
+.table-wrap tbody td:nth-child(4)::before{content:"الكمية"}
+.table-wrap tbody td:nth-child(5)::before{content:"السعر"}
+.table-wrap tbody td:nth-child(6)::before{content:"الحالة"}
+.table-wrap tbody td:nth-child(7)::before{content:"التفاصيل"}
+.table-wrap tbody td:nth-child(8)::before{content:"الإجراء"}
+.table-wrap tbody td[colspan]{display:block;grid-column:1/-1;text-align:center}
+.table-wrap tbody td[colspan]::before{display:none}
+#fullOrdersTableBody tr td:last-child,#withdrawOrdersTableBody tr td:last-child,#transferAlertsTableBody tr td:last-child{grid-column:1/-1;border-top:1px solid var(--line);margin-top:4px;padding-top:10px}
+.panel{padding:11px;border-radius:16px}
+.stat-card{min-height:94px}
+.order-kpis{gap:8px}
+.copy-pill,.secure-copy-field,.payment-copy-field{min-height:62px}
+.mobile-app-nav{bottom:max(8px,env(safe-area-inset-bottom));padding:6px;border-color:rgba(0,255,135,.14);background:rgba(6,17,12,.94)}
+.mobile-app-nav-item{min-height:46px}
+.mobile-app-nav-item.active{border-radius:14px;background:rgba(0,255,135,.08)}
+}
+@media(min-width:601px) and (max-width:1024px){
+.main-wrapper{padding:16px 18px 90px}
+.stats-grid{grid-template-columns:repeat(3,1fr)}
+.payment-columns{grid-template-columns:1fr 1fr}
+.payment-columns>.panel:last-child{grid-column:1/-1}
+}
