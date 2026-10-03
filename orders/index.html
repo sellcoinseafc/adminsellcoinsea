@@ -8,7 +8,7 @@
 <title>متجر سامي كوينز | SAMI COINS</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003.1">
+<link rel="stylesheet" href="style.css?v=20261003.2">
 </head>
 <body>
 <div class="app-shell" id="pageShell">
@@ -234,15 +234,20 @@
         <div class="review-card">
           <div class="card-heading"><span data-i18n="orderDetails">تفاصيل الطلب</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('platform')" data-i18n="edit">تعديل</button></div>
           <div id="revPlatformBoxTheme" class="review-platform review-order-details-grid">
-            <div class="review-order-detail-box review-quantity-box">
+            <div class="review-order-detail-row review-platform-row">
+              <i id="revPlatformIcon" aria-hidden="true"></i>
+              <strong id="revPlatformName">--</strong>
+            </div>
+            <div class="review-order-detail-row">
               <i class="fa-solid fa-coins" aria-hidden="true"></i>
-              <div><span>الكمية</span><strong id="revQty">--</strong></div>
+              <span>الكمية</span>
+              <strong id="revQty">--</strong>
             </div>
-            <div class="review-order-detail-box review-price-box">
+            <div class="review-order-detail-row">
               <i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>
-              <div><span>السعر</span><strong id="revTotal">--</strong></div>
+              <span>السعر</span>
+              <strong id="revTotal">--</strong>
             </div>
-            <i id="revPlatformIcon" class="review-platform-hidden-icon" aria-hidden="true"></i>
           </div>
           <div class="mini-grid"><div class="mini-card"><span data-i18n="withdrawDuration">مدة السحب</span><strong id="revWithdrawText">--</strong></div><div class="mini-card"><span data-i18n="transferDuration">مدة التحويل</span><strong id="revTransferText">--</strong></div><div class="mini-card"><span data-i18n="safeMethod">طريقة النقل</span><strong id="revSafeMethodText">--</strong></div></div>
         </div>
