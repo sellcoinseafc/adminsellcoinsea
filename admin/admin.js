@@ -3654,6 +3654,7 @@ window.renderClientsTable =
     });
 
     const search = String(searchQuery || "").trim().toLowerCase();
+    const resultCount = document.getElementById("customerResultCount");
     let clientsList = Object.values(clientsMap);
 
     if (search) {
@@ -3662,6 +3663,10 @@ window.renderClientsTable =
           client.name.toLowerCase().includes(search) ||
           client.phone.toLowerCase().includes(search)
       );
+    }
+
+    if (resultCount) {
+      resultCount.textContent = `${clientsList.length} ${clientsList.length === 1 ? "عميل" : "عملاء"}`;
     }
 
     if (clientsList.length === 0) {
