@@ -160,6 +160,10 @@ function normalizeStatus(status) {
     return ARABIC_STATUS_MAP[raw];
   }
 
+  if (normalized === "transferred") {
+    return "completed";
+  }
+
   return (
     LEGACY_STATUS_MAP[normalized] ||
     normalized
