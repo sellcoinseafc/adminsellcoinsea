@@ -4249,7 +4249,7 @@ window.openOrderModal = function (orderId) {
   const statusMessage=getStatusMessage(order.status,order);
   const statusBadgeClass = order.issue ? "status-problem" : "status-" + (order.status || "unknown");
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
-  if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${internalRef}`;
+  if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
   modalBody.innerHTML=`
@@ -4264,7 +4264,7 @@ window.openOrderModal = function (orderId) {
             <div class="order-basic-grid">
               <div class="order-basic-card order-basic-reference">
                 <span>رقم الطلب</span>
-                <strong dir="ltr">#${escapeHtml(ref)}</strong>
+                <strong class="order-basic-order-copy" dir="ltr" onclick="copyOrderNumberWithTracking('${escapeAttribute(ref)}')" title="نسخ رقم الطلب مع رابط صفحة التتبع">#${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></strong>
                 <small class="order-basic-reference-sub" dir="ltr">${escapeHtml(internalRef)}</small>
               </div>
               <div class="order-basic-card order-basic-platform">
