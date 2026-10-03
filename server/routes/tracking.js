@@ -1133,13 +1133,12 @@ function buildTrackingOrder(
       order.reviewSubmitted === true,
 
     transferStatusKey:
+      status === "completed" ||
       order.transferCompleted === true
         ? "completed"
-        : order.transferredAt
-          ? "transferred"
-          : ["transferred","completed"].includes(status)
-            ? "processing"
-            : "pending",
+        : status === "pending_transfer"
+          ? "pending"
+          : "pending",
 
     transferredAt:
       toISOStringSafe(order.transferredAt),
