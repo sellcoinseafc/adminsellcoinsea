@@ -135,17 +135,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
   .payment-methods-grid{grid-template-columns:1fr 1fr}.pay-btn-compact{min-height:52px}
   .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr 1fr}.review-main-grid .review-main-box:first-child,.invoice-main-grid .invoice-box:first-child{grid-column:1/-1}
 }
-@media (max-width:430px){
-  .header-actions{gap:4px}.header-icon-btn{width:34px;height:34px}.brand-mark{width:34px;height:34px}.brand-name span{font-size:11px}
-  .page-main{width:calc(100% - 12px);padding-top:10px}.sell-card{padding:12px;border-radius:16px}.section-heading h2{font-size:14px}.section-heading p{font-size:8px}
-  .platform-grid{grid-template-columns:1fr}.platform-btn{min-height:105px;display:grid;grid-template-columns:42px 1fr;gap:9px;text-align:right;padding:10px 13px}.platform-btn>i{grid-row:1/2;font-size:30px}.platform-btn strong{font-size:12px;align-self:center}
-  .duration-grid{grid-template-columns:1fr}.duration-card{min-height:62px}
-  .backup-grid{grid-template-columns:1fr}.backup-field{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:6px}.backup-field>span{margin:0;text-align:center}
-  .quantity-control{grid-template-columns:38px 1fr 38px}.quantity-control>button{height:46px}.quantity-input-wrap{height:46px}.quantity-input-wrap input{font-size:20px}
-  .payment-tabs{grid-template-columns:1fr 1fr}.payment-methods-grid{grid-template-columns:1fr 1fr}
-  .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr}.review-main-grid .review-main-box:first-child,.invoice-main-grid .invoice-box:first-child{grid-column:auto}
-  .page-heading h1{font-size:17px}.page-heading p{font-size:8px}
-}
+
 
 /* SAMI COINS — orders night mode */
 html[data-theme="dark"]{
@@ -230,10 +220,50 @@ html[data-theme="dark"] .quantity-card,html[data-theme="dark"] .account-section,
 .orders-page[data-platform="Xbox"] .payout-details-card,
 .orders-page[data-platform="PC"] .payout-details-card{border-color:color-mix(in srgb,var(--platform-accent) 32%,#25354a)}
 html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
-@media(max-width:720px){
- .selected-rate{grid-template-columns:1fr auto}.rate-title{grid-column:1}.rate-value{grid-column:1}.selected-rate>i{grid-column:2;grid-row:1/3}
- .rate-value strong{font-size:30px}.rate-value span{font-size:13px}
-}
-@media(max-width:430px){
- .rate-value{justify-content:flex-start}.rate-value strong{font-size:27px}.rate-value span{font-size:12px}
+
+
+@media (max-width:430px){
+  .header-actions{gap:4px}.header-icon-btn{width:34px;height:34px}.brand-mark{width:34px;height:34px}.brand-name span{font-size:11px}
+  .page-main{width:calc(100% - 12px);padding-top:10px}.sell-card{padding:12px;border-radius:16px}.section-heading h2{font-size:14px}.section-heading p{font-size:8px}
+
+  /* المنصات: ثلاث بطاقات صغيرة في صف واحد، وكل بطاقة بلون منصتها */
+  .platform-grid{grid-template-columns:repeat(3,1fr);gap:5px}
+  .platform-btn{min-height:86px;border-radius:11px;padding:8px 4px;gap:4px;justify-content:center;display:flex;text-align:center}
+  .platform-btn>i{font-size:25px}
+  .platform-btn strong{font-size:9px}
+  .ps-btn{background:linear-gradient(180deg,rgba(0,112,204,.24),rgba(0,112,204,.08));border-color:#0070cc}
+  .xbox-btn{background:linear-gradient(180deg,rgba(16,124,16,.24),rgba(16,124,16,.08));border-color:#107c10}
+  .pc-btn{background:linear-gradient(180deg,rgba(210,35,45,.28),rgba(210,35,45,.09));border-color:#d2232d}
+  .pc-btn>i{color:#e23a45}
+  .platform-btn.active{box-shadow:inset 0 0 0 1px currentColor}
+
+  .duration-grid{grid-template-columns:1fr 1fr 1fr}.duration-card{min-height:62px}
+  .backup-grid{grid-template-columns:1fr}.backup-field{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:6px}.backup-field>span{margin:0;text-align:center}
+  .quantity-control{grid-template-columns:38px 1fr 38px}.quantity-control>button{height:46px}.quantity-input-wrap{height:46px}.quantity-input-wrap input{font-size:20px}
+
+  /* سعر المليون: الرقم كبير بالأعلى، ثم ريال سعودي، ثم عنوان السعر */
+  .selected-rate{grid-template-columns:1fr auto;grid-template-areas:"value icon" "title icon";padding:13px 14px;min-height:88px}
+  .rate-value{grid-area:value;justify-content:flex-start;align-items:baseline;gap:8px;direction:ltr}
+  .rate-value strong{font-size:31px;line-height:1;font-weight:900}
+  .rate-value span{font-size:13px;font-weight:900}
+  .rate-title{grid-area:title;justify-self:start}.rate-title span{font-size:10px}
+  .selected-rate>i{grid-area:icon;font-size:27px;align-self:center}
+
+  /* طرق الاستلام: أصفر داكن */
+  .payment-tabs button,.pay-btn-compact{background:#241d0b!important;border-color:#6d5a22!important;color:#e4c45d!important}
+  .payment-tabs button.active,.pay-btn-compact.active{background:#34290d!important;border-color:#b9952f!important;color:#ffd96b!important;box-shadow:inset 0 0 0 1px rgba(255,217,107,.16)}
+
+  /* الإقرارات */
+  .terms-card .compact-heading{margin-bottom:16px}
+  .terms-card .compact-heading h2{font-size:20px;line-height:1.35}
+  .terms-card .compact-heading .section-number{width:38px;height:38px;font-size:11px}
+  .inline-terms-list{font-size:10px;line-height:1.95;max-height:180px}
+  .terms-check{min-height:48px;font-size:11px}
+  .terms-bottom-link{min-height:50px;font-size:11px;padding:10px 14px}
+
+  .payment-tabs{grid-template-columns:1fr 1fr}.payment-methods-grid{grid-template-columns:1fr 1fr}
+  .fields-grid{grid-template-columns:1fr}.customer-grid{grid-template-columns:1fr}
+  .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr}
+  .review-main-grid .review-main-box:first-child,.invoice-main-grid .invoice-box:first-child{grid-column:auto}
+  .page-heading h1{font-size:17px}.page-heading p{font-size:8px}
 }
