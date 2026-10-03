@@ -1437,6 +1437,11 @@ function calculateTotal() {
         summaryTotal.textContent = totalEl.textContent;
     }
 
+    const summaryQty = $("summaryQty");
+    if (summaryQty) {
+        summaryQty.textContent = currentQty.toLocaleString("en-US");
+    }
+
     if (reviewTotal) {
         reviewTotal.textContent = totalEl.textContent;
     }
@@ -2126,6 +2131,11 @@ function goToReview() {
     ];
 
     updateReviewPlatformUI();
+
+    setText(
+        "summaryQty",
+        currentQty.toLocaleString("en-US")
+    );
 
     setText(
         "revQty",
