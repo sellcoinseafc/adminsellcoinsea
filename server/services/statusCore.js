@@ -31,7 +31,6 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
-    "transferred",
     "completed"
   ]),
   finished: new Set([
@@ -40,7 +39,6 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
-    "transferred",
     "completed"
   ]),
   pending_transfer: new Set([
@@ -49,7 +47,6 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
-    "transferred",
     "completed"
   ]),
   completed: new Set([
@@ -58,7 +55,6 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
-    "transferred",
     "completed"
   ]),
   archived: new Set(["archived"])
