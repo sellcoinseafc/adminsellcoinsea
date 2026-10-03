@@ -58,8 +58,14 @@ const STATUS_CONFIG = {
         className: "pending-transfer"
     },
 
+    transferred: {
+        text: "تم التحويل لحسابك",
+        percentage: 98,
+        className: "transferred"
+    },
+
     completed: {
-        text: "تم التحويل — مكتمل",
+        text: "تم التنفيذ",
         percentage: 100,
         className: "success"
     }
@@ -1738,7 +1744,7 @@ function handleStatusState(
     const durationLabelElement = document.getElementById("statusDurationLabel");
     const withdrawDurationElement = document.getElementById("withdrawDuration");
     const transferDurationElement = document.getElementById("transferDuration");
-    const isTransferStage = status === "pending_transfer" || status === "completed";
+    const isTransferStage = ["pending_transfer", "transferred", "completed"].includes(status);
 
     if (durationLabelElement) {
         durationLabelElement.innerText = isTransferStage
@@ -1761,6 +1767,7 @@ function handleStatusState(
         status === "progress" ||
         status === "finished" ||
         status === "pending_transfer" ||
+        status === "transferred" ||
         status === "completed"
     ) {
         showWithdrawn = true;
@@ -1769,6 +1776,7 @@ function handleStatusState(
     if (
         status === "finished" ||
         status === "pending_transfer" ||
+        status === "transferred" ||
         status === "completed"
     ) {
         showSecurity = true;
@@ -1943,6 +1951,7 @@ function updateTimelineSteps(status) {
         "progress",
         "finished",
         "pending_transfer",
+        "transferred",
         "completed"
     ];
 
@@ -1952,7 +1961,8 @@ function updateTimelineSteps(status) {
         progress: 2,
         finished: 3,
         pending_transfer: 4,
-        completed: 5
+        transferred: 5,
+        completed: 6
     };
 
     const activeIndex =
