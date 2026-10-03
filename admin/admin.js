@@ -2434,7 +2434,7 @@ function getOrderStatusBadge(order) {
     ? getIssueLabel(order.issue)
     : (labels[status] || status || "---");
   const icon = order?.issue ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>' : '';
-  return `<span class="badge platform-status-badge ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
+  return `<span class="badge platform-status-badge status-${escapeAttribute(status || "unknown")} ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
 }
 
 
