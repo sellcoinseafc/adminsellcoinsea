@@ -918,15 +918,6 @@ function selectPlatform(
     platform,
     silent = false
 ) {
-    if (!settingsLoaded) {
-        showToast(
-            currentLanguage === "ar"
-                ? "جاري تحميل إعدادات المتجر، حاول بعد لحظات."
-                : "Store settings are still loading. Please try again in a moment."
-        );
-        return;
-    }
-
     const validPlatforms = [
         "PlayStation",
         "Xbox",
@@ -937,8 +928,13 @@ function selectPlatform(
         return;
     }
 
-    selectedPlatform =
-        platform;
+    // سجّل اختيار المستخدم فورًا حتى لو كانت لقطة Firestore الأولى لم تصل بعد.
+    // عند وصول الإعدادات، applySettingsToUI() سيعيد تطبيق الاختيار تلقائيًا.
+    selectedPlatform = platform;
+
+    if (!settingsLoaded) {
+        return;
+    }
 
     // اربط كامل تفاصيل الصفحة بلون المنصة المختارة.
     $("pageShell")?.setAttribute("data-platform", platform);
