@@ -1722,7 +1722,7 @@ function getCurrentPayoutDataFromForm() {
                 wallet:
                     $("usdDetails")?.value?.trim() || "",
                 network:
-                    "TRC20"
+                    ""
             };
 
         case "paypal":
@@ -2088,7 +2088,7 @@ function buildPaymentDetailsHTML() {
 
             <div class="review-value-box">
                 <span>
-                    USDT (TRC20): ${escapeHtml(wallet)}
+                    USD — إيميل المحفظة: ${escapeHtml(wallet)}
                 </span>
             </div>
         `;
