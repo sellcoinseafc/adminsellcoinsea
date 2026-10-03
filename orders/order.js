@@ -681,7 +681,10 @@ function startSettingsRealtime() {
                     pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
                 },
                 banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
-                wallets: Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets,
+                wallets: Array.from(new Set([
+                    ...(Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets),
+                    "سلة"
+                ])),
                 terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
                 termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
                 termsEnabled: settings.termsEnabled !== false,
@@ -1537,8 +1540,8 @@ function renderStep2PaymentFields() {
             <label class="field-label">
                 ${
                     currentLanguage === "ar"
-                        ? "رقم الجوال المرتبط بالمحفظة"
-                        : "Wallet Phone Number"
+                        ? "رقم المحفظة"
+                        : "Wallet Number"
                 }
                 <span class="required-star">*</span>
             </label>
@@ -1938,6 +1941,13 @@ function validateStep2() {
     if(!phone||!String(phone.value||"").trim()){markInvalid(phone);return false;}
     const p=String(phone.value||"").replace(/[\s()-]/g,"").replace(/^00/,"+");
     if(!/^(?:\+966|966|0)5\d{8}$/.test(p)){markInvalid(phone,"أدخل رقم جوال صحيحًا مع مفتاح الدولة، مثال: +966 5XXXXXXXX.");return false;}
+
+    const eaPassword = String($("eaPass")?.value || "").trim();
+    if (!eaPassword || !/[A-Z]/.test(eaPassword)) {
+        markInvalid($("eaPass"), "كلمة مرور حساب EA يجب أن تحتوي على حرف إنجليزي كبير واحد على الأقل.");
+        return false;
+    }
+
     if(!currentPaymentCategory||!selectedPaymentMethod){showToast("اختر طريقة استلام المبلغ أولاً.");$("dynamicPaymentMethodsGrid")?.scrollIntoView({behavior:"smooth",block:"center"});return false;}
     const fields=document.querySelectorAll("#step2PaymentFieldsContainer input,#step2PaymentFieldsContainer select");
     for(const field of fields){if(!String(field.value||"").trim()){markInvalid(field);return false;}}
@@ -2148,8 +2158,7 @@ function updateReviewPlatformUI() {
     }
 
     if (name) {
-        name.textContent =
-            selectedPlatform || "--";
+        name.textContent = "";
     }
 }
 
@@ -3132,7 +3141,7 @@ async function submitOrderFinal() {
 
         setText(
             "billQty",
-            `${currentQty.toLocaleString("en-US")} ${currentLanguage === "ar" ? "كوينز" : "Coins"}`
+            currentQty.toLocaleString("en-US")
         );
 
         setText(
@@ -3767,15 +3776,9 @@ document.addEventListener("DOMContentLoaded", () => {
         input.setAttribute("data-1p-ignore","true");
         input.setAttribute("spellcheck","false");
         input.setAttribute("autocapitalize","off");
-        input.classList.add("masked-secret");
-        const eye = input.parentElement?.querySelector("i");
-        if (eye && !eye.dataset.bound) {
-            eye.dataset.bound = "1";
-            eye.addEventListener("click", () => {
-                const unmasked = input.classList.toggle("secret-unmasked");
-                eye.className = unmasked ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
-            });
-        }
+        input.removeAttribute("data-form-type");
+        input.classList.remove("masked-secret","secret-unmasked");
+        input.parentElement?.querySelector("i.fa-eye, i.fa-eye-slash")?.remove();
     };
     setupSecretInput($("eaPass"));
     setupSecretInput($("editEaPass"));
