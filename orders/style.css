@@ -334,3 +334,40 @@ html[data-theme="dark"] .reference-card{color:#fff}
 .platform-unavailable-message{padding:9px 10px;border:1px solid rgba(239,68,68,.22);border-radius:10px;background:rgba(239,68,68,.07);color:#c53b3b;font-size:10px;font-weight:800;line-height:1.5;text-align:center}
 .platform-btn.is-unavailable{opacity:.48;filter:grayscale(.2);border-style:dashed;cursor:not-allowed;transform:none!important}
 .platform-btn.is-unavailable:hover{border-color:#dedee1;transform:none!important}
+
+
+/* Platform availability is driven by Admin > Prices & Offers. */
+.platform-btn{
+    overflow:hidden;
+}
+.platform-availability-status{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:58px;
+    min-height:20px;
+    padding:3px 8px;
+    margin-top:2px;
+    border:1px solid rgba(16,185,129,.28);
+    border-radius:999px;
+    background:rgba(16,185,129,.10);
+    color:#087443;
+    font-size:9px;
+    font-weight:900;
+    line-height:1;
+}
+.platform-btn.is-unavailable .platform-availability-status{
+    border-color:rgba(239,68,68,.28);
+    background:rgba(239,68,68,.10);
+    color:#c53b3b;
+}
+html[data-theme="dark"] .platform-availability-status{
+    color:#63e6b2;
+    border-color:rgba(0,230,118,.24);
+    background:rgba(0,230,118,.08);
+}
+html[data-theme="dark"] .platform-btn.is-unavailable .platform-availability-status{
+    color:#ff8585;
+    border-color:rgba(239,68,68,.28);
+    background:rgba(239,68,68,.09);
+}
