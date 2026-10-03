@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003-header-sidebar-detail1">
+<link rel="stylesheet" href="style.css?v=20261003-platform-availability">
 </head>
 <body>
 <div class="orders-page" id="pageShell">
@@ -55,6 +55,7 @@
                 <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')" aria-disabled="false">
                   <i class="fa-brands fa-playstation"></i>
                   <strong data-i18n="playstation">PlayStation</strong>
+                  <span class="platform-availability-status" data-platform-status="PlayStation">متاح</span>
                 </button>
                 <div id="psUnavailableMessage" class="platform-unavailable-message hidden">لا نستقبل شراء الكوينز لهذا المنتج حالياً.</div>
               </div>
@@ -62,6 +63,7 @@
                 <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')" aria-disabled="false">
                   <i class="fa-brands fa-xbox"></i>
                   <strong data-i18n="xbox">Xbox</strong>
+                  <span class="platform-availability-status" data-platform-status="Xbox">متاح</span>
                 </button>
                 <div id="xboxUnavailableMessage" class="platform-unavailable-message hidden">لا نستقبل شراء الكوينز لهذا المنتج حالياً.</div>
               </div>
@@ -69,6 +71,7 @@
                 <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')" aria-disabled="false">
                   <i class="fa-solid fa-desktop"></i>
                   <strong data-i18n="pc">PC</strong>
+                  <span class="platform-availability-status" data-platform-status="PC">متاح</span>
                 </button>
                 <div id="pcUnavailableMessage" class="platform-unavailable-message hidden">لا نستقبل شراء الكوينز لهذا المنتج حالياً.</div>
               </div>
@@ -308,6 +311,6 @@
 <div id="customModal" class="modal" aria-hidden="true"><div class="modal-card"><div class="modal-head"><h3 id="modalTitle">--</h3><button type="button" onclick="closeModal()" aria-label="إغلاق">×</button></div><div id="modalBodyContent" class="modal-body"></div></div></div>
 <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-<script type="module" src="order.js?v=20261003-header-sidebar-detail1"></script>
+<script type="module" src="order.js?v=20261003-platform-availability"></script>
 </body>
 </html>
