@@ -2388,27 +2388,17 @@ function buildActionButtonsHTML(order) {
   const refNum = order.referenceNumber || order.orderId || order.id;
   return `
     <div class="order-list-actions">
-      <button class="btn-action order-details-action" title="التفاصيل"
+      <button class="btn-action order-details-action" title="التفاصيل" aria-label="التفاصيل"
         onclick="openOrderModal('${escapeAttribute(order.id)}')">
         <i class="fa-solid fa-eye"></i>
       </button>
-      <button class="btn-action order-edit-action" title="تعديل الحالة"
+      <button class="btn-action order-edit-action" title="تعديل الحالة" aria-label="تعديل الحالة"
         onclick="openOrderStatusEditForm('${escapeAttribute(order.id)}')">
         <i class="fa-solid fa-pen-to-square"></i>
       </button>
-      <button class="btn-action order-archive-action" title="أرشفة"
+      <button class="btn-action order-archive-action" title="أرشفة" aria-label="أرشفة"
         onclick="handleArchiveOrder('${escapeAttribute(order.id)}','${escapeAttribute(refNum)}')">
         <i class="fa-solid fa-box-archive"></i>
-      </button>
-      ${order.issue ? `
-      <button class="btn-action" style="color:#25D366;border-color:#25D366;" title="إرسال رسالة المشكلة عبر واتساب"
-        onclick="sendIssueViaWhatsapp('${escapeAttribute(order.id)}')"><i class="fa-brands fa-whatsapp"></i></button>
-      <button class="btn-action" style="color:#25D366;border-color:#25D366;" title="إعادة إرسال آخر رسالة واتساب"
-        onclick="resendLastWhatsapp('${escapeAttribute(order.id)}')"><i class="fa-solid fa-rotate-right"></i></button>
-      ` : ""}
-      <button class="btn-action" style="color:var(--danger);border-color:var(--danger);" title="حذف الطلب"
-        onclick="handleDeleteOrder('${escapeAttribute(order.id)}','${escapeAttribute(refNum)}')">
-        <i class="fa-solid fa-trash"></i>
       </button>
     </div>
   `;
@@ -2459,17 +2449,18 @@ function renderOrderCardRow(order, mode = "standard") {
   const qty = Math.max(0, Number(order?.totalQty ?? order?.quantity) || 0);
   const price = getDisplayPriceMarkup(order);
   const status = getOrderStatusBadge(order);
-
-  // The dashboard "Recent Orders" card is the master component.
-  // The full Orders page deliberately uses this exact renderer.
   const createdAt = order?.createdAt
-    ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
+    ? order.createdAt.toLocaleString("en-GB", {
+        timeZone: "Asia/Riyadh",
+        dateStyle: "short",
+        timeStyle: "short"
+      })
     : "---";
 
   let quantityMarkup = `
     <div class="app-card-metric">
       <span>الكمية</span>
-      <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
+      <strong>${formatCoinsNumber(qty)}</strong>
     </div>
   `;
 
@@ -2484,7 +2475,7 @@ function renderOrderCardRow(order, mode = "standard") {
     quantityMarkup = `
       <div class="app-card-metric app-card-quantity-progress">
         <span>الكمية</span>
-        <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
+        <strong>${formatCoinsNumber(qty)}</strong>
         <div class="app-progress-track"><span style="width:${progress}%"></span></div>
         <small>مسحوب ${formatCoinsNumber(withdrawn)} · متبقي ${formatCoinsNumber(remaining)}</small>
       </div>
@@ -2522,7 +2513,7 @@ function renderOrderCardRow(order, mode = "standard") {
         </span>
       </td>
 
-      <td class="app-card-identity" data-label="رقم الطلب">
+      <td class="app-card-identity" data-label="رقم المرجع">
         <div class="app-order-main-line">
           <b class="app-order-number"
              onclick="copyOrderNumberWithTracking('${escapeAttribute(ref)}')"
@@ -2531,26 +2522,18 @@ function renderOrderCardRow(order, mode = "standard") {
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
           </b>
         </div>
-
         <div class="app-reference-line">
-          <b onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')"
-             title="نسخ رقم المرجع">
+          <b onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم المرجع الداخلي">
             ${escapeHtml(internalRef)}
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
           </b>
         </div>
-
         <small class="app-card-date">${escapeHtml(createdAt)}</small>
       </td>
 
       <td class="app-card-customer" data-label="العميل">
-        <strong>
-          <i class="fa-solid fa-user" aria-hidden="true"></i>
-          ${escapeHtml(name)}
-        </strong>
-        <span>
-          ${escapeHtml(phone)}
-        </span>
+        <strong>${escapeHtml(name)}</strong>
+        <span>${escapeHtml(phone)}</span>
       </td>
 
       <td class="app-card-quantity" data-label="الكمية">
