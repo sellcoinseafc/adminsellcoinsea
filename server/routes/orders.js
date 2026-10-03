@@ -3134,7 +3134,7 @@ router.post(
        * Transfer completion is represented by the final canonical status.
        * The server remains authoritative for transfer timestamp/actor.
        */
-      if (nextStatus === "completed") {
+      if (nextStatus === "transferred" || nextStatus === "completed") {
         updateData.transferredAt = current.transferredAt || new Date();
         updateData.transferredBy =
           current.transferredBy ||
