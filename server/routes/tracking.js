@@ -55,7 +55,7 @@ const STATUS_MESSAGES = {
   new: "طلب جديد",
   review: "بانتظار المراجعة",
   progress: "جاري سحب الكوينز من حسابك",
-  finished: "تم الانتهاء من سحب الكوين من حسابك",
+  finished: "تم الانتهاء من سحب الكوينز من حسابك",
   pending_transfer: "قيد التحويل",
   completed: "تم التحويل — مكتمل"
 };
