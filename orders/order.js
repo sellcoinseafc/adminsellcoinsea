@@ -3102,14 +3102,16 @@ async function submitOrderFinal() {
                 ""
         );
 
+        const successDurations = getCurrentPlatformDurations();
+
         setText(
             "successWithdrawText",
-            storeSettings.withdrawDays || "--"
+            localizeSettingText(successDurations.withdraw)
         );
 
         setText(
             "successTransferText",
-            storeSettings.transferHours || "--"
+            localizeSettingText(successDurations.transfer)
         );
 
         setText("successSafeMethodText","آمنة 99%");
