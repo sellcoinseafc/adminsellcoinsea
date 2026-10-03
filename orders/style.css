@@ -329,4 +329,3 @@ html[data-theme="dark"] .review-main-box i,html[data-theme="dark"] .invoice-box>
 .orders-page[data-platform="PC"] #orderReferenceCard{--platform-accent:#d2232d;--platform-soft:rgba(210,35,45,.30)}
 html[data-theme="dark"] .reference-card{color:#fff}
 
-@media(max-width:430px){.brand-logo-image{width:58px;height:38px}.reference-card{min-height:82px}.reference-card strong{font-size:18px}.reference-card span{font-size:9px}}
