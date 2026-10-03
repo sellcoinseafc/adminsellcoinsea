@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="light">
+<html lang="ar" dir="rtl" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#f5f5f5" id="themeColorMeta">
+<meta name="theme-color" content="#07101f" id="themeColorMeta">
 <meta name="description" content="SAMI COINS — بيع كوينز FC 27">
 <title>SAMI COINS | بيع كوينز FC 27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003-single-page1">
+<link rel="stylesheet" href="style.css?v=20261003-night-mode2">
 </head>
 <body>
 <div class="orders-page" id="pageShell">
@@ -50,24 +50,24 @@
           <section class="form-section">
             <div class="section-heading">
               <span class="section-number">01</span>
-              <div><h2 data-i18n="choosePlatform">اختر المنصة</h2><p>السعر ظاهر داخل بطاقة كل منصة.</p></div>
+              <div><h2 data-i18n="choosePlatform">اختر المنصة</h2><p>اختر المنصة لعرض سعر المليون والتفاصيل.</p></div>
             </div>
 
             <div class="platform-grid">
               <button type="button" class="platform-btn ps-btn" onclick="selectPlatform('PlayStation')">
                 <i class="fa-brands fa-playstation"></i>
                 <strong data-i18n="playstation">PlayStation</strong>
-                <span class="platform-price"><b id="psSubPrice">--</b><small>ر.س / 1,000,000</small></span>
+                
               </button>
               <button type="button" class="platform-btn xbox-btn" onclick="selectPlatform('Xbox')">
                 <i class="fa-brands fa-xbox"></i>
                 <strong data-i18n="xbox">Xbox</strong>
-                <span class="platform-price"><b id="xboxSubPrice">--</b><small>ر.س / 1,000,000</small></span>
+                
               </button>
               <button type="button" class="platform-btn pc-btn" onclick="selectPlatform('PC')">
                 <i class="fa-solid fa-desktop"></i>
                 <strong data-i18n="pc">PC</strong>
-                <span class="platform-price"><b id="pcSubPrice">--</b><small>ر.س / 1,000,000</small></span>
+                
               </button>
             </div>
 
@@ -77,7 +77,7 @@
             </div>
 
             <div id="singlePlatformRateCard" class="selected-rate hidden">
-              <div><span>سعر المليون</span><strong><span id="displaySelectedRate">0</span> <small>ر.س</small></strong></div>
+              <div class="rate-title"><span>سعر المليون</span></div><div class="rate-value"><strong id="displaySelectedRate">0</strong><span>ريال سعودي</span></div>
               <i id="selectedPlatformIcon" class="fa-brands fa-playstation"></i>
             </div>
 
@@ -122,7 +122,7 @@
             <div id="totalAmountBoxCard" class="total-card hidden">
               <span>إجمالي المبلغ المستحق لك</span>
               <strong id="totalAmountText">0.00 ر.س</strong>
-              <small>يُحسب حسب المنصة والكمية.</small>
+              
             </div>
           </section>
 

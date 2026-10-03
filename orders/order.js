@@ -179,7 +179,7 @@ const translations = {
         termsSubtitle: "يرجى قراءة الشروط قبل اعتماد الطلب.",
         termsAgreement: "لقد قرأت الشروط والأحكام وأوافق عليها",
         termsLink: "الشروط والأحكام",
-        declarationsTitle: "الإقرارات وانسحاب الشروط والأحكام",
+        declarationsTitle: "الإقرارات",
 
         previous: "السابق",
         reviewOrder: "مراجعة الطلب",
@@ -835,21 +835,21 @@ function applySettingsToUI() {
     if (rates.PlayStation !== undefined) {
         setText(
             "psSubPrice",
-            `${rates.PlayStation} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.PlayStation}`
         );
     }
 
     if (rates.Xbox !== undefined) {
         setText(
             "xboxSubPrice",
-            `${rates.Xbox} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.Xbox}`
         );
     }
 
     if (rates.PC !== undefined) {
         setText(
             "pcSubPrice",
-            `${rates.PC} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.PC}`
         );
     }
 
@@ -939,6 +939,9 @@ function selectPlatform(
 
     selectedPlatform =
         platform;
+
+    // اربط كامل تفاصيل الصفحة بلون المنصة المختارة.
+    $("pageShell")?.setAttribute("data-platform", platform);
 
     // بيانات حساب EA لا تظهر إلا بعد اختيار المنصة.
     showElement("accountStage");
@@ -3773,7 +3776,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedLanguage = localStorage.getItem("samiCoinsLanguage");
     const savedTheme = localStorage.getItem("samiCoinsTheme");
     if (savedLanguage === "ar" || savedLanguage === "en") currentLanguage = savedLanguage;
-    applyTheme(savedTheme === "dark" ? "dark" : "light");
+    applyTheme(savedTheme === "light" ? "light" : "dark");
     applyLanguage();
     setupModalEvents();
     const setupSecretInput = (input) => {
