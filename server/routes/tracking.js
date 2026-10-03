@@ -360,61 +360,6 @@ function maskEmail(email) {
   );
 }
 
-function maskPassword(password) {
-  if (!password) {
-    return "";
-  }
-
-  return "••••••••";
-}
-
-function maskBackupCodes(codes) {
-  if (
-    codes === null ||
-    codes === undefined ||
-    codes === ""
-  ) {
-    return "";
-  }
-
-  let list = [];
-
-  if (Array.isArray(codes)) {
-    list = codes;
-  } else {
-    const value = String(codes).trim();
-
-    if (!value) {
-      return "";
-    }
-
-    try {
-      const parsed = JSON.parse(value);
-
-      if (Array.isArray(parsed)) {
-        list = parsed;
-      } else {
-        list = value
-          .split(/\r?\n|,|\s+/)
-          .filter(Boolean);
-      }
-    } catch {
-      list = value
-        .split(/\r?\n|,|\s+/)
-        .filter(Boolean);
-    }
-  }
-
-  if (!list.length) {
-    return "";
-  }
-
-  return list
-    .slice(0, 3)
-    .map(() => "••••••")
-    .join("  |  ");
-}
-
 function extractLast6(value) {
   if (!value) {
     return "";
