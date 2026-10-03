@@ -100,11 +100,18 @@
       <h3>الطلبات</h3>
     </div>
     <div class="orders-master-controls">
-      <input id="orderStatusFilter" class="compact-input" placeholder="بحث بالحالة" list="statusOptions">
-      <datalist id="statusOptions">
-        <option value="new"><option value="review"><option value="progress"><option value="finished">
-        <option value="pending_transfer"><option value="transferred"><option value="completed">
-      </datalist>
+      <span class="orders-result-count" id="ordersResultCount">0 طلب</span>
+      <select id="orderStatusFilter" class="compact-input" onchange="renderOrdersTables()" aria-label="فلترة الطلبات حسب الحالة">
+        <option value="all">كل الحالات</option>
+        <option value="new">جديدة</option>
+        <option value="review">مراجعة</option>
+        <option value="progress">قيد السحب</option>
+        <option value="finished">مكتملة السحب</option>
+        <option value="pending_transfer">بانتظار التحويل</option>
+        <option value="transferred">تم التحويل</option>
+        <option value="completed">مكتملة</option>
+        <option value="archived">مؤرشفة</option>
+      </select>
       <button class="btn-secondary" onclick="renderOrdersTables()"><i class="fa-solid fa-rotate"></i> تحديث</button>
     </div>
   </div>
