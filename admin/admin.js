@@ -40,6 +40,7 @@ const STATUS_VALUES = [
   "progress",
   "finished",
   "pending_transfer",
+  "transferred",
   "completed"
 ];
 
@@ -49,6 +50,7 @@ const STATUS_DISPLAY_ORDER = [
   "progress",
   "finished",
   "pending_transfer",
+  "transferred",
   "completed"
 ];
 
@@ -87,9 +89,8 @@ const DEFAULT_STATUS_MESSAGES = {
   progress: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   finished: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك.",
   pending_transfer: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
-  completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
-  // Legacy transferred records use the same final-state message.
   transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
 };
 
@@ -99,9 +100,8 @@ const STATUS_LABELS = {
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوينز من حسابك",
   pending_transfer: "قيد التحويل",
-  completed: "تم التحويل — مكتمل",
-  // Legacy data compatibility: old transferred orders render as the final state.
-  transferred: "تم التحويل — مكتمل"
+  transferred: "تم التحويل لحسابك",
+  completed: "تم التنفيذ"
 };
 
 const ISSUE_LABELS = {
@@ -2168,7 +2168,7 @@ function sortOrdersByPriority() {
     review: 3,
     finished: 4,
     pending_transfer: 5,
-    transferred: 7,
+    transferred: 6,
     completed: 7,
     archived: 8
   };
@@ -4616,7 +4616,7 @@ function syncOpenOrderModal(order) {
 function getDisplayStatusKey(status){
   const normalized = String(status || "").trim().toLowerCase();
   if (normalized === "pending") return "new";
-  if (normalized === "transferred") return "completed";
+  if (normalized === "transferred") return "transferred";
   return STATUS_DISPLAY_ORDER.includes(normalized) ? normalized : "";
 }
 
