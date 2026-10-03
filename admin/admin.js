@@ -40,7 +40,15 @@ const STATUS_VALUES = [
   "progress",
   "finished",
   "pending_transfer",
-  "transferred",
+  "completed"
+];
+
+const STATUS_DISPLAY_ORDER = [
+  "new",
+  "review",
+  "progress",
+  "finished",
+  "pending_transfer",
   "completed"
 ];
 
@@ -79,7 +87,6 @@ const DEFAULT_STATUS_MESSAGES = {
   progress: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   finished: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك.",
   pending_transfer: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
-  transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
 };
@@ -90,8 +97,9 @@ const STATUS_LABELS = {
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوينز من حسابك",
   pending_transfer: "قيد التحويل",
-  transferred: "قيد التحويل",
-  completed: "تم التحويل — مكتمل"
+  completed: "تم التحويل — مكتمل",
+  // Legacy data compatibility: old transferred orders render as the final state.
+  transferred: "تم التحويل — مكتمل"
 };
 
 const ISSUE_LABELS = {
@@ -2406,37 +2414,16 @@ function buildActionButtonsHTML(order) {
   `;
 }
 function getStatusBadge(status) {
-  const labels = {
-    new: "طلب جديد",
-    pending: "طلب جديد",
-    review: "بانتظار المراجعة",
-    progress: "جاري سحب الكوينز من حسابك",
-    finished: "تم الانتهاء من سحب الكوينز من حسابك",
-    pending_transfer: "قيد التحويل",
-    transferred: "قيد التحويل",
-    completed: "تم التحويل — مكتمل"
-  };
-  const key = status === "pending" ? "new" : status;
-  return `<span class="badge status-badge status-${key || "unknown"}">${escapeHtml(labels[key] || status || "---")}</span>`;
+  const key = getDisplayStatusKey(status);
+  return `<span class="badge status-badge status-${key || "unknown"}">${escapeHtml(getStatusLabel(status))}</span>`;
 }
 
 function getOrderStatusBadge(order) {
   const meta = getPlatformMeta(order?.platform);
   const status = String(order?.status || "").trim().toLowerCase();
-  const labels = {
-    new: "طلب جديد",
-    pending: "طلب جديد",
-    review: "طلب بانتظار المراجعة",
-    progress: "جاري سحب الكوينز من حسابك",
-    finished: "تم الانتهاء من سحب الكوينز من حسابك",
-    pending_transfer: "بانتظار التحويل",
-    transferred: "تم تحويل المبلغ إلى حسابك",
-    completed: "مكتمل",
-    archived: "مؤرشف"
-  };
   const label = order?.issue
     ? getIssueLabel(order.issue)
-    : (labels[status] || status || "---");
+    : getStatusLabel(status) || "---";
   const icon = order?.issue ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>' : '';
   return `<span class="badge platform-status-badge status-${escapeAttribute(status || "unknown")} ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
 }
@@ -4211,7 +4198,8 @@ window.openOrderModal = function (orderId) {
   const remaining=Math.max(0,total-withdrawn);
   const percent=total>0?Math.min(100,(withdrawn/total)*100):0;
   const locked=order.status!=="progress";
-  const baseStatusLabel=STATUS_LABELS[order.status]||order.status||"---";
+  const displayStatusKey = getDisplayStatusKey(order.status);
+  const baseStatusLabel=getStatusLabel(order.status);
   const statusLabel=order.issue?(ISSUE_LABELS[order.issue]||getIssueLabel(order.issue)):baseStatusLabel;
   const customerPhone=String(order.phone||"").trim();
   const customerName=String(order.name||"").trim();
@@ -4234,7 +4222,8 @@ window.openOrderModal = function (orderId) {
   const statusBadgeClass = order.issue ? "status-problem" : "status-" + (order.status || "unknown");
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
   if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
-  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===displayStatusKey?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const statusFlow = buildOrderStatusFlow(order.status);
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
   modalBody.innerHTML=`
     <div class="order-detail-shell platform-order-${platformClass}">
@@ -4273,10 +4262,16 @@ window.openOrderModal = function (orderId) {
         <section class="order-detail-flat-item order-detail-status-item ${statusBadgeClass}">
           <button type="button" class="order-detail-flat-trigger" aria-expanded="false" onclick="toggleOrderDetailSection(this)">
             <span><small>ORDER STATUS</small><b>حالة الطلب</b></span>
-            <strong id="modalOrderStatusDisplay" class="order-status-display status-${escapeAttribute(order.status || "unknown")}">${escapeHtml(baseStatusLabel)}</strong>
+            <strong id="modalOrderStatusDisplay" class="order-status-display status-${escapeAttribute(displayStatusKey || "unknown")}">${escapeHtml(baseStatusLabel)}</strong>
           </button>
           <div class="order-detail-flat-content">
-            <select id="modalOrderStatusSelect" class="modal-status-select status-${order.status || "unknown"}" onchange="saveModalOrderStatus('${escapeAttribute(order.id)}')">${statusOptions}</select>
+            <div class="order-status-flow" aria-label="مراحل حالة الطلب">
+              ${statusFlow}
+            </div>
+            <div class="order-status-select-row">
+              <label for="modalOrderStatusSelect">تغيير الحالة</label>
+              <select id="modalOrderStatusSelect" class="modal-status-select status-${escapeAttribute(displayStatusKey || "unknown")}" onchange="saveModalOrderStatus('${escapeAttribute(order.id)}')">${statusOptions}</select>
+            </div>
           </div>
         </section>
 
@@ -4610,9 +4605,42 @@ function syncOpenOrderModal(order) {
   }
 }
 
+function getDisplayStatusKey(status){
+  const normalized = String(status || "").trim().toLowerCase();
+  if (normalized === "pending") return "new";
+  if (normalized === "transferred") return "completed";
+  return STATUS_DISPLAY_ORDER.includes(normalized) ? normalized : "";
+}
+
+function getStatusLabel(status){
+  const key = getDisplayStatusKey(status);
+  return STATUS_LABELS[key] || STATUS_LABELS[status] || status || "---";
+}
+
+function buildOrderStatusFlow(status){
+  const currentKey = getDisplayStatusKey(status);
+  const currentIndex = STATUS_DISPLAY_ORDER.indexOf(currentKey);
+
+  return STATUS_DISPLAY_ORDER.map((key, index) => {
+    const stateClass =
+      index < currentIndex
+        ? "is-done"
+        : index === currentIndex
+          ? "is-current"
+          : "is-upcoming";
+
+    return `
+      <div class="order-status-step ${stateClass}" data-status="${key}">
+        <span class="order-status-step-index">${index + 1}</span>
+        <span class="order-status-step-label">${escapeHtml(STATUS_LABELS[key])}</span>
+      </div>
+    `;
+  }).join("");
+}
+
 function getStatusMessage(status,order){
   const template=currentSettingsData.statusMessages?.[status]||DEFAULT_STATUS_MESSAGES[status]||"{customerName}، {status}";
-  return template.replace(/\{customerName\}/g,order?.name||"").replace(/\{referenceNumber\}/g,order?.referenceNumber||"").replace(/\{status\}/g,STATUS_LABELS[status]||status||"");
+  return template.replace(/\{customerName\}/g,order?.name||"").replace(/\{referenceNumber\}/g,order?.referenceNumber||"").replace(/\{status\}/g,getStatusLabel(status));
 }
 window.copyValue=async function(value){
   const textValue=String(value||""); if(!textValue)return;
@@ -4640,8 +4668,9 @@ window.saveModalOrderStatus=async function(orderId){
   if (!order || !select || !select.value) return;
 
   const nextStatus = select.value;
+  const currentDisplayStatus = getDisplayStatusKey(order.status);
 
-  if (nextStatus === order.status) {
+  if (nextStatus === currentDisplayStatus) {
     showToast("الحالة لم تتغير.");
     return;
   }
@@ -4862,10 +4891,11 @@ window.openOrderStatusEditForm=function(orderId){
 
   const withdrawalUnlocked=order.status==="progress";
   const locked=!withdrawalUnlocked;
-  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
+  const displayStatusKey = getDisplayStatusKey(order.status);
+  const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===displayStatusKey?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   const issueOptions=ISSUE_VALUES.map((value)=>'<option value="'+escapeAttribute(value)+'" '+(value===order.issue?"selected":"")+'>'+escapeHtml(ISSUE_LABELS[value]||value)+'</option>').join("");
 
-  const currentStatus=STATUS_LABELS[order.status]||order.status||"---";
+  const currentStatus=getStatusLabel(order.status);
   const currentIssue=order.issue?(ISSUE_LABELS[order.issue]||order.issue):"لا توجد مشكلة";
   const issueMessage=order.issueMessage|| (order.issue?getIssueLabel(order.issue):"");
 
@@ -5481,9 +5511,8 @@ window.promptEditOrder =
           "review = انتظار المراجعة\n" +
           "progress = جاري سحب الكوين\n" +
           "finished = تم الانتهاء من السحب\n" +
-          "pending_transfer = بانتظار التحويل\n" +
-          "transferred = تم التحويل لحسابك\n" +
-          "completed = مكتمل",
+          "pending_transfer = قيد التحويل\n" +
+          "completed = تم التحويل — مكتمل",
         order.status
       );
 
