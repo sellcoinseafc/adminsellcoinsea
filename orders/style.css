@@ -6,8 +6,8 @@
   --line:#e4e4e7;
   --text:#25262b;
   --muted:#777a82;
-  --accent:#f58220;
-  --accent-dark:#df6f10;
+  --accent:#00c86b;
+  --accent-dark:#009d54;
   --success:#159447;
   --danger:#d33b3b;
   --shadow:0 10px 30px rgba(24,24,27,.07);
@@ -51,7 +51,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 .platform-btn{min-height:154px;border:2px solid #dedee1;border-radius:14px;background:#fff;color:var(--text);padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:.18s;position:relative}
 .platform-btn:hover{border-color:#f5b27a;transform:translateY(-1px)}
-.platform-btn.active{border-color:var(--accent);background:linear-gradient(180deg,#fffaf5,#fff);box-shadow:0 0 0 1px rgba(245,130,32,.08)}
+.platform-btn.active{border-color:var(--accent);background:linear-gradient(180deg,#fffaf5,#fff);box-shadow:0 0 0 1px rgba(0,200,107,.10)}
 .platform-btn.active:after{content:"✓";position:absolute;top:0;right:0;width:27px;height:27px;border-radius:0 11px 0 10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:900;font-size:14px}
 .platform-btn>i{font-size:36px;color:#2f3542}
 .ps-btn>i{color:#0070cc}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#5b7cff}
@@ -81,7 +81,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .field label{display:block;font-size:10px;font-weight:800;margin:0 0 6px}
 .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{width:100%;height:58px;border:1px solid var(--line);border-radius:11px;background:var(--field);color:var(--text);outline:0;padding:0 12px;font-size:11px}
-.input-box-wrap input:focus,.input-box-wrap select:focus{border-color:#f0a46d;box-shadow:0 0 0 3px rgba(245,130,32,.08);background:#fff}
+.input-box-wrap input:focus,.input-box-wrap select:focus{border-color:#00c86b;box-shadow:0 0 0 3px rgba(0,200,107,.10);background:#fff}
 .field-note{display:block;color:var(--muted);font-size:8px;margin-top:5px}
 .backup-section{margin-top:24px;padding:20px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
 .backup-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.backup-title h3{font-size:12px;margin:0}.backup-title p{font-size:9px;color:var(--muted);margin:2px 0 0}.text-btn,.terms-bottom-link{border:0;background:transparent;color:var(--accent);font-size:9px;font-weight:800;padding:2px}
@@ -93,7 +93,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .payment-tabs button.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .payment-methods-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .pay-btn-compact{min-height:58px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--text);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;text-align:center;padding:7px}
-.pay-btn-compact.active{border-color:var(--accent);background:#fff5ed;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(245,130,32,.15)}
+.pay-btn-compact.active{border-color:var(--accent);background:#fff5ed;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(0,200,107,.15)}
 .payout-details-card{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
 .payout-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.payout-heading span{font-size:11px;font-weight:900}.payout-heading b{font-size:10px;color:var(--accent)}
 .payout-details-card .field-label{display:block;font-size:9px;font-weight:800;margin:9px 0 5px}.payout-details-card .required-star{color:var(--accent)}
@@ -105,7 +105,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .terms-bottom-link{display:inline-flex;align-items:center;gap:5px;margin-top:6px}
 .privacy-note{margin-top:17px;display:flex;gap:9px;align-items:flex-start;padding:11px 13px;border-radius:12px;background:#f4faf6;border:1px solid #d9eee0;color:#39704f}.privacy-note i{margin-top:2px;color:var(--success)}.privacy-note strong{display:block;font-size:10px;color:#25613d}.privacy-note span{display:block;font-size:8px;color:#5b7666;margin-top:2px}
 .primary-btn,.secondary-btn{min-height:48px;border-radius:12px;border:1px solid var(--line);font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;width:100%}
-.primary-btn{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 8px 18px rgba(245,130,32,.18)}.primary-btn:hover{background:var(--accent-dark)}
+.primary-btn{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 8px 18px rgba(0,200,107,.18)}.primary-btn:hover{background:var(--accent-dark)}
 .secondary-btn{background:#fff;color:var(--text)}
 .submit-review-btn{margin-top:14px;min-height:54px;font-size:14px}
 .bottom-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:9px}
@@ -184,15 +184,15 @@ html[data-theme="dark"] .toast{background:#f4f7fb;color:#07101b}
 }
 
 /* Selected platform accent system — one coherent layer */
-.orders-page{--platform-accent:#f58220;--platform-soft:rgba(245,130,32,.10)}
-.orders-page[data-platform="PlayStation"]{--platform-accent:#0070cc;--platform-soft:rgba(0,112,204,.12)}
-.orders-page[data-platform="Xbox"]{--platform-accent:#107c10;--platform-soft:rgba(16,124,16,.12)}
-.orders-page[data-platform="PC"]{--platform-accent:#d2232d;--platform-soft:rgba(210,35,45,.13)}
+.orders-page{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
+.orders-page[data-platform="PlayStation"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
+.orders-page[data-platform="Xbox"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
+.orders-page[data-platform="PC"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
 .platform-btn>i{transition:.18s}
-.ps-btn>i{color:#0070cc}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#d2232d}
-.ps-btn.active{border-color:#0070cc;background:linear-gradient(180deg,rgba(0,112,204,.12),var(--surface))}
-.xbox-btn.active{border-color:#107c10;background:linear-gradient(180deg,rgba(16,124,16,.12),var(--surface))}
-.pc-btn.active{border-color:#d2232d;background:linear-gradient(180deg,rgba(210,35,45,.13),var(--surface))}
+.ps-btn>i,.xbox-btn>i,.pc-btn>i{color:#00c86b}
+.ps-btn.active{border-color:#0070cc;background:linear-gradient(180deg,rgba(0,200,107,.11),var(--surface))}
+.xbox-btn.active{border-color:#107c10;background:linear-gradient(180deg,rgba(0,200,107,.11),var(--surface))}
+.pc-btn.active{border-color:#d2232d;background:linear-gradient(180deg,rgba(0,200,107,.11),var(--surface))}
 html[data-theme="dark"] .selected-rate{background:linear-gradient(135deg,var(--platform-soft),#0a111c);border-color:var(--platform-accent)}
 html[data-theme="dark"] .total-card{background:linear-gradient(135deg,var(--platform-soft),#0a111c);border-color:var(--platform-accent)}
 html[data-theme="dark"] .duration-card{border-color:color-mix(in srgb,var(--platform-accent) 35%,#27384e)}
@@ -201,15 +201,15 @@ html[data-theme="dark"] .quantity-card,html[data-theme="dark"] .account-section,
 
 
 /* Selected platform drives the visual identity of the remaining order details */
-.orders-page[data-platform="PlayStation"] .section-number{background:rgba(0,112,204,.14);color:#3c9be8}
-.orders-page[data-platform="Xbox"] .section-number{background:rgba(16,124,16,.14);color:#49a849}
-.orders-page[data-platform="PC"] .section-number{background:rgba(210,35,45,.14);color:#948dff}
+.orders-page[data-platform="PlayStation"] .section-number{background:rgba(0,200,107,.14);color:#3c9be8}
+.orders-page[data-platform="Xbox"] .section-number{background:rgba(0,200,107,.14);color:#49a849}
+.orders-page[data-platform="PC"] .section-number{background:rgba(0,200,107,.14);color:#948dff}
 .orders-page[data-platform="PlayStation"] .form-section,
-.orders-page[data-platform="PlayStation"] .terms-card{border-color:rgba(0,112,204,.30)}
+.orders-page[data-platform="PlayStation"] .terms-card{border-color:rgba(0,200,107,.30)}
 .orders-page[data-platform="Xbox"] .form-section,
-.orders-page[data-platform="Xbox"] .terms-card{border-color:rgba(16,124,16,.30)}
+.orders-page[data-platform="Xbox"] .terms-card{border-color:rgba(0,200,107,.30)}
 .orders-page[data-platform="PC"] .form-section,
-.orders-page[data-platform="PC"] .terms-card{border-color:rgba(210,35,45,.30)}
+.orders-page[data-platform="PC"] .terms-card{border-color:rgba(0,200,107,.30)}
 .orders-page[data-platform="PlayStation"] .duration-card,
 .orders-page[data-platform="Xbox"] .duration-card,
 .orders-page[data-platform="PC"] .duration-card{border-color:color-mix(in srgb,var(--platform-accent) 38%,#27384e)}
@@ -233,8 +233,8 @@ html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
   .platform-btn strong{font-size:9px}
   .ps-btn{background:linear-gradient(180deg,rgba(0,112,204,.24),rgba(0,112,204,.08));border-color:#0070cc}
   .xbox-btn{background:linear-gradient(180deg,rgba(16,124,16,.24),rgba(16,124,16,.08));border-color:#107c10}
-  .pc-btn{background:linear-gradient(180deg,rgba(210,35,45,.28),rgba(210,35,45,.09));border-color:#d2232d}
-  .pc-btn>i{color:#e23a45}
+  .pc-btn{background:linear-gradient(180deg,rgba(0,200,107,.24),rgba(0,200,107,.08));border-color:#00c86b}
+  .ps-btn,.xbox-btn,.pc-btn{color:#00c86b}.pc-btn>i{color:#00c86b}
   .platform-btn.active{box-shadow:inset 0 0 0 1px currentColor}
 
   .duration-grid{grid-template-columns:1fr 1fr 1fr}.duration-card{min-height:62px}
@@ -250,9 +250,9 @@ html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
   .rate-currency{font-size:11px;font-weight:900}
   .selected-rate>i{justify-self:start;font-size:27px}
 
-  /* طرق الاستلام: أصفر داكن */
-  .payment-tabs button,.pay-btn-compact{background:#241d0b!important;border-color:#6d5a22!important;color:#e4c45d!important}
-  .payment-tabs button.active,.pay-btn-compact.active{background:#34290d!important;border-color:#b9952f!important;color:#ffd96b!important;box-shadow:inset 0 0 0 1px rgba(255,217,107,.16)}
+  /* طرق الاستلام: نفس أخضر FC 27 مع نص وحدود بيضاء */
+  .payment-tabs button,.pay-btn-compact{background:#062c1d!important;border-color:#fff!important;color:#fff!important}
+  .payment-tabs button.active,.pay-btn-compact.active{background:#087a45!important;border-color:#fff!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
 
   /* الإقرارات */
   .terms-card .compact-heading{margin-bottom:16px}
@@ -290,4 +290,69 @@ html[data-theme="dark"] .payment-review-row .payment-review-label{background:#0a
   .code-display-row{min-height:70px;font-size:12px}
   .payment-review-row .payment-review-label{font-size:11px}
   .review-value-box{min-height:58px;font-size:12px}
+}
+
+/* FC 27 green identity — shared by first page, review and success */
+html[data-theme="dark"]{
+  --accent:#00c86b;
+  --accent-dark:#009d54;
+  --success:#00c86b;
+}
+html[data-theme="dark"] .payment-section .payment-tabs button,
+html[data-theme="dark"] .payment-section .pay-btn-compact{
+  background:#062c1d!important;
+  color:#fff!important;
+  border-color:#fff!important;
+}
+html[data-theme="dark"] .payment-section .payment-tabs button.active,
+html[data-theme="dark"] .payment-section .pay-btn-compact.active{
+  background:#087a45!important;
+  color:#fff!important;
+  border-color:#fff!important;
+}
+html[data-theme="dark"] .payout-details-card{
+  background:linear-gradient(135deg,#062c1d,#071a13)!important;
+  border:1px solid #fff!important;
+  color:#fff!important;
+}
+html[data-theme="dark"] .payout-details-card .field-label,
+html[data-theme="dark"] .payout-details-card .payout-heading span,
+html[data-theme="dark"] .payout-details-card .payout-heading b{
+  color:#fff!important;
+}
+html[data-theme="dark"] .payout-details-card .input-box-wrap input,
+html[data-theme="dark"] .payout-details-card .input-box-wrap select,
+html[data-theme="dark"] .payout-details-card .input-box-wrap textarea{
+  border-color:#fff!important;
+  color:#fff!important;
+  background:#041b12!important;
+  font-size:14px;
+  font-weight:800;
+}
+html[data-theme="dark"] .payout-details-card .input-box-wrap input::placeholder{color:#cfe8dc}
+.customer-section .input-box-wrap input{
+  height:64px;
+  font-size:15px;
+  font-weight:800;
+}
+.payout-details-card .input-box-wrap input,
+.payout-details-card .input-box-wrap select,
+.payout-details-card .input-box-wrap textarea{
+  height:64px;
+  font-size:14px;
+  font-weight:800;
+}
+.payout-details-card #bankNameSelect,
+.payout-details-card #accountName,
+.payout-details-card #iban{
+  font-size:16px;
+  font-weight:900;
+}
+html[data-theme="dark"] .customer-section,
+html[data-theme="dark"] .account-section,
+html[data-theme="dark"] .payment-section,
+html[data-theme="dark"] .terms-card,
+html[data-theme="dark"] .review-card,
+html[data-theme="dark"] .success-page{
+  --accent:#00c86b;
 }
