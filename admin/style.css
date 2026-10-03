@@ -1059,3 +1059,200 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   .pricing-panel-heading{align-items:flex-start;flex-direction:column}
   .platform-toggle-grid{grid-template-columns:1fr}
 }
+
+/* ========================================================================
+   Admin header / sidebar / order details refinement
+   ======================================================================== */
+.topbar-brand-title{display:flex;align-items:center;min-width:0}
+.topbar-brand-logo{width:168px;height:62px;object-fit:contain;display:block}
+.topbar-page-title-hidden{display:none!important}
+
+.platform-toggle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pc-toggle-grid{margin-bottom:14px}
+.platform-toggle-card{min-height:62px}
+
+.order-modal{width:min(1040px,calc(100vw - 28px));padding:16px}
+#modalOrderBody{min-width:0}
+.order-detail-shell{display:grid;gap:12px}
+.order-detail-accordion{display:grid;gap:10px}
+.order-detail-accordion-item,
+.order-detail-flat-item{
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+  overflow:hidden;
+  box-shadow:0 3px 14px rgba(20,42,29,.035);
+}
+.order-detail-accordion-trigger,
+.order-detail-flat-trigger{
+  width:100%;
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:13px 15px;
+  border:0;
+  background:var(--panel);
+  color:var(--text);
+  text-align:right;
+  cursor:pointer;
+}
+.order-detail-accordion-trigger>span,
+.order-detail-flat-trigger>span{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.order-detail-accordion-trigger b,
+.order-detail-flat-trigger b{font-size:.92rem}
+.order-detail-accordion-trigger small,
+.order-detail-flat-trigger small{color:var(--muted);font-size:.68rem}
+.accordion-chevron{color:var(--muted);transition:transform .2s ease;flex:0 0 auto}
+.order-detail-accordion-item.is-open .accordion-chevron{transform:rotate(180deg)}
+.order-detail-accordion-content,
+.order-detail-flat-content{
+  display:none;
+  padding:0 15px 15px;
+  border-top:1px solid var(--line);
+}
+.order-detail-accordion-item.is-open .order-detail-accordion-content,
+.order-detail-flat-item.is-open .order-detail-flat-content{display:block}
+.order-basic-grid,
+.general-info-grid,
+.transfer-detail-grid,
+.secure-fields-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.order-basic-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.order-basic-card,
+.detail-info-card,
+.quantity-card,
+.platform-detail-brand{
+  min-width:0;
+  padding:13px 14px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--input);
+}
+.order-basic-card>span,
+.detail-info-card>span,
+.quantity-card>span{
+  display:block;
+  color:var(--muted);
+  font-size:.68rem;
+  margin-bottom:6px;
+}
+.order-basic-card>strong,
+.detail-info-card>strong,
+.quantity-card>strong{
+  display:block;
+  color:var(--text);
+  font-size:.9rem;
+  overflow-wrap:anywhere;
+}
+.order-basic-order-copy{cursor:pointer}
+.order-basic-reference-sub{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:.62rem;
+  overflow-wrap:anywhere;
+}
+.platform-detail-brand{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:900;
+}
+.platform-detail-brand i{font-size:1.25rem}
+.platform-playstation{color:#2563eb;border-color:#bfdbfe;background:#eff6ff}
+.platform-xbox{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+.platform-pc{color:#475569;border-color:#cbd5e1;background:#f8fafc}
+.detail-total-quantity strong,
+.detail-total-amount strong,
+.detail-order-amount strong{font-size:1.05rem}
+.customer-total-amount{display:flex;align-items:baseline;gap:6px;direction:ltr}
+.customer-total-amount small{color:var(--muted)}
+.payment-total-row{margin-top:10px}
+.order-detail-status-item{border-right:4px solid var(--primary)}
+.order-detail-status-item.status-new{border-right-color:#3b82f6}
+.order-detail-status-item.status-review{border-right-color:#f59e0b}
+.order-detail-status-item.status-progress{border-right-color:#8b5cf6}
+.order-detail-status-item.status-finished{border-right-color:#10b981}
+.order-detail-status-item.status-transferred{border-right-color:#f59e0b}
+.order-detail-status-item.status-completed{border-right-color:#16a34a}
+.order-detail-issue-item.has-issue{border-right:4px solid #dc2626}
+.order-detail-issue-item.has-issue .order-detail-flat-trigger{background:#fff8f8}
+.order-detail-flat-trigger strong{font-size:.82rem}
+.modal-status-select,.modal-issue-select{width:100%;margin-top:12px}
+.detail-issue-message{margin-top:8px;min-height:80px}
+.secure-section-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+.secure-copy-field{border-radius:13px}
+.withdraw-editor{margin-top:10px}
+.message-token-hint{margin:12px 0 7px}
+.message-actions{margin-top:10px}
+@media(max-width:700px){
+  .topbar-brand-logo{width:145px;height:54px}
+  .order-basic-grid,
+  .general-info-grid,
+  .transfer-detail-grid,
+  .secure-fields-grid{grid-template-columns:1fr 1fr}
+  .order-basic-grid{grid-template-columns:1fr 1fr}
+  .order-detail-accordion-trigger,
+  .order-detail-flat-trigger{min-height:58px;padding:11px 12px}
+  .order-detail-accordion-content,
+  .order-detail-flat-content{padding:0 11px 11px}
+}
+@media(max-width:520px){
+  .topbar-brand-logo{width:132px;height:50px}
+  .order-basic-grid,
+  .general-info-grid,
+  .transfer-detail-grid,
+  .secure-fields-grid{grid-template-columns:1fr}
+}
+
+/* Tablet/mobile navigation: sidebar stays hidden until the hamburger is pressed. */
+@media(max-width:1300px){
+  .sidebar,
+  [dir=rtl] .sidebar{
+    width:min(88vw,310px)!important;
+    transform:translateX(110%)!important;
+    transition:transform .25s ease;
+    z-index:3000!important;
+  }
+  .sidebar.mobile-open,
+  [dir=rtl] .sidebar.mobile-open{transform:translateX(0)!important}
+  .sidebar-close-btn{
+    display:grid!important;
+    place-items:center;
+    width:40px;
+    height:40px;
+    border:1px solid var(--line);
+    border-radius:11px;
+    background:var(--panel2);
+    color:var(--text);
+    font-size:1.35rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .main-wrapper,
+  [dir=rtl] .main-wrapper{
+    margin:0!important;
+    width:100%!important;
+    max-width:none!important;
+  }
+  .mobile-only{display:grid!important}
+  .topbar-brand-logo{width:158px;height:58px}
+  .topbar-page-title-hidden{display:none!important}
+  .sidebar-overlay.is-visible{z-index:2999!important}
+}
