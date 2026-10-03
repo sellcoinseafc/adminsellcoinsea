@@ -2040,11 +2040,11 @@ switch (
             });
           }
 
-          if (!/^[A-Za-z][A-Za-z .'-]*$/.test(payout.fullNameEnglish)) {
+          if (!/^[A-Za-z]+(?:[ .'-]+[A-Za-z]+){2,}$/.test(payout.fullNameEnglish)) {
             return res.status(400).json({
               success: false,
               message:
-                "اسم Western Union يجب أن يكون بالإنجليزية فقط ويطابق الاسم في الهوية."
+                "اسم Western Union يجب أن يكون اسمًا ثلاثيًا بالإنجليزية كما هو مكتوب في الهوية."
             });
           }
 
