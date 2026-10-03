@@ -2467,7 +2467,7 @@ window.renderOrdersTables =
 
     if (filteredData.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="9" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
+        <tr><td colspan="10" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
       `;
       return;
     }
@@ -2478,14 +2478,11 @@ window.renderOrdersTables =
 
       return `
         <tr class="full-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="الطلب" class="order-data-cell">
-            <div class="order-ref-stack">
-              <span class="table-field-label">رقم المرجع</span>
-              <small>${escapeHtml(internalRef)}</small>
-              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">
-                ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
-              </b>
-            </div>
+          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          </td>
+          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
@@ -2511,7 +2508,7 @@ window.renderRecentOrdersTable =
 
     if (recentOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="8" class="empty-row">لا توجد طلبات حديثة.</td></tr>
+        <tr><td colspan="10" class="empty-row">لا توجد طلبات حديثة.</td></tr>
       `;
       return;
     }
@@ -2522,14 +2519,11 @@ window.renderRecentOrdersTable =
 
       return `
         <tr class="recent-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="الطلب" class="order-data-cell">
-            <div class="order-ref-stack">
-              <span class="table-field-label">رقم المرجع</span>
-              <small>${escapeHtml(internalRef)}</small>
-              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">
-                ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
-              </b>
-            </div>
+          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          </td>
+          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
@@ -2565,7 +2559,7 @@ window.renderWithdrawOrdersTable =
 
     if (withdrawOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="9" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
+        <tr><td colspan="10" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
       `;
       return;
     }
@@ -2581,12 +2575,11 @@ window.renderWithdrawOrdersTable =
 
       return `
         <tr class="withdraw-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="الطلب" class="order-data-cell">
-            <div class="order-ref-stack">
-              <span class="table-field-label">رقم المرجع</span>
-              <small>${escapeHtml(order.internalReference || order.orderId || order.id || "---")}</small>
-              <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-            </div>
+          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          </td>
+          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(order.internalReference || order.orderId || order.id || "---")}')" title="نسخ رقم الطلب">${escapeHtml(order.internalReference || order.orderId || order.id || "---")} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
@@ -2628,7 +2621,7 @@ window.renderTransferAlertsTable =
 
     if (transferOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="9" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
+        <tr><td colspan="10" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
       `;
       return;
     }
@@ -2642,8 +2635,11 @@ window.renderTransferAlertsTable =
 
       return `
         <tr class="transfer-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="المرجع" class="order-data-cell">
-            <div class="order-ref-stack"><span class="table-field-label">المرجع</span><b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b></div>
+          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          </td>
+          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
+            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(order.internalReference || order.orderId || order.id || "---")}')" title="نسخ رقم الطلب">${escapeHtml(order.internalReference || order.orderId || order.id || "---")} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
           <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
