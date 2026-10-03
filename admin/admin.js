@@ -6473,6 +6473,72 @@ window.toggleStoreStatus =
     }
   };
 
+function renderPlatformAvailabilityControls(config = {}) {
+  const states = {
+    PlayStation: config.psEnabled !== false,
+    Xbox: config.xboxEnabled !== false
+  };
+
+  Object.entries(states).forEach(([platform, enabled]) => {
+    const key = platform === "PlayStation" ? "psEnabledToggle" : "xboxEnabledToggle";
+    const button = document.getElementById(key);
+    if (!button) return;
+
+    button.classList.toggle("is-enabled", enabled);
+    button.classList.toggle("is-disabled", !enabled);
+    button.setAttribute("aria-pressed", enabled ? "true" : "false");
+
+    const label = button.querySelector("span");
+    if (label) label.textContent = enabled ? "مفعل" : "مغلق";
+  });
+}
+
+window.togglePlatformEnabled = async function (platform) {
+  const field = platform === "PlayStation"
+    ? "psEnabled"
+    : platform === "Xbox"
+      ? "xboxEnabled"
+      : null;
+
+  if (!field) return;
+
+  const currentValue = currentSettingsData?.[field] !== false;
+  const nextValue = !currentValue;
+
+  try {
+    await adminSettingsAction("update_pricing", {
+      data: {
+        [field]: nextValue
+      }
+    });
+
+    currentSettingsData = {
+      ...currentSettingsData,
+      [field]: nextValue
+    };
+
+    renderPlatformAvailabilityControls(currentSettingsData);
+
+    await logAuditEvent(
+      nextValue ? `تفعيل استقبال ${platform}` : `إيقاف استقبال ${platform}`,
+      "المنصات",
+      nextValue
+        ? `تم تفعيل استقبال شراء الكوينز لمنصة ${platform}`
+        : `تم إيقاف استقبال شراء الكوينز لمنصة ${platform}`
+    );
+
+    showToast(
+      nextValue
+        ? `تم تفعيل ${platform}.`
+        : `تم إيقاف ${platform}.`
+    );
+  } catch (error) {
+    console.error("Toggle platform enabled error:", error?.message || error);
+    showToast("❌ تعذر تغيير حالة المنصة.");
+    renderPlatformAvailabilityControls(currentSettingsData);
+  }
+};
+
 function populatePricingUI(
   config = {}
 ) {
@@ -6582,6 +6648,8 @@ function populatePricingUI(
     config.offerText ||
       ""
   );
+
+  renderPlatformAvailabilityControls(config);
 }
 
 window.saveProductsConfig =
@@ -6656,6 +6724,12 @@ window.saveProductsConfig =
           "psTransferDuration"
         )?.value ||
         "",
+
+      psEnabled:
+        currentSettingsData?.psEnabled !== false,
+
+      xboxEnabled:
+        currentSettingsData?.xboxEnabled !== false,
 
       pcRate:
         Number(

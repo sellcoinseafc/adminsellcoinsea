@@ -46,6 +46,8 @@ let storeSettings = {
     termsEnabled: true,
     terms: [],
     storeOpen: true,
+    psEnabled: true,
+    xboxEnabled: true,
     supportWhatsapp: ""
 };
 
@@ -732,6 +734,8 @@ function applyPublicSettingsSnapshot(settings) {
         termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
         termsEnabled: settings.termsEnabled !== false,
         storeOpen: settings.storeOpen !== false,
+        psEnabled: settings.psEnabled !== false,
+        xboxEnabled: settings.xboxEnabled !== false,
         withdrawDays: settings.psWithdrawDuration ?? storeSettings.withdrawDays,
         transferHours: settings.psTransferDuration ?? storeSettings.transferHours,
         pcWithdrawDays: settings.pcWithdrawDuration ?? storeSettings.pcWithdrawDays,
@@ -857,6 +861,64 @@ function contactClosedStoreWhatsapp() {
 // 9. تطبيق الإعدادات على HTML
 // ==========================================================================
 
+function isPlatformEnabled(platform) {
+    if (platform === "PlayStation") return storeSettings.psEnabled !== false;
+    if (platform === "Xbox") return storeSettings.xboxEnabled !== false;
+    return true;
+}
+
+function showPlatformUnavailableMessage(platform) {
+    const messageId = platform === "PlayStation"
+        ? "psUnavailableMessage"
+        : platform === "Xbox"
+            ? "xboxUnavailableMessage"
+            : "";
+
+    if (!messageId) return;
+
+    document.querySelectorAll(".platform-unavailable-message")
+        .forEach((element) => element.classList.add("hidden"));
+
+    const message = $(messageId);
+    if (message) {
+        message.textContent =
+            currentLanguage === "en"
+                ? "We are not accepting coin purchases for this product at the moment."
+                : "لا نستقبل شراء الكوينز لهذا المنتج حالياً.";
+        message.classList.remove("hidden");
+    }
+}
+
+function applyPlatformAvailabilityUI() {
+    const states = {
+        PlayStation: isPlatformEnabled("PlayStation"),
+        Xbox: isPlatformEnabled("Xbox"),
+        PC: true
+    };
+
+    Object.entries(states).forEach(([platform, enabled]) => {
+        const selector = platform === "PlayStation"
+            ? ".ps-btn"
+            : platform === "Xbox"
+                ? ".xbox-btn"
+                : ".pc-btn";
+
+        document.querySelectorAll(selector).forEach((button) => {
+            button.classList.toggle("is-unavailable", !enabled);
+            button.setAttribute("aria-disabled", enabled ? "false" : "true");
+        });
+
+        if (enabled) {
+            const messageId = platform === "PlayStation"
+                ? "psUnavailableMessage"
+                : platform === "Xbox"
+                    ? "xboxUnavailableMessage"
+                    : "";
+            if (messageId) $(messageId)?.classList.add("hidden");
+        }
+    });
+}
+
 function applySettingsToUI() {
 
     const arabicName = $("storeArabicName");
@@ -947,12 +1009,25 @@ function applySettingsToUI() {
         storeSettings.storeOpen === false
     );
 
-    // إعادة اختيار المنصة إن كانت موجودة
-    if (selectedPlatform) {
+    // حالة استقبال كل منصة
+    applyPlatformAvailabilityUI();
+
+    // إعادة اختيار المنصة إن كانت موجودة فقط إذا كانت ما زالت مفعلة.
+    if (selectedPlatform && isPlatformEnabled(selectedPlatform)) {
         selectPlatform(
             selectedPlatform,
             true
         );
+    } else if (selectedPlatform && !isPlatformEnabled(selectedPlatform)) {
+        selectedPlatform = null;
+        currentRate = 0;
+        hideElement("accountStage");
+        hideElement("singlePlatformRateCard");
+        hideElement("durationInfoCardsStep1");
+        hideElement("qtyCardContainer");
+        hideElement("totalAmountBoxCard");
+        showElement("platformPromptBox");
+        updateProgressUI(1);
     }
 }
 
@@ -974,6 +1049,14 @@ function selectPlatform(
     if (!validPlatforms.includes(platform)) {
         return;
     }
+
+    if (!isPlatformEnabled(platform)) {
+        showPlatformUnavailableMessage(platform);
+        return;
+    }
+
+    document.querySelectorAll(".platform-unavailable-message")
+        .forEach((element) => element.classList.add("hidden"));
 
     // سجّل اختيار المستخدم فورًا حتى لو كانت لقطة Firestore الأولى لم تصل بعد.
     // عند وصول الإعدادات، applySettingsToUI() سيعيد تطبيق الاختيار تلقائيًا.

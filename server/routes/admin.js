@@ -1988,6 +1988,12 @@ router.post(
             }
           }
 
+          if (Object.prototype.hasOwnProperty.call(input, "psEnabled")) {
+            patch.psEnabled = input.psEnabled !== false;
+          }
+          if (Object.prototype.hasOwnProperty.call(input, "xboxEnabled")) {
+            patch.xboxEnabled = input.xboxEnabled !== false;
+          }
           if (Object.prototype.hasOwnProperty.call(input, "offers")) {
             patch.offers = Boolean(input.offers);
           }
