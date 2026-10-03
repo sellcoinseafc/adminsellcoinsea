@@ -12215,6 +12215,29 @@ display:flex!important;align-items:center!important;justify-content:center!impor
 #ordersTab .orders-page-master #fullOrdersTableBody .app-card-price-cell{grid-column:5!important}
 #ordersTab .orders-page-master #fullOrdersTableBody .app-card-status{grid-column:6!important}
 #ordersTab .orders-page-master #fullOrdersTableBody .app-card-actions{grid-column:7!important}
+#ordersTab .orders-page-master .orders-result-count{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:38px!important;
+  padding:0 11px!important;
+  border:1px solid rgba(0,230,118,.16)!important;
+  border-radius:11px!important;
+  background:rgba(0,230,118,.055)!important;
+  color:#8FFFC1!important;
+  font-size:.68rem!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  font-variant-numeric:tabular-nums;
+}
+@media (max-width:760px){
+  #ordersTab .orders-page-master .orders-result-count{
+    min-height:36px!important;
+    padding:0 9px!important;
+    font-size:.64rem!important;
+  }
+}
+
 #ordersTab .orders-page-master .orders-master-controls{
   display:flex!important;
   align-items:center!important;
