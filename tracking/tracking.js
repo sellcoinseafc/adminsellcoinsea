@@ -1,3 +1,5 @@
+import { subscribeToPublicSettings } from "../shared/publicSettings.js?v=20261003pricing1";
+
 /**
  * SAMI COINS - tracking.js
  * Customer Tracking
@@ -78,8 +80,43 @@ const LEGACY_STATUS_MAP = {
 
 document.addEventListener("DOMContentLoaded", () => {
     setupInputFormatting();
+    subscribeToTrackingStoreName();
     initTrackingSession();
 });
+
+/* ==========================================
+   اسم المتجر — من إعدادات المتجر العامة
+   ========================================== */
+
+function subscribeToTrackingStoreName() {
+    subscribeToPublicSettings(
+        (settings) => {
+            const storeName = String(
+                settings?.storeName || "SAMI COINS"
+            ).trim() || "SAMI COINS";
+
+            const lookupName = document.getElementById("trackingStoreNameLookup");
+            const headerName = document.getElementById("trackingStoreName");
+
+            [lookupName, headerName].forEach((element) => {
+                if (element) element.textContent = storeName;
+            });
+
+            const lookupSub = document.getElementById("trackingStoreSubLookup");
+            const headerSub = document.getElementById("trackingStoreSub");
+
+            [lookupSub, headerSub].forEach((element) => {
+                if (element) element.textContent = "";
+            });
+        },
+        (error) => {
+            console.warn(
+                "Tracking store-name settings unavailable:",
+                error?.code || error?.message || error
+            );
+        }
+    );
+}
 
 /* ==========================================
    تهيئة جلسة التتبع
