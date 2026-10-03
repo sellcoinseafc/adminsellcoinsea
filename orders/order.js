@@ -1980,7 +1980,7 @@ function validateStep2() {
     }
     if(method==="usd"){
         const email=String($("usdDetails")?.value||"").trim();
-        if(!/^\\S+@\\S+\\.\\S+$/.test(email)){markInvalid($("usdDetails"),"أدخل إيميل محفظة صحيحًا.");return false;}
+        if(!/^\S+@\S+\.\S+$/.test(email)){markInvalid($("usdDetails"),"أدخل إيميل محفظة صحيحًا.");return false;}
     }
     if(method==="paypal"){
         const email=String($("paypalEmail")?.value||"").trim();
