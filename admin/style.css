@@ -11762,3 +11762,91 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     min-height:34px!important;
   }
 }
+
+
+/* MASTER ORDER CARD — identity hierarchy */
+@media(min-width:601px){
+  #ordersTab .app-card-identity,
+  #dashboardTab .dashboard-orders .app-card-identity{
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+  }
+
+  /* Order number = primary identifier */
+  #ordersTab .app-card-identity .app-order-number,
+  #dashboardTab .dashboard-orders .app-card-identity .app-order-number{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:5px!important;
+    color:#ffd21a!important;
+    font-size:1.05rem!important;
+    line-height:1.15!important;
+    font-weight:950!important;
+    direction:ltr!important;
+    cursor:pointer!important;
+  }
+
+  #ordersTab .app-card-identity .app-order-number i,
+  #dashboardTab .dashboard-orders .app-card-identity .app-order-number i{
+    color:#ffd21a!important;
+    font-size:.72rem!important;
+  }
+
+  /* Reference number = secondary identifier */
+  #ordersTab .app-reference-line b,
+  #dashboardTab .dashboard-orders .app-reference-line b{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    color:#00e676!important;
+    font-size:.78rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    direction:ltr!important;
+    cursor:pointer!important;
+  }
+
+  #ordersTab .app-reference-line b i,
+  #dashboardTab .dashboard-orders .app-reference-line b i{
+    color:#00e676!important;
+    font-size:.65rem!important;
+  }
+
+  /* Customer name and phone have the same readable scale. */
+  #ordersTab .app-card-customer strong,
+  #dashboardTab .dashboard-orders .app-card-customer strong,
+  #ordersTab .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{
+    font-size:.9rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+  }
+
+  #ordersTab .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{
+    margin-top:6px!important;
+    color:#aebdce!important;
+  }
+}
+
+/* Same master hierarchy on tablet. */
+@media(min-width:601px) and (max-width:1100px){
+  #ordersTab .app-card-identity .app-order-number,
+  #dashboardTab .dashboard-orders .app-card-identity .app-order-number{
+    font-size:.95rem!important;
+  }
+
+  #ordersTab .app-reference-line b,
+  #dashboardTab .dashboard-orders .app-reference-line b{
+    font-size:.72rem!important;
+  }
+
+  #ordersTab .app-card-customer strong,
+  #dashboardTab .dashboard-orders .app-card-customer strong,
+  #ordersTab .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{
+    font-size:.82rem!important;
+  }
+}
