@@ -2005,6 +2005,45 @@ function validateStep2() {
 // 22. تفاصيل الدفع في المراجعة
 // ==========================================================================
 
+function buildSuccessPaymentDetailsHTML() {
+    const payout = getCurrentPayoutDataFromForm();
+    const method = payout.method || "";
+    const boxes = [];
+
+    if (method === "bank") {
+        boxes.push(["طريقة التحويل", `تحويل بنكي — ${payout.bankName || "--"}`]);
+        boxes.push(["الاسم", payout.fullName || "--"]);
+        boxes.push(["الآيبان", payout.iban || "--"]);
+    } else if (method === "wallet") {
+        boxes.push(["طريقة التحويل", payout.walletName || "--"]);
+        boxes.push(["رقم الجوال", payout.phone || "--"]);
+    } else if (method === "usd") {
+        boxes.push(["طريقة التحويل", "USD"]);
+        boxes.push(["إيميل المحفظة", payout.wallet || "--"]);
+    } else if (method === "paypal") {
+        boxes.push(["طريقة التحويل", "PayPal"]);
+        boxes.push(["إيميل PayPal", payout.email || "--"]);
+    } else if (method === "western") {
+        boxes.push(["طريقة التحويل", "Western Union"]);
+        boxes.push(["الاسم", payout.fullNameEnglish || "--"]);
+        boxes.push(["الدولة", payout.country || "--"]);
+    }
+
+    return `
+        <div class="box-card-title">
+            <span><i class="fa-solid fa-wallet"></i> تفاصيل التحويل والاستلام</span>
+        </div>
+        <div class="payment-detail-grid">
+            ${boxes.map(([label, value]) => `
+                <div class="review-value-box">
+                    <small>${escapeHtml(label)}</small>
+                    <strong>${escapeHtml(value)}</strong>
+                </div>
+            `).join("")}
+        </div>
+    `;
+}
+
 function buildPaymentDetailsHTML() {
 
     const method =
@@ -2210,6 +2249,21 @@ function goToReview() {
         "revTotal",
         $("totalAmountText")?.textContent ||
         "0.00 ر.س"
+    );
+
+    setText(
+        "revWithdrawText",
+        storeSettings.withdrawDays || "--"
+    );
+
+    setText(
+        "revTransferText",
+        storeSettings.transferHours || "--"
+    );
+
+    setText(
+        "revSafeMethodText",
+        "آمنة 99%"
     );
 
     setText(
@@ -3185,21 +3239,7 @@ async function submitOrderFinal() {
             $("billPaymentCard");
 
         if (paymentCard) {
-
-            paymentCard.innerHTML = `
-                <div class="box-card-title">
-                    <span>
-                        <i class="fa-solid fa-wallet"></i>
-                        ${
-                            currentLanguage === "ar"
-                                ? "تفاصيل التحويل والاستلام"
-                                : "Payment & Receiving Details"
-                        }
-                    </span>
-                </div>
-
-                ${buildPaymentDetailsHTML()}
-            `;
+            paymentCard.innerHTML = buildSuccessPaymentDetailsHTML();
         }
 
         showScreen(
