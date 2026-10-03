@@ -5,7 +5,6 @@ import { db, auth } from "../shared/firebase.js";
 import {
   collection,
   doc,
-  getDoc,
   onSnapshot,
   query,
   orderBy,
