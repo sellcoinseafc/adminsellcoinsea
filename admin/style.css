@@ -665,6 +665,14 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
 
 .app-order-card{
   position:relative;
+  background:var(--panel)!important;
+  color:var(--text);
+}
+.app-order-card.platform-playstation,
+.app-order-card.platform-xbox,
+.app-order-card.platform-pc{
+  background:var(--panel)!important;
+  color:var(--text)!important;
 }
 .app-order-card td{
   white-space:nowrap;
@@ -1169,9 +1177,9 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   font-weight:900;
 }
 .platform-detail-brand i{font-size:1.25rem}
-.platform-playstation{color:#2563eb;border-color:#bfdbfe;background:#eff6ff}
-.platform-xbox{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
-.platform-pc{color:#475569;border-color:#cbd5e1;background:#f8fafc}
+.platform-playstation{color:#69adff;border-color:rgba(0,112,209,.32);background:rgba(0,112,209,.10)}
+.platform-xbox{color:#62e58e;border-color:rgba(0,230,118,.30);background:rgba(0,230,118,.09)}
+.platform-pc{color:#cbd5e1;border-color:rgba(148,163,184,.24);background:rgba(148,163,184,.07)}
 .detail-total-quantity strong,
 .detail-total-amount strong,
 .detail-order-amount strong{font-size:1.05rem}
