@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
     <!-- مسار الـ CSS المباشر داخل نفس المجلد -->
-    <link rel="stylesheet" href="style.css?v=20261003-tracking-final">
+    <link rel="stylesheet" href="style.css?v=20261003-tracking-duration">
 </head>
 <body class="tracking-page-body">
 
@@ -192,7 +192,7 @@
                     </div>
                     <div class="status-message-main" id="statusMessage"></div>
                     <div class="status-duration">
-                        <span>مدة التنفيذ المتوقعة: </span>
+                        <span id="statusDurationLabel">مدة سحب الكوينز المتوقعة: </span>
                         <strong id="withdrawDuration"></strong>
                         <strong id="transferDuration" style="display:none;"></strong>
                     </div>
@@ -453,7 +453,7 @@
 
     <!-- مسار الـ JS المباشر داخل نفس المجلد -->
     <script type="module" src="../shared/publicReviews.js?v=20261001"></script>
-    <script src="tracking.js?v=20261003-tracking-final"></script>
+    <script src="tracking.js?v=20261003-tracking-duration"></script>
     <script>
         function toggleAccordion(bodyId, arrowId) {
             const body = document.getElementById(bodyId);

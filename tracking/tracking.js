@@ -1735,6 +1735,25 @@ function handleStatusState(
     let showSecurity = false;
     let showWithdrawn = false;
 
+    const durationLabelElement = document.getElementById("statusDurationLabel");
+    const withdrawDurationElement = document.getElementById("withdrawDuration");
+    const transferDurationElement = document.getElementById("transferDuration");
+    const isTransferStage = status === "pending_transfer" || status === "completed";
+
+    if (durationLabelElement) {
+        durationLabelElement.innerText = isTransferStage
+            ? "مدة التحويل المتوقعة: "
+            : "مدة سحب الكوينز المتوقعة: ";
+    }
+
+    if (withdrawDurationElement) {
+        withdrawDurationElement.style.display = isTransferStage ? "none" : "inline";
+    }
+
+    if (transferDurationElement) {
+        transferDurationElement.style.display = isTransferStage ? "inline" : "none";
+    }
+
     /*
      * لا نعرض بيانات السحب في المراحل الأولى.
      */
