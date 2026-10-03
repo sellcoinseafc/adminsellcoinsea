@@ -2546,7 +2546,7 @@ function renderOrderCardRow(order, mode = "standard") {
         <div class="app-reference-line">
           <b onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')"
              title="نسخ رقم المرجع">
-            ${escapeHtml(ref)}
+            ${escapeHtml(internalRef)}
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
           </b>
         </div>
