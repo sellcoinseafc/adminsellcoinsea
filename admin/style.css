@@ -10934,3 +10934,316 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     }
   }
 }
+
+
+/* ==========================================================================
+   ORDERS PAGE — MASTER CARD = DASHBOARD "RECENT ORDERS"
+   Rebuild the full Orders list from the exact same visual component.
+   ========================================================================== */
+@media(min-width:601px){
+
+  #ordersTab .orders-panel .table-wrap{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+
+  #ordersTab .orders-panel .table-wrap table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    border-collapse:separate!important;
+    border-spacing:0!important;
+    table-layout:fixed!important;
+  }
+
+  #ordersTab .orders-panel .table-wrap thead{display:none!important}
+  #ordersTab .orders-panel .table-wrap tbody{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-card{
+    display:grid!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+    grid-template-columns:76px minmax(150px,1.05fr) minmax(175px,1.22fr) minmax(125px,.85fr) minmax(125px,.82fr) minmax(150px,.92fr) minmax(180px,1.08fr)!important;
+    grid-template-areas:"platform identity customer quantity price status actions"!important;
+    align-items:center!important;
+    gap:0!important;
+    min-height:92px!important;
+    margin:0 0 12px!important;
+    padding:7px!important;
+    overflow:hidden!important;
+    direction:ltr!important;
+    border-radius:19px!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-card td{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+    padding:10px 9px!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    direction:rtl!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-card td::before{
+    display:none!important;
+    content:none!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-platform{grid-area:platform!important}
+  #ordersTab #fullOrdersTableBody .app-card-identity{grid-area:identity!important}
+  #ordersTab #fullOrdersTableBody .app-card-customer{grid-area:customer!important}
+  #ordersTab #fullOrdersTableBody .app-card-quantity{grid-area:quantity!important}
+  #ordersTab #fullOrdersTableBody .app-card-price-cell{grid-area:price!important}
+  #ordersTab #fullOrdersTableBody .app-card-status{grid-area:status!important}
+  #ordersTab #fullOrdersTableBody .app-card-actions{grid-area:actions!important}
+
+  #ordersTab #fullOrdersTableBody .app-platform-icon{
+    width:52px!important;
+    height:52px!important;
+    margin:auto!important;
+    border-radius:14px!important;
+    font-size:1.6rem!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-number{
+    display:block!important;
+    font-size:.92rem!important;
+    font-weight:900!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-reference-line{
+    margin-top:4px!important;
+    font-size:.62rem!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-reference-line b{
+    font-size:.64rem!important;
+    font-family:monospace!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-date{
+    display:block!important;
+    margin-top:5px!important;
+    font-size:.57rem!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-customer{
+    border-right:1px solid rgba(255,255,255,.07)!important;
+    border-left:1px solid rgba(255,255,255,.07)!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-customer strong{
+    display:block!important;
+    font-size:.79rem!important;
+    line-height:1.2!important;
+    font-weight:850!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-customer span{
+    display:block!important;
+    margin-top:6px!important;
+    font-size:.65rem!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-metric>span{
+    display:block!important;
+    margin-bottom:5px!important;
+    font-size:.57rem!important;
+    line-height:1.1!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-metric>strong{
+    display:block!important;
+    font-size:.91rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-price{
+    text-align:center!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-price .order-price-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:1px!important;
+    direction:rtl!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-price .order-price-stack strong{
+    order:1!important;
+    color:#fff!important;
+    font-size:1.35rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-price .order-price-stack small{
+    order:2!important;
+    color:#aeb9c7!important;
+    font-size:.67rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-status{
+    text-align:center!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-status .platform-status-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-height:52px!important;
+    margin:0!important;
+    padding:7px 10px!important;
+    border:1px solid transparent!important;
+    border-radius:12px!important;
+    color:#fff!important;
+    font-size:.72rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:normal!important;
+  }
+
+  /* Status colors — the status determines the badge color. */
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-new,
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-pending{
+    background:rgba(58,167,255,.13)!important;
+    border-color:rgba(58,167,255,.55)!important;
+    color:#70c0ff!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-review{
+    background:rgba(255,184,0,.12)!important;
+    border-color:rgba(255,184,0,.55)!important;
+    color:#ffd45a!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-progress{
+    background:rgba(0,230,118,.11)!important;
+    border-color:rgba(0,230,118,.5)!important;
+    color:#35ee9a!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-finished,
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-completed{
+    background:rgba(0,230,118,.11)!important;
+    border-color:rgba(0,230,118,.5)!important;
+    color:#35ee9a!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-pending_transfer,
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-transferred{
+    background:rgba(164,105,255,.12)!important;
+    border-color:rgba(164,105,255,.55)!important;
+    color:#c39aff!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .platform-status-badge.status-archived{
+    background:rgba(148,163,184,.11)!important;
+    border-color:rgba(148,163,184,.45)!important;
+    color:#cbd5e1!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-card-actions{
+    border-right:1px solid rgba(255,255,255,.07)!important;
+    overflow:visible!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-actions{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex-wrap:nowrap!important;
+    gap:7px!important;
+    width:100%!important;
+    max-width:none!important;
+    overflow:visible!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-actions .btn-action,
+  #ordersTab #fullOrdersTableBody .app-order-actions .btn-custom{
+    flex:0 0 38px!important;
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:9px!important;
+    font-size:.72rem!important;
+    white-space:nowrap!important;
+  }
+
+  #ordersTab #fullOrdersTableBody .app-order-actions .btn-action i,
+  #ordersTab #fullOrdersTableBody .app-order-actions .btn-custom i{
+    margin:0!important;
+  }
+
+  /* Keep the dashboard master card and the full Orders card visually identical. */
+  #recentOrdersTableBody .app-order-card .app-order-actions{
+    flex-wrap:nowrap!important;
+    justify-content:center!important;
+    overflow:visible!important;
+  }
+
+  @media(max-width:1000px){
+    #ordersTab #fullOrdersTableBody .app-order-card{
+      grid-template-columns:60px minmax(130px,1.05fr) minmax(145px,1.15fr) minmax(105px,.8fr) minmax(105px,.8fr) minmax(120px,.9fr) minmax(145px,1fr)!important;
+    }
+
+    #ordersTab #fullOrdersTableBody .app-platform-icon{
+      width:46px!important;height:46px!important;font-size:1.45rem!important;
+    }
+
+    #ordersTab #fullOrdersTableBody .app-order-card td{padding:8px 6px!important}
+    #ordersTab #fullOrdersTableBody .app-order-number{font-size:.84rem!important}
+    #ordersTab #fullOrdersTableBody .app-card-customer strong{font-size:.71rem!important}
+    #ordersTab #fullOrdersTableBody .app-card-metric>strong{font-size:.82rem!important}
+    #ordersTab #fullOrdersTableBody .app-card-price .order-price-stack strong{font-size:1.12rem!important}
+    #ordersTab #fullOrdersTableBody .app-card-status .platform-status-badge{font-size:.62rem!important;min-height:46px!important}
+    #ordersTab #fullOrdersTableBody .app-order-actions{gap:5px!important}
+    #ordersTab #fullOrdersTableBody .app-order-actions .btn-action,
+    #ordersTab #fullOrdersTableBody .app-order-actions .btn-custom{
+      flex-basis:34px!important;width:34px!important;min-width:34px!important;max-width:34px!important;height:34px!important;min-height:34px!important;
+    }
+  }
+}
