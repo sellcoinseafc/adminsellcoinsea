@@ -2014,136 +2014,63 @@ function buildPaymentDetailsHTML() {
     const method =
         getSelectedPaymentCode();
 
+    const row = (label, value) => `
+        <div class="payment-review-row">
+            <div class="payment-review-label">${escapeHtml(label)}</div>
+            <div class="review-value-box"><span>${escapeHtml(value || "--")}</span></div>
+        </div>
+    `;
+
     if (method === "bank") {
-
-        const bank =
-            $("bankNameSelect")?.value || "";
-
-        const fullName =
-            $("accountName")?.value?.trim() || "";
-
+        const bank = $("bankNameSelect")?.value || "";
+        const fullName = $("accountName")?.value?.trim() || "";
         const iban = $("iban")?.value?.trim() || "";
-
-        return `
-            <div class="field-label">
-                طريقة التحويل:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    تحويل بنكي — ${escapeHtml(bank)}
-                </span>
-            </div>
-
-            <div class="field-label">
-                الاسم الثلاثي:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    ${escapeHtml(fullName)}
-                </span>
-            </div>
-
-            <div class="field-label">
-                الآيبان:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    ${escapeHtml(iban)}
-                </span>
-            </div>
-
-                    `;
+        return [
+            row("طريقة التحويل", "تحويل بنكي"),
+            row("اسم البنك", bank),
+            row("اسم صاحب الحساب", fullName),
+            row("IBAN", iban)
+        ].join("");
     }
 
     if (method === "wallet") {
-
-        const wallet =
-            $("walletTypeSelect")?.value || "";
-
-        const phone =
-            $("walletNumber")?.value?.trim() || "";
-
-        return `
-            <div class="field-label">
-                طريقة التحويل:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    ${escapeHtml(wallet)}
-                    (${escapeHtml(phone)})
-                </span>
-            </div>
-        `;
+        const wallet = $("walletTypeSelect")?.value || "";
+        const phone = $("walletNumber")?.value?.trim() || "";
+        return [
+            row("طريقة التحويل", wallet),
+            row("رقم المحفظة", phone)
+        ].join("");
     }
 
     if (method === "usd") {
-
-        const wallet =
-            $("usdDetails")?.value?.trim() || "";
-
-        return `
-            <div class="field-label">
-                طريقة التحويل:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    USDT (TRC20): ${escapeHtml(wallet)}
-                </span>
-            </div>
-        `;
+        const wallet = $("usdDetails")?.value?.trim() || "";
+        return [
+            row("طريقة التحويل", "USDT (TRC20)"),
+            row("تفاصيل المحفظة", wallet)
+        ].join("");
     }
 
     if (method === "paypal") {
-
-        const email =
-            $("paypalEmail")?.value?.trim() || "";
-
-        return `
-            <div class="field-label">
-                طريقة التحويل:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    PayPal: ${escapeHtml(email)}
-                </span>
-            </div>
-        `;
+        const email = $("paypalEmail")?.value?.trim() || "";
+        return [
+            row("طريقة التحويل", "PayPal"),
+            row("البريد الإلكتروني", email)
+        ].join("");
     }
 
     if (method === "western") {
-
-        const name =
-            $("wuName")?.value?.trim() || "";
-
-        const country =
-            $("wuCountry")?.value?.trim() || "";
-
-        return `
-            <div class="field-label">
-                طريقة التحويل:
-            </div>
-
-            <div class="review-value-box">
-                <span>
-                    Western Union
-                    (${escapeHtml(name)} -
-                    ${escapeHtml(country)})
-                </span>
-            </div>
-        `;
+        const name = $("wuName")?.value?.trim() || "";
+        const country = $("wuCountry")?.value?.trim() || "";
+        return [
+            row("طريقة التحويل", "Western Union"),
+            row("الاسم", name),
+            row("الدولة", country)
+        ].join("");
     }
 
     return "";
 }
 
-
-// ==========================================================================
 // 23. تحديث منصة المراجعة
 // ==========================================================================
 
