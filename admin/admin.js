@@ -3653,12 +3653,38 @@ window.renderClientsTable =
 
     tbody.innerHTML = clientsList.map((client) => `
       <tr class="client-row">
-        <td data-label="العميل"><strong>${escapeHtml(client.name)}</strong></td>
-        <td data-label="الجوال"><span class="phone-value" dir="ltr">${escapeHtml(client.phone)}</span></td>
-        <td data-label="عدد الطلبات"><span class="badge badge-new">${client.orderCount} طلبات</span></td>
-        <td data-label="إجمالي الكمية"><strong>${formatCoinsNumber(client.totalCoins)}</strong></td>
-        <td data-label="إجمالي المبلغ"><strong class="recent-price table-large-value">${client.totalMoneySar.toLocaleString("en-US",{maximumFractionDigits:2})} ريال</strong></td>
-        <td data-label="الإجراء"><button class="btn-action client-history-btn" onclick="openClientModal('${encodeURIComponent(client.phone)}')">سجل الطلبات</button></td>
+        <td data-label="العميل" class="client-field-cell client-name-cell">
+          <div class="client-field-box client-name-box">
+            <strong class="client-field-value">${escapeHtml(client.name)}</strong>
+          </div>
+        </td>
+        <td data-label="الجوال" class="client-field-cell">
+          <div class="client-field-box">
+            <span class="client-field-label">الجوال</span>
+            <strong class="client-field-value phone-value" dir="ltr">${escapeHtml(client.phone)}</strong>
+          </div>
+        </td>
+        <td data-label="عدد الطلبات" class="client-field-cell client-count-cell">
+          <div class="client-field-box client-count-box">
+            <span class="client-field-label">عدد الطلبات</span>
+            <strong class="client-field-value client-count-value"><i class="fa-solid fa-receipt" aria-hidden="true"></i> ${client.orderCount} طلبات</strong>
+          </div>
+        </td>
+        <td data-label="إجمالي الكمية" class="client-field-cell">
+          <div class="client-field-box">
+            <span class="client-field-label">إجمالي الكمية</span>
+            <strong class="client-field-value client-quantity-value">${formatCoinsNumber(client.totalCoins)}</strong>
+          </div>
+        </td>
+        <td data-label="إجمالي المبلغ" class="client-field-cell">
+          <div class="client-field-box">
+            <span class="client-field-label">إجمالي المبلغ</span>
+            <strong class="client-field-value client-amount-value">${client.totalMoneySar.toLocaleString("en-US",{maximumFractionDigits:2})} ريال</strong>
+          </div>
+        </td>
+        <td data-label="الإجراء" class="client-action-cell">
+          <button class="btn-action client-history-btn" onclick="openClientModal('${encodeURIComponent(client.phone)}')">سجل الطلبات</button>
+        </td>
       </tr>
     `).join("");
   };
