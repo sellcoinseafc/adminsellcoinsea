@@ -2962,6 +2962,16 @@ async function submitOrderFinal() {
         return;
     }
 
+    if (!selectedPlatform) {
+        document.querySelector(".platforms-flex")?.scrollIntoView({ behavior: "smooth", block: "center" });
+        showToast(currentLanguage === "ar" ? "اختر المنصة أولًا." : "Choose a platform first.");
+        return;
+    }
+
+    if (currentQty < minLimit || (maxLimit > 0 && currentQty > maxLimit)) {
+        markInvalid($("quantityInput"), "أدخل كمية ضمن الحدود المسموحة.");
+        return;
+    }
 
     if (isEditingAll) {
         toggleEditMode();
