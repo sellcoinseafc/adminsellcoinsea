@@ -88,6 +88,8 @@ const DEFAULT_STATUS_MESSAGES = {
   finished: "مرحبًا {customerName}، تم الانتهاء من سحب الكوين من حسابك.",
   pending_transfer: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   completed: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
+  // Legacy transferred records use the same final-state message.
+  transferred: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}.",
   archived: "مرحبًا {customerName}، أصبحت حالة طلبك: {status}."
 };
 
@@ -2166,7 +2168,7 @@ function sortOrdersByPriority() {
     review: 3,
     finished: 4,
     pending_transfer: 5,
-    transferred: 6,
+    transferred: 7,
     completed: 7,
     archived: 8
   };
@@ -2552,7 +2554,12 @@ window.renderOrdersTables = function () {
   let filteredData = ordersData;
 
   if (filter !== "all") {
-    filteredData = ordersData.filter((order) => order.status === filter);
+    filteredData = ordersData.filter((order) => {
+      if (filter === "completed") {
+        return order.status === "completed" || order.status === "transferred";
+      }
+      return order.status === filter;
+    });
   }
 
   if (activeSearchQuery) {
