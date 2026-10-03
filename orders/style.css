@@ -2132,3 +2132,79 @@ html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-e
   #step4SuccessScreen .invoice-quantity-value i,
   #step4SuccessScreen .invoice-price-value i{font-size:18px!important}
 }
+
+
+/* FINAL REVIEW DETAILS — one row per item: platform, quantity, price */
+#step3ReviewScreen #revPlatformBoxTheme.review-order-details-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:10px!important;
+  min-height:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#step3ReviewScreen .review-order-detail-row{
+  width:100%!important;
+  min-height:72px!important;
+  box-sizing:border-box!important;
+  border:1px solid var(--line)!important;
+  border-radius:18px!important;
+  background:var(--card)!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:12px!important;
+  padding:12px 18px!important;
+  text-align:center!important;
+}
+#step3ReviewScreen .review-order-detail-row>i{
+  width:38px!important;
+  height:38px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 38px!important;
+  border-radius:12px!important;
+  background:rgba(255,255,255,.06)!important;
+  color:#fff!important;
+  font-size:21px!important;
+}
+#step3ReviewScreen .review-order-detail-row>span{
+  color:#aab9c3!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
+#step3ReviewScreen .review-order-detail-row>strong{
+  color:#fff!important;
+  font-size:20px!important;
+  font-weight:900!important;
+  line-height:1.1!important;
+}
+#step3ReviewScreen .review-platform-row{
+  justify-content:center!important;
+}
+#step3ReviewScreen .review-platform-row>strong{
+  font-size:18px!important;
+}
+#step3ReviewScreen .review-platform-row.ps-theme>i,
+#step3ReviewScreen .review-platform-row.xbox-theme>i{
+  color:#fff!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(2)>i,
+#step3ReviewScreen .review-order-detail-row:nth-child(3)>i{
+  color:#fff!important;
+}
+@media(max-width:767px){
+  #step3ReviewScreen #revPlatformBoxTheme.review-order-details-grid{
+    grid-template-columns:1fr!important;
+  }
+  #step3ReviewScreen .review-order-detail-row{
+    min-height:68px!important;
+    padding:11px 14px!important;
+  }
+  #step3ReviewScreen .review-order-detail-row>strong{
+    font-size:18px!important;
+  }
+}
