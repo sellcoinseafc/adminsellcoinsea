@@ -25,7 +25,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .orders-page{min-height:100vh;background:var(--page)}
 .site-header{height:70px;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px max(18px,calc((100vw - 1180px)/2));gap:14px}
 .brand-home-link{border:0;background:transparent;color:#fff;display:flex;align-items:center;gap:10px;padding:0;text-align:right}
-.brand-mark{width:38px;height:38px;border-radius:12px;background:#fff;color:#1f2937;display:grid;place-items:center;font-size:18px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#fff;color:#1f2937;display:grid;place-items:center;font-size:18px}.brand-logo-image{width:58px;height:40px;object-fit:contain;display:block;border-radius:8px}
 .brand-name{display:flex;flex-direction:column;line-height:1.05}
 .brand-name span{font-size:13px;font-weight:800}
 .brand-name b{font-size:9px;letter-spacing:1.4px;opacity:.65;direction:ltr;text-align:right}
@@ -312,7 +312,7 @@ html[data-theme="dark"] .review-detail{background:#0a1421;border-color:#2a3b50}
 html[data-theme="dark"] .review-value-box{background:#07101b;border-color:#33475f;color:#f4f7fb}
 html[data-theme="dark"] .code-display-row{background:#07101b;border-color:#3a506a;color:#fff}
 html[data-theme="dark"] .payment-review-row .payment-review-label{background:#0a1421;border-color:#33475f}
-html[data-theme="dark"] .reference-card{background:#0d1a15;border-color:color-mix(in srgb,var(--platform-accent) 45%,#263247)}
+html[data-theme="dark"] .reference-card{background:var(--platform-accent);border-color:var(--platform-accent);color:#fff}.reference-card span,.reference-card strong{color:#fff}
 html[data-theme="dark"] .success-icon{background:rgba(0,200,107,.14);color:var(--accent)}
 html[data-theme="dark"] .closed-icon{background:var(--platform-soft);color:var(--platform-accent)}
 html[data-theme="dark"] .success-payment-card{background:#0a1421;border-color:#2a3b50}
@@ -328,3 +328,5 @@ html[data-theme="dark"] .review-main-box i,html[data-theme="dark"] .invoice-box>
 .orders-page[data-platform="Xbox"] #orderReferenceCard{--platform-accent:#107c10;--platform-soft:rgba(16,124,16,.30)}
 .orders-page[data-platform="PC"] #orderReferenceCard{--platform-accent:#d2232d;--platform-soft:rgba(210,35,45,.30)}
 html[data-theme="dark"] .reference-card{color:#fff}
+
+@media(max-width:430px){.brand-logo-image{width:58px;height:38px}.reference-card{min-height:82px}.reference-card strong{font-size:18px}.reference-card span{font-size:9px}}
