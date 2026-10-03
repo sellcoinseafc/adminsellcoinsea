@@ -56,9 +56,8 @@ const STATUS_MESSAGES = {
   review: "بانتظار المراجعة",
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوين من حسابك",
-  pending_transfer: "بانتظار التحويل",
-  transferred: "تم التحويل لحسابك",
-  completed: "مكتمل"
+  pending_transfer: "قيد التحويل",
+  completed: "تم التحويل — مكتمل"
 };
 
 const ARABIC_STATUS_MAP = {
