@@ -1927,7 +1927,7 @@ function validateAccountStep1() {
     if (!/^\S+@\S+\.\S+$/.test(String(email.value).trim())) { markInvalid(email,"أدخل بريدًا إلكترونيًا صحيحًا."); return false; }
     if (!/[A-Z]/.test(password.value)) { markInvalid(password,"يجب أن تحتوي كلمة المرور على حرف إنجليزي كبير واحد على الأقل."); return false; }
     const codes=[code1.value.trim(),code2.value.trim(),code3.value.trim()];
-    const codePattern=/^(?:[0-9]\.[0-9]{8}|[0-9]{8}|[0-9]{6})$/;
+    const codePattern=/^[0-9]{8,10}$/;
     const bad=[code1,code2,code3].find(x=>!codePattern.test(String(x?.value||"").trim()));
     if(bad){markInvalid(bad,"الكود يجب أن يحتوي على 8 إلى 10 أرقام إنجليزية فقط.");return false;}
     if(new Set(codes).size!==3){markInvalid(code3,"يجب أن تكون الأكواد الثلاثة مختلفة.");return false;}
