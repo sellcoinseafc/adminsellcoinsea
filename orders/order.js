@@ -3791,28 +3791,14 @@ document.addEventListener("DOMContentLoaded", () => {
     setupSecretInput($("eaPass"));
     setupSecretInput($("editEaPass"));
 
-    // تنظيف أكواد EA فور الكتابة: أرقام إنجليزية فقط، ونقطة واحدة
-    // مسموحة فقط بعد أول رقم. المسافات والرموز غير المسموحة تزال فورًا.
+    // أكواد EA: أرقام إنجليزية فقط، من 8 إلى 10 أرقام.
     const setupBackupCodeInput = (input) => {
         if (!input) return;
         input.addEventListener("input", () => {
-            let value = String(input.value || "")
+            input.value = String(input.value || "")
                 .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
-                .replace(/\s+/g, "")
-                .replace(/[^0-9.]/g, "");
-
-            const dotIndex = value.indexOf(".");
-            if (dotIndex >= 0) {
-                value =
-                    value.charAt(0).replace(/[^0-9]/g, "") +
-                    "." +
-                    value.slice(dotIndex + 1).replace(/\./g, "");
-                if (!/^[0-9]\./.test(value)) {
-                    value = value.replace(/\./g, "");
-                }
-            }
-
-            input.value = value.slice(0, 10);
+                .replace(/[^0-9]/g, "")
+                .slice(0, 10);
         });
     };
     setupBackupCodeInput($("code1"));
