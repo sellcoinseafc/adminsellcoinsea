@@ -1256,3 +1256,487 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   .topbar-page-title-hidden{display:none!important}
   .sidebar-overlay.is-visible{z-index:2999!important}
 }
+
+
+/* ==========================================================================
+   FINAL RESPONSIVE UI PASS — Orders / Customers / Inventory / Pricing / Settings
+   ========================================================================== */
+
+/* Pricing: platform controls are always one per row; numeric content is centered
+   and uses one consistent readable size across desktop, tablet and mobile. */
+.pricing-shared-panel .platform-toggle-grid{
+  grid-template-columns:1fr!important;
+}
+.pricing-platform-panel .field{
+  text-align:center;
+}
+.pricing-platform-panel .field label{
+  display:block;
+  text-align:center;
+  margin-bottom:7px;
+  font-weight:800;
+}
+.pricing-platform-panel .store-setting-field{
+  text-align:center!important;
+  font-size:1.08rem!important;
+  line-height:1.4!important;
+  font-weight:800!important;
+  min-height:50px;
+  font-variant-numeric:tabular-nums;
+}
+.pricing-platform-panel .two{
+  gap:12px;
+}
+.pricing-platform-panel .platform-toggle-card{
+  min-height:68px;
+}
+.pricing-platform-panel .platform-toggle-card>div{
+  min-width:0;
+}
+.pricing-platform-panel .platform-toggle-card small{
+  line-height:1.55;
+}
+.pricing-platform-panel .platform-enable-toggle{
+  flex:0 0 auto;
+}
+
+/* Inventory movement: PS/Xbox first row, PC second row on every viewport. */
+.inventory-movement-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:12px!important;
+}
+.inventory-movement-card{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(150px,1fr) minmax(120px,1fr) minmax(120px,1fr);
+  align-items:center;
+  gap:14px;
+  padding:16px 18px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel);
+}
+.inventory-movement-card>div{
+  min-width:0;
+}
+.inventory-movement-card>div:first-child{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:900;
+}
+.inventory-movement-card>div:not(:first-child){
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.inventory-movement-card>div span{
+  color:var(--muted);
+  font-size:.76rem;
+}
+.inventory-movement-card>div strong{
+  color:var(--text);
+  font-size:1.05rem;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Customer directory — desktop/tablet is a clean table, with proper field cards. */
+.customer-list-panel{overflow:hidden}
+.customer-table-wrap{width:100%;overflow:auto}
+.customer-table-wrap table{min-width:820px}
+.client-field-box{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.client-field-label{
+  display:none;
+  color:var(--muted);
+  font-size:.68rem;
+  font-weight:700;
+}
+.client-field-value{
+  color:var(--text);
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.client-name-box{gap:8px}
+.client-avatar{
+  width:30px;
+  height:30px;
+  display:inline-grid;
+  place-items:center;
+  flex:0 0 30px;
+  border-radius:9px;
+  background:var(--primary-soft);
+  color:var(--primary-strong);
+  border:1px solid var(--line);
+}
+.client-count-value{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.client-count-value i{color:var(--primary-strong)}
+.client-quantity-value,
+.client-amount-value{
+  font-variant-numeric:tabular-nums;
+}
+.client-action-cell{text-align:left}
+.client-history-btn{
+  white-space:nowrap;
+  min-height:36px;
+}
+
+/* Order / withdrawal / transfer / review / audit tables: readable on desktop. */
+.app-order-card td,
+.customer-table-wrap td,
+.stats-audit-panel td{
+  color:var(--text);
+}
+.app-order-card .app-order-number,
+.app-order-card .app-card-customer strong,
+.app-order-card .app-card-metric>strong{
+  color:var(--text);
+}
+.app-order-card .app-reference-line,
+.app-order-card .app-card-date,
+.app-order-card .app-card-customer span,
+.app-order-card .app-card-metric>span{
+  color:var(--muted);
+}
+.app-platform-icon{
+  background:var(--panel2);
+  border-color:var(--line);
+}
+
+/* Settings messages: never use the light card treatment while dark mode is active. */
+.status-message-card{
+  background:var(--panel)!important;
+  border-color:var(--line)!important;
+  color:var(--text);
+}
+.status-message-card h4{color:var(--text)}
+.status-message-input{
+  background:var(--input)!important;
+  color:var(--text)!important;
+  border-color:var(--line)!important;
+}
+.status-message-tokens{color:var(--muted)!important}
+
+/* Header: reserve a clean row for logo/menu and a full-width search row on small
+   screens so the logo can never sit underneath the search field. */
+@media (max-width:900px){
+  .topbar{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "left right"
+      "search search";
+    align-items:center;
+    gap:9px 10px;
+    flex-wrap:nowrap!important;
+    min-height:112px;
+  }
+  .topbar-right{
+    grid-area:right;
+    min-width:0!important;
+    display:flex!important;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+  }
+  .topbar-left{
+    grid-area:left;
+    min-width:0!important;
+    display:contents!important;
+  }
+  .global-search{
+    grid-area:search;
+    width:100%!important;
+    min-width:0!important;
+    order:initial!important;
+  }
+  .topbar-brand-logo{
+    width:150px!important;
+    height:56px!important;
+  }
+  .breadcrumb{
+    margin-top:4px!important;
+  }
+}
+
+/* Mobile/tablet tables become proper cards instead of forcing a 900px horizontal
+   table into a narrow viewport. This is deliberately limited to data tables. */
+@media (max-width:600px){
+  .table-wrap,
+  .mobile-order-table-wrap,
+  .customer-table-wrap{
+    overflow:visible!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  .table-wrap table,
+  .mobile-order-table-wrap table,
+  .customer-table-wrap table{
+    width:100%!important;
+    min-width:0!important;
+    border-collapse:separate!important;
+    border-spacing:0!important;
+    table-layout:fixed!important;
+  }
+  .table-wrap thead,
+  .mobile-order-table-wrap thead,
+  .customer-table-wrap thead{
+    display:none!important;
+  }
+  .table-wrap tbody,
+  .mobile-order-table-wrap tbody,
+  .customer-table-wrap tbody{
+    display:grid!important;
+    gap:10px;
+  }
+  .table-wrap tbody tr,
+  .mobile-order-table-wrap tbody tr,
+  .customer-table-wrap tbody tr{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    padding:9px;
+    border:1px solid var(--line)!important;
+    border-radius:16px;
+    background:var(--panel)!important;
+    box-shadow:0 5px 18px rgba(0,0,0,.10);
+    overflow:hidden;
+  }
+  .table-wrap tbody tr.empty-row,
+  .table-wrap tbody tr .empty,
+  .customer-table-wrap tbody tr:has(td.empty-row){
+    display:block!important;
+  }
+  .table-wrap tbody td,
+  .mobile-order-table-wrap tbody td,
+  .customer-table-wrap tbody td{
+    display:grid!important;
+    grid-template-columns:minmax(66px,auto) minmax(0,1fr);
+    align-items:center;
+    gap:7px;
+    width:auto!important;
+    min-width:0!important;
+    padding:10px 8px!important;
+    border:0!important;
+    border-bottom:1px solid var(--line)!important;
+    background:transparent!important;
+    color:var(--text)!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+  }
+  .table-wrap tbody td:last-child,
+  .mobile-order-table-wrap tbody td:last-child,
+  .customer-table-wrap tbody td:last-child{
+    border-bottom:0!important;
+  }
+  .table-wrap tbody td::before,
+  .mobile-order-table-wrap tbody td::before,
+  .customer-table-wrap tbody td::before{
+    content:attr(data-label);
+    display:block!important;
+    color:var(--muted)!important;
+    font-size:.66rem!important;
+    font-weight:700!important;
+    line-height:1.35;
+  }
+  .table-wrap tbody td[colspan],
+  .mobile-order-table-wrap tbody td[colspan]{
+    display:block!important;
+    grid-column:1 / -1;
+    text-align:center!important;
+    color:var(--muted)!important;
+  }
+  .table-wrap tbody td[colspan]::before,
+  .mobile-order-table-wrap tbody td[colspan]::before{
+    display:none!important;
+  }
+
+  /* Order cards */
+  .app-order-card{
+    grid-template-columns:1fr 1fr!important;
+    padding:7px!important;
+    background:var(--panel)!important;
+  }
+  .app-order-card .app-card-platform{
+    grid-column:1 / -1;
+    display:flex!important;
+    justify-content:flex-start;
+    align-items:center;
+  }
+  .app-order-card .app-card-platform::before{
+    display:none!important;
+  }
+  .app-order-card .app-card-identity,
+  .app-order-card .app-card-customer,
+  .app-order-card .app-card-quantity,
+  .app-order-card .app-card-price-cell,
+  .app-order-card .app-card-status{
+    min-width:0!important;
+  }
+  .app-order-card .app-card-actions{
+    grid-column:1 / -1;
+    min-width:0!important;
+    display:flex!important;
+    justify-content:flex-start;
+  }
+  .app-order-card .app-order-number,
+  .app-order-card .app-card-customer strong,
+  .app-order-card .app-card-metric>strong{
+    color:var(--text)!important;
+  }
+  .app-order-card .app-reference-line,
+  .app-order-card .app-card-date,
+  .app-order-card .app-card-customer span,
+  .app-order-card .app-card-metric>span{
+    color:var(--muted)!important;
+  }
+  .app-order-card .app-platform-icon{
+    margin-inline-start:auto;
+    margin-inline-end:0;
+  }
+  .app-order-card .app-card-status{
+    grid-column:1 / -1;
+  }
+  .app-order-card .app-card-status .badge{
+    justify-self:start;
+  }
+  .app-order-card .app-order-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  /* Customer cards */
+  .customer-table-wrap tbody tr.client-row{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .customer-table-wrap .client-name-cell{
+    grid-column:1 / -1;
+  }
+  .customer-table-wrap .client-action-cell{
+    grid-column:1 / -1;
+    padding-top:12px!important;
+  }
+  .customer-table-wrap .client-field-box{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    min-width:0;
+  }
+  .customer-table-wrap .client-field-label{
+    display:block;
+    flex:0 0 auto;
+  }
+  .customer-table-wrap .client-field-value{
+    font-size:.78rem;
+    min-width:0;
+  }
+  .customer-table-wrap .client-action-cell .client-history-btn{
+    width:100%;
+  }
+
+  /* Audit / reviews / purge rows are cards as well. */
+  .stats-audit-panel .table-wrap tbody tr,
+  #reviewsTab .table-wrap tbody tr,
+  #purgeTab .table-wrap tbody tr{
+    grid-template-columns:1fr!important;
+  }
+
+  /* Inventory movement: first card PS/Xbox, second card PC. */
+  .inventory-movement-card{
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    padding:14px;
+  }
+  .inventory-movement-card>div:first-child{
+    grid-column:1 / -1;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  .inventory-movement-card>div:not(:first-child){
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+
+  /* Pricing controls */
+  .pricing-platform-panel .two{
+    grid-template-columns:1fr 1fr!important;
+  }
+  .pricing-platform-panel .store-setting-field{
+    font-size:1.02rem!important;
+    min-height:48px;
+  }
+  .pricing-platform-panel .platform-toggle-card{
+    width:100%;
+  }
+  .pricing-platform-panel .platform-toggle-card small{
+    max-width:190px;
+  }
+
+  /* Settings message cards */
+  .status-messages-grid{
+    grid-template-columns:1fr!important;
+  }
+  .status-message-card{
+    padding:13px!important;
+    border-radius:15px!important;
+  }
+  .status-message-input{
+    min-height:120px!important;
+    font-size:.84rem!important;
+  }
+
+  /* Detail modal */
+  .order-detail-shell{gap:9px!important}
+  .order-basic-grid,
+  .general-info-grid,
+  .transfer-detail-grid,
+  .secure-fields-grid{
+    grid-template-columns:1fr!important;
+  }
+  .order-basic-card,
+  .detail-info-card,
+  .quantity-card{
+    padding:12px!important;
+  }
+}
+
+/* Small phones: keep the header readable and avoid any horizontal page shift. */
+@media (max-width:430px){
+  .topbar{
+    min-height:108px!important;
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  .topbar-brand-logo{
+    width:132px!important;
+    height:50px!important;
+  }
+  .global-search{
+    min-height:46px!important;
+  }
+  .pricing-platform-panel .two{
+    grid-template-columns:1fr!important;
+  }
+  .inventory-movement-card{
+    grid-template-columns:1fr!important;
+  }
+  .inventory-movement-card>div:first-child{
+    grid-column:auto;
+  }
+  .table-wrap tbody td,
+  .mobile-order-table-wrap tbody td,
+  .customer-table-wrap tbody td{
+    grid-template-columns:62px minmax(0,1fr);
+    padding:9px 7px!important;
+  }
+}

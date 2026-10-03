@@ -6481,7 +6481,12 @@ function renderPlatformAvailabilityControls(config = {}) {
   };
 
   Object.entries(states).forEach(([platform, enabled]) => {
-    const key = platform === "PlayStation" ? "psEnabledToggle" : "xboxEnabledToggle";
+    const key =
+      platform === "PlayStation"
+        ? "psEnabledToggle"
+        : platform === "Xbox"
+          ? "xboxEnabledToggle"
+          : "pcEnabledToggle";
     const button = document.getElementById(key);
     if (!button) return;
 
