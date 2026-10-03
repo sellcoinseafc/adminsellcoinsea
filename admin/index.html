@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003-order-status-final">
+<link rel="stylesheet" href="style.css?v=20261003-dark-platform-fix">
 </head>
 <body>
 <div class="login-overlay active" id="loginOverlay"><div class="login-card-nextgen">
@@ -300,5 +300,5 @@
 <div class="modal-overlay" id="clientDetailModal"><div class="modal-card"><div class="modal-header"><h3 id="clientModalTitle">سجل العميل</h3><button class="modal-close-btn" onclick="closeClientModal()">×</button></div><div id="clientModalBody"></div></div></div>
 <div class="modal-overlay" id="purgeConfirmModal"><div class="modal-card confirm-modal"><div class="modal-header"><h3>تأكيد الإتلاف</h3><button class="modal-close-btn" onclick="closePurgeModal()">×</button></div><div class="confirm-body"><i class="fa-solid fa-skull-crossbones danger-icon"></i><p>سيتم إتلاف البيانات الحساسة نهائياً ولا يمكن استعادتها.</p><input type="hidden" id="purgeTargetOrderId"><div><button class="btn-secondary" onclick="closePurgeModal()">إلغاء</button><button class="btn-danger" onclick="confirmPurgeDataFinal()">إتلاف نهائي</button></div></div></div></div>
 <nav class="mobile-app-nav" id="mobileAppNav"><button class="mobile-app-nav-item active" data-tab="dashboardTab" onclick="switchTab('dashboardTab',this)"><i class="fa-solid fa-house"></i><span>الرئيسية</span></button><button class="mobile-app-nav-item" data-tab="ordersTab" onclick="switchTab('ordersTab',this)"><i class="fa-solid fa-box"></i><span>الطلبات</span><b id="mobileOrdersBadge">0</b></button><button class="mobile-app-nav-item" data-tab="customerProfileTab" onclick="switchTab('customerProfileTab',this)"><i class="fa-solid fa-users"></i><span>العملاء</span></button><button class="mobile-app-nav-item" data-tab="paymentsTab" onclick="switchTab('paymentsTab',this)"><i class="fa-solid fa-wallet"></i><span>الدفع</span></button><button class="mobile-app-nav-item" data-tab="settingsTab" onclick="switchTab('settingsTab',this)"><i class="fa-solid fa-bars"></i><span>المزيد</span></button></nav>
-<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003-order-status-final"></script>
+<script type="module" src="../shared/firebase.js"></script><script type="module" src="../shared/system.js"></script><script type="module" src="admin.js?v=20261003-dark-platform-fix"></script>
 </body></html>
