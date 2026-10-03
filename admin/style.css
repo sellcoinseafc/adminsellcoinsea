@@ -11850,3 +11850,267 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     font-size:.82rem!important;
   }
 }
+
+
+/* ==========================================================================
+   ORDER DETAIL — MASTER VISUAL PASS
+   ========================================================================== */
+#orderDetailModal .order-basic-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:9px!important;
+}
+
+#orderDetailModal .order-basic-card{
+  min-height:105px!important;
+  padding:14px 12px!important;
+  border-radius:15px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+}
+
+#orderDetailModal .order-basic-card>span{
+  margin-bottom:8px!important;
+  font-size:.72rem!important;
+  color:#8798ad!important;
+  line-height:1.1!important;
+}
+
+#orderDetailModal .order-basic-reference>strong{
+  color:#ffd21a!important;
+  font-size:1.22rem!important;
+  font-weight:950!important;
+  line-height:1.05!important;
+  letter-spacing:.2px!important;
+}
+
+#orderDetailModal .order-basic-reference-sub{
+  display:block!important;
+  margin-top:8px!important;
+  color:#00e676!important;
+  font-size:.78rem!important;
+  font-weight:900!important;
+  line-height:1!important;
+  direction:ltr!important;
+}
+
+#orderDetailModal .order-basic-quantity>strong{
+  color:#fff!important;
+  font-size:1.42rem!important;
+  font-weight:950!important;
+  line-height:1.05!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+#orderDetailModal .order-basic-price .order-price-stack{
+  width:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+}
+
+#orderDetailModal .order-basic-price .order-price-stack strong{
+  order:1!important;
+  color:#fff!important;
+  font-size:1.42rem!important;
+  font-weight:950!important;
+  line-height:1!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+#orderDetailModal .order-basic-price .order-price-stack small{
+  order:2!important;
+  color:#aebdce!important;
+  font-size:.68rem!important;
+  font-weight:800!important;
+  line-height:1!important;
+}
+
+#orderDetailModal .platform-detail-brand{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
+  min-width:0!important;
+}
+
+#orderDetailModal .platform-detail-brand i{
+  color:#fff!important;
+  font-size:2.35rem!important;
+  line-height:1!important;
+  filter:drop-shadow(0 0 7px rgba(255,255,255,.12))!important;
+}
+
+#orderDetailModal .platform-detail-brand strong{
+  color:#fff!important;
+  font-size:.76rem!important;
+  font-weight:900!important;
+}
+
+#orderDetailModal .modal-close-btn{
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border:1px solid rgba(0,230,118,.5)!important;
+  background:rgba(0,230,118,.09)!important;
+  color:#00e676!important;
+  border-radius:11px!important;
+  font-size:1.55rem!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+}
+
+#orderDetailModal .modal-header{
+  min-height:54px!important;
+  align-items:center!important;
+}
+
+#orderDetailModal .modal-header .eyebrow{
+  display:none!important;
+}
+
+/* Smaller, cleaner application header and date controls. */
+.topbar{
+  min-height:70px!important;
+  padding:10px 18px!important;
+}
+
+.topbar h1,
+#pageTitleHeading{
+  font-size:1.55rem!important;
+  line-height:1.05!important;
+}
+
+.topbar .topbar-right{
+  gap:10px!important;
+}
+
+.topbar-left{
+  gap:8px!important;
+}
+
+#liveDatetime{
+  gap:6px!important;
+}
+
+#liveDatetime .clock-stack{
+  gap:6px!important;
+  width:min(100%,290px)!important;
+}
+
+#liveDatetime .admin-date-box{
+  min-height:32px!important;
+  padding:5px 8px!important;
+  border-radius:9px!important;
+  font-size:.68rem!important;
+}
+
+/* Keep detail identity hierarchy consistent at tablet widths. */
+@media(min-width:601px) and (max-width:1100px){
+  #orderDetailModal .order-basic-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+  #orderDetailModal .order-basic-card{
+    min-height:96px!important;
+    padding:11px 8px!important;
+  }
+  #orderDetailModal .order-basic-reference>strong,
+  #orderDetailModal .order-basic-quantity>strong,
+  #orderDetailModal .order-basic-price .order-price-stack strong{
+    font-size:1.15rem!important;
+  }
+  #orderDetailModal .platform-detail-brand i{
+    font-size:2rem!important;
+  }
+}
+
+/* Mobile detail: compact cards, but preserve the same hierarchy. */
+@media(max-width:600px){
+  #orderDetailModal .order-basic-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  #orderDetailModal .order-basic-card{
+    min-height:88px!important;
+    padding:10px 8px!important;
+    border-radius:13px!important;
+  }
+
+  #orderDetailModal .order-basic-card>span{
+    margin-bottom:6px!important;
+    font-size:.66rem!important;
+  }
+
+  #orderDetailModal .order-basic-reference>strong{
+    font-size:1.02rem!important;
+  }
+
+  #orderDetailModal .order-basic-reference-sub{
+    margin-top:6px!important;
+    font-size:.68rem!important;
+  }
+
+  #orderDetailModal .order-basic-quantity>strong,
+  #orderDetailModal .order-basic-price .order-price-stack strong{
+    font-size:1.15rem!important;
+  }
+
+  #orderDetailModal .order-basic-price .order-price-stack{
+    gap:5px!important;
+  }
+
+  #orderDetailModal .order-basic-price .order-price-stack small{
+    font-size:.62rem!important;
+  }
+
+  #orderDetailModal .platform-detail-brand i{
+    font-size:1.9rem!important;
+  }
+
+  #orderDetailModal .platform-detail-brand strong{
+    font-size:.68rem!important;
+  }
+
+  .topbar{
+    min-height:60px!important;
+    padding:8px 12px!important;
+  }
+
+  .topbar h1,
+  #pageTitleHeading{
+    font-size:1.28rem!important;
+  }
+
+  #liveDatetime .clock-stack{
+    width:min(100%,270px)!important;
+    gap:4px!important;
+  }
+
+  #liveDatetime .admin-date-box{
+    min-height:30px!important;
+    padding:5px 6px!important;
+    font-size:.61rem!important;
+    border-radius:8px!important;
+  }
+
+  #orderDetailModal .modal-close-btn{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    font-size:1.4rem!important;
+  }
+}
