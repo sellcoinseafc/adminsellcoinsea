@@ -10564,3 +10564,373 @@ display:flex!important;align-items:center!important;justify-content:center!impor
   #reviewsTab .review-data-card td:nth-child(8){grid-area:status!important}
   #reviewsTab .review-data-card td:nth-child(9){grid-area:actions!important}
 }
+
+
+/* ==========================================================================
+   STEP 4 — DESKTOP + TABLET APP CARDS
+   Same visual language as the approved mobile blueprint.
+   Mobile overrides remain isolated below 600px.
+   ========================================================================== */
+@media(min-width:601px){
+
+  #ordersTab .table-wrap,
+  #withdrawTab .table-wrap,
+  #transferAlertsTab .table-wrap,
+  #dashboardTab .dashboard-orders .table-wrap,
+  #customerProfileTab .table-wrap,
+  #reviewsTab .table-wrap{
+    width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+  }
+
+  #ordersTab .table-wrap table,
+  #withdrawTab .table-wrap table,
+  #transferAlertsTab .table-wrap table,
+  #dashboardTab .dashboard-orders .table-wrap table,
+  #customerProfileTab .table-wrap table,
+  #reviewsTab .table-wrap table{
+    width:100%!important;
+    min-width:0!important;
+    border-collapse:separate!important;
+    border-spacing:0 10px!important;
+  }
+
+  #ordersTab .table-wrap thead,
+  #withdrawTab .table-wrap thead,
+  #transferAlertsTab .table-wrap thead,
+  #dashboardTab .dashboard-orders .table-wrap thead,
+  #customerProfileTab .table-wrap thead,
+  #reviewsTab .table-wrap thead{
+    display:none!important;
+  }
+
+  #ordersTab .table-wrap tbody,
+  #withdrawTab .table-wrap tbody,
+  #transferAlertsTab .table-wrap tbody,
+  #dashboardTab .dashboard-orders .table-wrap tbody,
+  #customerProfileTab .table-wrap tbody,
+  #reviewsTab .table-wrap tbody{
+    width:100%!important;
+  }
+
+  /* ----------------------------- Orders ----------------------------- */
+  #ordersTab .app-order-card,
+  #withdrawTab .app-order-card,
+  #transferAlertsTab .app-order-card,
+  #dashboardTab .dashboard-orders .app-order-card{
+    display:grid!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    grid-template-columns:72px minmax(150px,1.05fr) minmax(175px,1.25fr) minmax(120px,.85fr) minmax(110px,.78fr) minmax(125px,.85fr) minmax(155px,1fr)!important;
+    grid-template-areas:"platform identity customer quantity price status actions"!important;
+    align-items:center!important;
+    gap:0!important;
+    padding:7px!important;
+    margin:0!important;
+    min-height:92px!important;
+    overflow:hidden!important;
+    direction:ltr!important;
+    border-radius:19px!important;
+  }
+
+  #ordersTab .app-order-card td,
+  #withdrawTab .app-order-card td,
+  #transferAlertsTab .app-order-card td,
+  #dashboardTab .dashboard-orders .app-order-card td{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:10px 9px!important;
+    border:0!important;
+    direction:rtl!important;
+    overflow:hidden!important;
+    background:transparent!important;
+  }
+
+  #ordersTab .app-order-card td::before,
+  #withdrawTab .app-order-card td::before,
+  #transferAlertsTab .app-order-card td::before,
+  #dashboardTab .dashboard-orders .app-order-card td::before{
+    display:none!important;
+    content:none!important;
+  }
+
+  #ordersTab .app-card-platform,
+  #withdrawTab .app-card-platform,
+  #transferAlertsTab .app-card-platform,
+  #dashboardTab .dashboard-orders .app-card-platform{grid-area:platform!important}
+  #ordersTab .app-card-identity,
+  #withdrawTab .app-card-identity,
+  #transferAlertsTab .app-card-identity,
+  #dashboardTab .dashboard-orders .app-card-identity{grid-area:identity!important}
+  #ordersTab .app-card-customer,
+  #withdrawTab .app-card-customer,
+  #transferAlertsTab .app-card-customer,
+  #dashboardTab .dashboard-orders .app-card-customer{grid-area:customer!important}
+  #ordersTab .app-card-quantity,
+  #withdrawTab .app-card-quantity,
+  #transferAlertsTab .app-card-quantity,
+  #dashboardTab .dashboard-orders .app-card-quantity{grid-area:quantity!important}
+  #ordersTab .app-card-price-cell,
+  #withdrawTab .app-card-price-cell,
+  #transferAlertsTab .app-card-price-cell,
+  #dashboardTab .dashboard-orders .app-card-price-cell{grid-area:price!important}
+  #ordersTab .app-card-status,
+  #withdrawTab .app-card-status,
+  #transferAlertsTab .app-card-status,
+  #dashboardTab .dashboard-orders .app-card-status{grid-area:status!important}
+  #ordersTab .app-card-actions,
+  #withdrawTab .app-card-actions,
+  #transferAlertsTab .app-card-actions,
+  #dashboardTab .dashboard-orders .app-card-actions{grid-area:actions!important}
+
+  .app-platform-icon{
+    width:52px!important;
+    height:52px!important;
+    border-radius:14px!important;
+    font-size:1.6rem!important;
+    margin:auto!important;
+  }
+
+  .app-order-number{
+    font-size:.92rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-reference-line{
+    margin-top:4px!important;
+    font-size:.62rem!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+  }
+
+  .app-reference-line b{
+    font-size:.64rem!important;
+    font-family:monospace!important;
+  }
+
+  .app-card-date{
+    margin-top:5px!important;
+    font-size:.57rem!important;
+  }
+
+  .app-card-customer{
+    border-right:1px solid rgba(255,255,255,.07)!important;
+    border-left:1px solid rgba(255,255,255,.07)!important;
+  }
+
+  .app-card-customer strong{
+    font-size:.79rem!important;
+    font-weight:850!important;
+  }
+
+  .app-card-customer span{
+    margin-top:6px!important;
+    font-size:.65rem!important;
+  }
+
+  .app-card-metric>span{
+    font-size:.57rem!important;
+    margin-bottom:5px!important;
+  }
+
+  .app-card-metric>strong{
+    font-size:.91rem!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+  }
+
+  .app-card-price strong{
+    font-size:.79rem!important;
+  }
+
+  .app-card-status{
+    text-align:center!important;
+  }
+
+  .app-card-status .badge{
+    min-height:32px!important;
+    padding:6px 11px!important;
+    font-size:.61rem!important;
+    white-space:nowrap!important;
+    max-width:100%!important;
+  }
+
+  .app-card-actions{
+    border-right:1px solid rgba(255,255,255,.07)!important;
+  }
+
+  .app-order-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:5px!important;
+    flex-wrap:nowrap!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+
+  .app-order-actions .btn-action,
+  .app-order-actions .btn-custom{
+    min-width:31px!important;
+    min-height:32px!important;
+    padding:6px 8px!important;
+    border-radius:9px!important;
+    font-size:.61rem!important;
+    white-space:nowrap!important;
+  }
+
+  /* ----------------------------- Customers ----------------------------- */
+  #customerProfileTab .table-wrap tbody{
+    display:grid!important;
+    gap:10px!important;
+  }
+
+  #customerProfileTab .client-row{
+    display:grid!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    grid-template-columns:minmax(190px,1.25fr) minmax(155px,1fr) minmax(110px,.72fr) minmax(120px,.82fr) minmax(120px,.82fr) minmax(125px,.78fr)!important;
+    grid-template-areas:"name phone orders quantity amount action"!important;
+    align-items:center!important;
+    min-height:86px!important;
+    padding:5px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:18px!important;
+  }
+
+  #customerProfileTab .client-row td{
+    min-width:0!important;
+    width:auto!important;
+    box-sizing:border-box!important;
+    padding:10px 9px!important;
+    border:0!important;
+    overflow:hidden!important;
+  }
+
+  #customerProfileTab .client-row td::before{
+    display:none!important;
+    content:none!important;
+  }
+
+  #customerProfileTab .client-name-cell{grid-area:name!important}
+  #customerProfileTab .client-row td:nth-child(2){grid-area:phone!important}
+  #customerProfileTab .client-row td:nth-child(3){grid-area:orders!important}
+  #customerProfileTab .client-row td:nth-child(4){grid-area:quantity!important}
+  #customerProfileTab .client-row td:nth-child(5){grid-area:amount!important}
+  #customerProfileTab .client-row .client-action-cell{grid-area:action!important}
+
+  #customerProfileTab .client-name-box{
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+    min-width:0!important;
+  }
+
+  #customerProfileTab .client-name-box:before{
+    float:none!important;
+    flex:0 0 42px!important;
+    width:42px!important;
+    height:42px!important;
+    margin:0!important;
+  }
+
+  #customerProfileTab .client-field-label{
+    display:block!important;
+    font-size:.56rem!important;
+    margin-bottom:4px!important;
+  }
+
+  #customerProfileTab .client-field-value{
+    display:block!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:.74rem!important;
+  }
+
+  #customerProfileTab .client-history-btn{
+    width:100%!important;
+    min-height:34px!important;
+    font-size:.59rem!important;
+  }
+
+  /* ----------------------------- Reviews ----------------------------- */
+  #reviewsTab .table-wrap tbody{
+    display:grid!important;
+    gap:10px!important;
+  }
+
+  #reviewsTab .review-data-card{
+    display:grid!important;
+    width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    grid-template-columns:minmax(150px,1.05fr) minmax(125px,.85fr) minmax(100px,.7fr) minmax(100px,.7fr) minmax(210px,1.35fr) minmax(100px,.65fr) minmax(120px,.75fr)!important;
+    grid-template-areas:"customer reference platform quantity rating status actions"!important;
+    align-items:center!important;
+    min-height:82px!important;
+    padding:5px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:18px!important;
+  }
+
+  #reviewsTab .review-data-card td{
+    min-width:0!important;
+    width:auto!important;
+    box-sizing:border-box!important;
+    padding:9px!important;
+    border:0!important;
+    overflow:hidden!important;
+  }
+
+  #reviewsTab .review-data-card td::before{
+    display:none!important;
+    content:none!important;
+  }
+
+  #reviewsTab .review-data-card td:nth-child(1){grid-area:customer!important}
+  #reviewsTab .review-data-card td:nth-child(2){grid-area:reference!important}
+  #reviewsTab .review-data-card td:nth-child(3){grid-area:platform!important}
+  #reviewsTab .review-data-card td:nth-child(4){grid-area:quantity!important}
+  #reviewsTab .review-data-card td:nth-child(5){grid-area:rating!important}
+  #reviewsTab .review-data-card td:nth-child(6){grid-area:rating!important}
+  #reviewsTab .review-data-card td:nth-child(7){grid-area:customer!important}
+  #reviewsTab .review-data-card td:nth-child(8){grid-area:status!important}
+  #reviewsTab .review-data-card td:nth-child(9){grid-area:actions!important}
+
+  #reviewsTab .review-data-card .badge{
+    font-size:.57rem!important;
+    padding:6px 9px!important;
+  }
+
+  /* Tablet: same card, fewer columns so nothing gets squeezed. */
+  @media(max-width:1000px){
+    #ordersTab .app-order-card,
+    #withdrawTab .app-order-card,
+    #transferAlertsTab .app-order-card,
+    #dashboardTab .dashboard-orders .app-order-card{
+      grid-template-columns:62px minmax(125px,1fr) minmax(145px,1.15fr) minmax(105px,.82fr) minmax(95px,.72fr) minmax(110px,.78fr) minmax(125px,.9fr)!important;
+    }
+    .app-platform-icon{width:46px!important;height:46px!important;font-size:1.45rem!important}
+    .app-order-card td{padding:8px 6px!important}
+    .app-order-number{font-size:.84rem!important}
+    .app-card-customer strong{font-size:.71rem!important}
+    .app-card-metric>strong{font-size:.82rem!important}
+    .app-card-status .badge{font-size:.55rem!important;padding:5px 8px!important}
+    .app-order-actions .btn-action,.app-order-actions .btn-custom{padding:5px 6px!important;font-size:.56rem!important}
+    #customerProfileTab .client-row{
+      grid-template-columns:minmax(155px,1.15fr) minmax(135px,1fr) minmax(90px,.72fr) minmax(100px,.78fr) minmax(105px,.78fr) minmax(105px,.72fr)!important;
+    }
+  }
+}
