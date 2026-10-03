@@ -143,6 +143,12 @@ export const defaultSettings = {
     psRate:
         200,
 
+    psEnabled:
+        true,
+
+    xboxEnabled:
+        true,
+
     psMin:
         100000,
 
