@@ -2601,6 +2601,11 @@ window.renderOrdersTables = function () {
     });
   }
 
+  const resultCount = document.getElementById("ordersResultCount");
+  if (resultCount) {
+    resultCount.textContent = `${filteredData.length} ${filteredData.length === 1 ? "طلب" : "طلبات}`;
+  }
+
   tbody.innerHTML = filteredData.length
     ? filteredData.map((order) => renderOrderCardRow(order, "standard")).join("")
     : '<tr><td colspan="10" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>';
