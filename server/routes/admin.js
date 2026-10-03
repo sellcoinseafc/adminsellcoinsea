@@ -1994,6 +1994,9 @@ router.post(
           if (Object.prototype.hasOwnProperty.call(input, "xboxEnabled")) {
             patch.xboxEnabled = input.xboxEnabled !== false;
           }
+          if (Object.prototype.hasOwnProperty.call(input, "pcEnabled")) {
+            patch.pcEnabled = input.pcEnabled !== false;
+          }
           if (Object.prototype.hasOwnProperty.call(input, "offers")) {
             patch.offers = Boolean(input.offers);
           }
