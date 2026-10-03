@@ -181,7 +181,7 @@ export const ORDER_STATUSES = Object.freeze({
     NEW: "طلب جديد",
 
     PENDING_REVIEW:
-        "طلب بانتظار المراجعة",
+        "بانتظار المراجعة",
 
     WITHDRAWING:
         "جاري سحب الكوينز من حسابك",
@@ -190,10 +190,13 @@ export const ORDER_STATUSES = Object.freeze({
         "تم الانتهاء من سحب الكوينز من حسابك",
 
     PENDING_TRANSFER:
-        "بانتظار التحويل",
+        "قيد التحويل",
+
+    TRANSFERRED:
+        "تم التحويل لحسابك",
 
     COMPLETED:
-        "تم التحويل — مكتمل"
+        "تم التنفيذ"
 });
 
 export const ORDER_STATUS_CODES = Object.freeze({
@@ -202,6 +205,7 @@ export const ORDER_STATUS_CODES = Object.freeze({
     WITHDRAWING: "progress",
     WITHDRAWN: "finished",
     PENDING_TRANSFER: "pending_transfer",
+    TRANSFERRED: "transferred",
     COMPLETED: "completed"
 });
 
