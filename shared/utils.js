@@ -820,12 +820,3 @@ export default {
 };
 
 
-/** Canonical shared validation helpers. */
-export function isPositiveInteger(value) {
-    const n = Number(value);
-    return Number.isInteger(n) && n > 0;
-}
-
-export function normalizeOrderNumber(value) {
-    return String(value || "").trim().toUpperCase();
-}
