@@ -119,6 +119,8 @@ let reviewsData = [];
 let adminsData = [];
 let auditLogsData = [];
 let currentSettingsData = {};
+let catalogDefaultsMigrationInFlight = false;
+let catalogDefaultsMigrationDone = false;
 
 let activeSearchQuery = "";
 let activeReviewSearchQuery = "";
@@ -6326,15 +6328,6 @@ function initSystemSettingsListener() {
         "D360 Bank",
         "بنك الخليج الدولي"
       ];
-      const configuredBanks = Array.isArray(settings?.banks) ? settings.banks : [];
-      requiredBanks.forEach((bank) => {
-        if (!configuredBanks.includes(bank)) {
-          adminSettingsAction("add_bank", { value: bank }).catch((error) => {
-            console.error("Bank catalog migration error:", error?.message || error);
-          });
-        }
-      });
-
       const requiredWallets = [
         "STC Pay",
         "Barq",
@@ -6343,14 +6336,30 @@ function initSystemSettingsListener() {
         "Tiqmo",
         "Alinma Pay"
       ];
-      const configuredWallets = Array.isArray(settings?.wallets) ? settings.wallets : [];
-      requiredWallets.forEach((wallet) => {
-        if (!configuredWallets.includes(wallet)) {
-          adminSettingsAction("add_wallet", { value: wallet }).catch((error) => {
-            console.error("Wallet catalog migration error:", error?.message || error);
+
+      const banksReady =
+        Array.isArray(settings?.banks) &&
+        requiredBanks.every((bank) => settings.banks.includes(bank));
+
+      const walletsReady =
+        Array.isArray(settings?.wallets) &&
+        requiredWallets.every((wallet) => settings.wallets.includes(wallet));
+
+      if (!catalogDefaultsMigrationDone && !catalogDefaultsMigrationInFlight && (!banksReady || !walletsReady)) {
+        catalogDefaultsMigrationInFlight = true;
+        adminSettingsAction("ensure_catalog_defaults")
+          .then(() => {
+            catalogDefaultsMigrationDone = true;
+          })
+          .catch((error) => {
+            console.error("Catalog defaults migration error:", error?.message || error);
+          })
+          .finally(() => {
+            catalogDefaultsMigrationInFlight = false;
           });
-        }
-      });
+      } else if (banksReady && walletsReady) {
+        catalogDefaultsMigrationDone = true;
+      }
 
       updateStoreStatusUI(
         settings.storeOpen !==
@@ -6485,94 +6494,80 @@ function populatePricingUI(
 
   setValue(
     "gameVersion",
-    config.gameVersion ||
-      27
+    config.gameVersion ?? 27
   );
 
   setValue(
     "gameName",
-    config.gameName ||
-      "FC"
+    config.gameName ?? "FC"
   );
 
   setValue(
     "psRate",
-    config.psRate ||
-      200
+    config.psRate ?? 200
   );
 
   setValue(
     "psMin",
     formatCoinsNumber(
-      config.psMin ||
-        100000
+      config.psMin ?? 100000
     )
   );
 
   setValue(
     "psMax",
     formatCoinsNumber(
-      config.psMax ||
-        5000000
+      config.psMax ?? 5000000
     )
   );
 
   setValue(
     "psWithdrawDuration",
-    config.psWithdrawDuration ||
-      "3 - 5 أيام عمل"
+    config.psWithdrawDuration ?? "3 - 5 أيام عمل"
   );
 
   setValue(
     "psTransferDuration",
-    config.psTransferDuration ||
-      "24 ساعة"
+    config.psTransferDuration ?? "24 ساعة"
   );
 
   setValue(
     "pcRate",
-    config.pcRate ||
-      150
+    config.pcRate ?? 150
   );
 
   setValue(
     "pcMin",
     formatCoinsNumber(
-      config.pcMin ||
-        100000
+      config.pcMin ?? 100000
     )
   );
 
   setValue(
     "pcMax",
     formatCoinsNumber(
-      config.pcMax ||
-        1000000
+      config.pcMax ?? 1000000
     )
   );
 
   setValue(
     "pcWithdrawDuration",
-    config.pcWithdrawDuration ||
-      "2 - 4 أيام عمل"
+    config.pcWithdrawDuration ?? "2 - 4 أيام عمل"
   );
 
   setValue(
     "pcTransferDuration",
-    config.pcTransferDuration ||
-      "24 ساعة"
+    config.pcTransferDuration ?? "24 ساعة"
   );
 
   setValue(
     "storeNameInput",
-    config.storeName ||
-      "SAMI COINS"
+    config.storeName ?? "SAMI COINS"
   );
 
   setValue(
     "supportWhatsappInput",
-    config.supportWhatsapp ||
-      ""
+    config.supportWhatsapp ?? ""
   );
 
   setValue(
@@ -7421,7 +7416,10 @@ window.deleteTerm =
  */
 window.toggleTermsEnabled =
   async function (enabled) {
-    const normalized = Boolean(enabled);
+    const normalized =
+      typeof enabled === "boolean"
+        ? enabled
+        : !Boolean(currentSettingsData?.termsEnabled);
     try {
       await adminSettingsAction("toggle_terms_enabled", { enabled: normalized });
       currentSettingsData = { ...currentSettingsData, termsEnabled: normalized };
