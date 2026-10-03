@@ -3232,7 +3232,10 @@ router.post(
           delete transactionUpdateData.purgeDueAt;
         }
 
-        if (nextStatus === "completed") {
+        if (
+          nextStatus === "transferred" ||
+          nextStatus === "completed"
+        ) {
           transactionUpdateData.transferredAt =
             freshData.transferredAt || new Date();
           transactionUpdateData.transferredBy =
