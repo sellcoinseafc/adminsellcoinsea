@@ -12870,3 +12870,355 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     width:135.135%!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE ORDERS / BLUE-BLACK FINAL PASS
+   ========================================================================== */
+
+/* Blue-black is the primary admin visual language. */
+:root{
+  --v-bg:#071018;
+  --v-bg2:#050b12;
+  --v-surface:rgba(8,18,31,.88);
+  --v-surface-strong:rgba(8,18,31,.96);
+  --v-surface-alt:rgba(5,13,23,.96);
+  --v-border:rgba(0,112,209,.24);
+  --v-green:#0070D1;
+  --v-green-glow:rgba(0,112,209,.30);
+  --v-blue:#0070D1;
+  --status-finished:#0070D1;
+  --status-completed:#0070D1;
+}
+
+body:not(.light-mode){
+  --primary:#0070D1;
+  --primary-strong:#38BDF8;
+  --primary-soft:rgba(0,112,209,.12);
+  background:radial-gradient(circle at 50% 0%,#0d1b2d 0%,#050b12 62%,#03070c 100%)!important;
+}
+
+body:not(.light-mode) .sidebar,
+body:not(.light-mode) .mobile-app-nav{
+  background:rgba(5,13,23,.97)!important;
+}
+
+.topbar{
+  background:rgba(5,13,23,.92)!important;
+  border-color:var(--v-border)!important;
+}
+
+.eyebrow,
+.sidebar-link.active,
+.store-pill,
+.quick-action>span,
+.stat-card>i,
+.operation-note>i,
+.transfer-command>i{
+  color:var(--v-blue)!important;
+}
+
+.sidebar-link.active{
+  background:rgba(0,112,209,.12)!important;
+  border-color:rgba(0,112,209,.24)!important;
+  box-shadow:inset -3px 0 0 var(--v-blue),0 0 18px rgba(0,112,209,.06)!important;
+}
+
+.btn-primary{
+  background:var(--v-blue)!important;
+  border-color:var(--v-blue)!important;
+  color:#fff!important;
+  box-shadow:0 8px 22px rgba(0,112,209,.16)!important;
+}
+
+.dashboard-status-card,
+.dashboard-stock-card,
+.dashboard-orders,
+.dashboard-shortcuts,
+.panel,
+.stat-card{
+  background:linear-gradient(145deg,rgba(8,18,31,.94),rgba(5,13,23,.94))!important;
+  border-color:var(--v-border)!important;
+}
+
+.dashboard-stock-group{
+  align-items:stretch!important;
+}
+.dashboard-stock-card{
+  min-height:170px!important;
+  height:100%!important;
+}
+
+.dashboard-stock-card .stock-trend-up,
+.dashboard-stock-card .stock-trend-flat{
+  color:var(--v-blue)!important;
+  background:rgba(0,112,209,.10)!important;
+  border-color:rgba(0,112,209,.24)!important;
+}
+
+/* The clock is now only time + date; no weekday box. */
+.clock-stack{
+  display:inline-grid!important;
+  grid-template-columns:auto auto!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+.admin-date-box{
+  display:grid!important;
+  place-items:center!important;
+  min-height:48px!important;
+  padding:8px 16px!important;
+  border:1px solid rgba(0,112,209,.28)!important;
+  border-radius:12px!important;
+  background:rgba(5,13,23,.92)!important;
+  color:#fff!important;
+  font-variant-numeric:tabular-nums!important;
+}
+.admin-time-box{
+  font-size:1.25rem!important;
+  font-weight:900!important;
+}
+.admin-calendar-box{
+  font-size:1.08rem!important;
+  font-weight:800!important;
+}
+
+/* Mobile/tablet: orders are real cards, never an empty/overflowing table. */
+@media(max-width:600px){
+  .topbar-left{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  .topbar-left .clock{
+    display:inline-flex!important;
+    width:auto!important;
+    margin-inline:auto!important;
+  }
+  .clock-stack{
+    grid-template-columns:1fr 1fr!important;
+    gap:8px!important;
+  }
+  .admin-date-box{
+    min-height:54px!important;
+    padding:7px 13px!important;
+  }
+  .admin-time-box{font-size:1.35rem!important}
+  .admin-calendar-box{font-size:1.15rem!important}
+
+  .dashboard-stock-group{
+    grid-template-columns:1fr!important;
+  }
+  .dashboard-stock-card{
+    min-height:165px!important;
+    height:165px!important;
+  }
+
+  .dashboard-orders .table-wrap,
+  #ordersTab .table-wrap,
+  #withdrawTab .table-wrap{
+    overflow:visible!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  .dashboard-orders table,
+  #ordersTab table,
+  #withdrawTab table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:auto!important;
+  }
+
+  .dashboard-orders table thead,
+  #ordersTab table thead,
+  #withdrawTab table thead{
+    display:none!important;
+  }
+
+  .dashboard-orders table tbody,
+  #ordersTab table tbody,
+  #withdrawTab table tbody{
+    display:grid!important;
+    gap:12px!important;
+    width:100%!important;
+  }
+
+  .dashboard-orders table tbody tr,
+  #ordersTab table tbody tr,
+  #withdrawTab table tbody tr{
+    display:grid!important;
+    grid-template-columns:58px minmax(0,1fr)!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:0 10px!important;
+    padding:14px!important;
+    margin:0!important;
+    background:linear-gradient(145deg,#0a192b,#07111e)!important;
+    border:1px solid rgba(0,112,209,.25)!important;
+    border-radius:18px!important;
+    box-shadow:0 8px 28px rgba(0,0,0,.20)!important;
+  }
+
+  .dashboard-orders table tbody tr td,
+  #ordersTab table tbody tr td,
+  #withdrawTab table tbody tr td{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    padding:7px 2px!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    overflow:visible!important;
+  }
+
+  .dashboard-orders table tbody tr td[colspan],
+  #ordersTab table tbody tr td[colspan],
+  #withdrawTab table tbody tr td[colspan]{
+    grid-column:1/-1!important;
+    text-align:center!important;
+    min-height:70px!important;
+  }
+
+  .app-card-platform{
+    grid-row:1 / span 2!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+  .app-platform-icon{
+    display:grid!important;
+    place-items:center!important;
+    width:48px!important;
+    height:48px!important;
+    border-radius:14px!important;
+    font-size:1.45rem!important;
+    background:rgba(0,112,209,.10)!important;
+    border:1px solid rgba(0,112,209,.28)!important;
+  }
+  .app-platform-icon.platform-xbox{
+    color:#65d38a!important;
+    border-color:rgba(101,211,138,.28)!important;
+    background:rgba(101,211,138,.08)!important;
+  }
+
+  .app-card-identity,
+  .app-card-customer{
+    text-align:right!important;
+  }
+  .app-order-number,
+  .app-reference-line b{
+    color:#fff!important;
+    font-size:.82rem!important;
+    font-weight:900!important;
+    direction:ltr!important;
+    display:inline-block!important;
+  }
+  .app-reference-line b{
+    color:#8acbff!important;
+    font-size:.68rem!important;
+  }
+  .app-card-date{
+    display:block!important;
+    color:#7f92a8!important;
+    font-size:.58rem!important;
+    margin-top:3px!important;
+  }
+  .app-card-customer strong{
+    display:block!important;
+    color:#fff!important;
+    font-size:.78rem!important;
+  }
+  .app-card-customer span{
+    display:block!important;
+    color:#8e9bae!important;
+    font-size:.66rem!important;
+    direction:ltr!important;
+    margin-top:3px!important;
+  }
+
+  .app-card-quantity,
+  .app-card-price-cell,
+  .app-card-status,
+  .app-card-actions{
+    grid-column:1/-1!important;
+  }
+  .app-card-quantity,
+  .app-card-price-cell{
+    border-top:1px solid rgba(0,112,209,.14)!important;
+    margin-top:4px!important;
+    padding-top:10px!important;
+  }
+  .app-card-metric{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+  }
+  .app-card-metric>span{
+    color:#8e9bae!important;
+    font-size:.66rem!important;
+  }
+  .app-card-metric>strong{
+    color:#fff!important;
+    font-size:1rem!important;
+    font-weight:900!important;
+  }
+  .app-card-metric i{
+    color:#38bdf8!important;
+  }
+  .app-card-price strong,
+  .app-card-price .order-price-stack strong{
+    color:#fff!important;
+  }
+
+  .app-card-status{
+    padding-top:10px!important;
+  }
+  .app-card-status .platform-status-badge,
+  .app-card-status .status-badge{
+    width:100%!important;
+    min-height:42px!important;
+    justify-content:center!important;
+  }
+
+  .app-card-actions{
+    border-top:1px solid rgba(0,112,209,.14)!important;
+    margin-top:4px!important;
+    padding-top:10px!important;
+  }
+  .app-order-actions,
+  .recent-order-actions{
+    display:flex!important;
+    width:100%!important;
+    justify-content:center!important;
+    gap:7px!important;
+    flex-wrap:wrap!important;
+  }
+  .app-order-actions .btn-action,
+  .recent-order-actions .btn-action{
+    min-width:42px!important;
+    min-height:42px!important;
+  }
+
+  /* Withdraw cards: keep quantity/progress readable instead of overlapping. */
+  #withdrawTab table tbody tr{
+    grid-template-columns:58px minmax(0,1fr)!important;
+  }
+  #withdrawTab .app-card-quantity{
+    padding-top:12px!important;
+  }
+  .app-card-quantity-progress{
+    display:grid!important;
+    gap:5px!important;
+  }
+  .app-card-quantity-progress .app-progress-track{
+    width:100%!important;
+    margin-top:3px!important;
+  }
+  .app-card-quantity-progress small{
+    color:#8e9bae!important;
+    font-size:.6rem!important;
+  }
+}
