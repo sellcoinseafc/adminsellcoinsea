@@ -52,14 +52,14 @@ const STATUS_CONFIG = {
         className: "finished"
     },
 
-    transferred: {
-        text: "تم تحويل المبلغ إلى حسابك",
+    pending_transfer: {
+        text: "قيد التحويل",
         percentage: 95,
-        className: "success"
+        className: "pending-transfer"
     },
 
     completed: {
-        text: "مكتمل",
+        text: "تم التحويل — مكتمل",
         percentage: 100,
         className: "success"
     }
@@ -1083,14 +1083,20 @@ function normalizeStatus(status) {
         "تم الانتهاء من سحب الكوينز من حسابك":
             "finished",
 
+        "قيد التحويل":
+            "pending_transfer",
+
         "بانتظار التحويل":
             "pending_transfer",
 
         "تم التحويل لحسابك":
-            "transferred",
+            "completed",
 
         "تم تحويل المبلغ إلى حسابك":
-            "transferred",
+            "completed",
+
+        "تم التحويل — مكتمل":
+            "completed",
 
         "مكتمل":
             "completed"
@@ -1098,6 +1104,10 @@ function normalizeStatus(status) {
 
     if (arabicStatusMap[raw]) {
         return arabicStatusMap[raw];
+    }
+
+    if (normalized === "transferred") {
+        return "completed";
     }
 
     return LEGACY_STATUS_MAP[normalized] ||
