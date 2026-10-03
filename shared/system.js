@@ -1167,44 +1167,6 @@ export function subscribeToInventory(
 
 /**
  * ============================================================================
- * 13. Payment methods
- * ============================================================================
- */
-
-export async function getPaymentMethods() {
-    const settings =
-        await getSettings();
-
-    if (
-        Array.isArray(
-            settings.paymentMethods
-        )
-    ) {
-        return [
-            ...settings.paymentMethods
-        ];
-    }
-
-    if (
-        settings.paymentMethods &&
-        typeof settings.paymentMethods ===
-            "object"
-    ) {
-        return normalizeStringArray(
-            Object.values(
-                settings.paymentMethods
-            )
-        );
-    }
-
-    return [];
-}
-
-
-
-
-/**
- * ============================================================================
  * 14. Terms
  * ============================================================================
  */
