@@ -2524,9 +2524,9 @@ window.renderRecentOrdersTable =
         <tr class="recent-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
-              <span class="table-field-label">الطلب</span>
+              <span class="table-field-label">رقم المرجع</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
@@ -2583,9 +2583,9 @@ window.renderWithdrawOrdersTable =
         <tr class="withdraw-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
-              <span class="table-field-label">الطلب</span>
+              <span class="table-field-label">رقم المرجع</span>
               <small>${escapeHtml(order.internalReference || order.orderId || order.id || "---")}</small>
-              <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
+              <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
             </div>
           </td>
           <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
