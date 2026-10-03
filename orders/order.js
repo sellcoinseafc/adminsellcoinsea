@@ -815,7 +815,7 @@ function applySettingsToUI() {
     const arabicName = $("storeArabicName");
     const englishName = $("storeEnglishName");
     if (arabicName) arabicName.textContent = storeSettings.arabicStoreName || "سامي كوينز";
-    if (englishName) englishName.textContent = "samicoins";
+    if (englishName) englishName.textContent = storeSettings.storeName || "SAMI COINS";
 
     const gameName =
         storeSettings.gameName || "FC";
