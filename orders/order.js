@@ -682,8 +682,8 @@ function startSettingsRealtime() {
                 },
                 banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
                 wallets: Array.from(new Set([
-                    ...(Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets),
-                    "سلة"
+                    "سلة",
+                    ...(Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets)
                 ])),
                 terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
                 termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
@@ -1510,55 +1510,33 @@ function renderStep2PaymentFields() {
 
     if (method === "wallet") {
 
-        const wallets =
-            Array.isArray(storeSettings.wallets)
-                ? storeSettings.wallets
-                : [];
+        const wallets = Array.from(new Set([
+            "سلة",
+            ...(Array.isArray(storeSettings.wallets) ? storeSettings.wallets : [])
+        ])).filter(Boolean);
 
-        const options =
-            wallets.map(
-                (wallet) =>
-                    `<option value="${escapeHtml(wallet)}">${escapeHtml(wallet)}</option>`
-            ).join("");
+        const options = wallets.map((wallet) =>
+            `<option value="${escapeHtml(wallet)}">${escapeHtml(wallet)}</option>`
+        ).join("");
 
         container.innerHTML = `
             <label class="field-label">
-                ${
-                    currentLanguage === "ar"
-                        ? "اسم المحفظة الرقمية"
-                        : "Digital Wallet"
-                }
+                ${currentLanguage === "ar" ? "المحفظة الرقمية" : "Digital Wallet"}
                 <span class="required-star">*</span>
             </label>
-
             <div class="input-box-wrap">
                 <select id="walletTypeSelect" required autocomplete="off">
                     ${options}
                 </select>
             </div>
-
             <label class="field-label">
-                ${
-                    currentLanguage === "ar"
-                        ? "رقم المحفظة"
-                        : "Wallet Number"
-                }
+                ${currentLanguage === "ar" ? "رقم المحفظة" : "Wallet Number"}
                 <span class="required-star">*</span>
             </label>
-
             <div class="input-box-wrap">
-                <input
-                    type="tel"
-                    id="walletNumber"
-                    autocomplete="off"
-                    placeholder="9665xxxxxxxx"
-                    inputmode="numeric"
-                    oninput="convertArabicNumbersToEnglish(this)"
-                    required
-                >
+                <input type="tel" id="walletNumber" autocomplete="off" placeholder="9665xxxxxxxx" inputmode="numeric" oninput="convertArabicNumbersToEnglish(this)" required>
             </div>
         `;
-
         return;
     }
 
