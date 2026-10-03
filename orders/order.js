@@ -655,8 +655,8 @@ function localizeSettingText(value) {
 function getCurrentPlatformDurations() {
     if (selectedPlatform === "PC") {
         return {
-            withdraw: storeSettings.pcWithdrawDays || storeSettings.withdrawDays || "--",
-            transfer: storeSettings.pcTransferHours || storeSettings.transferHours || "--"
+            withdraw: storeSettings.pcWithdrawDays || "--",
+            transfer: storeSettings.pcTransferHours || "--"
         };
     }
     return {
