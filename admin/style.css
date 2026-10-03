@@ -10487,3 +10487,80 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     padding:5px 7px!important;
   }
 }
+
+
+/* STEP 4 MOBILE — FINAL STRUCTURAL OVERRIDE */
+@media(max-width:600px){
+  #ordersTab .table-wrap,#withdrawTab .table-wrap,#transferAlertsTab .table-wrap,#dashboardTab .dashboard-orders .table-wrap,#customerProfileTab .table-wrap,#reviewsTab .table-wrap{width:100%!important;max-width:100%!important;min-width:0!important;overflow:visible!important}
+  #ordersTab .table-wrap table,#withdrawTab .table-wrap table,#transferAlertsTab .table-wrap table,#dashboardTab .dashboard-orders .table-wrap table,#customerProfileTab .table-wrap table,#reviewsTab .table-wrap table{display:block!important;width:100%!important;max-width:100%!important;min-width:0!important;table-layout:fixed!important}
+  #ordersTab .table-wrap tbody,#withdrawTab .table-wrap tbody,#transferAlertsTab .table-wrap tbody,#dashboardTab .dashboard-orders .table-wrap tbody,#customerProfileTab .table-wrap tbody,#reviewsTab .table-wrap tbody{display:block!important;width:100%!important;min-width:0!important}
+
+  #ordersTab .app-order-card,#withdrawTab .app-order-card,#transferAlertsTab .app-order-card,#dashboardTab .dashboard-orders .app-order-card{
+    display:grid!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+    grid-template-columns:44px minmax(0,1.02fr) minmax(0,1.22fr) minmax(0,.88fr)!important;
+    grid-template-rows:minmax(54px,auto) minmax(50px,auto)!important;
+    grid-template-areas:"platform identity customer status" "platform quantity price actions"!important;
+    gap:0!important;padding:6px!important;margin:0 0 11px!important;overflow:hidden!important;direction:ltr!important;
+  }
+  #ordersTab .app-order-card td,#withdrawTab .app-order-card td,#transferAlertsTab .app-order-card td,#dashboardTab .dashboard-orders .app-order-card td{
+    display:block!important;width:auto!important;min-width:0!important;box-sizing:border-box!important;padding:6px!important;border:0!important;direction:rtl!important;overflow:hidden!important;
+  }
+  #ordersTab .app-order-card td::before,#withdrawTab .app-order-card td::before,#transferAlertsTab .app-order-card td::before,#dashboardTab .dashboard-orders .app-order-card td::before{display:none!important;content:none!important}
+  #ordersTab .app-card-platform,#withdrawTab .app-card-platform,#transferAlertsTab .app-card-platform,#dashboardTab .dashboard-orders .app-card-platform{grid-area:platform!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important}
+  #ordersTab .app-card-identity,#withdrawTab .app-card-identity,#transferAlertsTab .app-card-identity,#dashboardTab .dashboard-orders .app-card-identity{grid-area:identity!important}
+  #ordersTab .app-card-customer,#withdrawTab .app-card-customer,#transferAlertsTab .app-card-customer,#dashboardTab .dashboard-orders .app-card-customer{grid-area:customer!important}
+  #ordersTab .app-card-status,#withdrawTab .app-card-status,#transferAlertsTab .app-card-status,#dashboardTab .dashboard-orders .app-card-status{grid-area:status!important}
+  #ordersTab .app-card-quantity,#withdrawTab .app-card-quantity,#transferAlertsTab .app-card-quantity,#dashboardTab .dashboard-orders .app-card-quantity{grid-area:quantity!important}
+  #ordersTab .app-card-price-cell,#withdrawTab .app-card-price-cell,#transferAlertsTab .app-card-price-cell,#dashboardTab .dashboard-orders .app-card-price-cell{grid-area:price!important}
+  #ordersTab .app-card-actions,#withdrawTab .app-card-actions,#transferAlertsTab .app-card-actions,#dashboardTab .dashboard-orders .app-card-actions{grid-area:actions!important}
+  .app-platform-icon{flex:0 0 40px!important;width:40px!important;height:40px!important;font-size:1.28rem!important}
+  .app-order-number{display:block!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:.88rem!important;white-space:nowrap!important}
+  .app-reference-line{max-width:100%!important;overflow:hidden!important;white-space:nowrap!important}
+  .app-reference-line b{overflow:hidden!important;text-overflow:ellipsis!important}
+  .app-card-date{white-space:nowrap!important}
+  .app-card-customer strong,.app-card-customer span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .app-card-metric>strong{font-size:.79rem!important;white-space:nowrap!important}
+  .app-card-status .badge{max-width:100%!important;font-size:.56rem!important}
+  .app-order-actions{width:100%!important;min-width:0!important;gap:4px!important;overflow:hidden!important}
+  .app-order-actions .btn-action,.app-order-actions .btn-custom{min-width:28px!important;flex:0 1 auto!important;padding:5px!important;font-size:.56rem!important}
+
+  #customerProfileTab .table-wrap tbody{display:grid!important;gap:10px!important}
+  #customerProfileTab .client-row{
+    display:grid!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+    grid-template-columns:42px minmax(0,1.15fr) minmax(0,1fr) minmax(0,.72fr)!important;
+    grid-template-rows:auto auto!important;grid-template-areas:"avatar name phone action" "avatar orders quantity amount"!important;
+    gap:0!important;min-height:106px!important;padding:5px!important;margin:0!important;overflow:hidden!important;
+  }
+  #customerProfileTab .client-row td{min-width:0!important;width:auto!important;box-sizing:border-box!important;overflow:hidden!important;padding:6px!important;border:0!important}
+  #customerProfileTab .client-row td::before{display:none!important;content:none!important}
+  #customerProfileTab .client-row .client-name-cell{grid-area:name!important}
+  #customerProfileTab .client-row td:nth-child(2){grid-area:phone!important}
+  #customerProfileTab .client-row td:nth-child(3){grid-area:orders!important}
+  #customerProfileTab .client-row td:nth-child(4){grid-area:quantity!important}
+  #customerProfileTab .client-row td:nth-child(5){grid-area:amount!important}
+  #customerProfileTab .client-row .client-action-cell{grid-area:action!important}
+  #customerProfileTab .client-name-box{display:flex!important;align-items:center!important;gap:6px!important;width:100%!important;min-width:0!important}
+  #customerProfileTab .client-name-box:before{float:none!important;flex:0 0 34px!important;width:34px!important;height:34px!important;margin:0!important}
+  #customerProfileTab .client-field-value{display:block!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;font-size:.69rem!important}
+  #customerProfileTab .client-field-label{font-size:.49rem!important}
+  #customerProfileTab .client-history-btn{max-width:100%!important;min-height:29px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;padding:5px!important;font-size:.53rem!important}
+
+  #reviewsTab .table-wrap tbody{display:grid!important;gap:10px!important}
+  #reviewsTab .review-data-card{
+    display:grid!important;width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+    grid-template-columns:42px minmax(0,1.15fr) minmax(0,1fr) minmax(0,.72fr)!important;
+    grid-template-rows:auto auto!important;grid-template-areas:"avatar identity platform status" "avatar quantity rating actions"!important;
+    gap:0!important;min-height:108px!important;padding:5px!important;margin:0!important;overflow:hidden!important;
+  }
+  #reviewsTab .review-data-card td{min-width:0!important;width:auto!important;box-sizing:border-box!important;overflow:hidden!important;padding:6px!important;border:0!important}
+  #reviewsTab .review-data-card td::before{display:none!important;content:none!important}
+  #reviewsTab .review-data-card td:nth-child(1){grid-area:identity!important}
+  #reviewsTab .review-data-card td:nth-child(2){grid-area:identity!important}
+  #reviewsTab .review-data-card td:nth-child(3){grid-area:platform!important}
+  #reviewsTab .review-data-card td:nth-child(4){grid-area:quantity!important}
+  #reviewsTab .review-data-card td:nth-child(5){grid-area:rating!important}
+  #reviewsTab .review-data-card td:nth-child(6){display:none!important}
+  #reviewsTab .review-data-card td:nth-child(7){display:none!important}
+  #reviewsTab .review-data-card td:nth-child(8){grid-area:status!important}
+  #reviewsTab .review-data-card td:nth-child(9){grid-area:actions!important}
+}
