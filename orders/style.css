@@ -2208,3 +2208,49 @@ html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-e
     font-size:18px!important;
   }
 }
+
+
+/* REVIEW DETAILS — final color treatment requested */
+#step3ReviewScreen .review-platform-row>i{
+  border-radius:8px!important;
+  width:42px!important;
+  height:42px!important;
+  flex:0 0 42px!important;
+  background:rgba(255,255,255,.08)!important;
+  color:#fff!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.ps-theme .review-platform-row>i{
+  background:linear-gradient(135deg,#005aaa,#143c68)!important;
+  color:#fff!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.xbox-theme .review-platform-row>i{
+  background:linear-gradient(135deg,#107c10,#0a4516)!important;
+  color:#fff!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.pc-theme .review-platform-row>i{
+  background:linear-gradient(135deg,#c9a64c,#55420f)!important;
+  color:#fff!important;
+}
+#step3ReviewScreen .review-platform-row>strong{
+  color:#fff!important;
+  font-weight:900!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(2)>i{
+  color:#ffd21c!important;
+  background:rgba(255,210,28,.09)!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(2)>strong{
+  color:#ffd21c!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(2)>span{
+  color:#fff!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(3){
+  background:linear-gradient(135deg,rgba(10,55,20,.72),rgba(3,16,10,.96))!important;
+  border-color:rgba(38,150,72,.34)!important;
+}
+#step3ReviewScreen .review-order-detail-row:nth-child(3)>i,
+#step3ReviewScreen .review-order-detail-row:nth-child(3)>span,
+#step3ReviewScreen .review-order-detail-row:nth-child(3)>strong{
+  color:#fff!important;
+}
