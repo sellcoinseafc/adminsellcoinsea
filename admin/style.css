@@ -9573,3 +9573,243 @@ textarea.form-control{
     font-weight:900!important;
   }
 }
+
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE STEP 4 / FULL ORDERS LIST
+   The main "قائمة الطلبات" uses the exact same field-box proportions.
+   ========================================================================== */
+@media (max-width:600px){
+
+  #fullOrdersTableBody .full-order-row{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:12px!important;
+    margin:0 0 14px!important;
+    box-sizing:border-box!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td.order-data-cell{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:96px!important;
+    min-height:96px!important;
+    margin:0 0 9px!important;
+    padding:8px 14px!important;
+    box-sizing:border-box!important;
+    border:1px solid #fff!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(9,29,49,.97),rgba(5,17,30,.99))!important;
+    overflow:hidden!important;
+    gap:4px!important;
+    text-align:center!important;
+  }
+
+  #fullOrdersTableBody .full-order-row .order-ref-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    gap:4px!important;
+  }
+
+  #fullOrdersTableBody .full-order-row .order-ref-stack small{
+    display:none!important;
+  }
+
+  #fullOrdersTableBody .full-order-row .order-reference-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    font-size:1.40rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="العميل"] .table-field-label,
+  #fullOrdersTableBody .full-order-row>td[data-label="الجوال"] .table-field-label,
+  #fullOrdersTableBody .full-order-row>td[data-label="المنصة"] .table-field-label,
+  #fullOrdersTableBody .full-order-row>td[data-label="الكمية"] .table-field-label,
+  #fullOrdersTableBody .full-order-row>td[data-label="ريال سعودي"] .table-field-label{
+    display:none!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="العميل"] .table-primary-value,
+  #fullOrdersTableBody .full-order-row>td[data-label="الجوال"] .table-primary-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    color:#fff!important;
+    font-size:1.38rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="الجوال"] .phone-value{
+    direction:ltr!important;
+    unicode-bidi:plaintext!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="المنصة"] .platform-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:60px!important;
+    min-height:60px!important;
+    padding:7px 12px!important;
+    margin:0!important;
+    border-radius:13px!important;
+    gap:9px!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="المنصة"] .platform-badge i{
+    font-size:1.65rem!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="المنصة"] .platform-badge-name{
+    display:inline!important;
+    font-size:1.08rem!important;
+    font-weight:900!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="الكمية"] .recent-quantity{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:#ffc52e!important;
+    font-size:1.55rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    text-align:center!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="ريال سعودي"] .order-price-stack{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:none!important;
+    direction:ltr!important;
+    white-space:nowrap!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="ريال سعودي"] .order-price-stack small{
+    display:inline-flex!important;
+    align-items:center!important;
+    color:#9aaabd!important;
+    font-size:.78rem!important;
+    font-weight:900!important;
+    order:0!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="ريال سعودي"] .order-price-stack strong{
+    display:inline-flex!important;
+    align-items:center!important;
+    color:#fff!important;
+    font-size:1.55rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    order:1!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="الحالة"] .table-field-label{
+    display:none!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="الحالة"]{
+    height:104px!important;
+    min-height:104px!important;
+    padding:8px!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="الحالة"] .platform-status-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:70px!important;
+    height:70px!important;
+    margin:0!important;
+    padding:8px 12px!important;
+    border:0!important;
+    border-radius:13px!important;
+    background:rgba(0,255,135,.09)!important;
+    color:#fff!important;
+    font-size:1.02rem!important;
+    line-height:1.35!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:normal!important;
+    word-break:keep-all!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="آخر تحديث"]{
+    height:86px!important;
+    min-height:86px!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td[data-label="آخر تحديث"] .last-update-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    color:#fff!important;
+    font-size:1.12rem!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+    text-align:center!important;
+  }
+
+  #fullOrdersTableBody .full-order-row>td.recent-actions-cell{
+    height:auto!important;
+    min-height:0!important;
+    padding:4px 0 0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+}
