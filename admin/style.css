@@ -5,7 +5,8 @@
    SAMI COINS V2.7 — Order detail / mobile / operations UI
    ========================================================================== */
 .login-overlay:not(.active){display:none!important}
-.login-overlay{z-index:5000}
+.login-overlay{z-index:10000!important}
+body.sidebar-drawer-open{overflow:hidden}
 .order-detail-shell{display:grid;gap:14px}
 .order-detail-section{padding:18px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.025),rgba(0,255,135,.018))}
 .order-section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:15px}
