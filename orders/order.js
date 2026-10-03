@@ -1994,7 +1994,7 @@ function validateStep2() {
     }
     if(method==="western"){
         const wu=String($("wuName")?.value||"").trim();
-        if(!/^[A-Za-z][A-Za-z .'-]*$/.test(wu)){markInvalid($("wuName"),"اسم Western Union يجب أن يكون بالإنجليزية فقط ويطابق الاسم في الهوية.");return false;}
+        if(!/^[A-Za-z]+(?:[ .\'-]+[A-Za-z]+){2,}$/.test(wu)){markInvalid($("wuName"),"أدخل الاسم الثلاثي بالإنجليزية كما هو مكتوب في الهوية.");return false;}
         if(String($("wuCountry")?.value||"").trim().length<2){markInvalid($("wuCountry"),"الدولة مطلوبة.");return false;}
     }
     if(storeSettings.termsEnabled!==false&&!$("termsCheck")?.checked){$("termsCheck")?.scrollIntoView({behavior:"smooth",block:"center"});showToast("يجب الموافقة على الشروط والأحكام.");return false;}
