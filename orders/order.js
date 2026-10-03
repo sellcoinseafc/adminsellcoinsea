@@ -999,6 +999,35 @@ function selectPlatform(
     // اربط كامل تفاصيل الصفحة بلون المنصة المختارة.
     $("pageShell")?.setAttribute("data-platform", platform);
 
+    // عند تغيير المنصة، حدّث مدد السحب والتحويل فورًا من إعدادات
+    // المنصة الحالية. سابقًا كانت هذه القيم تُرسم عند تحميل الإعدادات فقط،
+    // لذلك كان اختيار PC يترك مدد PlayStation ظاهرة.
+    const platformDurations = getCurrentPlatformDurations();
+    setText(
+        "withdrawText",
+        localizeSettingText(platformDurations.withdraw)
+    );
+    setText(
+        "transferText",
+        localizeSettingText(platformDurations.transfer)
+    );
+    setText(
+        "revWithdrawText",
+        localizeSettingText(platformDurations.withdraw)
+    );
+    setText(
+        "revTransferText",
+        localizeSettingText(platformDurations.transfer)
+    );
+    setText(
+        "successWithdrawText",
+        localizeSettingText(platformDurations.withdraw)
+    );
+    setText(
+        "successTransferText",
+        localizeSettingText(platformDurations.transfer)
+    );
+
     // بيانات حساب EA لا تظهر إلا بعد اختيار المنصة.
     showElement("accountStage");
 
