@@ -524,7 +524,9 @@ function normalizePaymentMethodCode(method) {
 
     if (
         value.includes("محفظ") ||
-        value.includes("wallet")
+        value.includes("محافظ") ||
+        value.includes("wallet") ||
+        value === "سلة"
     ) {
         return "wallet";
     }
@@ -2135,48 +2137,28 @@ function buildPaymentDetailsHTML() {
 
 function updateReviewPlatformUI() {
 
-    const box =
-        $("revPlatformBoxTheme");
+    const box = $("revPlatformBoxTheme");
+    const icon = $("revPlatformIcon");
+    const name = $("revPlatformName");
 
-    const icon =
-        $("revPlatformIcon");
-
-    const name =
-        $("revPlatformName");
-
-    if (!box || !icon) {
+    if (!box || !icon || !name) {
         return;
     }
 
-    box.className =
-        "review-summary-item platform-summary";
+    box.classList.remove("ps-theme", "xbox-theme", "pc-theme");
 
     if (selectedPlatform === "PlayStation") {
-
         box.classList.add("ps-theme");
-
-        icon.className =
-            "fa-brands fa-playstation";
-    }
-
-    if (selectedPlatform === "Xbox") {
-
+        icon.className = "fa-brands fa-playstation";
+        name.textContent = "PlayStation";
+    } else if (selectedPlatform === "Xbox") {
         box.classList.add("xbox-theme");
-
-        icon.className =
-            "fa-brands fa-xbox";
-    }
-
-    if (selectedPlatform === "PC") {
-
+        icon.className = "fa-brands fa-xbox";
+        name.textContent = "Xbox";
+    } else if (selectedPlatform === "PC") {
         box.classList.add("pc-theme");
-
-        icon.className =
-            "fa-solid fa-desktop";
-    }
-
-    if (name) {
-        name.textContent = "";
+        icon.className = "fa-solid fa-desktop";
+        name.textContent = "PC";
     }
 }
 
