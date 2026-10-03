@@ -71,9 +71,11 @@ const ARABIC_STATUS_MAP = {
   "تم الانتهاء من سحب الكوينز بحسابك": "finished",
   "تم الانتهاء من سحب الكوين من حسابك": "finished",
   "تم الانتهاء من سحب الكوينز من حسابك": "finished",
+  "قيد التحويل": "pending_transfer",
   "بانتظار التحويل": "pending_transfer",
-  "تم التحويل لحسابك": "transferred",
-  "تم تحويل المبلغ إلى حسابك": "transferred",
+  "تم التحويل لحسابك": "completed",
+  "تم تحويل المبلغ إلى حسابك": "completed",
+  "تم التحويل — مكتمل": "completed",
   "مكتمل": "completed"
 };
 
