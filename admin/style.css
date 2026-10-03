@@ -1740,3 +1740,169 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
     padding:9px 7px!important;
   }
 }
+
+
+/* ==========================================================================
+   ORDER DETAIL FINAL PASS — fixed lifecycle + cyber-dark surfaces
+   ========================================================================== */
+.order-status-flow{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin:12px 0 10px;
+}
+.order-status-step{
+  position:relative;
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:82px;
+  padding:10px 7px;
+  border:1px solid var(--v-border);
+  border-radius:13px;
+  background:var(--v-surface-alt);
+  color:var(--v-muted);
+  text-align:center;
+  transition:.18s ease;
+}
+.order-status-step-index{
+  width:25px;
+  height:25px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(142,155,174,.24);
+  background:rgba(142,155,174,.08);
+  color:var(--v-sub);
+  font-size:.68rem;
+  font-weight:900;
+  direction:ltr;
+}
+.order-status-step-label{
+  font-size:.66rem;
+  line-height:1.45;
+  font-weight:800;
+  overflow-wrap:anywhere;
+}
+.order-status-step.is-done{
+  border-color:rgba(0,230,118,.18);
+  background:rgba(0,230,118,.055);
+  color:#b8f8d2;
+}
+.order-status-step.is-done .order-status-step-index{
+  border-color:rgba(0,230,118,.3);
+  background:rgba(0,230,118,.12);
+  color:var(--v-green);
+}
+.order-status-step.is-current{
+  border-color:rgba(0,230,118,.42);
+  background:linear-gradient(145deg,rgba(0,230,118,.14),rgba(13,22,38,.92));
+  color:var(--v-white);
+  box-shadow:0 0 0 1px rgba(0,230,118,.08),0 8px 24px rgba(0,230,118,.08);
+}
+.order-status-step.is-current .order-status-step-index{
+  border-color:var(--v-green);
+  background:var(--v-green);
+  color:#06130b;
+  box-shadow:0 0 14px rgba(0,230,118,.22);
+}
+.order-status-select-row{
+  display:grid;
+  gap:7px;
+  margin-top:10px;
+  padding-top:11px;
+  border-top:1px solid var(--v-border);
+}
+.order-status-select-row label{
+  color:var(--v-muted);
+  font-size:.68rem;
+  font-weight:800;
+}
+.order-detail-shell .modal-status-select,
+.order-detail-shell .modal-issue-select{
+  min-height:46px;
+  margin-top:0;
+  background:var(--v-surface-alt)!important;
+  color:var(--v-white)!important;
+  border:1px solid var(--v-border)!important;
+  color-scheme:dark;
+}
+.order-detail-shell .modal-status-select option,
+.order-detail-shell .modal-issue-select option{
+  background:#0d1626;
+  color:#fff;
+}
+
+/* Platform identity cards must follow the SAMI COINS dark visual language.
+   These overrides intentionally remove the previous light/white surfaces. */
+.order-detail-shell .platform-detail-brand.platform-playstation{
+  color:#69adff!important;
+  border-color:rgba(0,112,209,.42)!important;
+  background:rgba(0,112,209,.13)!important;
+}
+.order-detail-shell .platform-detail-brand.platform-xbox{
+  color:#62e58e!important;
+  border-color:rgba(0,230,118,.34)!important;
+  background:rgba(0,230,118,.10)!important;
+}
+.order-detail-shell .platform-detail-brand.platform-pc{
+  color:#ff6b6b!important;
+  border-color:rgba(239,68,68,.34)!important;
+  background:rgba(239,68,68,.11)!important;
+}
+.order-detail-shell .order-detail-issue-item.has-issue .order-detail-flat-trigger{
+  background:rgba(239,68,68,.07)!important;
+  color:var(--v-white)!important;
+}
+.order-detail-shell .order-detail-issue-item.has-issue{
+  border-color:rgba(239,68,68,.28)!important;
+}
+.order-detail-shell .payment-total-row{
+  background:rgba(255,193,7,.07)!important;
+  border-color:rgba(255,193,7,.18)!important;
+}
+.order-detail-shell .payment-total-row strong{
+  color:#ffd15a!important;
+}
+.order-detail-shell .order-basic-card,
+.order-detail-shell .detail-info-card,
+.order-detail-shell .quantity-card,
+.order-detail-shell .secure-copy-field,
+.order-detail-shell .payment-copy-field{
+  background:var(--v-surface-alt)!important;
+  border-color:var(--v-border)!important;
+  color:var(--v-white)!important;
+}
+.order-detail-shell .order-basic-card>strong,
+.order-detail-shell .detail-info-card>strong,
+.order-detail-shell .quantity-card>strong{
+  color:var(--v-white)!important;
+}
+.order-detail-shell .order-basic-card>span,
+.order-detail-shell .detail-info-card>span,
+.order-detail-shell .quantity-card>span,
+.order-detail-shell .order-basic-reference-sub{
+  color:var(--v-muted)!important;
+}
+
+@media(max-width:900px){
+  .order-status-flow{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media(max-width:520px){
+  .order-status-flow{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:7px;
+  }
+  .order-status-step{
+    min-height:76px;
+    padding:9px 6px;
+  }
+  .order-status-step-label{
+    font-size:.64rem;
+  }
+}
