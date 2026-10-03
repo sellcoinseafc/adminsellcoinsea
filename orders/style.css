@@ -25,7 +25,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .orders-page{min-height:100vh;background:var(--page)}
 .site-header{height:78px;background:#1f2937;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:9px max(18px,calc((100vw - 1180px)/2));gap:14px}
 .brand-home-link{border:0;background:transparent;color:#fff;display:flex;align-items:center;gap:10px;padding:0;text-align:right}
-.brand-mark{width:38px;height:38px;border-radius:12px;background:#fff;color:#1f2937;display:grid;place-items:center;font-size:18px}.brand-logo-image{width:126px;height:58px;object-fit:contain;display:block;border-radius:8px}
+.brand-mark{width:38px;height:38px;border-radius:12px;background:#fff;color:#1f2937;display:grid;place-items:center;font-size:18px}.brand-logo-image{width:180px;height:66px;object-fit:contain;display:block;border-radius:8px}
 .brand-name{display:flex;flex-direction:column;line-height:1.05}
 .brand-name span{font-size:13px;font-weight:800}
 .brand-name b{font-size:9px;letter-spacing:1.4px;opacity:.65;direction:ltr;text-align:right}
@@ -127,7 +127,7 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:100}.modal.active{display:flex}.modal-card{width:min(560px,100%);max-height:85vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.25)}.modal-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--line)}.modal-head h3{margin:0;font-size:14px}.modal-head button{border:0;background:#f1f1f2;width:31px;height:31px;border-radius:9px;font-size:22px}.modal-body{padding:16px;font-size:10px;line-height:1.9}
 .toast-container{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:120;width:min(92vw,430px);display:grid;gap:7px}.toast{background:#25262b;color:#fff;border-radius:10px;padding:10px 13px;font-size:10px;text-align:center;box-shadow:0 12px 25px rgba(0,0,0,.18)}
 @media (max-width:720px){
-  .site-header{padding:8px 12px;height:68px}.brand-logo-image{width:108px;height:50px}.header-track-btn{font-size:0;width:40px;padding:0}.header-track-btn i{font-size:14px}
+  .site-header{padding:8px 12px;height:68px}.brand-logo-image{width:158px;height:58px}.header-track-btn{font-size:0;width:40px;padding:0}.header-track-btn i{font-size:14px}
   .page-main{width:min(100% - 18px,620px);padding:14px 0 35px}.page-heading{padding:0 2px}.page-heading h1{font-size:19px}.page-heading p{font-size:9px}.heading-icon{width:44px;height:44px;font-size:19px}
   .sell-card{padding:15px;border-radius:19px}.form-section{padding-bottom:19px;margin-bottom:19px}
   .platform-grid{gap:7px}.platform-btn{min-height:132px;padding:10px 5px}.platform-btn>i{font-size:30px}.platform-btn strong{font-size:11px}
