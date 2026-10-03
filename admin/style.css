@@ -11437,3 +11437,72 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     #customerProfileTab #clientsTableBody .client-history-btn{font-size:.59rem!important}
   }
 }
+
+
+/* CUSTOMER CARD — final 3% polish */
+@media(min-width:601px){
+  #customerProfileTab .page-head .eyebrow{
+    display:none!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-name-box{
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-width:0!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-avatar{
+    display:flex!important;
+    flex:0 0 44px!important;
+    width:44px!important;
+    height:44px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:13px!important;
+    background:rgba(0,230,118,.08)!important;
+    border:1px solid rgba(0,230,118,.2)!important;
+    color:#00e676!important;
+    font-size:1rem!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-name-box::before{
+    display:none!important;
+    content:none!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-name-cell .client-field-value{
+    display:block!important;
+    min-width:0!important;
+    max-width:100%!important;
+    color:#fff!important;
+    font-size:.82rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-quantity-value{
+    font-size:1.12rem!important;
+    line-height:1.1!important;
+    font-weight:950!important;
+    color:#00e676!important;
+    white-space:nowrap!important;
+  }
+
+  @media(max-width:1000px){
+    #customerProfileTab #clientsTableBody .client-avatar{
+      flex-basis:40px!important;
+      width:40px!important;
+      height:40px!important;
+    }
+    #customerProfileTab #clientsTableBody .client-name-cell .client-field-value{
+      font-size:.74rem!important;
+    }
+    #customerProfileTab #clientsTableBody .client-quantity-value{
+      font-size:.98rem!important;
+    }
+  }
+}
