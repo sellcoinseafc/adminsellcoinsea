@@ -340,11 +340,8 @@ export const ORDER_STATUSES = Object.freeze({
     WITHDRAWN:
         "تم الانتهاء من سحب الكوينز بحسابك",
 
-    TRANSFERRED:
-        "تم تحويل المبلغ إلى حسابك",
-
     COMPLETED:
-        "مكتمل"
+        "تم التحويل — مكتمل"
 });
 
 /**
