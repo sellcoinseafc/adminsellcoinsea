@@ -1935,19 +1935,28 @@ function validateAccountStep1() {
 
 function goToStep2() {
     if(!selectedPlatform){
-        const platformGrid = document.querySelector(".platforms-flex");
+        const platformGrid = document.querySelector(".platform-grid");
         const prompt = $("platformPromptBox");
         platformGrid?.classList.add("platform-required-error");
         prompt?.classList.add("platform-required-error");
         prompt?.scrollIntoView({behavior:"smooth",block:"center"});
         showToast(currentLanguage === "ar" ? "اختر المنصة أولًا للمتابعة." : "Please select a platform first.");
-        return;
+        return false;
     }
-    document.querySelector(".platforms-flex")?.classList.remove("platform-required-error");
+
+    document.querySelector(".platform-grid")?.classList.remove("platform-required-error");
     $("platformPromptBox")?.classList.remove("platform-required-error");
-    if(currentQty<minLimit||(maxLimit>0&&currentQty>maxLimit)){markInvalid($("quantityInput"),"أدخل كمية ضمن الحدود المسموحة.");return;}
-    if(!validateAccountStep1()) return;
-    showScreen("step2Screen");
+
+    if(currentQty < minLimit || (maxLimit > 0 && currentQty > maxLimit)){
+        markInvalid($("quantityInput"),"أدخل كمية ضمن الحدود المسموحة.");
+        return false;
+    }
+
+    if(!validateAccountStep1()) return false;
+    if(!validateStep2()) return false;
+
+    // الصفحة الرئيسية أصبحت نموذج بيع واحد؛ المراجعة هي الشاشة التالية فقط بعد اكتمال كل البيانات.
+    return goToReview();
 }
 
 
@@ -2071,7 +2080,7 @@ function buildPaymentDetailsHTML() {
     if (method === "usd") {
 
         const wallet =
-            $("usdtWalletType")?.value?.trim() || "";
+            $("usdDetails")?.value?.trim() || "";
 
         return `
             <div class="field-label">
@@ -2969,7 +2978,7 @@ async function submitOrderFinal() {
     }
 
     if (!validateStep2()) {
-        showScreen("step2Screen");
+        showScreen("step1Screen");
         return;
     }
 
@@ -3764,7 +3773,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedLanguage = localStorage.getItem("samiCoinsLanguage");
     const savedTheme = localStorage.getItem("samiCoinsTheme");
     if (savedLanguage === "ar" || savedLanguage === "en") currentLanguage = savedLanguage;
-    applyTheme(savedTheme === "light" ? "light" : "dark");
+    applyTheme(savedTheme === "dark" ? "dark" : "light");
     applyLanguage();
     setupModalEvents();
     const setupSecretInput = (input) => {
