@@ -192,11 +192,8 @@ export const ORDER_STATUSES = Object.freeze({
     PENDING_TRANSFER:
         "بانتظار التحويل",
 
-    TRANSFERRED:
-        "تم تحويل المبلغ لحسابك",
-
     COMPLETED:
-        "مكتمل"
+        "تم التحويل — مكتمل"
 });
 
 export const ORDER_STATUS_CODES = Object.freeze({
@@ -205,7 +202,6 @@ export const ORDER_STATUS_CODES = Object.freeze({
     WITHDRAWING: "progress",
     WITHDRAWN: "finished",
     PENDING_TRANSFER: "pending_transfer",
-    TRANSFERRED: "transferred",
     COMPLETED: "completed"
 });
 
