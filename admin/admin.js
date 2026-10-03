@@ -2512,8 +2512,7 @@ function renderOrderCardRow(order, mode = "standard") {
           <b class="app-order-number" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
         </div>
         <div class="app-reference-line">
-          <span>مرجع</span>
-          <b onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+<b onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
         </div>
         <small class="app-card-date">${updated}</small>
       </td>
