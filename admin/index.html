@@ -222,7 +222,21 @@
   </div>
 </section>
 
-<section id="customerProfileTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">CUSTOMERS</span><h2>ملف العملاء</h2></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>العميل</th><th>الجوال</th><th>عدد الطلبات</th><th>إجمالي الكمية</th><th>إجمالي المبلغ</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div></div></section>
+<section id="customerProfileTab" class="tab-content">
+  <div class="page-head customer-page-head">
+    <div><span class="eyebrow">CUSTOMERS</span><h2>ملف العملاء</h2><p class="page-subtitle">سجل العملاء وإجمالي طلباتهم وكمياتهم ومبالغهم.</p></div>
+    <div class="head-tools customer-head-tools">
+      <input id="customerSearchInput" class="compact-input" placeholder="بحث باسم العميل أو الجوال" oninput="filterClients(this.value)" autocomplete="off">
+    </div>
+  </div>
+  <div class="panel customer-list-panel">
+    <div class="panel-title customer-list-title">
+      <div><span class="eyebrow">CUSTOMER DIRECTORY</span><h3>قائمة العملاء</h3></div>
+      <span class="orders-result-count" id="customerResultCount">0 عميل</span>
+    </div>
+    <div class="table-wrap customer-table-wrap"><table><thead><tr><th>العميل</th><th>الجوال</th><th>عدد الطلبات</th><th>إجمالي الكمية</th><th>إجمالي المبلغ</th><th></th></tr></thead><tbody id="clientsTableBody"></tbody></table></div>
+  </div>
+</section>
 
 <section id="pricingTab" class="tab-content"><div class="page-head"><div><span class="eyebrow">PRICING</span><h2>الأسعار والعروض</h2></div><button class="btn-primary" onclick="saveProductsConfig()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button></div><div class="form-grid">
 <div class="panel"><h3>إعدادات المتجر</h3><div class="field"><label>اسم المتجر</label><input id="storeNameInput"  class="form-control store-setting-field"></div><div class="field"><label>اسم اللعبة</label><input id="gameName"  class="form-control store-setting-field"></div><div class="field"><label>الإصدار</label><input id="gameVersion"  class="form-control store-setting-field" type="number"></div><div class="field"><label>واتساب الدعم</label><input id="supportWhatsappInput"  class="form-control store-setting-field"></div></div>
