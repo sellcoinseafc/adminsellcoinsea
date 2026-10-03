@@ -51,10 +51,10 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
 .platform-btn{min-height:154px;border:2px solid #dedee1;border-radius:14px;background:#fff;color:var(--text);padding:14px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;transition:.18s;position:relative}
 .platform-btn:hover{border-color:#f5b27a;transform:translateY(-1px)}
-.platform-btn.active{border-color:var(--accent);background:linear-gradient(180deg,#fffaf5,#fff);box-shadow:0 0 0 1px rgba(0,200,107,.10)}
+.platform-btn.active{border-color:var(--platform-accent,var(--accent));background:linear-gradient(180deg,var(--platform-soft,rgba(0,200,107,.10)),var(--surface));box-shadow:0 0 0 1px color-mix(in srgb,var(--platform-accent,var(--accent)) 18%,transparent)}
 .platform-btn.active:after{content:"✓";position:absolute;top:0;right:0;width:27px;height:27px;border-radius:0 11px 0 10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:900;font-size:14px}
 .platform-btn>i{font-size:36px;color:#2f3542}
-.ps-btn>i,.xbox-btn>i,.pc-btn>i{color:#00c86b}
+.ps-btn>i,.xbox-btn>i,.pc-btn>i{color:#2f3542}
 .platform-btn strong{font-size:14px;font-weight:800;direction:ltr}
 .choice-note{margin-top:11px;padding:11px 13px;border-radius:11px;background:#f7f7f8;color:var(--muted);font-size:10px;display:flex;align-items:center;justify-content:center;gap:7px;text-align:center}
 .choice-note i{color:var(--accent)}
@@ -82,11 +82,12 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .field label{display:block;font-size:10px;font-weight:800;margin:0 0 6px}
 .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{width:100%;height:58px;border:1px solid var(--line);border-radius:11px;background:var(--field);color:var(--text);outline:0;padding:0 12px;font-size:11px}
 .input-box-wrap input:focus,.input-box-wrap select:focus{border-color:#00c86b;box-shadow:0 0 0 3px rgba(0,200,107,.10);background:#fff}
+.account-section .input-box-wrap input{height:64px;font-size:15px;font-weight:800}
 .field-note{display:block;color:var(--muted);font-size:8px;margin-top:5px}
 .backup-section{margin-top:24px;padding:20px 0 0;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent}
 .backup-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.backup-title h3{font-size:12px;margin:0}.backup-title p{font-size:9px;color:var(--muted);margin:2px 0 0}.text-btn,.terms-bottom-link{border:0;background:transparent;color:var(--accent);font-size:9px;font-weight:800;padding:2px}
 .backup-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}
-.backup-field{display:block}.backup-field>span{display:block;font-size:8px;color:var(--accent);font-weight:900;margin:0 0 5px}.backup-field input{width:100%;height:56px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:center;font-size:14px;direction:ltr;outline:0}
+.backup-field{display:block}.backup-field>span{display:block;font-size:8px;color:var(--accent);font-weight:900;margin:0 0 5px}.backup-field input{width:100%;height:64px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:center;font-size:15px;font-weight:800;direction:ltr;outline:0}
 .backup-field input:focus{border-color:#f0a46d}
 .payment-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 .payment-tabs button{height:56px;border:1px solid var(--line);border-radius:11px;background:#f7f7f8;color:var(--muted);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:7px}
@@ -94,9 +95,9 @@ button:disabled{cursor:not-allowed;opacity:.65}
 .payment-methods-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
 .pay-btn-compact{min-height:58px;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--text);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;text-align:center;padding:7px}
 .pay-btn-compact.active{border-color:var(--accent);background:#fff5ed;color:var(--accent);box-shadow:inset 0 0 0 1px rgba(0,200,107,.15)}
-.payout-details-card{margin-top:14px;padding:18px;border:1px solid var(--line);border-radius:14px;background:#fafafa}
-.payout-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.payout-heading span{font-size:11px;font-weight:900}.payout-heading b{font-size:10px;color:var(--accent)}
-.payout-details-card .field-label{display:block;font-size:9px;font-weight:800;margin:9px 0 5px}.payout-details-card .required-star{color:var(--accent)}
+.payout-details-card{margin-top:14px;padding:18px;border:1.5px solid var(--platform-accent,var(--line));border-radius:16px;background:linear-gradient(180deg,var(--platform-soft,rgba(0,200,107,.06)),var(--surface));box-shadow:0 10px 26px rgba(24,24,27,.06)}
+.payout-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid color-mix(in srgb,var(--platform-accent,var(--line)) 22%,var(--line))}.payout-heading span{font-size:12px;font-weight:900}.payout-heading b{font-size:10px;color:var(--platform-accent,var(--accent));font-weight:900}
+.payout-details-card .field-label{display:block;font-size:10px;font-weight:900;margin:11px 0 6px}.payout-details-card .required-star{color:var(--platform-accent,var(--accent))}
 .terms-card{border-top:1px solid #ededee;padding-top:20px}
 .compact-heading{margin-bottom:14px}.terms-card .compact-heading h2{font-size:18px}.terms-card .compact-heading .section-number{width:34px;height:34px}
 .inline-terms-list{font-size:9px;color:var(--muted);line-height:1.8;max-height:150px;overflow:auto;padding:0 8px}
@@ -177,51 +178,37 @@ html[data-theme="dark"] .modal-head button{background:#182538;color:#fff}
 html[data-theme="dark"] .toast{background:#f4f7fb;color:#07101b}
 @media (max-width:720px){
   .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{height:60px}
-  .backup-field input{height:58px}.terms-card .compact-heading h2{font-size:17px}
+  .backup-field input{height:64px}.terms-card .compact-heading h2{font-size:17px}
 }
 @media (max-width:430px){
-  .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{height:58px}.backup-field input{height:58px}
+  .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{height:58px}.backup-field input{height:64px}
 }
 
-/* Selected platform accent system — one coherent layer */
-.orders-page{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
-.orders-page[data-platform="PlayStation"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
-.orders-page[data-platform="Xbox"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
-.orders-page[data-platform="PC"]{--platform-accent:#00c86b;--platform-soft:rgba(0,200,107,.11)}
-.platform-btn>i{transition:.18s}
-.ps-btn>i,.xbox-btn>i,.pc-btn>i{color:#00c86b}
-.ps-btn.active{border-color:#00c86b;background:linear-gradient(180deg,rgba(0,200,107,.12),var(--surface))}
-.xbox-btn.active{border-color:#00c86b;background:linear-gradient(180deg,rgba(0,200,107,.12),var(--surface))}
-.pc-btn.active{border-color:#00c86b;background:linear-gradient(180deg,rgba(0,200,107,.12),var(--surface))}
-html[data-theme="dark"] .selected-rate{background:linear-gradient(135deg,var(--platform-soft),#0a111c);border-color:var(--platform-accent)}
-html[data-theme="dark"] .total-card{background:linear-gradient(135deg,var(--platform-soft),#0a111c);border-color:var(--platform-accent)}
-html[data-theme="dark"] .duration-card{border-color:color-mix(in srgb,var(--platform-accent) 35%,#27384e)}
-html[data-theme="dark"] .quantity-card,html[data-theme="dark"] .account-section,html[data-theme="dark"] .customer-section,html[data-theme="dark"] .payment-section,html[data-theme="dark"] .terms-card{border-color:color-mix(in srgb,var(--platform-accent) 30%,#1e2b3d)}
-
-
-
-/* Selected platform drives the visual identity of the remaining order details */
-.orders-page[data-platform="PlayStation"] .section-number{background:rgba(0,200,107,.14);color:#3c9be8}
-.orders-page[data-platform="Xbox"] .section-number{background:rgba(0,200,107,.14);color:#49a849}
-.orders-page[data-platform="PC"] .section-number{background:rgba(0,200,107,.14);color:#948dff}
-.orders-page[data-platform="PlayStation"] .form-section,
-.orders-page[data-platform="PlayStation"] .terms-card{border-color:rgba(0,200,107,.30)}
-.orders-page[data-platform="Xbox"] .form-section,
-.orders-page[data-platform="Xbox"] .terms-card{border-color:rgba(0,200,107,.30)}
-.orders-page[data-platform="PC"] .form-section,
-.orders-page[data-platform="PC"] .terms-card{border-color:rgba(0,200,107,.30)}
-.orders-page[data-platform="PlayStation"] .duration-card,
-.orders-page[data-platform="Xbox"] .duration-card,
-.orders-page[data-platform="PC"] .duration-card{border-color:color-mix(in srgb,var(--platform-accent) 38%,#27384e)}
-.orders-page[data-platform="PlayStation"] .quantity-card,
-.orders-page[data-platform="Xbox"] .quantity-card,
-.orders-page[data-platform="PC"] .quantity-card,
-.orders-page[data-platform="PlayStation"] .payout-details-card,
-.orders-page[data-platform="Xbox"] .payout-details-card,
-.orders-page[data-platform="PC"] .payout-details-card{border-color:color-mix(in srgb,var(--platform-accent) 32%,#25354a)}
-html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
-
-
+/* Platform identity — one coherent layer
+   PlayStation: official brand blue family; Xbox: official brand green; PC: store red accent. */
+.orders-page{--platform-accent:var(--accent);--platform-soft:rgba(0,200,107,.10);--platform-contrast:#fff}
+.orders-page[data-platform="PlayStation"]{--platform-accent:#00439c;--platform-soft:rgba(0,67,156,.12)}
+.orders-page[data-platform="Xbox"]{--platform-accent:#107c10;--platform-soft:rgba(16,124,16,.12)}
+.orders-page[data-platform="PC"]{--platform-accent:#e31b23;--platform-soft:rgba(227,27,35,.12)}
+.platform-btn{border-color:#dedee1}.platform-btn>i{transition:.18s}
+.ps-btn{border-color:rgba(0,67,156,.55);background:linear-gradient(180deg,rgba(0,67,156,.08),var(--surface))}
+.xbox-btn{border-color:rgba(16,124,16,.55);background:linear-gradient(180deg,rgba(16,124,16,.08),var(--surface))}
+.pc-btn{border-color:rgba(227,27,35,.55);background:linear-gradient(180deg,rgba(227,27,35,.08),var(--surface))}
+.ps-btn>i{color:#00439c}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#e31b23}
+.ps-btn.active,.xbox-btn.active,.pc-btn.active{border-color:var(--platform-accent);background:var(--platform-accent);color:#fff;box-shadow:0 8px 22px color-mix(in srgb,var(--platform-accent) 28%,transparent)}
+.ps-btn.active>i,.xbox-btn.active>i,.pc-btn.active>i{color:#fff}
+.platform-btn.active:after{background:rgba(0,0,0,.18)}
+.selected-rate,.total-card{border-color:var(--platform-accent)}
+.selected-rate{background:linear-gradient(135deg,var(--platform-soft),var(--surface))}
+.total-card{background:var(--platform-soft)}
+.duration-card{border-color:color-mix(in srgb,var(--platform-accent) 28%,var(--line))}
+.duration-card.safe-card{border-color:color-mix(in srgb,var(--platform-accent) 34%,var(--line))}
+.duration-card i,.duration-card strong{color:var(--platform-accent)}
+.quantity-card,.account-section,.customer-section,.payment-section,.terms-card{border-color:color-mix(in srgb,var(--platform-accent) 22%,#ededee)}
+.payout-details-card{border-color:color-mix(in srgb,var(--platform-accent) 42%,var(--line))}
+.rate-value strong,.rate-currency,.selected-rate>i,.total-card strong,.reference-card strong{color:var(--platform-accent)}
+.section-number{background:var(--platform-soft);color:var(--platform-accent)}
+.payment-tabs button.active,.pay-btn-compact.active{background:var(--accent);border-color:var(--accent);color:#fff}
 @media (max-width:430px){
   .header-actions{gap:4px}.header-icon-btn{width:34px;height:34px}.brand-mark{width:34px;height:34px}.brand-name span{font-size:11px}
   .page-main{width:calc(100% - 12px);padding-top:10px}.sell-card{padding:12px;border-radius:16px}.section-heading h2{font-size:14px}.section-heading p{font-size:8px}
@@ -229,14 +216,14 @@ html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
   /* المنصات: ثلاث بطاقات صغيرة في صف واحد، وكل بطاقة بلون منصتها */
   .platform-grid{grid-template-columns:repeat(3,1fr);gap:5px}
   .platform-btn{min-height:86px;border-radius:11px;padding:8px 4px;gap:4px;justify-content:center;display:flex;text-align:center}
-  .platform-btn>i{font-size:25px}
-  .platform-btn strong{font-size:9px}
-  .ps-btn{background:linear-gradient(180deg,rgba(0,200,107,.24),rgba(0,200,107,.08));border-color:#00c86b}
-  .xbox-btn{background:linear-gradient(180deg,rgba(0,200,107,.24),rgba(0,200,107,.08));border-color:#00c86b}
-  .pc-btn{background:linear-gradient(180deg,rgba(0,200,107,.24),rgba(0,200,107,.08));border-color:#00c86b}
-  .ps-btn,.xbox-btn,.pc-btn{color:#00c86b}.pc-btn>i{color:#00c86b}
-  .platform-btn.active{box-shadow:inset 0 0 0 1px currentColor}
-
+  .platform-btn>i{font-size:25px}.platform-btn strong{font-size:9px}
+  .ps-btn{border-color:rgba(0,67,156,.55);background:linear-gradient(180deg,rgba(0,67,156,.08),var(--surface))}
+  .xbox-btn{border-color:rgba(16,124,16,.55);background:linear-gradient(180deg,rgba(16,124,16,.08),var(--surface))}
+  .pc-btn{border-color:rgba(227,27,35,.55);background:linear-gradient(180deg,rgba(227,27,35,.08),var(--surface))}
+  .ps-btn>i{color:#00439c}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#e31b23}
+  .ps-btn.active,.xbox-btn.active,.pc-btn.active{background:var(--platform-accent);border-color:var(--platform-accent);color:#fff}
+  .ps-btn.active>i,.xbox-btn.active>i,.pc-btn.active>i{color:#fff}
+  .platform-btn.active{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28)}
   .duration-grid{grid-template-columns:1fr 1fr 1fr}.duration-card{min-height:62px}
   .backup-grid{grid-template-columns:1fr}.backup-field{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:6px}.backup-field>span{margin:0;text-align:center}
   .quantity-control{grid-template-columns:38px 1fr 38px}.quantity-control>button{height:46px}.quantity-input-wrap{height:46px}.quantity-input-wrap input{font-size:20px}
@@ -262,6 +249,7 @@ html[data-theme="dark"] .rate-value span{color:var(--platform-accent)}
   .terms-check{min-height:48px;font-size:11px}
   .terms-bottom-link{min-height:50px;font-size:11px;padding:10px 14px}
 
+  .payout-details-card{padding:15px;border-radius:15px}.payout-heading{margin-bottom:10px;padding-bottom:9px}.payout-heading span{font-size:11px}.payout-details-card .field-label{font-size:9px;margin-top:9px}.payout-details-card .input-box-wrap input,.payout-details-card .input-box-wrap select,.payout-details-card .input-box-wrap textarea{height:62px;font-size:15px}
   .payment-tabs{grid-template-columns:1fr 1fr}.payment-methods-grid{grid-template-columns:1fr 1fr}
   .fields-grid{grid-template-columns:1fr}.customer-grid{grid-template-columns:1fr}
   .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr}
@@ -292,67 +280,37 @@ html[data-theme="dark"] .payment-review-row .payment-review-label{background:#0a
   .review-value-box{min-height:58px;font-size:12px}
 }
 
-/* FC 27 green identity — shared by first page, review and success */
-html[data-theme="dark"]{
-  --accent:#00c86b;
-  --accent-dark:#009d54;
-  --success:#00c86b;
-}
-html[data-theme="dark"] .payment-section .payment-tabs button,
-html[data-theme="dark"] .payment-section .pay-btn-compact{
-  background:#062c1d!important;
-  color:#fff!important;
-  border-color:#fff!important;
-}
-html[data-theme="dark"] .payment-section .payment-tabs button.active,
-html[data-theme="dark"] .payment-section .pay-btn-compact.active{
-  background:#087a45!important;
-  color:#fff!important;
-  border-color:#fff!important;
-}
-html[data-theme="dark"] .payout-details-card{
-  background:linear-gradient(135deg,#062c1d,#071a13)!important;
-  border:1px solid #fff!important;
-  color:#fff!important;
-}
-html[data-theme="dark"] .payout-details-card .field-label,
-html[data-theme="dark"] .payout-details-card .payout-heading span,
-html[data-theme="dark"] .payout-details-card .payout-heading b{
-  color:#fff!important;
-}
-html[data-theme="dark"] .payout-details-card .input-box-wrap input,
-html[data-theme="dark"] .payout-details-card .input-box-wrap select,
-html[data-theme="dark"] .payout-details-card .input-box-wrap textarea{
-  border-color:#fff!important;
-  color:#fff!important;
-  background:#041b12!important;
-  font-size:14px;
-  font-weight:800;
-}
+/* Shared dark-mode refinements for the current order identity */
+html[data-theme="dark"]{--accent:#00c86b;--accent-dark:#009d54;--success:#00c86b}
+html[data-theme="dark"] .section-number{color:var(--platform-accent,var(--accent));background:color-mix(in srgb,var(--platform-accent,var(--accent)) 16%,#17263a)}
+html[data-theme="dark"] .platform-btn{background:linear-gradient(180deg,#111a28,#0a111c);border-color:#2a394d;color:#f4f7fb}
+html[data-theme="dark"] .platform-btn:hover{border-color:color-mix(in srgb,var(--platform-accent,var(--accent)) 60%,#2a394d)}
+html[data-theme="dark"] .ps-btn.active,html[data-theme="dark"] .xbox-btn.active,html[data-theme="dark"] .pc-btn.active{background:var(--platform-accent);border-color:var(--platform-accent);color:#fff}
+html[data-theme="dark"] .ps-btn.active>i,html[data-theme="dark"] .xbox-btn.active>i,html[data-theme="dark"] .pc-btn.active>i{color:#fff}
+html[data-theme="dark"] .selected-rate,html[data-theme="dark"] .total-card{background:linear-gradient(135deg,var(--platform-soft),#0a111c);border-color:var(--platform-accent)}
+html[data-theme="dark"] .duration-card{border-color:color-mix(in srgb,var(--platform-accent) 35%,#27384e)}
+html[data-theme="dark"] .quantity-card,html[data-theme="dark"] .account-section,html[data-theme="dark"] .customer-section,html[data-theme="dark"] .payment-section,html[data-theme="dark"] .terms-card{border-color:color-mix(in srgb,var(--platform-accent) 30%,#1e2b3d)}
+html[data-theme="dark"] .payment-section .payment-tabs button,html[data-theme="dark"] .payment-section .pay-btn-compact{background:#062c1d!important;color:#fff!important;border-color:#fff!important}
+html[data-theme="dark"] .payment-section .payment-tabs button.active,html[data-theme="dark"] .payment-section .pay-btn-compact.active{background:#087a45!important;color:#fff!important;border-color:#fff!important}
+html[data-theme="dark"] .payout-details-card{background:linear-gradient(135deg,#062c1d,#071a13)!important;border:1px solid #fff!important;color:#fff!important}
+html[data-theme="dark"] .payout-details-card .field-label,html[data-theme="dark"] .payout-details-card .payout-heading span,html[data-theme="dark"] .payout-details-card .payout-heading b{color:#fff!important}
+html[data-theme="dark"] .payout-details-card .input-box-wrap input,html[data-theme="dark"] .payout-details-card .input-box-wrap select,html[data-theme="dark"] .payout-details-card .input-box-wrap textarea{border-color:#fff!important;color:#fff!important;background:#041b12!important;font-size:16px;font-weight:900}
 html[data-theme="dark"] .payout-details-card .input-box-wrap input::placeholder{color:#cfe8dc}
-.customer-section .input-box-wrap input{
-  height:64px;
-  font-size:15px;
-  font-weight:800;
+html[data-theme="dark"] .account-section .input-box-wrap input{border-color:#fff;font-size:15px;font-weight:800}
+html[data-theme="dark"] .customer-section .input-box-wrap input{height:64px;font-size:15px;font-weight:800}
+html[data-theme="dark"] .backup-field input{height:64px;font-size:15px}
+html[data-theme="dark"] .review-detail{background:#0a1421;border-color:#2a3b50}
+html[data-theme="dark"] .review-value-box{background:#07101b;border-color:#33475f;color:#f4f7fb}
+html[data-theme="dark"] .code-display-row{background:#07101b;border-color:#3a506a;color:#fff}
+html[data-theme="dark"] .payment-review-row .payment-review-label{background:#0a1421;border-color:#33475f}
+html[data-theme="dark"] .reference-card{background:#0d1a15;border-color:color-mix(in srgb,var(--platform-accent) 45%,#263247)}
+html[data-theme="dark"] .success-icon{background:rgba(0,200,107,.14);color:var(--accent)}
+html[data-theme="dark"] .closed-icon{background:var(--platform-soft);color:var(--platform-accent)}
+html[data-theme="dark"] .success-payment-card{background:#0a1421;border-color:#2a3b50}
+html[data-theme="dark"] .review-main-box i,html[data-theme="dark"] .invoice-box>i{color:var(--platform-accent)}
+@media(max-width:720px){
+  .review-client-grid{grid-template-columns:1fr 1fr;gap:7px}.review-ea-grid{grid-template-columns:1fr;gap:7px}.review-large-detail{min-height:78px;padding:12px}.review-detail>span{font-size:10px}.review-detail>strong{font-size:13px}.backup-codes-stack{grid-template-columns:repeat(3,1fr);gap:6px}.code-display-row{min-height:66px;font-size:13px;padding:8px 4px}.payment-review-row{grid-template-columns:1fr;gap:5px}.payment-review-row .payment-review-label{min-height:42px}
 }
-.payout-details-card .input-box-wrap input,
-.payout-details-card .input-box-wrap select,
-.payout-details-card .input-box-wrap textarea{
-  height:64px;
-  font-size:14px;
-  font-weight:800;
-}
-.payout-details-card #bankNameSelect,
-.payout-details-card #accountName,
-.payout-details-card #iban{
-  font-size:16px;
-  font-weight:900;
-}
-html[data-theme="dark"] .customer-section,
-html[data-theme="dark"] .account-section,
-html[data-theme="dark"] .payment-section,
-html[data-theme="dark"] .terms-card,
-html[data-theme="dark"] .review-card,
-html[data-theme="dark"] .success-page{
-  --accent:#00c86b;
+@media(max-width:430px){
+  .review-client-grid{grid-template-columns:1fr 1fr}.review-ea-grid{grid-template-columns:1fr}.backup-codes-stack{grid-template-columns:repeat(3,1fr)}.code-display-row{min-height:70px;font-size:12px}.payment-review-row .payment-review-label{font-size:11px}.review-value-box{min-height:58px;font-size:12px}
 }
