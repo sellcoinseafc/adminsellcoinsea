@@ -1572,7 +1572,7 @@ function renderStep2PaymentFields() {
                     autocomplete="off"
                     placeholder="05xxxxxxxx"
                     inputmode="numeric"
-                    maxlength="15"
+                    maxlength="10"
                     oninput="convertArabicNumbersToEnglish(this)"
                     required
                 >
@@ -1585,7 +1585,7 @@ function renderStep2PaymentFields() {
 
         container.innerHTML = `
             <label class="field-label">
-                USDT (TRC20)
+                USD — إيميل المحفظة
                 <span class="required-star">*</span>
             </label>
 
