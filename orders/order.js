@@ -1595,10 +1595,11 @@ function renderStep2PaymentFields() {
                     id="usdDetails"
                     placeholder="${
                         currentLanguage === "ar"
-                            ? "عنوان محفظة USDT على شبكة TRC20"
-                            : "USDT wallet address on TRC20"
+                            ? "إيميل المحفظة"
+                            : "Wallet email"
                     }"
-                    autocomplete="off"
+                    autocomplete="email"
+                    inputmode="email"
                     required
                 >
             </div>
@@ -1928,7 +1929,7 @@ function validateAccountStep1() {
     const codes=[code1.value.trim(),code2.value.trim(),code3.value.trim()];
     const codePattern=/^(?:[0-9]\.[0-9]{8}|[0-9]{8}|[0-9]{6})$/;
     const bad=[code1,code2,code3].find(x=>!codePattern.test(String(x?.value||"").trim()));
-    if(bad){markInvalid(bad,"الكود يجب أن يكون 6 أو 8 أرقام، أو رقمًا واحدًا ثم نقطة ثم 8 أرقام.");return false;}
+    if(bad){markInvalid(bad,"الكود يجب أن يحتوي على 8 إلى 10 أرقام إنجليزية فقط.");return false;}
     if(new Set(codes).size!==3){markInvalid(code3,"يجب أن تكون الأكواد الثلاثة مختلفة.");return false;}
     return true;
 }
@@ -1978,16 +1979,23 @@ function validateStep2() {
         $("iban").value=iban;
     }
     if(method==="usd"){
-        const address=String($("usdDetails")?.value||"").trim();
-        if(!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address)){markInvalid($("usdDetails"),"أدخل عنوان USDT صحيحًا على شبكة TRC20 يبدأ بحرف T.");return false;}
+        const email=String($("usdDetails")?.value||"").trim();
+        if(!/^\\S+@\\S+\\.\\S+$/.test(email)){markInvalid($("usdDetails"),"أدخل إيميل محفظة صحيحًا.");return false;}
     }
     if(method==="paypal"){
         const email=String($("paypalEmail")?.value||"").trim();
         if(!/^\S+@\S+\.\S+$/.test(email)){markInvalid($("paypalEmail"),"أدخل بريد PayPal صحيحًا.");return false;}
     }
+    if(method==="wallet"){
+        const wallet=String($("walletTypeSelect")?.value||"").trim();
+        const phone=String($("walletNumber")?.value||"").trim();
+        if(!wallet){markInvalid($("walletTypeSelect"),"اختر المحفظة الرقمية.");return false;}
+        if(!/^05\\d{8}$/.test(phone)){markInvalid($("walletNumber"),"رقم جوال المحفظة يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.");return false;}
+    }
     if(method==="western"){
         const wu=String($("wuName")?.value||"").trim();
         if(!/^[A-Za-z][A-Za-z .'-]*$/.test(wu)){markInvalid($("wuName"),"اسم Western Union يجب أن يكون بالإنجليزية فقط ويطابق الاسم في الهوية.");return false;}
+        if(String($("wuCountry")?.value||"").trim().length<2){markInvalid($("wuCountry"),"الدولة مطلوبة.");return false;}
     }
     if(storeSettings.termsEnabled!==false&&!$("termsCheck")?.checked){$("termsCheck")?.scrollIntoView({behavior:"smooth",block:"center"});showToast("يجب الموافقة على الشروط والأحكام.");return false;}
     return true;
@@ -2071,7 +2079,7 @@ function buildPaymentDetailsHTML() {
     if (method === "usd") {
 
         const wallet =
-            $("usdtWalletType")?.value?.trim() || "";
+            $("usdDetails")?.value?.trim() || "";
 
         return `
             <div class="field-label">
