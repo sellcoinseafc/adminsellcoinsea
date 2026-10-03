@@ -4241,23 +4241,23 @@ window.openOrderModal = function (orderId) {
             <div class="order-basic-grid">
               <div class="order-basic-card order-basic-reference">
                 <span>رقم الطلب</span>
-                <strong dir="ltr">#\${escapeHtml(internalRef)}</strong>
-                <small class="order-basic-reference-sub" dir="ltr">\${escapeHtml(ref)}</small>
+                <strong dir="ltr">#${escapeHtml(internalRef)}</strong>
+                <small class="order-basic-reference-sub" dir="ltr">${escapeHtml(ref)}</small>
               </div>
               <div class="order-basic-card order-basic-platform">
                 <span>المنصة</span>
-                <div class="platform-detail-brand platform-\${escapeAttribute(platformClass)}">
-                  <i class="\${platformIcon}" aria-hidden="true"></i>
-                  <strong>\${escapeHtml(platform||"---")}</strong>
+                <div class="platform-detail-brand platform-${escapeAttribute(platformClass)}">
+                  <i class="${platformIcon}" aria-hidden="true"></i>
+                  <strong>${escapeHtml(platform||"---")}</strong>
                 </div>
               </div>
               <div class="order-basic-card order-basic-quantity">
                 <span>الكمية المباعة</span>
-                <strong dir="ltr">\${formatCoinsNumber(total)}</strong>
+                <strong dir="ltr">${formatCoinsNumber(total)}</strong>
               </div>
               <div class="order-basic-card order-basic-price">
                 <span>سعر البيع</span>
-                \${getDisplayPriceMarkup(order)}
+                ${getDisplayPriceMarkup(order)}
               </div>
             </div>
           </div>
