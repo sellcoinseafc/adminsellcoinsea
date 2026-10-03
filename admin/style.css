@@ -8210,3 +8210,365 @@ textarea.form-control{
     line-height:1.35!important;
   }
 }
+
+
+/* ==========================================================================
+   SAMI COINS — STEP 4 FINAL MOBILE OPERATION CARDS
+   Orders / Recent Orders / Withdraw / Transfers
+   One operation = one compact full-width card.
+   One field = one full-width row.
+   ========================================================================== */
+@media (max-width:700px){
+
+  #ordersTab .orders-toolbar,
+  #withdrawTab .orders-toolbar{
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    padding:0 0 11px!important;
+    margin:0 0 11px!important;
+    border-bottom:1px solid rgba(0,255,135,.13)!important;
+  }
+
+  #ordersTab .orders-toolbar > div:first-child,
+  #withdrawTab .orders-toolbar > div:first-child{min-width:0!important;}
+
+  #ordersTab .orders-toolbar strong,
+  #withdrawTab .orders-toolbar strong{
+    display:block!important;
+    font-size:1.05rem!important;
+    line-height:1.35!important;
+    font-weight:900!important;
+  }
+
+  #ordersTab .orders-toolbar span,
+  #withdrawTab .orders-toolbar span{
+    display:block!important;
+    margin-top:3px!important;
+    color:var(--muted)!important;
+    font-size:.68rem!important;
+    line-height:1.65!important;
+  }
+
+  #ordersTab .orders-legend{display:none!important;}
+
+  #fullOrdersTableBody,
+  #recentOrdersTableBody,
+  #withdrawOrdersTableBody,
+  #transferAlertsTableBody{
+    display:block!important;
+    width:100%!important;
+  }
+
+  #fullOrdersTableBody tr,
+  #recentOrdersTableBody tr,
+  #withdrawOrdersTableBody tr,
+  #transferAlertsTableBody tr{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    margin:0 0 10px!important;
+    padding:5px 13px!important;
+    border:1px solid rgba(0,255,135,.11)!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(10,24,39,.98),rgba(6,15,27,.98))!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.18)!important;
+  }
+
+  #fullOrdersTableBody td,
+  #recentOrdersTableBody td,
+  #withdrawOrdersTableBody td,
+  #transferAlertsTableBody td{
+    display:flex!important;
+    flex-direction:row!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    padding:9px 0!important;
+    margin:0!important;
+    border:0!important;
+    border-bottom:1px solid rgba(255,255,255,.065)!important;
+    background:transparent!important;
+    text-align:right!important;
+    vertical-align:middle!important;
+  }
+
+  #fullOrdersTableBody td:last-child,
+  #recentOrdersTableBody td:last-child,
+  #withdrawOrdersTableBody td:last-child,
+  #transferAlertsTableBody td:last-child{border-bottom:0!important;}
+
+  #fullOrdersTableBody td .table-field-label,
+  #recentOrdersTableBody td .table-field-label,
+  #withdrawOrdersTableBody td .table-field-label,
+  #transferAlertsTableBody td .table-field-label{
+    flex:0 0 82px!important;
+    width:82px!important;
+    margin:0!important;
+    color:#8fa1b5!important;
+    font-size:.66rem!important;
+    font-weight:800!important;
+    line-height:1.35!important;
+    white-space:nowrap!important;
+  }
+
+  #fullOrdersTableBody td > *:not(.table-field-label),
+  #recentOrdersTableBody td > *:not(.table-field-label),
+  #withdrawOrdersTableBody td > *:not(.table-field-label),
+  #transferAlertsTableBody td > *:not(.table-field-label){
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:calc(100% - 92px)!important;
+  }
+
+  #fullOrdersTableBody .order-ref-stack,
+  #recentOrdersTableBody .order-ref-stack,
+  #withdrawOrdersTableBody .order-ref-stack,
+  #transferAlertsTableBody .order-ref-stack{
+    display:flex!important;
+    flex:1 1 auto!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:7px!important;
+    min-width:0!important;
+    max-width:calc(100% - 92px)!important;
+  }
+
+  #fullOrdersTableBody .order-ref-stack small,
+  #recentOrdersTableBody .order-ref-stack small,
+  #withdrawOrdersTableBody .order-ref-stack small{display:none!important;}
+
+  #fullOrdersTableBody .order-reference-value,
+  #recentOrdersTableBody .order-reference-value,
+  #withdrawOrdersTableBody .order-reference-value,
+  #transferAlertsTableBody .order-reference-value{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:100%!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    font-size:1rem!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+    cursor:pointer!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  #fullOrdersTableBody .order-reference-value i,
+  #recentOrdersTableBody .order-reference-value i,
+  #withdrawOrdersTableBody .order-reference-value i,
+  #transferAlertsTableBody .order-reference-value i{
+    color:#7f93a9!important;
+    font-size:.72rem!important;
+    flex:0 0 auto!important;
+  }
+
+  #fullOrdersTableBody .table-primary-value,
+  #recentOrdersTableBody .table-primary-value,
+  #withdrawOrdersTableBody .table-primary-value,
+  #transferAlertsTableBody .table-primary-value{
+    flex:1 1 auto!important;
+    text-align:left!important;
+    color:#fff!important;
+    font-size:.9rem!important;
+    line-height:1.35!important;
+    font-weight:800!important;
+    overflow-wrap:anywhere!important;
+  }
+
+  #fullOrdersTableBody .phone-value,
+  #recentOrdersTableBody .phone-value,
+  #withdrawOrdersTableBody .phone-value,
+  #transferAlertsTableBody .phone-value{
+    direction:ltr!important;
+    text-align:left!important;
+    white-space:nowrap!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  #fullOrdersTableBody .platform-badge,
+  #recentOrdersTableBody .platform-badge,
+  #withdrawOrdersTableBody .platform-badge,
+  #transferAlertsTableBody .platform-badge{
+    display:inline-flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    width:auto!important;
+    min-width:104px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:5px 9px!important;
+    border-radius:11px!important;
+    flex:0 0 auto!important;
+  }
+
+  #fullOrdersTableBody .platform-badge i,
+  #recentOrdersTableBody .platform-badge i,
+  #withdrawOrdersTableBody .platform-badge i,
+  #transferAlertsTableBody .platform-badge i{font-size:1rem!important;}
+
+  #fullOrdersTableBody .platform-badge-name,
+  #recentOrdersTableBody .platform-badge-name,
+  #withdrawOrdersTableBody .platform-badge-name,
+  #transferAlertsTableBody .platform-badge-name{
+    display:inline!important;
+    font-size:.66rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+  }
+
+  #fullOrdersTableBody .table-large-value,
+  #recentOrdersTableBody .table-large-value,
+  #withdrawOrdersTableBody .table-large-value,
+  #transferAlertsTableBody .table-large-value{
+    flex:1 1 auto!important;
+    text-align:left!important;
+    color:#fff!important;
+    font-size:1rem!important;
+    line-height:1.25!important;
+    font-weight:900!important;
+    font-variant-numeric:tabular-nums!important;
+    direction:ltr!important;
+    white-space:nowrap!important;
+  }
+
+  #fullOrdersTableBody .order-price-stack,
+  #recentOrdersTableBody .order-price-stack{
+    flex:1 1 auto!important;
+    max-width:calc(100% - 92px)!important;
+    text-align:left!important;
+  }
+
+  #fullOrdersTableBody .order-price-stack small,
+  #recentOrdersTableBody .order-price-stack small{
+    display:block!important;
+    color:#8fa1b5!important;
+    font-size:.58rem!important;
+    line-height:1.2!important;
+    margin-bottom:1px!important;
+  }
+
+  #fullOrdersTableBody .order-price-stack strong,
+  #recentOrdersTableBody .order-price-stack strong{
+    display:block!important;
+    color:#fff!important;
+    font-size:1.05rem!important;
+    font-weight:900!important;
+  }
+
+  #fullOrdersTableBody .platform-status-badge,
+  #recentOrdersTableBody .platform-status-badge,
+  #withdrawOrdersTableBody .platform-status-badge{
+    flex:1 1 auto!important;
+    width:auto!important;
+    max-width:calc(100% - 92px)!important;
+    min-height:34px!important;
+    margin:0!important;
+    padding:6px 9px!important;
+    border-radius:10px!important;
+    font-size:.65rem!important;
+    line-height:1.3!important;
+    text-align:center!important;
+  }
+
+  #fullOrdersTableBody .recent-actions-cell,
+  #recentOrdersTableBody .recent-actions-cell,
+  #withdrawOrdersTableBody .recent-actions-cell,
+  #transferAlertsTableBody .recent-actions-cell{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:6px!important;
+    padding:9px 0 5px!important;
+  }
+
+  #fullOrdersTableBody .recent-actions-cell .table-field-label,
+  #recentOrdersTableBody .recent-actions-cell .table-field-label,
+  #withdrawOrdersTableBody .recent-actions-cell .table-field-label,
+  #transferAlertsTableBody .recent-actions-cell .table-field-label{
+    width:auto!important;
+    flex:none!important;
+    margin:0!important;
+  }
+
+  #fullOrdersTableBody .recent-order-actions,
+  #recentOrdersTableBody .recent-order-actions,
+  #withdrawOrdersTableBody .recent-order-actions{
+    width:100%!important;
+    max-width:none!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+  }
+
+  #transferAlertsTableBody .transfer-payment-badge,
+  #transferAlertsTableBody .last-update-value{
+    flex:1 1 auto!important;
+    max-width:calc(100% - 92px)!important;
+    text-align:left!important;
+    font-size:.72rem!important;
+  }
+
+  #transferAlertsTableBody .transfer-action-button{
+    width:100%!important;
+    max-width:none!important;
+    min-height:40px!important;
+  }
+
+  #ordersTab .table-wrap,
+  #dashboardTab .dashboard-orders .table-wrap,
+  #withdrawTab .table-wrap,
+  #transferAlertsTab .table-wrap{
+    overflow:visible!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  #ordersTab table,
+  #dashboardTab .dashboard-orders table,
+  #withdrawTab table,
+  #transferAlertsTab table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:auto!important;
+  }
+
+  #ordersTab thead,
+  #dashboardTab .dashboard-orders thead,
+  #withdrawTab thead,
+  #transferAlertsTab thead{display:none!important;}
+
+  #ordersTab .order-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin-bottom:12px!important;
+  }
+
+  #ordersTab .order-kpis > div{
+    min-height:72px!important;
+    padding:9px 11px!important;
+  }
+
+  #ordersTab .order-kpis b{
+    font-size:1.35rem!important;
+    line-height:1.15!important;
+  }
+
+  #ordersTab .order-kpis span{
+    margin-top:4px!important;
+    font-size:.64rem!important;
+  }
+}
