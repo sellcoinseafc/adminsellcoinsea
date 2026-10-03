@@ -327,18 +327,6 @@ export const defaultSettings = {
  * ============================================================================
  */
 
-function cleanString(
-    value,
-    fallback = ""
-) {
-    const text =
-        String(
-            value ?? ""
-        ).trim();
-
-    return text || fallback;
-}
-
 function normalizeStringArray(
     value
 ) {
