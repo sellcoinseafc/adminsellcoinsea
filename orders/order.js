@@ -11,6 +11,25 @@ import { subscribeToPublicSettings } from "../shared/publicSettings.js?v=2026100
 // 0. إعدادات التطبيق
 // ==========================================================================
 
+const PUBLIC_SETTINGS_CACHE_KEY = "sami_coins_public_settings_v2";
+
+function readCachedPublicSettings() {
+    try {
+        const raw = localStorage.getItem(PUBLIC_SETTINGS_CACHE_KEY);
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object" || !parsed.settings) {
+            return null;
+        }
+
+        return parsed.settings;
+    } catch (error) {
+        console.warn("Unable to read cached public settings:", error);
+        return null;
+    }
+}
+
 let storeSettings = {
     rates: {},
     limits: {},
@@ -681,6 +700,59 @@ function loadSettings() {
 // 8. الإعدادات اللحظية
 // ==========================================================================
 
+function applyPublicSettingsSnapshot(settings) {
+    if (!settings || typeof settings !== "object") return;
+
+    storeSettings = {
+        ...storeSettings,
+        storeName: settings.storeName || storeSettings.storeName || "SAMI COINS",
+        arabicStoreName: settings.arabicStoreName || storeSettings.arabicStoreName || "سامي كوينز",
+        storeLogo: settings.storeLogo || storeSettings.storeLogo || "",
+        gameName: settings.gameName || "FC",
+        gameVersion: Number(settings.gameVersion || 27),
+        rates: {
+            ...storeSettings.rates,
+            PlayStation: Number(settings.psRate ?? storeSettings.rates.PlayStation ?? 0),
+            Xbox: Number(settings.psRate ?? storeSettings.rates.Xbox ?? 0),
+            PC: Number(settings.pcRate ?? storeSettings.rates.PC ?? 0)
+        },
+        limits: {
+            ...storeSettings.limits,
+            psMin: Number(settings.psMin ?? storeSettings.limits.psMin ?? 0),
+            psMax: Number(settings.psMax ?? storeSettings.limits.psMax ?? 0),
+            pcMin: Number(settings.pcMin ?? storeSettings.limits.pcMin ?? 0),
+            pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
+        },
+        banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
+        wallets: getConfiguredWallets({
+            ...settings,
+            wallets: settings.wallets
+        }),
+        terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
+        termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
+        termsEnabled: settings.termsEnabled !== false,
+        storeOpen: settings.storeOpen !== false,
+        withdrawDays: settings.psWithdrawDuration ?? storeSettings.withdrawDays,
+        transferHours: settings.psTransferDuration ?? storeSettings.transferHours,
+        pcWithdrawDays: settings.pcWithdrawDuration ?? storeSettings.pcWithdrawDays,
+        pcTransferHours: settings.pcTransferDuration ?? storeSettings.pcTransferHours,
+        safeMethod: "آمنة 100%",
+        paymentCategories: settings.paymentCategories || storeSettings.paymentCategories,
+        paymentMethods: settings.paymentMethods || storeSettings.paymentMethods,
+        supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
+    };
+}
+
+const cachedPublicSettings = readCachedPublicSettings();
+if (cachedPublicSettings) {
+    applyPublicSettingsSnapshot(cachedPublicSettings);
+    settingsLoaded = true;
+}
+
+// ==========================================================================
+// 8.1 بدء الاستماع اللحظي
+// ==========================================================================
+
 function startSettingsRealtime() {
     if (typeof unsubscribeSettingsRealtime === "function") {
         unsubscribeSettingsRealtime();
@@ -688,44 +760,19 @@ function startSettingsRealtime() {
 
     try {
         unsubscribeSettingsRealtime = subscribeToPublicSettings((settings) => {
-            storeSettings = {
-                ...storeSettings,
-                storeName: settings.storeName || storeSettings.storeName || "SAMI COINS",
-                arabicStoreName: settings.arabicStoreName || storeSettings.arabicStoreName || "سامي كوينز",
-                storeLogo: settings.storeLogo || storeSettings.storeLogo || "",
-                gameName: settings.gameName || "FC",
-                gameVersion: Number(settings.gameVersion || 27),
-                rates: {
-                    ...storeSettings.rates,
-                    PlayStation: Number(settings.psRate ?? storeSettings.rates.PlayStation ?? 0),
-                    Xbox: Number(settings.psRate ?? storeSettings.rates.Xbox ?? 0),
-                    PC: Number(settings.pcRate ?? storeSettings.rates.PC ?? 0)
-                },
-                limits: {
-                    ...storeSettings.limits,
-                    psMin: Number(settings.psMin ?? storeSettings.limits.psMin ?? 0),
-                    psMax: Number(settings.psMax ?? storeSettings.limits.psMax ?? 0),
-                    pcMin: Number(settings.pcMin ?? storeSettings.limits.pcMin ?? 0),
-                    pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
-                },
-                banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
-                wallets: getConfiguredWallets({
-                    ...settings,
-                    wallets: settings.wallets
-                }),
-                terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
-                termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
-                termsEnabled: settings.termsEnabled !== false,
-                storeOpen: settings.storeOpen !== false,
-                withdrawDays: settings.psWithdrawDuration || storeSettings.withdrawDays,
-                transferHours: settings.psTransferDuration || storeSettings.transferHours,
-                pcWithdrawDays: settings.pcWithdrawDuration ?? "",
-                pcTransferHours: settings.pcTransferDuration ?? "",
-                safeMethod: "آمنة 100%",
-                paymentCategories: settings.paymentCategories || storeSettings.paymentCategories,
-                paymentMethods: settings.paymentMethods || storeSettings.paymentMethods,
-                supportWhatsapp: settings.supportWhatsapp || storeSettings.supportWhatsapp
-            };
+            applyPublicSettingsSnapshot(settings);
+
+            try {
+                localStorage.setItem(
+                    PUBLIC_SETTINGS_CACHE_KEY,
+                    JSON.stringify({
+                        savedAt: Date.now(),
+                        settings
+                    })
+                );
+            } catch (error) {
+                console.warn("Unable to cache public settings:", error);
+            }
 
             settingsLoaded = true;
             applySettingsToUI();
@@ -932,7 +979,20 @@ function selectPlatform(
     // عند وصول الإعدادات، applySettingsToUI() سيعيد تطبيق الاختيار تلقائيًا.
     selectedPlatform = platform;
 
+    // لا نوقف تفاعل المستخدم بانتظار أول لقطة Firestore.
+    // إذا لم تصل اللقطة بعد، نعرض الواجهة فورًا من الكاش/القيم الحالية،
+    // ثم تصححها اللقطة اللحظية فور وصولها.
     if (!settingsLoaded) {
+        $("pageShell")?.setAttribute("data-platform", platform);
+        showElement("accountStage");
+        updateRateCardsUI();
+        const durations = getCurrentPlatformDurations();
+        setText("withdrawText", localizeSettingText(durations.withdraw));
+        setText("transferText", localizeSettingText(durations.transfer));
+        showElement("durationInfoCardsStep1");
+        showElement("singlePlatformRateCard");
+        showElement("qtyCardContainer");
+        showElement("totalAmountBoxCard");
         return;
     }
 
