@@ -12,6 +12,7 @@ test("API status normalization rejects legacy and invalid mutation values", () =
   assert.equal(normalizeStatus("pending"), "");
   assert.equal(normalizeStatus("invalid"), "");
   assert.equal(normalizeStatus(" COMPLETED "), "completed");
+  assert.equal(normalizeStoredStatus("transferred"), "completed");
   assert.equal(isValidStatus("pending"), false);
 });
 
@@ -26,8 +27,7 @@ test("operational status transitions remain selectable by the admin", () => {
   assert.equal(normalizeStatus("pending_transfer"), "pending_transfer");
   assert.equal(ALLOWED_STATUS_TRANSITIONS.new.has("completed"), true);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.finished.has("pending_transfer"), true);
-  assert.equal(ALLOWED_STATUS_TRANSITIONS.pending_transfer.has("transferred"), true);
-  assert.equal(ALLOWED_STATUS_TRANSITIONS.transferred.has("completed"), true);
+  assert.equal(ALLOWED_STATUS_TRANSITIONS.pending_transfer.has("completed"), true);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.completed.has("progress"), true);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.archived.has("completed"), false);
   assert.equal(ALLOWED_STATUS_TRANSITIONS.completed.has("archived"), false);

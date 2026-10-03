@@ -55,10 +55,9 @@ const STATUS_MESSAGES = {
   new: "طلب جديد",
   review: "بانتظار المراجعة",
   progress: "جاري سحب الكوينز من حسابك",
-  finished: "تم الانتهاء من سحب الكوين من حسابك",
-  pending_transfer: "بانتظار التحويل",
-  transferred: "تم التحويل لحسابك",
-  completed: "مكتمل"
+  finished: "تم الانتهاء من سحب الكوينز من حسابك",
+  pending_transfer: "قيد التحويل",
+  completed: "تم التحويل — مكتمل"
 };
 
 const ARABIC_STATUS_MAP = {
@@ -72,9 +71,11 @@ const ARABIC_STATUS_MAP = {
   "تم الانتهاء من سحب الكوينز بحسابك": "finished",
   "تم الانتهاء من سحب الكوين من حسابك": "finished",
   "تم الانتهاء من سحب الكوينز من حسابك": "finished",
+  "قيد التحويل": "pending_transfer",
   "بانتظار التحويل": "pending_transfer",
-  "تم التحويل لحسابك": "transferred",
-  "تم تحويل المبلغ إلى حسابك": "transferred",
+  "تم التحويل لحسابك": "completed",
+  "تم تحويل المبلغ إلى حسابك": "completed",
+  "تم التحويل — مكتمل": "completed",
   "مكتمل": "completed"
 };
 
@@ -157,6 +158,10 @@ function normalizeStatus(status) {
 
   if (ARABIC_STATUS_MAP[raw]) {
     return ARABIC_STATUS_MAP[raw];
+  }
+
+  if (normalized === "transferred") {
+    return "completed";
   }
 
   return (
@@ -962,10 +967,10 @@ function buildTrackingOrder(
     const defaultPercentages = {
       new: 15,
       review: 35,
-      progress: 0,
-      finished: 100,
-      transferred: 100,
-      completed: 100
+      progress: 65,
+        finished: 85,
+        pending_transfer: 95,
+        completed: 100
     };
 
     progressPercentage =
@@ -1128,13 +1133,12 @@ function buildTrackingOrder(
       order.reviewSubmitted === true,
 
     transferStatusKey:
+      status === "completed" ||
       order.transferCompleted === true
         ? "completed"
-        : order.transferredAt
-          ? "transferred"
-          : ["transferred","completed"].includes(status)
-            ? "processing"
-            : "pending",
+        : status === "pending_transfer"
+          ? "pending"
+          : "pending",
 
     transferredAt:
       toISOStringSafe(order.transferredAt),

@@ -35,7 +35,7 @@ const STATUS_CONFIG = {
     },
 
     review: {
-        text: "طلب بانتظار المراجعة",
+        text: "بانتظار المراجعة",
         percentage: 35,
         className: "review"
     },
@@ -52,14 +52,14 @@ const STATUS_CONFIG = {
         className: "finished"
     },
 
-    transferred: {
-        text: "تم تحويل المبلغ إلى حسابك",
+    pending_transfer: {
+        text: "قيد التحويل",
         percentage: 95,
-        className: "success"
+        className: "pending-transfer"
     },
 
     completed: {
-        text: "مكتمل",
+        text: "تم التحويل — مكتمل",
         percentage: 100,
         className: "success"
     }
@@ -671,8 +671,8 @@ function renderTrackingExtras(order,statusMessage,issueMessage){
  if(action)action.style.display=needs?'block':'none';
  if(needs){setElementText('customerActionTitle',getIssueTitle(order.issue));setElementText('customerActionMessage',issueMessage||order?.issueMessage||'');setElementText('customerActionState','حالة الطلب: بانتظار إجراء العميل');}
  const key=String(order?.transferStatusKey||'pending');
- const labels={pending:'بانتظار التحويل',processing:'جاري التحويل',transferred:'تم التحويل',completed:'اكتمل التحويل'};
- const messages={pending:'لم تبدأ مرحلة التحويل بعد.',processing:'جاري تجهيز وتحويل المبلغ.',transferred:'تم تسجيل تحويل المبلغ.',completed:'تم اكتمال التحويل وإغلاق الطلب.'};
+ const labels={pending:'قيد التحويل',completed:'تم التحويل — مكتمل'};
+ const messages={pending:'جاري تجهيز وتحويل المبلغ.',completed:'تم تحويل المبلغ وإغلاق الطلب بنجاح.'};
  setElementText('transferStatusLabel',labels[key]||labels.pending);
  setElementText('transferStatusMessage',messages[key]||messages.pending);
  const tr=document.getElementById('transferCompletionRow'),cr=document.getElementById('completedAtRow');
@@ -1083,14 +1083,20 @@ function normalizeStatus(status) {
         "تم الانتهاء من سحب الكوينز من حسابك":
             "finished",
 
+        "قيد التحويل":
+            "pending_transfer",
+
         "بانتظار التحويل":
             "pending_transfer",
 
         "تم التحويل لحسابك":
-            "transferred",
+            "completed",
 
         "تم تحويل المبلغ إلى حسابك":
-            "transferred",
+            "completed",
+
+        "تم التحويل — مكتمل":
+            "completed",
 
         "مكتمل":
             "completed"
@@ -1098,6 +1104,10 @@ function normalizeStatus(status) {
 
     if (arabicStatusMap[raw]) {
         return arabicStatusMap[raw];
+    }
+
+    if (normalized === "transferred") {
+        return "completed";
     }
 
     return LEGACY_STATUS_MAP[normalized] ||
@@ -1732,7 +1742,6 @@ function handleStatusState(
         status === "progress" ||
         status === "finished" ||
         status === "pending_transfer" ||
-        status === "transferred" ||
         status === "completed"
     ) {
         showWithdrawn = true;
@@ -1741,7 +1750,6 @@ function handleStatusState(
     if (
         status === "finished" ||
         status === "pending_transfer" ||
-        status === "transferred" ||
         status === "completed"
     ) {
         showSecurity = true;
@@ -1915,7 +1923,8 @@ function updateTimelineSteps(status) {
         "review",
         "progress",
         "finished",
-        "transferred"
+        "pending_transfer",
+        "completed"
     ];
 
     const statusMap = {
@@ -1923,8 +1932,8 @@ function updateTimelineSteps(status) {
         review: 1,
         progress: 2,
         finished: 3,
-        transferred: 4,
-        completed: 4
+        pending_transfer: 4,
+        completed: 5
     };
 
     const activeIndex =
