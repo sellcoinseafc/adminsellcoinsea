@@ -911,15 +911,27 @@ function applyPlatformAvailabilityUI() {
         document.querySelectorAll(selector).forEach((button) => {
             button.classList.toggle("is-unavailable", !enabled);
             button.setAttribute("aria-disabled", enabled ? "false" : "true");
+            button.setAttribute("data-platform-enabled", enabled ? "true" : "false");
+
+            const status = button.querySelector("[data-platform-status]");
+            if (status) {
+                status.textContent =
+                    enabled
+                        ? (currentLanguage === "en" ? "Open" : "متاح")
+                        : (currentLanguage === "en" ? "Closed" : "مغلق");
+                status.classList.toggle("is-closed", !enabled);
+            }
         });
 
-        if (enabled) {
-            const messageId = platform === "PlayStation"
+        const messageId =
+            platform === "PlayStation"
                 ? "psUnavailableMessage"
                 : platform === "Xbox"
                     ? "xboxUnavailableMessage"
-                    : "";
-            if (messageId) $(messageId)?.classList.add("hidden");
+                    : "pcUnavailableMessage";
+
+        if (messageId) {
+            $(messageId)?.classList.toggle("hidden", enabled);
         }
     });
 }
