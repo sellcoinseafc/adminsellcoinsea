@@ -3078,6 +3078,18 @@ async function submitOrderFinal() {
             billOval.classList.add(selectedPlatform === "PlayStation" ? "ps-theme" : selectedPlatform === "Xbox" ? "xbox-theme" : "pc-theme");
         }
 
+        const orderReferenceCard = $("orderReferenceCard");
+        if (orderReferenceCard) {
+            orderReferenceCard.classList.remove("ps-theme","xbox-theme","pc-theme");
+            orderReferenceCard.classList.add(
+                selectedPlatform === "PlayStation"
+                    ? "ps-theme"
+                    : selectedPlatform === "Xbox"
+                        ? "xbox-theme"
+                        : "pc-theme"
+            );
+        }
+
         setText(
             "billQty",
             currentQty.toLocaleString("en-US")
