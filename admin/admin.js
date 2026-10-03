@@ -152,7 +152,7 @@ async function getAdminToken() {
     );
   }
 
-  return await user.getIdToken();
+  return await user.getIdToken(true);
 }
 
 async function adminFetch(
