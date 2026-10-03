@@ -12252,3 +12252,226 @@ display:flex!important;align-items:center!important;justify-content:center!impor
   #ordersTab .orders-page-master #fullOrdersTableBody .app-card-status{grid-column:auto!important;grid-area:status!important}
   #ordersTab .orders-page-master #fullOrdersTableBody .app-card-actions{grid-column:auto!important;grid-area:actions!important}
 }
+
+
+/* ==========================================================================
+   SAMI COINS — RECENT ORDERS MASTER VISUAL
+   Ground truth: Dashboard > آخر الطلبات
+   Orders page must use the same card typography, colors and proportions.
+   ========================================================================== */
+@media (min-width:761px){
+  #dashboardTab .dashboard-orders .app-order-card,
+  #ordersTab .orders-page-master .app-order-card{
+    min-height:124px!important;
+    border-radius:18px!important;
+    border-top:1px solid rgba(0,230,118,.16)!important;
+    border-right:1px solid rgba(0,230,118,.16)!important;
+    border-bottom:1px solid rgba(0,230,118,.16)!important;
+    background:
+      radial-gradient(circle at 4% 50%,rgba(0,230,118,.055),transparent 24%),
+      linear-gradient(145deg,#071827 0%,#061321 100%)!important;
+    box-shadow:0 7px 22px rgba(0,0,0,.22)!important;
+  }
+
+  /* Status owns the left edge — exactly as the master card. */
+  #dashboardTab .dashboard-orders .app-order-card.order-status-new,
+  #ordersTab .orders-page-master .app-order-card.order-status-new{
+    border-left:3px solid #3AA7FF!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-card.order-status-review,
+  #ordersTab .orders-page-master .app-order-card.order-status-review{
+    border-left:3px solid #FFB800!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-card.order-status-progress,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-finished,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-completed,
+  #ordersTab .orders-page-master .app-order-card.order-status-progress,
+  #ordersTab .orders-page-master .app-order-card.order-status-finished,
+  #ordersTab .orders-page-master .app-order-card.order-status-completed{
+    border-left:3px solid #00E676!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-card.order-status-pending_transfer,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-transferred,
+  #ordersTab .orders-page-master .app-order-card.order-status-pending_transfer,
+  #ordersTab .orders-page-master .app-order-card.order-status-transferred{
+    border-left:3px solid #A469FF!important;
+  }
+
+  /* Order number / reference hierarchy from the approved master. */
+  #dashboardTab .dashboard-orders .app-order-number,
+  #ordersTab .orders-page-master .app-order-number{
+    color:#FFC107!important;
+    font-size:1rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    letter-spacing:.1px!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-number i,
+  #ordersTab .orders-page-master .app-order-number i{
+    color:#FFC107!important;
+    font-size:.72rem!important;
+  }
+  #dashboardTab .dashboard-orders .app-reference-line,
+  #ordersTab .orders-page-master .app-reference-line{
+    margin-top:5px!important;
+    color:#00E676!important;
+    font-size:.78rem!important;
+    line-height:1.1!important;
+  }
+  #dashboardTab .dashboard-orders .app-reference-line b,
+  #ordersTab .orders-page-master .app-reference-line b{
+    color:#00E676!important;
+    font-family:Tajawal,Arial,sans-serif!important;
+    font-size:.78rem!important;
+    font-weight:800!important;
+  }
+  #dashboardTab .dashboard-orders .app-reference-line i,
+  #ordersTab .orders-page-master .app-reference-line i{
+    color:#00E676!important;
+    font-size:.66rem!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-date,
+  #ordersTab .orders-page-master .app-card-date{
+    margin-top:5px!important;
+    color:#617184!important;
+    font-size:.54rem!important;
+  }
+
+  /* Customer column. */
+  #dashboardTab .dashboard-orders .app-card-customer strong,
+  #ordersTab .orders-page-master .app-card-customer strong{
+    color:#F4F7FB!important;
+    font-size:.88rem!important;
+    font-weight:900!important;
+    line-height:1.2!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-customer span,
+  #ordersTab .orders-page-master .app-card-customer span{
+    color:#AAB7C7!important;
+    font-size:.76rem!important;
+    font-weight:800!important;
+    margin-top:6px!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-customer i,
+  #ordersTab .orders-page-master .app-card-customer i{
+    color:#91A0B2!important;
+  }
+
+  /* Quantity is the dominant yellow metric. */
+  #dashboardTab .dashboard-orders .app-card-metric>span,
+  #ordersTab .orders-page-master .app-card-metric>span{
+    color:#6D7C8E!important;
+    font-size:.54rem!important;
+    margin-bottom:5px!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-metric>strong,
+  #ordersTab .orders-page-master .app-card-metric>strong{
+    color:#FFC107!important;
+    font-size:1.28rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-metric>strong i,
+  #ordersTab .orders-page-master .app-card-metric>strong i{
+    color:#FFC107!important;
+    font-size:.78rem!important;
+  }
+
+  /* Price: Saudi currency label above the white amount. */
+  #dashboardTab .dashboard-orders .app-card-price strong,
+  #ordersTab .orders-page-master .app-card-price strong{
+    color:#FFFFFF!important;
+    font-size:1.05rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+  }
+
+  /* Status pill. */
+  #dashboardTab .dashboard-orders .app-card-status .platform-status-badge,
+  #ordersTab .orders-page-master .app-card-status .platform-status-badge{
+    min-height:50px!important;
+    padding:7px 13px!important;
+    border:1px solid transparent!important;
+    border-radius:13px!important;
+    font-size:.68rem!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+    font-weight:900!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-status .status-progress,
+  #dashboardTab .dashboard-orders .app-card-status .status-finished,
+  #dashboardTab .dashboard-orders .app-card-status .status-completed,
+  #ordersTab .orders-page-master .app-card-status .status-progress,
+  #ordersTab .orders-page-master .app-card-status .status-finished,
+  #ordersTab .orders-page-master .app-card-status .status-completed{
+    background:#063C32!important;
+    border-color:#063C32!important;
+  }
+  #dashboardTab .dashboard-orders .app-card-status .status-new,
+  #ordersTab .orders-page-master .app-card-status .status-new{
+    background:#063C55!important;
+    border-color:#063C55!important;
+  }
+
+  /* Action icons. */
+  #dashboardTab .dashboard-orders .app-order-actions,
+  #ordersTab .orders-page-master .app-order-actions{
+    justify-content:flex-start!important;
+    align-items:center!important;
+    gap:8px!important;
+    flex-wrap:nowrap!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action,
+  #ordersTab .orders-page-master .app-order-actions .btn-action{
+    width:45px!important;
+    min-width:45px!important;
+    height:45px!important;
+    min-height:45px!important;
+    padding:0!important;
+    border-radius:12px!important;
+    font-size:.85rem!important;
+    display:inline-grid!important;
+    place-items:center!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action i,
+  #ordersTab .orders-page-master .app-order-actions .btn-action i{
+    font-size:.86rem!important;
+  }
+
+  /* Platform tile. */
+  #dashboardTab .dashboard-orders .app-platform-icon,
+  #ordersTab .orders-page-master .app-platform-icon{
+    width:66px!important;
+    height:66px!important;
+    border-radius:16px!important;
+    font-size:2rem!important;
+    background:rgba(0,112,209,.14)!important;
+    border:1px solid rgba(0,112,209,.28)!important;
+    color:#1688FF!important;
+  }
+}
+
+@media (min-width:761px) and (max-width:1100px){
+  #dashboardTab .dashboard-orders .app-order-card,
+  #ordersTab .orders-page-master .app-order-card{
+    min-height:112px!important;
+  }
+  #dashboardTab .dashboard-orders .app-order-number,
+  #ordersTab .orders-page-master .app-order-number{font-size:.92rem!important}
+  #dashboardTab .dashboard-orders .app-reference-line b,
+  #ordersTab .orders-page-master .app-reference-line b{font-size:.72rem!important}
+  #dashboardTab .dashboard-orders .app-card-customer strong,
+  #ordersTab .orders-page-master .app-card-customer strong{font-size:.8rem!important}
+  #dashboardTab .dashboard-orders .app-card-customer span,
+  #ordersTab .orders-page-master .app-card-customer span{font-size:.69rem!important}
+  #dashboardTab .dashboard-orders .app-card-metric>strong,
+  #ordersTab .orders-page-master .app-card-metric>strong{font-size:1.08rem!important}
+  #dashboardTab .dashboard-orders .app-card-price strong,
+  #ordersTab .orders-page-master .app-card-price strong{font-size:.92rem!important}
+  #dashboardTab .dashboard-orders .app-platform-icon,
+  #ordersTab .orders-page-master .app-platform-icon{width:56px!important;height:56px!important;font-size:1.7rem!important}
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action,
+  #ordersTab .orders-page-master .app-order-actions .btn-action{
+    width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;
+  }
+}
