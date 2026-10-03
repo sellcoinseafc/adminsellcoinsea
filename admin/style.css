@@ -12114,3 +12114,34 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     font-size:1.4rem!important;
   }
 }
+
+
+/* ORDER DETAIL — English/secure field typography */
+#orderDetailModal .order-detail-flat-trigger small,
+#orderDetailModal .secure-copy-field span,
+#orderDetailModal .order-basic-reference-sub{
+  font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif!important;
+  font-style:normal!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+#orderDetailModal .secure-copy-field span{
+  text-align:center!important;
+  letter-spacing:.2px!important;
+}
+
+#orderDetailModal .secure-copy-field strong{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace!important;
+  font-variant-numeric:tabular-nums!important;
+  direction:ltr!important;
+  text-align:center!important;
+  letter-spacing:.25px!important;
+}
+
+#orderDetailModal .order-basic-reference>strong,
+#orderDetailModal .order-basic-reference-sub{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace!important;
+  font-variant-numeric:tabular-nums!important;
+  direction:ltr!important;
+  text-align:center!important;
+}
