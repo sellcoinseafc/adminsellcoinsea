@@ -743,17 +743,10 @@ function startLiveClock() {
       month: "2-digit",
       year: "numeric"
     });
-    const weekday = new Intl.DateTimeFormat("ar", {
-      timeZone: "Asia/Riyadh",
-      weekday: "long"
-    }).format(now);
-    const { dayClass } = getAdminDateMeta(now);
-
     clockEl.innerHTML = `
-      <span class="clock-stack ${dayClass}">
+      <span class="clock-stack">
         <b class="admin-date-box admin-time-box">${time}</b>
         <span class="admin-date-box admin-calendar-box">${dateText}</span>
-        <small class="admin-date-box admin-weekday-box">${weekday}</small>
       </span>`;
   };
   updateClock();
