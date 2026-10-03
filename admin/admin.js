@@ -2603,7 +2603,7 @@ window.renderOrdersTables = function () {
 
   const resultCount = document.getElementById("ordersResultCount");
   if (resultCount) {
-    resultCount.textContent = `${filteredData.length} ${filteredData.length === 1 ? "طلب" : "طلبات}`;
+    resultCount.textContent = `${filteredData.length} ${filteredData.length === 1 ? "طلب" : "طلبات"}`;
   }
 
   tbody.innerHTML = filteredData.length
