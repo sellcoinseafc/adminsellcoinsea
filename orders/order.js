@@ -940,6 +940,9 @@ function selectPlatform(
     selectedPlatform =
         platform;
 
+    // اربط كامل تفاصيل الصفحة بلون المنصة المختارة.
+    $("pageShell")?.setAttribute("data-platform", platform);
+
     // بيانات حساب EA لا تظهر إلا بعد اختيار المنصة.
     showElement("accountStage");
 
