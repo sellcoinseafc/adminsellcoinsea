@@ -1990,7 +1990,7 @@ function validateStep2() {
         const wallet=String($("walletTypeSelect")?.value||"").trim();
         const phone=String($("walletNumber")?.value||"").trim();
         if(!wallet){markInvalid($("walletTypeSelect"),"اختر المحفظة الرقمية.");return false;}
-        if(!/^05\\d{8}$/.test(phone)){markInvalid($("walletNumber"),"رقم جوال المحفظة يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.");return false;}
+        if(!/^05\d{8}$/.test(phone)){markInvalid($("walletNumber"),"رقم جوال المحفظة يجب أن يبدأ بـ 05 ويتكون من 10 أرقام.");return false;}
     }
     if(method==="western"){
         const wu=String($("wuName")?.value||"").trim();
