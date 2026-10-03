@@ -3773,7 +3773,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedLanguage = localStorage.getItem("samiCoinsLanguage");
     const savedTheme = localStorage.getItem("samiCoinsTheme");
     if (savedLanguage === "ar" || savedLanguage === "en") currentLanguage = savedLanguage;
-    applyTheme(savedTheme === "dark" ? "dark" : "light");
+    applyTheme(savedTheme === "light" ? "light" : "dark");
     applyLanguage();
     setupModalEvents();
     const setupSecretInput = (input) => {
