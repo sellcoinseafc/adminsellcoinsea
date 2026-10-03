@@ -158,11 +158,9 @@ html[data-theme="dark"] .platform-btn.active:after{color:#fff}
 html[data-theme="dark"] .choice-note,html[data-theme="dark"] .quantity-card,html[data-theme="dark"] .payout-details-card,html[data-theme="dark"] .backup-section,html[data-theme="dark"] .review-detail,html[data-theme="dark"] .review-main-box,html[data-theme="dark"] .invoice-box,html[data-theme="dark"] .pay-btn-compact{
   background:#0b1421;border-color:#25354a
 }
-html[data-theme="dark"] .selected-rate,html[data-theme="dark"] .total-card,html[data-theme="dark"] .reference-card{
-  background:linear-gradient(135deg,#101c2b,#0a121e);border-color:#6d3e1f
+html[data-theme="dark"] .reference-card{
+  background:linear-gradient(135deg,#101c2b,#0a121e);border-color:#243247
 }
-html[data-theme="dark"] .duration-card{background:#0b1522;border-color:#27384e}
-html[data-theme="dark"] .duration-card.safe-card{background:#0a2118;border-color:#1c5a3d}
 html[data-theme="dark"] .quantity-control>button,html[data-theme="dark"] .quantity-input-wrap,html[data-theme="dark"] .input-box-wrap input,html[data-theme="dark"] .input-box-wrap select,html[data-theme="dark"] .input-box-wrap textarea,html[data-theme="dark"] .backup-field input,html[data-theme="dark"] .edit-panel input,html[data-theme="dark"] .small-edit-btn,html[data-theme="dark"] .secondary-btn{
   background:#0a111c;border-color:#29394e;color:#f4f7fb
 }
@@ -184,42 +182,67 @@ html[data-theme="dark"] .toast{background:#f4f7fb;color:#07101b}
   .input-box-wrap input,.input-box-wrap select,.input-box-wrap textarea{height:58px}.backup-field input{height:64px}
 }
 
-/* Platform identity — one coherent layer
-   PlayStation: official brand blue family; Xbox: official brand green; PC: store red accent. */
+/* Platform identity — final first-page visual layer
+   PlayStation blue, Xbox green, PC red. Selected cards and key borders follow the platform. */
 .orders-page{--platform-accent:var(--accent);--platform-soft:rgba(0,200,107,.10);--platform-contrast:#fff}
 .orders-page[data-platform="PlayStation"]{--platform-accent:#00439c;--platform-soft:rgba(0,67,156,.12)}
 .orders-page[data-platform="Xbox"]{--platform-accent:#107c10;--platform-soft:rgba(16,124,16,.12)}
 .orders-page[data-platform="PC"]{--platform-accent:#e31b23;--platform-soft:rgba(227,27,35,.12)}
+
 .platform-btn{border-color:#dedee1}.platform-btn>i{transition:.18s}
 .ps-btn{border-color:rgba(0,67,156,.55);background:linear-gradient(180deg,rgba(0,67,156,.08),var(--surface))}
 .xbox-btn{border-color:rgba(16,124,16,.55);background:linear-gradient(180deg,rgba(16,124,16,.08),var(--surface))}
 .pc-btn{border-color:rgba(227,27,35,.55);background:linear-gradient(180deg,rgba(227,27,35,.08),var(--surface))}
 .ps-btn>i{color:#00439c}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#e31b23}
-.ps-btn.active,.xbox-btn.active,.pc-btn.active{border-color:var(--platform-accent);background:var(--platform-accent);color:#fff;box-shadow:0 8px 22px color-mix(in srgb,var(--platform-accent) 28%,transparent)}
+
+.platform-btn.active{
+  border-color:var(--platform-accent);
+  background:var(--platform-accent);
+  color:#fff;
+  box-shadow:0 8px 22px color-mix(in srgb,var(--platform-accent) 28%,transparent)
+}
 .ps-btn.active>i,.xbox-btn.active>i,.pc-btn.active>i{color:#fff}
-.platform-btn.active:after{background:rgba(0,0,0,.18)}
-.selected-rate,.total-card{border-color:var(--platform-accent)}
-.selected-rate{background:linear-gradient(135deg,var(--platform-soft),var(--surface))}
-.total-card{background:var(--platform-soft)}
-.duration-card{border-color:color-mix(in srgb,var(--platform-accent) 28%,var(--line))}
-.duration-card.safe-card{border-color:color-mix(in srgb,var(--platform-accent) 34%,var(--line))}
-.duration-card i,.duration-card strong{color:var(--platform-accent)}
-.quantity-card,.account-section,.customer-section,.payment-section,.terms-card{border-color:color-mix(in srgb,var(--platform-accent) 22%,#ededee)}
+.platform-btn.active:after{background:rgba(0,0,0,.18);color:#fff}
+
+.selected-rate{
+  border-color:var(--platform-accent);
+  background:linear-gradient(135deg,#101a29,#0a111c);
+  color:#fff
+}
+.rate-title span,.rate-value strong,.rate-currency,.selected-rate>i{color:#fff}
+
+.total-card{
+  border-color:var(--platform-accent);
+  background:linear-gradient(135deg,#101a29,#0a111c);
+  color:#fff
+}
+.total-card>span,.total-card strong{color:#fff}
+
+.duration-card{
+  border-color:var(--platform-accent);
+  background:#0b1522;
+  color:#fff
+}
+.duration-card i,.duration-card span,.duration-card strong{color:#fff}
+.duration-card.safe-card{
+  background:#0b1522;
+  border-color:var(--platform-accent)
+}
+
+.quantity-card,.account-section,.customer-section,.payment-section,.terms-card{
+  border-color:color-mix(in srgb,var(--platform-accent) 22%,#ededee)
+}
 .payout-details-card{border-color:color-mix(in srgb,var(--platform-accent) 42%,var(--line))}
-.rate-value strong,.rate-currency,.selected-rate>i,.total-card strong,.reference-card strong{color:var(--platform-accent)}
 .section-number{background:var(--platform-soft);color:var(--platform-accent)}
 .payment-tabs button.active,.pay-btn-compact.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
 @media (max-width:430px){
   .header-actions{gap:4px}.header-icon-btn{width:34px;height:34px}.brand-mark{width:34px;height:34px}.brand-name span{font-size:11px}
   .page-main{width:calc(100% - 12px);padding-top:10px}.sell-card{padding:12px;border-radius:16px}.section-heading h2{font-size:14px}.section-heading p{font-size:8px}
-
-  /* المنصات: ثلاث بطاقات صغيرة في صف واحد، وكل بطاقة بلون منصتها */
   .platform-grid{grid-template-columns:repeat(3,1fr);gap:5px}
   .platform-btn{min-height:86px;border-radius:11px;padding:8px 4px;gap:4px;justify-content:center;display:flex;text-align:center}
   .platform-btn>i{font-size:25px}.platform-btn strong{font-size:9px}
-  .ps-btn{border-color:rgba(0,67,156,.55);background:linear-gradient(180deg,rgba(0,67,156,.08),var(--surface))}
-  .xbox-btn{border-color:rgba(16,124,16,.55);background:linear-gradient(180deg,rgba(16,124,16,.08),var(--surface))}
-  .pc-btn{border-color:rgba(227,27,35,.55);background:linear-gradient(180deg,rgba(227,27,35,.08),var(--surface))}
+  .ps-btn,.xbox-btn,.pc-btn{background:linear-gradient(180deg,var(--platform-soft),var(--surface))}
   .ps-btn>i{color:#00439c}.xbox-btn>i{color:#107c10}.pc-btn>i{color:#e31b23}
   .ps-btn.active,.xbox-btn.active,.pc-btn.active{background:var(--platform-accent);border-color:var(--platform-accent);color:#fff}
   .ps-btn.active>i,.xbox-btn.active>i,.pc-btn.active>i{color:#fff}
@@ -227,35 +250,21 @@ html[data-theme="dark"] .toast{background:#f4f7fb;color:#07101b}
   .duration-grid{grid-template-columns:1fr 1fr 1fr}.duration-card{min-height:62px}
   .backup-grid{grid-template-columns:1fr}.backup-field{display:grid;grid-template-columns:28px 1fr;align-items:center;gap:6px}.backup-field>span{margin:0;text-align:center}
   .quantity-control{grid-template-columns:38px 1fr 38px}.quantity-control>button{height:46px}.quantity-input-wrap{height:46px}.quantity-input-wrap input{font-size:20px}
-
-  /* سعر المليون: نفس ترتيب سطح المكتب — العنوان يمين، السعر في الوسط، والأيقونة يسار */
   .selected-rate{grid-template-columns:1fr auto 1fr;padding:13px 14px;min-height:82px}
-  .rate-title{justify-self:end}
-  .rate-title span{font-size:10px}
+  .rate-title{justify-self:end}.rate-title span{font-size:10px}
   .rate-value{justify-content:center;align-items:baseline;gap:8px;direction:ltr}
-  .rate-value strong{font-size:31px;line-height:1;font-weight:900}
-  .rate-currency{font-size:11px;font-weight:900}
+  .rate-value strong{font-size:31px;line-height:1;font-weight:900}.rate-currency{font-size:11px;font-weight:900}
   .selected-rate>i{justify-self:start;font-size:27px}
-
-  /* طرق الاستلام: نفس أخضر FC 27 مع نص وحدود بيضاء */
   .payment-tabs button,.pay-btn-compact{background:#062c1d!important;border-color:#fff!important;color:#fff!important}
   .payment-tabs button.active,.pay-btn-compact.active{background:#087a45!important;border-color:#fff!important;color:#fff!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
-
-  /* الإقرارات */
-  .terms-card .compact-heading{margin-bottom:16px}
-  .terms-card .compact-heading h2{font-size:20px;line-height:1.35}
-  .terms-card .compact-heading .section-number{width:38px;height:38px;font-size:11px}
-  .inline-terms-list{font-size:10px;line-height:1.95;max-height:180px}
-  .terms-check{min-height:48px;font-size:11px}
-  .terms-bottom-link{min-height:50px;font-size:11px;padding:10px 14px}
-
+  .terms-card .compact-heading{margin-bottom:16px}.terms-card .compact-heading h2{font-size:20px;line-height:1.35}.terms-card .compact-heading .section-number{width:38px;height:38px;font-size:11px}
+  .inline-terms-list{font-size:10px;line-height:1.95;max-height:180px}.terms-check{min-height:48px;font-size:11px}.terms-bottom-link{min-height:50px;font-size:11px;padding:10px 14px}
   .payout-details-card{padding:15px;border-radius:15px}.payout-heading{margin-bottom:10px;padding-bottom:9px}.payout-heading span{font-size:11px}.payout-details-card .field-label{font-size:9px;margin-top:9px}.payout-details-card .input-box-wrap input,.payout-details-card .input-box-wrap select,.payout-details-card .input-box-wrap textarea{height:62px;font-size:15px}
-  .payment-tabs{grid-template-columns:1fr 1fr}.payment-methods-grid{grid-template-columns:1fr 1fr}
-  .fields-grid{grid-template-columns:1fr}.customer-grid{grid-template-columns:1fr}
-  .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr}
-  .review-main-grid .review-main-box:first-child,.invoice-main-grid .invoice-box:first-child{grid-column:auto}
+  .payment-tabs{grid-template-columns:1fr 1fr}.payment-methods-grid{grid-template-columns:1fr 1fr}.fields-grid{grid-template-columns:1fr}.customer-grid{grid-template-columns:1fr}
+  .review-main-grid,.invoice-main-grid,.invoice-top-grid{grid-template-columns:1fr}.review-main-grid .review-main-box:first-child,.invoice-main-grid .invoice-box:first-child{grid-column:auto}
   .page-heading h1{font-size:17px}.page-heading p{font-size:8px}
 }
+
 /* Review screen — same information hierarchy on desktop, tablet and mobile */
 html[data-theme="dark"] .review-detail{background:#0a1421;border-color:#2a3b50}
 html[data-theme="dark"] .review-value-box{background:#07101b;border-color:#33475f;color:#f4f7fb}
