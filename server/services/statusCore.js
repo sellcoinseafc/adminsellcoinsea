@@ -4,6 +4,7 @@ const STATUS_VALUES = new Set([
   "progress",
   "finished",
   "pending_transfer",
+  "transferred",
   "completed",
   "archived"
 ]);
@@ -47,6 +48,16 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  transferred: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
     "completed"
   ]),
   completed: new Set([
@@ -55,6 +66,7 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
+    "transferred",
     "completed"
   ]),
   archived: new Set(["archived"])
@@ -75,12 +87,6 @@ export function normalizeStoredStatus(value) {
 
   if (status === "pending") {
     return "new";
-  }
-
-  // Legacy orders used "transferred" as an intermediate/final state.
-  // The canonical workflow now has six states, so legacy records are read as completed.
-  if (status === "transferred") {
-    return "completed";
   }
 
   return normalizeStatus(status);

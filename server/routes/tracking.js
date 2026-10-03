@@ -57,7 +57,8 @@ const STATUS_MESSAGES = {
   progress: "جاري سحب الكوينز من حسابك",
   finished: "تم الانتهاء من سحب الكوينز من حسابك",
   pending_transfer: "قيد التحويل",
-  completed: "تم التحويل — مكتمل"
+  transferred: "تم التحويل لحسابك",
+  completed: "تم التنفيذ"
 };
 
 const ARABIC_STATUS_MAP = {
@@ -73,9 +74,10 @@ const ARABIC_STATUS_MAP = {
   "تم الانتهاء من سحب الكوينز من حسابك": "finished",
   "قيد التحويل": "pending_transfer",
   "بانتظار التحويل": "pending_transfer",
-  "تم التحويل لحسابك": "completed",
+  "تم التحويل لحسابك": "transferred",
   "تم تحويل المبلغ إلى حسابك": "completed",
   "تم التحويل — مكتمل": "completed",
+  "تم التنفيذ": "completed",
   "مكتمل": "completed"
 };
 
@@ -161,7 +163,7 @@ function normalizeStatus(status) {
   }
 
   if (normalized === "transferred") {
-    return "completed";
+    return "transferred";
   }
 
   return (
@@ -968,9 +970,10 @@ function buildTrackingOrder(
       new: 15,
       review: 35,
       progress: 65,
-        finished: 85,
-        pending_transfer: 95,
-        completed: 100
+      finished: 85,
+      pending_transfer: 95,
+      transferred: 98,
+      completed: 100
     };
 
     progressPercentage =
@@ -1133,12 +1136,13 @@ function buildTrackingOrder(
       order.reviewSubmitted === true,
 
     transferStatusKey:
-      status === "completed" ||
-      order.transferCompleted === true
+      status === "completed"
         ? "completed"
-        : status === "pending_transfer"
-          ? "pending"
-          : "pending",
+        : status === "transferred" || order.transferCompleted === true
+          ? "transferred"
+          : status === "pending_transfer"
+            ? "pending"
+            : "pending",
 
     transferredAt:
       toISOStringSafe(order.transferredAt),

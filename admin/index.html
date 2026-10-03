@@ -103,12 +103,13 @@
       <span class="orders-result-count" id="ordersResultCount">0 طلب</span>
       <select id="orderStatusFilter" class="compact-input" onchange="renderOrdersTables()" aria-label="فلترة الطلبات حسب الحالة">
         <option value="all">كل الحالات</option>
-        <option value="new">جديدة</option>
-        <option value="review">مراجعة</option>
-        <option value="progress">قيد السحب</option>
-        <option value="finished">مكتملة السحب</option>
+        <option value="new">طلب جديد</option>
+        <option value="review">بانتظار المراجعة</option>
+        <option value="progress">جاري سحب الكوينز من حسابك</option>
+        <option value="finished">تم الانتهاء من سحب الكوينز من حسابك</option>
         <option value="pending_transfer">قيد التحويل</option>
-        <option value="completed">تم التحويل — مكتمل</option>
+        <option value="transferred">تم التحويل لحسابك</option>
+        <option value="completed">تم التنفيذ</option>
         <option value="archived">مؤرشفة</option>
       </select>
       <button class="btn-secondary" onclick="renderOrdersTables()"><i class="fa-solid fa-rotate"></i> تحديث</button>

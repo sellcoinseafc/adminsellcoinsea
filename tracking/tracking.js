@@ -58,8 +58,14 @@ const STATUS_CONFIG = {
         className: "pending-transfer"
     },
 
+    transferred: {
+        text: "تم التحويل لحسابك",
+        percentage: 98,
+        className: "transferred"
+    },
+
     completed: {
-        text: "تم التحويل — مكتمل",
+        text: "تم التنفيذ",
         percentage: 100,
         className: "success"
     }
@@ -671,8 +677,16 @@ function renderTrackingExtras(order,statusMessage,issueMessage){
  if(action)action.style.display=needs?'block':'none';
  if(needs){setElementText('customerActionTitle',getIssueTitle(order.issue));setElementText('customerActionMessage',issueMessage||order?.issueMessage||'');setElementText('customerActionState','حالة الطلب: بانتظار إجراء العميل');}
  const key=String(order?.transferStatusKey||'pending');
- const labels={pending:'قيد التحويل',completed:'تم التحويل — مكتمل'};
- const messages={pending:'جاري تجهيز وتحويل المبلغ.',completed:'تم تحويل المبلغ وإغلاق الطلب بنجاح.'};
+ const labels={
+   pending:'قيد التحويل',
+   transferred:'تم التحويل لحسابك',
+   completed:'تم التنفيذ'
+ };
+ const messages={
+   pending:'جاري تجهيز وتحويل المبلغ.',
+   transferred:'تم تحويل المبلغ إلى حسابك.',
+   completed:'تم تنفيذ الطلب وإغلاقه بنجاح.'
+ };
  setElementText('transferStatusLabel',labels[key]||labels.pending);
  setElementText('transferStatusMessage',messages[key]||messages.pending);
  const tr=document.getElementById('transferCompletionRow'),cr=document.getElementById('completedAtRow');
@@ -1738,7 +1752,7 @@ function handleStatusState(
     const durationLabelElement = document.getElementById("statusDurationLabel");
     const withdrawDurationElement = document.getElementById("withdrawDuration");
     const transferDurationElement = document.getElementById("transferDuration");
-    const isTransferStage = status === "pending_transfer" || status === "completed";
+    const isTransferStage = ["pending_transfer", "transferred", "completed"].includes(status);
 
     if (durationLabelElement) {
         durationLabelElement.innerText = isTransferStage
@@ -1761,6 +1775,7 @@ function handleStatusState(
         status === "progress" ||
         status === "finished" ||
         status === "pending_transfer" ||
+        status === "transferred" ||
         status === "completed"
     ) {
         showWithdrawn = true;
@@ -1769,6 +1784,7 @@ function handleStatusState(
     if (
         status === "finished" ||
         status === "pending_transfer" ||
+        status === "transferred" ||
         status === "completed"
     ) {
         showSecurity = true;
@@ -1943,6 +1959,7 @@ function updateTimelineSteps(status) {
         "progress",
         "finished",
         "pending_transfer",
+        "transferred",
         "completed"
     ];
 
@@ -1952,7 +1969,8 @@ function updateTimelineSteps(status) {
         progress: 2,
         finished: 3,
         pending_transfer: 4,
-        completed: 5
+        transferred: 5,
+        completed: 6
     };
 
     const activeIndex =
