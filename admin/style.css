@@ -1013,6 +1013,66 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
   .status-editor-controls select{min-width:0!important;width:100%!important}
   .store-status-control{min-height:40px;padding:5px 8px}
   .store-status-copy{font-size:.72rem}
+  /* Pricing & offers — mobile structure */
+  #pricingTab > .form-grid{
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+  #pricingTab > .form-grid > .pricing-shared-panel{order:1!important}
+  #pricingTab > .form-grid > .pricing-pc-panel{order:2!important}
+  #pricingTab > .form-grid > .pricing-store-panel{order:3!important}
+  #pricingTab > .form-grid > .panel:not(.pricing-shared-panel):not(.pricing-pc-panel):not(.pricing-store-panel){order:4!important}
+  #pricingTab .pricing-platform-panel,
+  #pricingTab .pricing-store-panel{
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-panel h3,
+  #pricingTab .pricing-store-panel h3{
+    justify-content:center!important;
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-panel .field,
+  #pricingTab .pricing-store-panel .field{
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-panel .field label,
+  #pricingTab .pricing-store-panel .field label{
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-panel .form-control,
+  #pricingTab .pricing-store-panel .form-control{
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-panel .two{
+    grid-template-columns:1fr 1fr!important;
+  }
+  #pricingTab #psRate,
+  #pricingTab #pcRate{
+    min-height:58px!important;
+    font-size:1.65rem!important;
+    font-weight:900!important;
+    text-align:center!important;
+    letter-spacing:.02em;
+  }
+  #pricingTab #psMin,
+  #pricingTab #psMax,
+  #pricingTab #pcMin,
+  #pricingTab #pcMax{
+    text-align:center!important;
+  }
+  #pricingTab .pricing-platform-icons{
+    justify-content:center!important;
+  }
+  #pricingTab .pricing-store-panel .field:last-child{
+    margin-bottom:0!important;
+  }
+  #pricingTab .pricing-store-panel input,
+  #pricingTab .pricing-store-panel select,
+  #pricingTab .pricing-store-panel textarea,
+  #pricingTab .panel:not(.pricing-shared-panel):not(.pricing-pc-panel):not(.pricing-store-panel) .field{
+    text-align:center!important;
+  }
+
 }
 
 /* Small phones */
