@@ -93,12 +93,29 @@
 </section>
 
 <section id="ordersTab" class="tab-content">
-<div class="workspace-header"><div><span class="eyebrow">ORDER MANAGEMENT</span><h2>الطلبات</h2><p>مركز العمل الرئيسي لمعالجة الطلبات من الاستلام حتى الإغلاق.</p></div><div class="workspace-actions"><input id="orderStatusFilter" class="compact-input" placeholder="بحث بالحالة" list="statusOptions"><datalist id="statusOptions"><option value="new"><option value="review"><option value="progress"><option value="finished"><option value="pending_transfer"><option value="transferred"><option value="completed"></datalist><button class="btn-secondary" onclick="renderOrdersTables()"><i class="fa-solid fa-rotate"></i> تحديث</button></div></div>
-<div class="order-kpis"><div><b id="ordersTotalCount">0</b><span>إجمالي الطلبات</span></div><div><b id="ordersNewCount">0</b><span>تحتاج مراجعة</span></div><div><b id="ordersProgressCount">0</b><span>قيد السحب</span></div><div><b id="ordersCompletedCount">0</b><span>مكتملة</span></div></div>
-<div class="orders-workspace">
-<div class="orders-toolbar"><div><strong>قائمة الطلبات</strong><span>استخدم «التفاصيل» لفتح بيانات الطلب و«تعديل» لتغيير الحالة.</span></div><div class="orders-legend"><span><i class="dot dot-new"></i> جديد</span><span><i class="dot dot-progress"></i> سحب</span><span><i class="dot dot-transfer"></i> تحويل</span></div></div>
-<div class="panel orders-panel"><div class="table-wrap"><table><thead><tr><th>رقم المرجع</th><th>اسم العميل</th><th>رقم الجوال</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th><th>آخر تحديث</th><th>إجراء</th></tr></thead><tbody id="fullOrdersTableBody"><tr><td colspan="8" class="empty">جاري تحميل الطلبات...</td></tr></tbody></table></div></div>
-</div></section>
+<div class="panel dashboard-orders orders-page-master">
+  <div class="panel-title">
+    <div>
+      <span class="eyebrow">ORDER MANAGEMENT</span>
+      <h3>الطلبات</h3>
+    </div>
+    <div class="orders-master-controls">
+      <input id="orderStatusFilter" class="compact-input" placeholder="بحث بالحالة" list="statusOptions">
+      <datalist id="statusOptions">
+        <option value="new"><option value="review"><option value="progress"><option value="finished">
+        <option value="pending_transfer"><option value="transferred"><option value="completed">
+      </datalist>
+      <button class="btn-secondary" onclick="renderOrdersTables()"><i class="fa-solid fa-rotate"></i> تحديث</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>رقم الطلب</th><th>اسم العميل</th><th>رقم الجوال</th><th>المنصة</th><th>الكمية</th><th>المبلغ</th><th>الحالة</th><th>إجراء</th></tr></thead>
+      <tbody id="fullOrdersTableBody"><tr><td colspan="8" class="empty">جاري تحميل الطلبات...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+</section>
 
 <section id="withdrawTab" class="tab-content">
 <div class="workspace-header"><div><span class="eyebrow">COIN OPERATIONS</span><h2>السحب</h2><p>مساحة تشغيل مخصصة لمتابعة الكمية المطلوبة والمسحوبة والمتبقية.</p></div><select id="withdrawFilter" class="compact-input" onchange="renderWithdrawOrdersTable()"><option value="all">كل الحالات</option><option value="new">جديدة</option><option value="review">مراجعة</option><option value="progress">جاري السحب</option></select></div>
