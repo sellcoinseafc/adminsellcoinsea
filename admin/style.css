@@ -9854,3 +9854,377 @@ display:flex!important;align-items:center!important;justify-content:center!impor
 #fullOrdersTableBody td.recent-actions-cell,#recentOrdersTableBody td.recent-actions-cell,#withdrawOrdersTableBody td.recent-actions-cell,#transferAlertsTableBody td.recent-actions-cell{height:auto!important;min-height:58px!important;padding:4px 0 0!important;border:0!important;background:transparent!important;box-shadow:none!important;overflow:visible!important}
 #fullOrdersTableBody .recent-order-actions,#recentOrdersTableBody .recent-order-actions,#withdrawOrdersTableBody .recent-order-actions{display:flex!important;align-items:center!important;justify-content:center!important;flex-wrap:wrap!important;width:100%!important;gap:7px!important}
 }
+
+
+/* ==========================================================================
+   SAMI COINS — APP DATA CARDS V2
+   One visual language for every data-heavy page.
+   ========================================================================== */
+
+.data-card-table .table-wrap,
+.orders-panel .table-wrap,
+.dashboard-orders .table-wrap,
+#withdrawTab .table-wrap,
+#transferAlertsTab .table-wrap,
+#reviewsTab .table-wrap,
+#customerProfileTab .table-wrap,
+#purgeTab .table-wrap{
+  overflow:visible!important;
+}
+
+.app-order-card,
+.client-row,
+.review-data-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(0,230,118,.16)!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 5% 50%,rgba(0,230,118,.045),transparent 28%),
+    linear-gradient(145deg,rgba(13,22,38,.96),rgba(7,12,21,.98))!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.20)!important;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+
+.app-order-card:hover,
+.client-row:hover,
+.review-data-card:hover{
+  transform:translateY(-1px);
+  box-shadow:0 14px 34px rgba(0,0,0,.28)!important;
+}
+
+.app-order-card.platform-playstation{border-left:3px solid #0070d1!important}
+.app-order-card.platform-xbox{border-left:3px solid #16c172!important}
+.app-order-card.platform-pc{border-left:3px solid #8e9baa!important}
+.app-order-card:nth-child(4n){border-left-color:#00e676!important}
+.app-order-card:nth-child(5n){border-left-color:#ffc107!important}
+
+.app-order-card td{
+  border:0!important;
+  background:transparent!important;
+  padding:12px 10px!important;
+  min-width:0;
+  vertical-align:middle;
+}
+
+.app-order-card{
+  display:grid!important;
+  grid-template-columns:64px minmax(150px,1.05fr) minmax(175px,1.35fr) minmax(115px,.9fr) minmax(105px,.75fr) minmax(125px,.9fr) minmax(150px,1fr);
+  align-items:center;
+  gap:0;
+  direction:ltr;
+  width:100%;
+  margin-bottom:10px;
+}
+.app-order-card td{direction:rtl}
+.app-order-card .app-card-platform{grid-column:1}
+.app-order-card .app-card-identity{grid-column:2}
+.app-order-card .app-card-customer{grid-column:3}
+.app-order-card .app-card-quantity{grid-column:4}
+.app-order-card .app-card-price-cell{grid-column:5}
+.app-order-card .app-card-status{grid-column:6}
+.app-order-card .app-card-actions{grid-column:7}
+
+.app-platform-icon{
+  width:48px;height:48px;
+  display:grid;place-items:center;
+  border-radius:13px;
+  font-size:1.65rem;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 0 18px rgba(255,255,255,.035);
+}
+.app-platform-icon.platform-playstation{color:#48a7ff;background:rgba(0,112,209,.16);border-color:rgba(0,112,209,.30)}
+.app-platform-icon.platform-xbox{color:#20d879;background:rgba(22,193,114,.14);border-color:rgba(22,193,114,.28)}
+.app-platform-icon.platform-pc{color:#c6d0db;background:rgba(142,155,170,.14);border-color:rgba(142,155,170,.24)}
+
+.app-order-main-line{display:flex;align-items:center;gap:7px}
+.app-order-number{
+  color:#fff!important;
+  font-size:.88rem!important;
+  font-weight:900!important;
+  letter-spacing:.1px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.app-order-number i,.app-reference-line i{font-size:.68rem;color:#8e9bae}
+.app-reference-line{
+  display:flex;align-items:center;gap:5px;
+  margin-top:3px;
+  color:#8e9bae;
+  font-size:.58rem;
+}
+.app-reference-line b{color:#b9c5d3;cursor:pointer;font-family:monospace;font-size:.62rem}
+.app-card-date{
+  display:block;
+  margin-top:5px;
+  color:#718096!important;
+  font-size:.55rem!important;
+  line-height:1.4;
+}
+
+.app-card-customer{
+  border-right:1px solid rgba(255,255,255,.07)!important;
+  border-left:1px solid rgba(255,255,255,.07)!important;
+}
+.app-card-customer strong,
+.app-card-customer span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.app-card-customer strong{
+  color:#f4f7fb!important;
+  font-size:.76rem!important;
+  font-weight:800!important;
+}
+.app-card-customer span{
+  color:#8e9bae!important;
+  font-size:.63rem!important;
+  margin-top:5px;
+  direction:ltr;
+  text-align:right;
+}
+.app-card-customer i{width:15px;color:#7f91a7}
+
+.app-card-metric>span{
+  display:block;
+  color:#718096!important;
+  font-size:.55rem!important;
+  margin-bottom:4px;
+}
+.app-card-metric>strong{
+  display:block;
+  color:#ffc107!important;
+  font-size:.88rem!important;
+  font-weight:900!important;
+  white-space:nowrap;
+}
+.app-card-metric>strong i{font-size:.72rem;margin-left:3px}
+.app-card-price strong{
+  color:#fff!important;
+  font-size:.76rem!important;
+}
+.app-card-status{text-align:center}
+.app-card-status .badge{
+  display:inline-flex!important;
+  align-items:center;
+  justify-content:center;
+  min-height:30px;
+  max-width:100%;
+  padding:6px 10px!important;
+  border-radius:999px!important;
+  font-size:.58rem!important;
+  white-space:nowrap;
+}
+.app-card-actions{
+  border-right:1px solid rgba(255,255,255,.07)!important;
+}
+.app-order-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:5px;
+  flex-wrap:wrap;
+}
+.app-order-actions .btn-action,
+.app-order-actions .btn-custom{
+  min-width:32px;
+  min-height:30px;
+  padding:6px 8px!important;
+  border-radius:9px!important;
+  font-size:.62rem!important;
+}
+.app-order-actions .btn-action i{font-size:.68rem}
+.app-order-actions .transfer-action-button{white-space:nowrap}
+
+.app-card-extra{display:flex;flex-direction:column;gap:4px}
+.app-card-extra-label{color:#718096;font-size:.55rem}
+.app-card-transfer-extra span{color:#b9c5d3;font-size:.58rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.app-card-transfer-extra strong{color:#ffc107;font-size:.78rem}
+.app-card-transfer-extra small{color:#718096;font-size:.52rem}
+
+.app-progress-track{
+  width:100%;height:4px;border-radius:99px;
+  margin:7px 0 4px;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.app-progress-track span{
+  display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#00e676,#ffc107);
+}
+.app-card-quantity-progress small{display:block;color:#718096;font-size:.5rem;white-space:nowrap}
+
+/* Client cards */
+#customerProfileTab .table-wrap table,
+#reviewsTab .table-wrap table,
+#purgeTab .table-wrap table,
+#dashboardTab .dashboard-orders table,
+#ordersTab .orders-panel table,
+#withdrawTab .table-wrap table,
+#transferAlertsTab .table-wrap table{
+  border-collapse:separate!important;
+  border-spacing:0!important;
+}
+
+#customerProfileTab table thead,
+#reviewsTab table thead,
+#purgeTab table thead,
+#dashboardTab .dashboard-orders table thead,
+#ordersTab .orders-panel table thead,
+#withdrawTab table thead,
+#transferAlertsTab table thead{
+  display:none!important;
+}
+
+#customerProfileTab table tbody,
+#reviewsTab table tbody,
+#purgeTab table tbody,
+#dashboardTab .dashboard-orders table tbody,
+#ordersTab .orders-panel table tbody,
+#withdrawTab table tbody,
+#transferAlertsTab table tbody{
+  display:grid!important;
+  gap:10px;
+}
+
+#customerProfileTab .client-row{
+  display:grid!important;
+  grid-template-columns:minmax(180px,1.3fr) minmax(150px,1fr) minmax(100px,.7fr) minmax(120px,.8fr) minmax(120px,.8fr) minmax(120px,.75fr);
+  direction:ltr;
+  align-items:center;
+  min-height:92px;
+}
+.client-row td{direction:rtl;border:0!important;background:transparent!important;padding:12px 14px!important}
+.client-row .client-name-cell{grid-column:1}
+.client-row .client-name-box:before{
+  content:"\f007";
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+  display:grid;place-items:center;
+  width:38px;height:38px;border-radius:11px;
+  margin-left:8px;float:right;
+  color:#00e676;background:rgba(0,230,118,.10);
+  border:1px solid rgba(0,230,118,.18);
+}
+.client-row .client-field-label{display:block;color:#718096!important;font-size:.54rem!important;margin-bottom:3px}
+.client-row .client-field-value{color:#f4f7fb!important;font-size:.72rem!important;font-weight:800!important}
+.client-row .phone-value{direction:ltr;display:inline-block}
+.client-row .client-count-value{color:#00e676!important}
+.client-row .client-quantity-value{color:#ffc107!important}
+.client-row .client-amount-value{color:#fff!important}
+.client-row .client-action-cell{grid-column:6}
+.client-row .client-history-btn{width:100%;min-height:34px!important;font-size:.62rem!important}
+
+/* Review cards */
+#reviewsTab .review-data-card{
+  display:grid!important;
+  grid-template-columns:minmax(170px,1.1fr) minmax(120px,.8fr) minmax(110px,.75fr) minmax(110px,.75fr) minmax(180px,1.4fr) minmax(100px,.7fr) minmax(100px,.7fr) minmax(110px,.7fr) minmax(110px,.65fr);
+  direction:ltr;
+  align-items:center;
+  min-height:88px;
+}
+.review-data-card td{direction:rtl;border:0!important;background:transparent!important;padding:10px!important}
+.review-data-card td:first-child:before{
+  content:"\f005";
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+  display:inline-grid;place-items:center;
+  width:34px;height:34px;border-radius:10px;
+  margin-left:7px;
+  color:#ffc107;background:rgba(255,193,7,.10);
+}
+.review-data-card td:nth-child(1){grid-column:1}
+.review-data-card td:nth-child(2){grid-column:2}
+.review-data-card td:nth-child(3){grid-column:3}
+.review-data-card td:nth-child(4){grid-column:4}
+.review-data-card td:nth-child(5){grid-column:5}
+.review-data-card td:nth-child(6){grid-column:6}
+.review-data-card td:nth-child(7){grid-column:7}
+.review-data-card td:nth-child(8){grid-column:8}
+.review-data-card td:nth-child(9){grid-column:9}
+.review-data-card .badge{font-size:.55rem!important;padding:5px 8px!important}
+.review-data-card code{font-size:.6rem!important}
+.review-data-card .btn-action{min-width:30px!important;min-height:30px!important}
+
+/* Dashboard and all data cards become the primary visual language on compact screens too. */
+@media(max-width:1100px){
+  .app-order-card{
+    grid-template-columns:56px minmax(125px,1fr) minmax(145px,1.2fr) minmax(100px,.85fr) minmax(95px,.7fr) minmax(110px,.8fr) minmax(125px,.9fr);
+  }
+  .app-order-card td{padding:10px 7px!important}
+  .app-platform-icon{width:43px;height:43px;font-size:1.45rem}
+  .app-order-number{font-size:.78rem!important}
+  .app-card-customer strong{font-size:.69rem!important}
+  .app-card-metric>strong{font-size:.78rem!important}
+  .app-card-status .badge{font-size:.52rem!important;padding:5px 7px!important}
+}
+
+@media(max-width:760px){
+  .app-order-card{
+    grid-template-columns:48px minmax(110px,1fr) minmax(125px,1.2fr) minmax(92px,.8fr);
+    grid-template-areas:
+      "platform identity customer status"
+      "platform quantity price actions";
+    padding:4px!important;
+    min-height:126px;
+  }
+  .app-order-card .app-card-platform{grid-area:platform}
+  .app-order-card .app-card-identity{grid-area:identity}
+  .app-order-card .app-card-customer{grid-area:customer;border:0!important}
+  .app-order-card .app-card-status{grid-area:status}
+  .app-order-card .app-card-quantity{grid-area:quantity}
+  .app-order-card .app-card-price-cell{grid-area:price}
+  .app-order-card .app-card-actions{grid-area:actions;border:0!important}
+  .app-order-card td{padding:6px!important}
+  .app-platform-icon{width:40px;height:40px;font-size:1.3rem}
+  .app-card-customer span{font-size:.55rem!important}
+  .app-card-date{font-size:.48rem!important}
+  .app-reference-line{font-size:.5rem}
+  .app-reference-line b{font-size:.54rem}
+  .app-card-metric>span{font-size:.48rem!important}
+  .app-card-metric>strong{font-size:.7rem!important}
+  .app-card-price strong{font-size:.66rem!important}
+  .app-card-status .badge{min-height:25px;font-size:.48rem!important}
+  .app-order-actions{justify-content:flex-start}
+  .app-order-actions .btn-action,.app-order-actions .btn-custom{min-width:28px;min-height:27px;padding:5px!important}
+  
+  #customerProfileTab .client-row{
+    grid-template-columns:48px 1.2fr 1fr 1fr;
+    grid-template-areas:
+      "avatar name phone action"
+      "avatar orders quantity amount";
+    min-height:108px;
+  }
+  .client-row .client-name-cell{grid-area:name}
+  .client-row .client-name-box:before{grid-area:avatar}
+  .client-row td:nth-child(2){grid-area:phone}
+  .client-row td:nth-child(3){grid-area:orders}
+  .client-row td:nth-child(4){grid-area:quantity}
+  .client-row td:nth-child(5){grid-area:amount}
+  .client-row .client-action-cell{grid-area:action}
+  .client-row td{padding:7px!important}
+  .client-row td:nth-child(5){display:block}
+  
+  #reviewsTab .review-data-card{
+    grid-template-columns:48px 1.2fr 1fr 1fr;
+    grid-template-areas:
+      "avatar identity platform status"
+      "avatar quantity rating actions";
+    min-height:112px;
+  }
+  .review-data-card td:first-child{grid-area:identity}
+  .review-data-card td:nth-child(2){grid-area:identity}
+  .review-data-card td:nth-child(3){grid-area:platform}
+  .review-data-card td:nth-child(4){grid-area:quantity}
+  .review-data-card td:nth-child(5){grid-area:rating}
+  .review-data-card td:nth-child(6){grid-area:rating}
+  .review-data-card td:nth-child(7){grid-area:identity}
+  .review-data-card td:nth-child(8){grid-area:status}
+  .review-data-card td:nth-child(9){grid-area:actions}
+  .review-data-card td{padding:6px!important}
+  .review-data-card td:nth-child(6){display:none}
+  .review-data-card td:nth-child(7){display:none}
+}
