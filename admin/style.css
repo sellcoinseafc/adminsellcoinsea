@@ -11581,3 +11581,184 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     align-items:stretch!important;
   }
 }
+
+
+/* ==========================================================================
+   MASTER ORDER CARD — final desktop/tablet polish
+   Orders + Dashboard Recent Orders stay pixel-consistent.
+   ========================================================================== */
+@media(min-width:601px){
+
+  /* Remove the green SAMI COINS eyebrow above the page title. */
+  .topbar .topbar-brand .eyebrow,
+  .topbar-brand .eyebrow{
+    display:none!important;
+  }
+
+  /* Customer name + phone: same visual weight, no handset icon. */
+  #ordersTab .app-card-customer strong,
+  #dashboardTab .dashboard-orders .app-card-customer strong{
+    font-size:.9rem!important;
+    line-height:1.2!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #ordersTab .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{
+    display:block!important;
+    margin-top:6px!important;
+    font-size:.78rem!important;
+    line-height:1.2!important;
+    font-weight:800!important;
+    direction:ltr!important;
+    text-align:right!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* Quantity is deliberately the same visual size as the price. */
+  #ordersTab .app-card-metric>strong,
+  #dashboardTab .dashboard-orders .app-card-metric>strong{
+    font-size:1.35rem!important;
+    line-height:1.05!important;
+    font-weight:950!important;
+    white-space:nowrap!important;
+  }
+
+  #ordersTab .app-card-price .order-price-stack strong,
+  #dashboardTab .dashboard-orders .app-card-price .order-price-stack strong{
+    font-size:1.35rem!important;
+    line-height:1.05!important;
+    font-weight:950!important;
+  }
+
+  /* All actions stay on ONE horizontal line. */
+  #ordersTab .app-card-actions,
+  #dashboardTab .dashboard-orders .app-card-actions{
+    overflow:visible!important;
+  }
+
+  #ordersTab .app-order-actions,
+  #dashboardTab .dashboard-orders .app-order-actions,
+  #ordersTab .app-order-actions .order-list-actions,
+  #dashboardTab .dashboard-orders .app-order-actions .order-list-actions{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex-wrap:nowrap!important;
+    gap:6px!important;
+    width:max-content!important;
+    max-width:none!important;
+    overflow:visible!important;
+  }
+
+  #ordersTab .app-order-actions .btn-action,
+  #ordersTab .app-order-actions .btn-custom,
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action,
+  #dashboardTab .dashboard-orders .app-order-actions .btn-custom{
+    flex:0 0 36px!important;
+    width:36px!important;
+    min-width:36px!important;
+    max-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:9px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    white-space:nowrap!important;
+  }
+
+  /* Status owns the card's left accent — not the platform. */
+  #ordersTab .app-order-card,
+  #dashboardTab .dashboard-orders .app-order-card{
+    border-left-width:3px!important;
+    border-left-style:solid!important;
+  }
+
+  #ordersTab .app-order-card.order-status-new,
+  #ordersTab .app-order-card.order-status-pending,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-new,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-pending{
+    border-left-color:#3aa7ff!important;
+  }
+
+  #ordersTab .app-order-card.order-status-review,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-review{
+    border-left-color:#ffb800!important;
+  }
+
+  #ordersTab .app-order-card.order-status-progress,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-progress{
+    border-left-color:#00e676!important;
+  }
+
+  #ordersTab .app-order-card.order-status-finished,
+  #ordersTab .app-order-card.order-status-completed,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-finished,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-completed{
+    border-left-color:#00e676!important;
+  }
+
+  #ordersTab .app-order-card.order-status-pending_transfer,
+  #ordersTab .app-order-card.order-status-transferred,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-pending_transfer,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-transferred{
+    border-left-color:#a469ff!important;
+  }
+
+  #ordersTab .app-order-card.order-status-archived,
+  #dashboardTab .dashboard-orders .app-order-card.order-status-archived{
+    border-left-color:#94a3b8!important;
+  }
+
+  /* Give the status badge a little more presence without changing its layout. */
+  #ordersTab .app-card-status .platform-status-badge,
+  #dashboardTab .dashboard-orders .app-card-status .platform-status-badge{
+    font-weight:950!important;
+  }
+}
+
+/* Tablet: preserve the same proportions without squeezing the actions. */
+@media(min-width:601px) and (max-width:1100px){
+  #ordersTab #fullOrdersTableBody .app-order-card,
+  #dashboardTab .dashboard-orders .app-order-card{
+    grid-template-columns:58px minmax(135px,1fr) minmax(160px,1.15fr) minmax(115px,.85fr) minmax(110px,.82fr) minmax(125px,.9fr) minmax(170px,1.1fr)!important;
+  }
+
+  #ordersTab .app-card-customer strong,
+  #dashboardTab .dashboard-orders .app-card-customer strong{
+    font-size:.82rem!important;
+  }
+
+  #ordersTab .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{
+    font-size:.72rem!important;
+  }
+
+  #ordersTab .app-card-metric>strong,
+  #dashboardTab .dashboard-orders .app-card-metric>strong,
+  #ordersTab .app-card-price .order-price-stack strong,
+  #dashboardTab .dashboard-orders .app-card-price .order-price-stack strong{
+    font-size:1.18rem!important;
+  }
+
+  #ordersTab .app-order-actions .btn-action,
+  #ordersTab .app-order-actions .btn-custom,
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action,
+  #dashboardTab .dashboard-orders .app-order-actions .btn-custom{
+    flex-basis:34px!important;
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+  }
+}
