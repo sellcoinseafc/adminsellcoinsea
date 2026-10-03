@@ -967,10 +967,10 @@ function buildTrackingOrder(
     const defaultPercentages = {
       new: 15,
       review: 35,
-      progress: 0,
-      finished: 100,
-      transferred: 100,
-      completed: 100
+      progress: 65,
+        finished: 85,
+        pending_transfer: 95,
+        completed: 100
     };
 
     progressPercentage =
