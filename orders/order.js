@@ -179,7 +179,7 @@ const translations = {
         termsSubtitle: "يرجى قراءة الشروط قبل اعتماد الطلب.",
         termsAgreement: "لقد قرأت الشروط والأحكام وأوافق عليها",
         termsLink: "الشروط والأحكام",
-        declarationsTitle: "الإقرارات وانسحاب الشروط والأحكام",
+        declarationsTitle: "الإقرارات",
 
         previous: "السابق",
         reviewOrder: "مراجعة الطلب",
@@ -835,21 +835,21 @@ function applySettingsToUI() {
     if (rates.PlayStation !== undefined) {
         setText(
             "psSubPrice",
-            `${rates.PlayStation} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.PlayStation}`
         );
     }
 
     if (rates.Xbox !== undefined) {
         setText(
             "xboxSubPrice",
-            `${rates.Xbox} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.Xbox}`
         );
     }
 
     if (rates.PC !== undefined) {
         setText(
             "pcSubPrice",
-            `${rates.PC} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`
+            `${rates.PC}`
         );
     }
 
