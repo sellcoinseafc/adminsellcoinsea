@@ -993,6 +993,27 @@ function initAdminsListener() {
   );
 }
 
+window.copyReferenceNumber =
+  async function (refCode) {
+    const value = String(refCode || "").trim();
+    if (!value || value === "---") return;
+    try {
+      await navigator.clipboard.writeText(value);
+      if (typeof showToast === "function") showToast("تم نسخ رقم المرجع.");
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = value;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+      if (typeof showToast === "function") showToast("تم نسخ رقم المرجع.");
+    }
+  };
+
 window.copyTrackingLink =
   async function (refCode) {
     if (
@@ -2446,7 +2467,7 @@ window.renderOrdersTables =
 
     if (filteredData.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="8" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
+        <tr><td colspan="9" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
       `;
       return;
     }
@@ -2459,9 +2480,9 @@ window.renderOrdersTables =
         <tr class="full-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
           <td data-label="الطلب" class="order-data-cell">
             <div class="order-ref-stack">
-              <span class="table-field-label">الطلب</span>
+              <span class="table-field-label">رقم المرجع</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b class="order-value-box order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
@@ -2490,7 +2511,7 @@ window.renderRecentOrdersTable =
 
     if (recentOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="7" class="empty-row">لا توجد طلبات حديثة.</td></tr>
+        <tr><td colspan="8" class="empty-row">لا توجد طلبات حديثة.</td></tr>
       `;
       return;
     }
@@ -2505,7 +2526,7 @@ window.renderRecentOrdersTable =
             <div class="order-ref-stack">
               <span class="table-field-label">الطلب</span>
               <small>${escapeHtml(internalRef)}</small>
-              <b class="order-value-box order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
+              <b class="order-value-box order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رابط التتبع">
                 ${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i>
               </b>
             </div>
@@ -2544,7 +2565,7 @@ window.renderWithdrawOrdersTable =
 
     if (withdrawOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="8" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
+        <tr><td colspan="9" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
       `;
       return;
     }
@@ -2567,7 +2588,8 @@ window.renderWithdrawOrdersTable =
               <b class="order-reference-value" onclick="copyTrackingLink('${escapeAttribute(ref)}')">${escapeHtml(ref)}</b>
             </div>
           </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
+          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
           <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
           <td data-label="المطلوب" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(total)}</strong></td>
           <td data-label="المسحوب" class="order-data-cell"><span class="table-field-label">المسحوب</span><strong class="withdrawn-value table-large-value">${formatCoinsNumber(withdrawn)}</strong></td>
@@ -2606,7 +2628,7 @@ window.renderTransferAlertsTable =
 
     if (transferOrders.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="7" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
+        <tr><td colspan="9" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
       `;
       return;
     }
