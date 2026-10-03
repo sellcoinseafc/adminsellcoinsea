@@ -753,14 +753,6 @@ function getRiyadhDateKey() {
 }
 
 /**
- * Legacy alias.
- */
-
-function getMakkahDateKey() {
-    return getRiyadhDateKey();
-}
-
-/**
  * ============================================================================
  * 3. Legacy daily codes
  * ============================================================================
