@@ -2444,90 +2444,121 @@ function renderOrderCardRow(order, mode = "standard") {
   const internalRef = order?.internalReference || order?.orderId || order?.id || "---";
   const name = order?.name || "---";
   const phone = order?.phone || "---";
-  const qty = Math.max(0, Number(order?.totalQty) || 0);
+  const qty = Math.max(0, Number(order?.totalQty ?? order?.quantity) || 0);
   const price = getDisplayPriceMarkup(order);
   const status = getOrderStatusBadge(order);
-  const updated = formatAdminLastUpdate(order?.lastUpdate || order?.updatedAt || order?.createdAt);
-  const actions = buildActionButtonsHTML(order);
 
-  let quantityMarkup = `
+  // The dashboard "Recent Orders" card is the master component.
+  // The full Orders page deliberately uses this exact renderer.
+  const createdAt = order?.createdAt
+    ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
+    : "---";
+
+  let quantityMarkup = \`
     <div class="app-card-metric">
       <span>الكمية</span>
-      <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
+      <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> \${formatCoinsNumber(qty)}</strong>
     </div>
-  `;
-
-  let extraMarkup = `
-    <div class="app-card-extra">
-      <span class="app-card-extra-label">آخر تحديث</span>
-      <span class="app-card-date">${updated}</span>
-    </div>
-  `;
+  \`;
 
   if (mode === "withdraw") {
-    const withdrawn = Math.min(qty, Math.max(0, Number(order?.withdrawnQuantity ?? order?.drawnCoins ?? 0) || 0));
+    const withdrawn = Math.min(
+      qty,
+      Math.max(0, Number(order?.withdrawnQuantity ?? order?.drawnCoins ?? 0) || 0)
+    );
     const remaining = Math.max(0, qty - withdrawn);
     const progress = qty > 0 ? Math.round((withdrawn / qty) * 100) : 0;
-    quantityMarkup = `
+
+    quantityMarkup = \`
       <div class="app-card-metric app-card-quantity-progress">
         <span>الكمية</span>
-        <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
-        <div class="app-progress-track"><span style="width:${progress}%"></span></div>
-        <small>مسحوب ${formatCoinsNumber(withdrawn)} · متبقي ${formatCoinsNumber(remaining)}</small>
+        <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> \${formatCoinsNumber(qty)}</strong>
+        <div class="app-progress-track"><span style="width:\${progress}%"></span></div>
+        <small>مسحوب \${formatCoinsNumber(withdrawn)} · متبقي \${formatCoinsNumber(remaining)}</small>
       </div>
-    `;
+    \`;
   }
 
-  if (mode === "transfer") {
-    const amount = getDisplayPrice(order);
-    const createdAt = order?.createdAt
-      ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
-      : "---";
-    extraMarkup = `
-      <div class="app-card-extra app-card-transfer-extra">
-        <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> ${escapeHtml(order?.paymentMethod || "---")}${order?.bankName ? " · " + escapeHtml(order.bankName) : ""}</span>
-        <strong>${escapeHtml(amount)}</strong>
-        <small>${escapeHtml(createdAt)}</small>
+  const amountMarkup = \`
+    <div class="app-card-metric app-card-price">
+      <span>السعر</span>
+      <strong>\${price}</strong>
+    </div>
+  \`;
+
+  const transferAmount = getDisplayPrice(order);
+  const transferMarkup = mode === "transfer"
+    ? \`
+      <div class="app-card-transfer-extra">
+        <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> \${escapeHtml(order?.paymentMethod || "---")}</span>
+        <strong>\${escapeHtml(transferAmount)}</strong>
       </div>
-    `;
-  }
+    \`
+    : amountMarkup;
 
-  const primaryPrice = mode === "transfer"
-    ? ""
-    : `<div class="app-card-metric app-card-price"><span>السعر</span><strong>${price}</strong></div>`;
+  const actions = mode === "transfer"
+    ? \`<button class="btn-custom transfer-action-button" onclick="openOrderModal('\${escapeAttribute(order.id)}')"><i class="fa-solid fa-arrow-left"></i> إتمام التحويل</button>\`
+    : buildActionButtonsHTML(order);
 
-  const transferAction = mode === "transfer"
-    ? `<button class="btn-custom transfer-action-button" onclick="openOrderModal('${escapeAttribute(order.id)}')"><i class="fa-solid fa-arrow-left"></i> إتمام التحويل</button>`
-    : actions;
-
-  return `
-    <tr class="app-order-card ${meta.className}">
+  return \`
+    <tr class="app-order-card \${meta.className}">
       <td class="app-card-platform" data-label="المنصة">
-        <span class="app-platform-icon ${meta.className}" title="${escapeAttribute(meta.label)}" aria-label="${escapeAttribute(meta.label)}">
-          <i class="${meta.icon}" aria-hidden="true"></i>
+        <span class="app-platform-icon \${meta.className}"
+              title="\${escapeAttribute(meta.label)}"
+              aria-label="\${escapeAttribute(meta.label)}">
+          <i class="\${meta.icon}" aria-hidden="true"></i>
         </span>
       </td>
+
       <td class="app-card-identity" data-label="رقم الطلب">
         <div class="app-order-main-line">
-          <b class="app-order-number" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          <b class="app-order-number"
+             onclick="copyReferenceNumber('\${escapeAttribute(internalRef)}')"
+             title="نسخ رقم الطلب">
+            \${escapeHtml(internalRef)}
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+          </b>
         </div>
+
         <div class="app-reference-line">
-<b onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+          <b onclick="copyReferenceNumber('\${escapeAttribute(ref)}')"
+             title="نسخ رقم المرجع">
+            \${escapeHtml(ref)}
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+          </b>
         </div>
-        <small class="app-card-date">${updated}</small>
+
+        <small class="app-card-date">\${escapeHtml(createdAt)}</small>
       </td>
+
       <td class="app-card-customer" data-label="العميل">
-        <strong><i class="fa-solid fa-user" aria-hidden="true"></i> ${escapeHtml(name)}</strong>
-        <span><i class="fa-solid fa-phone" aria-hidden="true"></i> ${escapeHtml(phone)}</span>
+        <strong>
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          \${escapeHtml(name)}
+        </strong>
+        <span>
+          <i class="fa-solid fa-phone" aria-hidden="true"></i>
+          \${escapeHtml(phone)}
+        </span>
       </td>
-      <td class="app-card-quantity" data-label="الكمية">${quantityMarkup}</td>
-      <td class="app-card-price-cell" data-label="السعر">${primaryPrice || extraMarkup}</td>
-      <td class="app-card-status" data-label="الحالة">${status}</td>
-      <td class="app-card-actions" data-label="الإجراء">
-        <div class="app-order-actions">${transferAction}</div>
+
+      <td class="app-card-quantity" data-label="الكمية">
+        \${quantityMarkup}
+      </td>
+
+      <td class="app-card-price-cell" data-label="السعر">
+        \${transferMarkup}
+      </td>
+
+      <td class="app-card-status" data-label="الحالة">
+        \${status}
+      </td>
+
+      <td class="app-card-actions" data-label="الإجراءات">
+        <div class="app-order-actions">\${actions}</div>
       </td>
     </tr>
-  `;
+  \`;
 }
 
 window.renderOrdersTables = function () {
