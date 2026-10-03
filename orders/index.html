@@ -8,7 +8,7 @@
 <title>متجر سامي كوينز | SAMI COINS</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link rel="stylesheet" href="style.css?v=20261003-redesign1">
+<link rel="stylesheet" href="style.css?v=20261003-review-final1">
 </head>
 <body>
 <div class="app-shell" id="pageShell">
@@ -30,10 +30,80 @@
 <section class="order-card summary-card"><div class="section-heading"><div><span>06</span><h2>ملخص الطلب</h2></div><i class="fa-solid fa-clipboard-check"></i></div><div id="revPlatformBoxTheme" class="summary-grid"><div class="summary-item"><small>المنصة</small><div class="summary-platform"><i id="revPlatformIcon"></i><strong id="revPlatformName">--</strong></div></div><div class="summary-item"><small>الكمية</small><strong id="revQty">--</strong></div><div class="summary-item"><small>السعر</small><strong id="revTotal">--</strong></div><div class="summary-item"><small>مدة السحب</small><strong id="revWithdrawText">--</strong></div></div><div class="summary-subgrid"><div><span>مدة التحويل</span><strong id="revTransferText">--</strong></div><div><span>طريقة النقل</span><strong id="revSafeMethodText">آمنة 99%</strong></div></div></section>
 <section id="termsCard" class="order-card terms-card"><div id="termsContainer"><div class="section-heading compact"><div><h2>الإقرارات والشروط</h2></div><i class="fa-solid fa-file-contract"></i></div><div id="inlineTermsList" class="inline-terms-list"></div><label class="terms-check"><input id="termsCheck" type="checkbox" onchange="syncTermsChecks(this)"><span>لقد قرأت الشروط والأحكام وأوافق عليها</span></label><button type="button" class="terms-bottom-link" onclick="showTermsModal()"><i class="fa-solid fa-file-contract"></i><span>الشروط والأحكام</span></button></div></section>
 <div class="legal-notice-outside"><i class="fa-solid fa-shield-halved"></i><div><strong>تنبيه الخصوصية</strong><span>بيانات الحساب والدفع حساسة. يتم إرسالها عبر النظام الآمن ولا نعرضها بعد إنشاء الطلب.</span></div></div>
-<button class="primary-btn create-order-final-btn create-order-button" type="button" onclick="submitOrderFinal()"><i class="fa-solid fa-file-circle-check"></i><span data-i18n="createOrder">إنشاء الطلب</span></button>
+<button class="primary-btn create-order-final-btn create-order-button" type="button" onclick="goToReview()"><i class="fa-solid fa-file-circle-check"></i><span data-i18n="reviewOrder">مراجعة الطلب</span></button>
 </section>
-<section id="step2Screen" class="screen hidden"></section><section id="step3ReviewScreen" class="screen hidden"></section>
-<section id="step4SuccessScreen" class="screen hidden success-screen"><div class="success-hero"><div class="success-check"><i class="fa-solid fa-check"></i></div><span>SAMI COINS</span><h1 data-i18n="successTitle">تم استلام طلبك بنجاح</h1><p data-i18n="successText">احتفظ برقم الطلب لمتابعة حالة طلبك.</p></div><div class="success-reference"><small>رقم الطلب</small><div><strong id="finalOrderId">--</strong><button type="button" onclick="copyOrderId()"><i class="fa-regular fa-copy"></i></button></div></div><div class="success-card invoice-card"><div class="card-heading"><span>تفاصيل الطلب</span></div><div class="success-summary"><div><small>العميل</small><strong id="billClientName">--</strong></div><div><small>واتساب</small><strong id="billClientPhone">--</strong></div><div><small>المنصة</small><strong id="billPlatform">--</strong></div><div><small>الكمية</small><strong id="billQty">--</strong></div><div><small>المبلغ</small><strong id="billTotal">--</strong></div><div><small>الحالة</small><strong id="billStatusText">طلب جديد</strong></div></div><div id="billPaymentCard" class="payment-invoice"></div></div><div class="mini-grid success-duration-grid"><div class="mini-card"><span>مدة السحب</span><strong id="successWithdrawText">--</strong></div><div class="mini-card"><span>مدة التحويل</span><strong id="successTransferText">--</strong></div><div class="mini-card"><span>طريقة النقل</span><strong id="successSafeMethodText">آمنة 99%</strong></div></div><div class="success-actions"><button class="primary-btn" type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass-chart"></i><span>متابعة الطلب</span></button><button class="secondary-btn whatsapp-btn" type="button" onclick="sendOrderViaWhatsapp()"><i class="fa-brands fa-whatsapp"></i><span>إرسال عبر الواتساب</span></button><button class="secondary-btn" type="button" onclick="location.reload()"><i class="fa-solid fa-plus"></i><span>إنشاء طلب جديد</span></button></div><div class="tracking-hidden-data" aria-hidden="true"><span id="finalTrackingLink"></span><span id="finalInternalReference"></span></div></section>
+<section id="step2Screen" class="screen hidden"></section><section id="step3ReviewScreen" class="screen hidden">
+<div class="review-page">
+  <div class="review-page-head"><div><span class="review-kicker">SAMI COINS</span><h1>المراجعة والتأكيد</h1><p>راجع جميع البيانات قبل إنشاء الطلب.</p></div><i class="fa-solid fa-clipboard-check"></i></div>
+  <div class="review-banner"><i class="fa-solid fa-shield-halved"></i><div><strong>مراجعة الطلب والاعتماد</strong><span>تأكد من البيانات، ويمكنك تعديل أي قسم قبل إنشاء الطلب.</span></div></div>
+
+  <section class="review-card">
+    <div class="review-card-head"><h2>تفاصيل الطلب</h2><button type="button" class="section-edit-btn" onclick="openReviewEditSection('platform')">تعديل</button></div>
+    <div id="editPlatformQtyPanel" class="form-card hidden">
+      <div class="card-heading"><span>تغيير المنصة والكمية</span></div>
+      <div class="platforms-flex compact"><button class="platform-btn ps-btn" type="button" onclick="selectPlatformInline('PlayStation')"><i class="fa-brands fa-playstation"></i><strong>PlayStation</strong></button><button class="platform-btn xbox-btn" type="button" onclick="selectPlatformInline('Xbox')"><i class="fa-brands fa-xbox"></i><strong>Xbox</strong></button><button class="platform-btn pc-btn" type="button" onclick="selectPlatformInline('PC')"><i class="fa-solid fa-desktop"></i><strong>PC</strong></button></div>
+      <label class="field-label">تعديل كمية الكوينز</label><div class="quantity-box"><button type="button" onclick="adjustQtyInline(-100000)">−</button><input id="inlineQtyInput" type="text" oninput="formatAndCalculateInline(this)"><button type="button" onclick="adjustQtyInline(100000)">+</button></div>
+    </div>
+    <div id="revPlatformBoxTheme" class="review-main-grid">
+      <div class="review-main-box platform-main-box"><small>المنصة</small><div><i id="revPlatformIcon"></i><strong id="revPlatformName">--</strong></div></div>
+      <div class="review-main-box"><small>الكمية</small><div><i class="fa-solid fa-coins"></i><strong id="revQty">--</strong></div></div>
+      <div class="review-main-box"><small>السعر</small><div><i class="fa-solid fa-money-bill-wave"></i><strong id="revTotal">--</strong></div></div>
+    </div>
+    <div class="review-duration-grid">
+      <div class="mini-card"><span>مدة السحب</span><strong id="revWithdrawText">--</strong></div>
+      <div class="mini-card"><span>مدة التحويل</span><strong id="revTransferText">--</strong></div>
+      <div class="mini-card"><span>طريقة النقل</span><strong id="revSafeMethodText">--</strong></div>
+    </div>
+  </section>
+
+  <section class="review-card">
+    <div class="review-card-head"><h2>معلومات العميل</h2><button type="button" class="section-edit-btn" onclick="openReviewEditSection('client')">تعديل</button></div>
+    <div id="clientViewMode" class="review-client-grid"><div class="review-info-box"><small>الاسم الكامل</small><strong id="revClientName">--</strong></div><div class="review-info-box"><small>رقم التواصل</small><strong id="revClientPhone">--</strong></div></div>
+    <div id="clientEditMode" class="hidden"><label class="field-label">اسم العميل</label><div class="input-box-wrap"><input id="editClientName"></div><label class="field-label">رقم التواصل واتساب</label><div class="input-box-wrap"><input id="editClientPhone"></div></div>
+  </section>
+
+  <section class="review-card">
+    <div class="review-card-head"><h2>بيانات حساب EA والأكواد</h2><button type="button" class="section-edit-btn" onclick="openReviewEditSection('ea')">تعديل</button></div>
+    <div id="eaViewMode"><div class="review-client-grid"><div class="review-info-box"><small>البريد الإلكتروني</small><strong id="revEmail">--</strong></div><div class="review-info-box"><small>كلمة المرور</small><strong id="revPass">••••••••</strong></div></div><div id="revCodes"></div></div>
+    <div id="eaEditMode" class="hidden"><label class="field-label">البريد الإلكتروني</label><div class="input-box-wrap"><input id="editEaEmail"></div><label class="field-label">كلمة المرور</label><div class="input-box-wrap password-wrap"><input id="editEaPass" class="masked-secret" type="text" name="eaSecretTextEdit" autocomplete="off"><i class="fa-solid fa-eye"></i></div><div class="code-input-row"><span>1</span><div class="input-box-wrap"><input id="editCode1"></div></div><div class="code-input-row"><span>2</span><div class="input-box-wrap"><input id="editCode2"></div></div><div class="code-input-row"><span>3</span><div class="input-box-wrap"><input id="editCode3"></div></div></div>
+  </section>
+
+  <section class="review-card">
+    <div class="review-card-head"><h2>معلومات التحويل والاستلام</h2><button type="button" class="section-edit-btn" onclick="openReviewEditSection('payout')">تعديل</button></div>
+    <div id="payoutViewMode"><div id="revSpecificDetailsContainer"></div></div>
+    <div id="payoutEditMode" class="hidden"><div id="inlinePayoutEditWrap"></div></div>
+  </section>
+
+  <div id="saveEditsButtonWrap" class="hidden"><button id="saveCurrentEditBtn" class="primary-btn" type="button" onclick="saveCurrentEditSection()">حفظ التعديلات</button></div>
+  <div class="review-actions"><button class="secondary-btn" type="button" onclick="showScreen('step1Screen')">الرجوع للتعديل</button><button class="primary-btn create-order-final-btn" type="button" onclick="submitOrderFinal()"><i class="fa-solid fa-check"></i><span>إنشاء الطلب</span></button></div>
+  <div class="security-note"><i class="fa-solid fa-shield-halved"></i><span>عند إنشاء الطلب سيتم تأمين بياناتك ومعالجتها وفقًا لنظام الحماية المعتمد.</span></div>
+</div>
+</section><section id="step4SuccessScreen" class="screen hidden">
+<div class="success-page">
+  <div class="success-hero"><div class="success-check"><i class="fa-solid fa-check"></i></div><h1>تم استلام طلبك بنجاح</h1><p>احتفظ برقم الطلب لمتابعة حالة طلبك.</p></div>
+  <div class="success-reference"><small>رقم الطلب</small><div><strong id="finalOrderId">--</strong><button type="button" onclick="copyOrderId()"><i class="fa-regular fa-copy"></i></button></div></div>
+  <section class="success-card invoice-card">
+    <div class="success-card-head"><h2>تفاصيل طلبك</h2></div>
+    <div class="invoice-top-grid">
+      <div class="invoice-box"><small>الاسم</small><strong id="billClientName">--</strong></div>
+      <div class="invoice-box"><small>رقم الجوال</small><strong id="billClientPhone">--</strong></div>
+      <div class="invoice-box"><small>حالة الطلب</small><strong id="billStatusText">طلب جديد</strong></div>
+    </div>
+    <div class="invoice-main-grid">
+      <div class="invoice-box platform-invoice-box"><small>المنصة</small><div><i id="billPlatformIcon" class="fa-brands fa-playstation"></i><strong id="billPlatform">--</strong></div></div>
+      <div class="invoice-box"><small>الكمية</small><div><i class="fa-solid fa-coins"></i><strong id="billQty">--</strong></div></div>
+      <div class="invoice-box"><small>السعر</small><div><i class="fa-solid fa-money-bill-wave"></i><strong id="billTotal">--</strong></div></div>
+    </div>
+    <div class="invoice-duration-grid">
+      <div class="mini-card"><span>مدة السحب</span><strong id="successWithdrawText">--</strong></div>
+      <div class="mini-card"><span>مدة التحويل</span><strong id="successTransferText">--</strong></div>
+      <div class="mini-card"><span>طريقة النقل</span><strong id="successSafeMethodText">آمنة 99%</strong></div>
+    </div>
+    <div id="billPaymentCard" class="payment-invoice"></div>
+  </section>
+  <div class="success-actions"><button class="primary-btn" type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass-chart"></i><span>متابعة الطلب</span></button><button class="secondary-btn whatsapp-btn" type="button" onclick="sendOrderViaWhatsapp()"><i class="fa-brands fa-whatsapp"></i><span>إرسال تفاصيل الطلب عبر الواتساب</span></button><button class="secondary-btn" type="button" onclick="location.reload()"><i class="fa-solid fa-plus"></i><span>إنشاء طلب جديد</span></button></div>
+</div>
+</section>
 </section>
 </main>
 <footer class="app-footer"><button type="button" onclick="showSupportModal()"><i class="fa-brands fa-whatsapp"></i><span>دعم فني</span></button><button type="button" onclick="showPrivacyModal()"><i class="fa-solid fa-lock"></i><span>الخصوصية</span></button><button type="button" onclick="showTermsModal()"><i class="fa-solid fa-file-contract"></i><span>الشروط</span></button><button type="button" onclick="openInquiryPage()"><i class="fa-solid fa-magnifying-glass"></i><span>استعلام عن الطلب</span></button></footer>
