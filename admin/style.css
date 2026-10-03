@@ -9091,3 +9091,485 @@ textarea.form-control{
     font-size:1.04rem!important;
   }
 }
+
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE STEP 4 CORRECTION / EXACT REFERENCE PROPORTIONS
+   Corrects the previous narrow-pill rendering seen on mobile.
+   ========================================================================== */
+@media (max-width:600px){
+
+  /* ================================================================
+     1) WITHDRAW QUEUE — every field is a real full-width box
+     ================================================================ */
+  #withdrawOrdersTableBody .withdraw-order-row{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:12px!important;
+    margin:0 0 14px!important;
+    box-sizing:border-box!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td.order-data-cell{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:104px!important;
+    min-height:104px!important;
+    margin:0 0 9px!important;
+    padding:9px 14px!important;
+    box-sizing:border-box!important;
+    border:1px solid #fff!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(9,29,49,.97),rgba(5,17,30,.99))!important;
+    overflow:hidden!important;
+    gap:5px!important;
+    text-align:center!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td.order-data-cell .table-field-label{
+    display:block!important;
+    width:auto!important;
+    flex:0 0 auto!important;
+    margin:0!important;
+    color:#8ea1b5!important;
+    font-size:.66rem!important;
+    font-weight:900!important;
+    line-height:1!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+  }
+
+  /* Reference: large and visually dominant. */
+  #withdrawOrdersTableBody .order-ref-stack{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    gap:4px!important;
+  }
+
+  #withdrawOrdersTableBody .order-ref-stack small{
+    display:none!important;
+  }
+
+  #withdrawOrdersTableBody .order-reference-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    font-size:1.42rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="العميل"] .table-primary-value,
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="الجوال"] .table-primary-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    color:#fff!important;
+    font-size:1.38rem!important;
+    line-height:1.12!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="الجوال"] .phone-value{
+    direction:ltr!important;
+    unicode-bidi:plaintext!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  /* Platform: remove the "المنصة" caption; the platform itself fills the field. */
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المنصة"] .table-field-label{
+    display:none!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المنصة"] .platform-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:58px!important;
+    min-height:58px!important;
+    margin:0!important;
+    padding:7px 12px!important;
+    box-sizing:border-box!important;
+    border-radius:13px!important;
+    gap:9px!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المنصة"] .platform-badge i{
+    font-size:1.55rem!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المنصة"] .platform-badge-name{
+    display:inline!important;
+    font-size:1.02rem!important;
+    font-weight:900!important;
+  }
+
+  /* Quantity / withdrawn / remaining: no tiny inner pills. */
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المطلوب"] .table-field-label,
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المسحوب"] .table-field-label,
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المتبقي"] .table-field-label{
+    font-size:.64rem!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المطلوب"] .table-large-value,
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المسحوب"] .table-large-value,
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المتبقي"] .table-large-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    color:#fff!important;
+    background:transparent!important;
+    border:0!important;
+    font-size:1.48rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    text-align:center!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المتبقي"] .table-large-value{
+    color:#ff5b6e!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="المسحوب"] .table-large-value{
+    color:#ffc52e!important;
+  }
+
+  /* Status: use the whole box and enlarge the actual message. */
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="الحالة"] .table-field-label{
+    display:none!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="الحالة"]{
+    height:112px!important;
+    min-height:112px!important;
+    padding:8px!important;
+  }
+
+  #withdrawOrdersTableBody .withdraw-order-row>td[data-label="الحالة"] .platform-status-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:78px!important;
+    height:78px!important;
+    margin:0!important;
+    padding:9px 12px!important;
+    box-sizing:border-box!important;
+    border:0!important;
+    border-radius:13px!important;
+    background:rgba(0,255,135,.09)!important;
+    color:#fff!important;
+    font-size:1.08rem!important;
+    line-height:1.35!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:normal!important;
+    word-break:keep-all!important;
+  }
+
+
+  /* ================================================================
+     2) RECENT ORDERS — same reference-size boxes, no blue quantity pill
+     ================================================================ */
+  #recentOrdersTableBody .recent-order-row{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    padding:12px!important;
+    margin:0 0 14px!important;
+    box-sizing:border-box!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td.order-data-cell{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:96px!important;
+    min-height:96px!important;
+    margin:0 0 9px!important;
+    padding:8px 14px!important;
+    box-sizing:border-box!important;
+    border:1px solid #fff!important;
+    border-radius:16px!important;
+    background:linear-gradient(145deg,rgba(9,29,49,.97),rgba(5,17,30,.99))!important;
+    overflow:hidden!important;
+    gap:4px!important;
+    text-align:center!important;
+  }
+
+  /* Reference label stays useful; the actual reference is large. */
+  #recentOrdersTableBody .recent-order-row .order-reference-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    font-size:1.40rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row .order-ref-stack small{
+    display:none!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="العميل"] .table-field-label,
+  #recentOrdersTableBody .recent-order-row>td[data-label="الجوال"] .table-field-label,
+  #recentOrdersTableBody .recent-order-row>td[data-label="الكمية"] .table-field-label,
+  #recentOrdersTableBody .recent-order-row>td[data-label="ريال سعودي"] .table-field-label,
+  #recentOrdersTableBody .recent-order-row>td[data-label="المنصة"] .table-field-label{
+    display:none!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="العميل"] .table-primary-value,
+  #recentOrdersTableBody .recent-order-row>td[data-label="الجوال"] .table-primary-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    color:#fff!important;
+    font-size:1.38rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="الجوال"] .phone-value{
+    direction:ltr!important;
+    unicode-bidi:plaintext!important;
+    font-variant-numeric:tabular-nums!important;
+  }
+
+  /* Platform has no caption and fills the same large field. */
+  #recentOrdersTableBody .recent-order-row>td[data-label="المنصة"] .platform-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:60px!important;
+    min-height:60px!important;
+    margin:0!important;
+    padding:7px 12px!important;
+    box-sizing:border-box!important;
+    border-radius:13px!important;
+    gap:9px!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="المنصة"] .platform-badge i{
+    font-size:1.65rem!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="المنصة"] .platform-badge-name{
+    display:inline!important;
+    font-size:1.08rem!important;
+    font-weight:900!important;
+  }
+
+  /* Quantity: remove the previous blue inner box and use yellow text. */
+  #recentOrdersTableBody .recent-order-row>td[data-label="الكمية"] .recent-quantity{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:#ffc52e!important;
+    font-size:1.55rem!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    text-align:center!important;
+  }
+
+  /* Amount: currency sits on the left, number is large on the right. */
+  #recentOrdersTableBody .recent-order-row>td[data-label="ريال سعودي"] .order-price-stack{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:12px!important;
+    width:100%!important;
+    max-width:none!important;
+    direction:ltr!important;
+    white-space:nowrap!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="ريال سعودي"] .order-price-stack small{
+    display:inline-flex!important;
+    align-items:center!important;
+    color:#9aaabd!important;
+    font-size:.78rem!important;
+    font-weight:900!important;
+    order:0!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="ريال سعودي"] .order-price-stack strong{
+    display:inline-flex!important;
+    align-items:center!important;
+    color:#fff!important;
+    font-size:1.55rem!important;
+    line-height:1!important;
+    font-weight:900!important;
+    order:1!important;
+  }
+
+  /* Recent status follows the same large-box rhythm. */
+  #recentOrdersTableBody .recent-order-row>td[data-label="الحالة"] .table-field-label{
+    display:none!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="الحالة"]{
+    height:104px!important;
+    min-height:104px!important;
+    padding:8px!important;
+  }
+
+  #recentOrdersTableBody .recent-order-row>td[data-label="الحالة"] .platform-status-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    min-height:70px!important;
+    height:70px!important;
+    margin:0!important;
+    padding:8px 12px!important;
+    border:0!important;
+    border-radius:13px!important;
+    background:rgba(0,255,135,.09)!important;
+    color:#fff!important;
+    font-size:1.02rem!important;
+    line-height:1.35!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:normal!important;
+    word-break:keep-all!important;
+  }
+
+
+  /* ================================================================
+     3) CUSTOMERS — remove captions; values become the design
+     ================================================================ */
+  #customerProfileTab .client-field-label{
+    display:none!important;
+  }
+
+  #customerProfileTab .client-field-box{
+    height:92px!important;
+    min-height:92px!important;
+    border:1px solid #fff!important;
+    border-radius:16px!important;
+    padding:10px 14px!important;
+  }
+
+  #customerProfileTab .client-field-value,
+  #customerProfileTab .client-name-box .client-field-value,
+  #customerProfileTab .client-count-value,
+  #customerProfileTab .client-quantity-value,
+  #customerProfileTab .client-amount-value{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:100%!important;
+    color:#fff!important;
+    font-size:1.45rem!important;
+    line-height:1.1!important;
+    font-weight:900!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  #customerProfileTab .client-name-box .client-field-value{
+    font-size:1.52rem!important;
+  }
+
+  #customerProfileTab .client-count-value{
+    color:#73c4ff!important;
+    gap:8px!important;
+    font-size:1.45rem!important;
+  }
+
+  #customerProfileTab .client-count-value i{
+    font-size:1.22rem!important;
+  }
+
+  #customerProfileTab .client-quantity-value{
+    color:#00e88a!important;
+    font-size:1.52rem!important;
+  }
+
+  #customerProfileTab .client-amount-value{
+    color:#fff!important;
+    font-size:1.48rem!important;
+  }
+
+  #customerProfileTab .client-action-cell{
+    margin-top:2px!important;
+  }
+
+  #customerProfileTab .client-history-btn{
+    min-height:52px!important;
+    font-size:.90rem!important;
+    font-weight:900!important;
+  }
+}
