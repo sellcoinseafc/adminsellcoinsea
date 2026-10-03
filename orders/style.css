@@ -1876,3 +1876,107 @@ html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-e
     font-size:18px!important;
   }
 }
+
+
+/* FINAL MOBILE PARITY — keep the same desktop/tablet geometry on phones.
+   Only the available canvas width changes; no separate cramped mobile design. */
+@media (max-width: 767px){
+  .app-shell{
+    max-width:620px!important;
+    width:100%!important;
+  }
+
+  .app-content{
+    padding-inline:16px!important;
+    padding-bottom:90px!important;
+  }
+
+  /* Same card sizing/typography as tablet */
+  .hero-card{min-height:190px!important;padding:24px!important}
+  .hero-media-slot{height:84px!important}
+  .hero-copy{margin-top:72px!important}
+  .hero-copy h1{font-size:17px!important}
+  .hero-copy p{font-size:10px!important}
+
+  .platforms-flex{gap:14px!important}
+  .platform-btn{
+    min-height:132px!important;
+    padding:14px 8px!important;
+  }
+  .platform-btn i{font-size:38px!important}
+  .platform-btn strong{font-size:13px!important}
+  .platform-btn small{font-size:12px!important}
+
+  .mini-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+  .payment-methods-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .form-card{padding:20px!important}
+  .account-stage .form-card,
+  .customer-stage .form-card{padding:20px!important}
+  .account-stage .input-box-wrap input,
+  .account-stage .input-box-wrap select,
+  .customer-stage .input-box-wrap input,
+  .customer-stage .input-box-wrap select{
+    height:52px!important;
+    font-size:13px!important;
+  }
+  .pay-btn-compact{min-height:58px!important;font-size:11px!important}
+
+  /* Review page: keep the tablet card geometry instead of collapsing it. */
+  #step3ReviewScreen .review-values{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #step3ReviewScreen .backup-codes-stack{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #step3ReviewScreen .review-platform{
+    min-height:82px!important;
+    grid-template-columns:42px minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr)!important;
+  }
+  #step3ReviewScreen .review-platform>div:last-child{
+    grid-column:auto!important;
+  }
+
+  /* Success/invoice: same two-column card structure as tablet. */
+  #step4SuccessScreen .success-oval-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  #step4SuccessScreen .invoice-card .success-name-oval,
+  #step4SuccessScreen .invoice-card .success-phone-oval{
+    grid-column:1/-1!important;
+  }
+  #step4SuccessScreen .success-quantity-price-oval,
+  #step4SuccessScreen .success-platform-status-oval{
+    grid-column:auto!important;
+  }
+
+  /* Latest customer reviews: don't compress them into a 56px strip. */
+  .public-reviews-section.orders-public-reviews{
+    padding:12px 14px!important;
+  }
+  .orders-public-reviews .public-reviews-container{
+    max-height:none!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding-bottom:3px!important;
+  }
+  .orders-public-reviews .public-reviews-track{
+    grid-auto-columns:280px!important;
+    gap:10px!important;
+  }
+  .orders-public-reviews .public-review-card{
+    width:280px!important;
+    min-height:72px!important;
+    padding:10px 12px!important;
+    border-radius:12px!important;
+  }
+  .orders-public-reviews .public-review-platform-logo{
+    width:30px!important;
+    height:30px!important;
+    flex-basis:30px!important;
+    font-size:13px!important;
+  }
+  .orders-public-reviews .public-review-quantity,
+  .orders-public-reviews .public-review-stars{
+    font-size:10px!important;
+  }
+}
