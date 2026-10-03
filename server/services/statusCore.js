@@ -4,6 +4,7 @@ const STATUS_VALUES = new Set([
   "progress",
   "finished",
   "pending_transfer",
+  "transferred",
   "completed",
   "archived"
 ]);
@@ -47,6 +48,16 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
+    "transferred",
+    "completed"
+  ]),
+  transferred: new Set([
+    "new",
+    "review",
+    "progress",
+    "finished",
+    "pending_transfer",
+    "transferred",
     "completed"
   ]),
   completed: new Set([
