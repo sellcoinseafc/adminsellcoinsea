@@ -7620,6 +7620,7 @@ window.closeSidebar =
     const menuIcon = menuButton?.querySelector("i");
 
     if (sidebar) sidebar.classList.remove("mobile-open");
+    document.body.classList.remove("sidebar-drawer-open");
     if (overlay) {
       overlay.classList.remove("is-visible");
       overlay.setAttribute("aria-hidden", "true");
@@ -7656,6 +7657,7 @@ window.toggleSidebar =
     const menuIcon = menuButton?.querySelector("i");
 
     sidebar.classList.add("mobile-open");
+    document.body.classList.add("sidebar-drawer-open");
     if (overlay) {
       overlay.classList.add("is-visible");
       overlay.setAttribute("aria-hidden", "false");
