@@ -12522,3 +12522,52 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     width:min(100%,190px)!important;
   }
 }
+
+
+/* TABLET CUSTOMER CARDS — prevent six-column overflow */
+@media (min-width:601px) and (max-width:900px){
+  #customerProfileTab #clientsTableBody .client-row{
+    grid-template-columns:minmax(120px,1.25fr) minmax(105px,1fr) minmax(70px,.7fr) minmax(82px,.82fr) minmax(82px,.82fr) 92px!important;
+    min-height:76px!important;
+    padding:6px!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-row td{
+    padding:8px 6px!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-name-box::before{
+    flex-basis:36px!important;
+    width:36px!important;
+    height:36px!important;
+    font-size:.85rem!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-name-box{
+    gap:7px!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-field-value{
+    font-size:.64rem!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-quantity-value{
+    font-size:.76rem!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-amount-value{
+    font-size:.82rem!important;
+  }
+
+  #customerProfileTab #clientsTableBody .client-history-btn{
+    min-height:34px!important;
+    padding:0 7px!important;
+    font-size:.56rem!important;
+  }
+}
+
+@media (min-width:601px) and (max-width:700px){
+  #customerProfileTab #clientsTableBody .client-row{
+    grid-template-columns:minmax(105px,1.2fr) minmax(88px,1fr) minmax(60px,.7fr) minmax(70px,.82fr) minmax(70px,.82fr) 78px!important;
+  }
+}
