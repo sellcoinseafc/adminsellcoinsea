@@ -11506,3 +11506,78 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     }
   }
 }
+
+
+/* ORDER DETAIL — final mobile polish */
+@media(max-width:600px){
+  /* Remove the green SAMI COINS eyebrow above the current page title. */
+  .topbar .topbar-brand .eyebrow,
+  .topbar .eyebrow{
+    display:none!important;
+  }
+
+  /* Keep the close button visible even when the detail content is long/full-height. */
+  #orderDetailModal .modal-card{
+    position:relative!important;
+    max-height:calc(100dvh - 18px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  #orderDetailModal .modal-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    background:linear-gradient(180deg,var(--panel2) 0%,rgba(5,11,22,.97) 100%)!important;
+    padding-top:8px!important;
+    padding-bottom:10px!important;
+  }
+
+  #orderDetailModal .modal-close-btn{
+    position:sticky!important;
+    top:4px!important;
+    z-index:40!important;
+    flex:0 0 40px!important;
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border:1px solid rgba(0,230,118,.42)!important;
+    background:rgba(0,230,118,.08)!important;
+    color:#00e676!important;
+    border-radius:11px!important;
+    font-size:1.45rem!important;
+    line-height:1!important;
+  }
+
+  /* Sensitive values: Tajawal, centered, readable. */
+  #orderDetailModal .secure-copy-field{
+    font-family:"Tajawal",sans-serif!important;
+    text-align:center!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  #orderDetailModal .secure-copy-field span,
+  #orderDetailModal .secure-copy-field strong{
+    display:block!important;
+    width:100%!important;
+    text-align:center!important;
+  }
+
+  #orderDetailModal .secure-copy-field strong{
+    font-family:"Tajawal",sans-serif!important;
+    font-size:1rem!important;
+    font-weight:900!important;
+    letter-spacing:0!important;
+    direction:ltr!important;
+  }
+
+  #orderDetailModal .secure-fields-grid{
+    align-items:stretch!important;
+  }
+}
