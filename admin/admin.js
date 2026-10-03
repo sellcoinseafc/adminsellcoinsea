@@ -3132,7 +3132,7 @@ function renderReviewsTable() {
             );
 
           return `
-            <tr>
+            <tr class="review-data-card">
 
               <td>
                 <b>
