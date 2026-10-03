@@ -12618,3 +12618,340 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     grid-template-columns:minmax(105px,1.2fr) minmax(88px,1fr) minmax(60px,.7fr) minmax(70px,.82fr) minmax(70px,.82fr) 78px!important;
   }
 }
+
+
+/* ==========================================================================
+   MOBILE — desktop/tablet visual geometry, scaled to fit the phone
+   Keep the same component structure; reduce sizing instead of rebuilding it.
+   ========================================================================== */
+
+@media (max-width:600px){
+  .main-wrapper{
+    padding:10px 10px 82px!important;
+  }
+
+  .topbar{
+    gap:8px!important;
+  }
+
+  .topbar-right,
+  .topbar-left{
+    min-width:0!important;
+  }
+
+  .topbar h1,
+  #pageTitleHeading{
+    font-size:1.05rem!important;
+  }
+
+  .global-search{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .hero{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    padding:16px!important;
+    border-radius:18px!important;
+  }
+
+  .hero h2{
+    font-size:1.25rem!important;
+  }
+
+  .hero p{
+    font-size:.72rem!important;
+    line-height:1.65!important;
+  }
+
+  .hero-actions{
+    display:flex!important;
+    flex:0 0 auto!important;
+    margin-top:0!important;
+    gap:6px!important;
+  }
+
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary,
+  .hero-actions .btn-warning,
+  .hero-actions .btn-danger{
+    min-height:36px!important;
+    padding:7px 9px!important;
+    font-size:.68rem!important;
+    white-space:nowrap!important;
+  }
+
+  .stats-grid,
+  .stats-grid.four{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .stat-card{
+    min-height:88px!important;
+    padding:11px!important;
+    border-radius:14px!important;
+  }
+
+  .stat-card span{
+    font-size:.64rem!important;
+  }
+
+  .stat-card strong{
+    font-size:1.15rem!important;
+    margin-top:8px!important;
+  }
+
+  .stat-card>i{
+    left:10px!important;
+    bottom:9px!important;
+    font-size:1.15rem!important;
+  }
+
+  .panel{
+    padding:12px!important;
+    border-radius:15px!important;
+  }
+
+  .panel-title,
+  .page-head{
+    gap:8px!important;
+    margin-bottom:11px!important;
+  }
+
+  .panel-title h3,
+  .page-head h2{
+    font-size:1rem!important;
+  }
+
+  .head-tools{
+    gap:6px!important;
+  }
+
+  .order-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .order-kpis>div{
+    padding:10px!important;
+    border-radius:12px!important;
+  }
+
+  .order-kpis b{
+    font-size:1.1rem!important;
+  }
+
+  .form-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+
+  .payment-columns{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+
+  .two{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+
+  .inventory-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+  }
+
+  .inventory-card{
+    padding:14px!important;
+    border-radius:15px!important;
+  }
+
+  .inventory-card strong{
+    font-size:1.35rem!important;
+  }
+
+  .inline-add{
+    display:flex!important;
+    gap:7px!important;
+  }
+
+  .inline-add input{
+    min-width:0!important;
+  }
+
+  /* Orders: retain the same 7-column card geometry as tablet/desktop. */
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card{
+    grid-template-columns:
+      38px
+      minmax(48px,.95fr)
+      minmax(58px,1.15fr)
+      minmax(48px,.8fr)
+      minmax(44px,.72fr)
+      minmax(56px,.9fr)
+      minmax(56px,.92fr)!important;
+    grid-template-rows:none!important;
+    grid-template-areas:none!important;
+    min-height:96px!important;
+    margin:0 0 8px!important;
+    padding:2px!important;
+    border-radius:14px!important;
+  }
+
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card td{
+    padding:7px 4px!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-platform,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-identity,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-customer,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-quantity,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-price-cell,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-status,
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-actions{
+    grid-area:auto!important;
+    grid-column:auto!important;
+  }
+
+  #ordersTab .orders-page-master .app-order-number{
+    font-size:.7rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-reference-line,
+  #ordersTab .orders-page-master .app-reference-line b{
+    font-size:.54rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-card-customer strong{
+    font-size:.63rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-card-customer span{
+    font-size:.52rem!important;
+    margin-top:3px!important;
+  }
+
+  #ordersTab .orders-page-master .app-card-metric>strong{
+    font-size:.82rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-card-price strong{
+    font-size:.7rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-card-status .platform-status-badge{
+    min-height:34px!important;
+    padding:4px 5px!important;
+    font-size:.48rem!important;
+    border-radius:9px!important;
+  }
+
+  #ordersTab .orders-page-master .app-platform-icon{
+    width:38px!important;
+    height:38px!important;
+    border-radius:10px!important;
+    font-size:1.15rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-order-actions{
+    gap:3px!important;
+  }
+
+  #ordersTab .orders-page-master .app-order-actions .btn-action{
+    width:29px!important;
+    min-width:29px!important;
+    height:29px!important;
+    min-height:29px!important;
+    border-radius:8px!important;
+    font-size:.62rem!important;
+  }
+
+  .modal-overlay{
+    padding:6px!important;
+  }
+
+  .modal-card{
+    width:100%!important;
+    max-width:none!important;
+    border-radius:16px!important;
+    padding:11px!important;
+  }
+}
+
+@media (max-width:390px){
+  .main-wrapper{
+    padding-left:7px!important;
+    padding-right:7px!important;
+  }
+
+  .hero{
+    gap:8px!important;
+    padding:13px!important;
+  }
+
+  .hero h2{
+    font-size:1.08rem!important;
+  }
+
+  .hero p{
+    font-size:.65rem!important;
+  }
+
+  .hero-actions .btn-primary,
+  .hero-actions .btn-secondary,
+  .hero-actions .btn-warning,
+  .hero-actions .btn-danger{
+    padding:6px 7px!important;
+    font-size:.6rem!important;
+  }
+
+  .stats-grid,
+  .stats-grid.four,
+  .order-kpis,
+  .inventory-grid{
+    gap:6px!important;
+  }
+
+  .stat-card{
+    min-height:82px!important;
+    padding:9px!important;
+  }
+
+  .stat-card strong{
+    font-size:1.02rem!important;
+  }
+
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card{
+    grid-template-columns:
+      34px
+      minmax(43px,.95fr)
+      minmax(52px,1.15fr)
+      minmax(43px,.8fr)
+      minmax(40px,.72fr)
+      minmax(50px,.9fr)
+      minmax(50px,.92fr)!important;
+    min-height:88px!important;
+  }
+
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card td{
+    padding:6px 3px!important;
+  }
+
+  #ordersTab .orders-page-master .app-platform-icon{
+    width:34px!important;
+    height:34px!important;
+    font-size:1rem!important;
+  }
+
+  #ordersTab .orders-page-master .app-order-actions .btn-action{
+    width:26px!important;
+    min-width:26px!important;
+    height:26px!important;
+    min-height:26px!important;
+  }
+}
