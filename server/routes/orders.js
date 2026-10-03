@@ -1881,14 +1881,14 @@ router.post(
 
       if (
         account.backupCodes.some(
-          (code) => code.length < 6 || code.length > 11
+          (code) => !/^[0-9]{8,10}$/.test(code)
         ) ||
         new Set(account.backupCodes).size !== 3
       ) {
         return res.status(400).json({
           success: false,
           message:
-            "الأكواد الاحتياطية يجب أن تكون 3 أكواد مختلفة، طول كل منها بين 6 و11 خانة."
+            "الأكواد الاحتياطية يجب أن تكون 3 أكواد مختلفة، وكل كود يجب أن يحتوي على 8 إلى 10 أرقام إنجليزية فقط."
         });
       }
 
@@ -2007,31 +2007,15 @@ switch (
           break;
 
         case "usd":
-          if (!payout.wallet) {
+          if (!payout.wallet || !/^\\S+@\\S+\\.\\S+$/.test(payout.wallet)) {
             return res.status(400).json({
               success: false,
               message:
-                "عنوان محفظة USDT مطلوب."
+                "إيميل محفظة USD غير صحيح."
             });
           }
 
-          if (payout.network && payout.network.toUpperCase() !== "TRC20") {
-            return res.status(400).json({
-              success: false,
-              message:
-                "شبكة USDT المعتمدة هي TRC20 فقط."
-            });
-          }
-
-          if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(payout.wallet)) {
-            return res.status(400).json({
-              success: false,
-              message:
-                "عنوان USDT غير صحيح لشبكة TRC20."
-            });
-          }
-
-          payout.network = "TRC20";
+          payout.network = "";
           break;
 
         case "paypal":
