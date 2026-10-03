@@ -329,3 +329,8 @@ html[data-theme="dark"] .review-main-box i,html[data-theme="dark"] .invoice-box>
 .orders-page[data-platform="PC"] #orderReferenceCard{--platform-accent:#d2232d;--platform-soft:rgba(210,35,45,.30)}
 html[data-theme="dark"] .reference-card{color:#fff}
 
+
+.platform-option{display:flex;flex-direction:column;gap:7px;min-width:0}
+.platform-unavailable-message{padding:9px 10px;border:1px solid rgba(239,68,68,.22);border-radius:10px;background:rgba(239,68,68,.07);color:#c53b3b;font-size:10px;font-weight:800;line-height:1.5;text-align:center}
+.platform-btn.is-unavailable{opacity:.48;filter:grayscale(.2);border-style:dashed;cursor:not-allowed;transform:none!important}
+.platform-btn.is-unavailable:hover{border-color:#dedee1;transform:none!important}
