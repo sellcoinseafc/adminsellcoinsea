@@ -13868,3 +13868,641 @@ body:not(.light-mode) .mobile-app-nav{
   .mobile-order-table-wrap[data-mobile-table="transfer"] table{min-width:1280px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(1),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(1){min-width:150px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(2),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(2){min-width:170px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(3),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(3){min-width:145px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(4),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(4){min-width:120px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(5),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(5){min-width:125px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(6),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(6){min-width:115px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(7),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(7){min-width:170px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(8),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(8){min-width:155px!important;}.mobile-order-table-wrap[data-mobile-table="transfer"] th:nth-child(9),.mobile-order-table-wrap[data-mobile-table="transfer"] td:nth-child(9){min-width:115px!important;}
 }
 @media (max-width:390px){.main-wrapper{zoom:1!important;width:100%!important;}.mobile-order-table-wrap{margin-inline:0!important;}.mobile-order-table-wrap th{height:42px!important;padding-inline:10px!important;}.mobile-order-table-wrap td{height:56px!important;padding-inline:10px!important;}}
+
+
+/* ==========================================================================
+   SAMI COINS — MOBILE UI FINAL PASS
+   Scope: <= 767px only.
+   Purpose: real mobile composition, not a shrunken desktop.
+   Desktop/tablet rules remain untouched.
+   ========================================================================== */
+@media (max-width: 767px){
+
+  html, body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+
+  body{
+    padding-bottom:0!important;
+  }
+
+  .main-wrapper{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:8px 10px 88px!important;
+    overflow-x:hidden!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Compact mobile header */
+  .topbar{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    min-height:52px!important;
+    padding:7px 9px!important;
+    margin:0 0 8px!important;
+    border-radius:15px!important;
+  }
+
+  .topbar-right{
+    width:auto!important;
+    min-width:0!important;
+    flex:1 1 auto!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+  }
+
+  .topbar-right > div{
+    min-width:0!important;
+  }
+
+  .topbar-right h1{
+    margin:0!important;
+    font-size:1rem!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .topbar-left{
+    width:auto!important;
+    min-width:0!important;
+    flex:0 0 auto!important;
+    display:flex!important;
+    align-items:center!important;
+  }
+
+  .global-search{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    max-width:40px!important;
+    padding:0!important;
+    justify-content:center!important;
+    cursor:pointer!important;
+  }
+
+  .global-search input{
+    display:none!important;
+  }
+
+  .global-search i{
+    margin:0!important;
+    font-size:.9rem!important;
+  }
+
+  .clock{
+    display:none!important;
+  }
+
+  .mobile-only{
+    display:grid!important;
+    place-items:center!important;
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    border-radius:11px!important;
+  }
+
+  .breadcrumb{
+    display:none!important;
+  }
+
+  /* Workspace headings */
+  .workspace-header,
+  .page-head{
+    gap:7px!important;
+    margin:4px 2px 10px!important;
+  }
+
+  .workspace-header h2,
+  .page-head h2{
+    font-size:1.08rem!important;
+    line-height:1.25!important;
+  }
+
+  .workspace-header p,
+  .page-subtitle{
+    font-size:.65rem!important;
+    line-height:1.65!important;
+  }
+
+  .workspace-actions{
+    grid-template-columns:1fr 1fr!important;
+    gap:7px!important;
+  }
+
+  .workspace-actions button{
+    min-height:42px!important;
+    font-size:.68rem!important;
+  }
+
+  /* Dashboard status controls */
+  #dashboardTab .store-control-card{
+    margin-bottom:9px!important;
+    padding:10px!important;
+  }
+
+  #dashboardTab .store-command-side{
+    width:100%!important;
+    justify-content:space-between!important;
+  }
+
+  #dashboardTab .store-command-side > span{
+    font-size:.65rem!important;
+  }
+
+  #dashboardTab .dashboard-stats-grid{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    margin-bottom:10px!important;
+  }
+
+  #dashboardTab .dashboard-status-group{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+
+  #dashboardTab .dashboard-stock-group{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+
+  #dashboardTab .dashboard-status-card{
+    min-height:88px!important;
+    padding:11px!important;
+    border-radius:14px!important;
+  }
+
+  #dashboardTab .dashboard-status-card span{
+    font-size:.58rem!important;
+  }
+
+  #dashboardTab .dashboard-status-card strong{
+    margin-top:6px!important;
+    font-size:1.22rem!important;
+  }
+
+  #dashboardTab .dashboard-stock-card{
+    min-height:94px!important;
+    padding:11px!important;
+    border-radius:14px!important;
+  }
+
+  #dashboardTab .dashboard-stock-card strong{
+    font-size:1.22rem!important;
+  }
+
+  /* The dashboard must be one vertical flow on a phone. */
+  #dashboardTab .dashboard-grid{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:10px!important;
+  }
+
+  #dashboardTab .dashboard-orders,
+  #dashboardTab .dashboard-shortcuts{
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  #dashboardTab .dashboard-orders{order:1!important}
+  #dashboardTab .dashboard-shortcuts{order:2!important}
+
+  /* Recent orders: actual mobile cards, full width. */
+  #dashboardTab .mobile-order-table-wrap{
+    overflow:visible!important;
+    width:100%!important;
+    max-width:100%!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  #dashboardTab .mobile-table-hint{
+    display:none!important;
+  }
+
+  #dashboardTab .mobile-order-table-wrap table{
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    table-layout:auto!important;
+    border:0!important;
+  }
+
+  #dashboardTab .mobile-order-table-wrap thead{
+    display:none!important;
+  }
+
+  #dashboardTab .mobile-order-table-wrap tbody{
+    display:grid!important;
+    width:100%!important;
+    gap:8px!important;
+  }
+
+  #dashboardTab .mobile-order-table-wrap tbody tr.app-order-card{
+    display:grid!important;
+    grid-template-columns:46px minmax(0,1fr)!important;
+    grid-template-rows:auto auto auto auto auto!important;
+    grid-template-areas:
+      "platform identity"
+      "platform customer"
+      "quantity quantity"
+      "price price"
+      "status status"
+      "actions actions"!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:11px!important;
+    box-sizing:border-box!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+    direction:ltr!important;
+    background:linear-gradient(145deg,rgba(7,27,46,.98),rgba(4,16,28,.98))!important;
+    border:1px solid rgba(0,112,209,.23)!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
+  }
+
+  #dashboardTab .mobile-order-table-wrap tbody tr.app-order-card > td{
+    display:block!important;
+    width:auto!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:4px 2px!important;
+    border:0!important;
+    background:transparent!important;
+    direction:rtl!important;
+    box-sizing:border-box!important;
+  }
+
+  #dashboardTab .app-card-platform{
+    grid-area:platform!important;
+    display:grid!important;
+    place-items:start center!important;
+    padding-top:7px!important;
+  }
+
+  #dashboardTab .app-platform-icon{
+    width:42px!important;
+    height:42px!important;
+    border-radius:12px!important;
+    font-size:1.2rem!important;
+  }
+
+  #dashboardTab .app-card-identity{
+    grid-area:identity!important;
+    text-align:right!important;
+  }
+
+  #dashboardTab .app-order-number{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    max-width:100%!important;
+    color:#ffc107!important;
+    font-size:.82rem!important;
+    line-height:1.2!important;
+    white-space:nowrap!important;
+  }
+
+  #dashboardTab .app-reference-line{
+    margin-top:3px!important;
+    font-size:.62rem!important;
+  }
+
+  #dashboardTab .app-reference-line b{
+    color:#00e676!important;
+    font-size:.64rem!important;
+  }
+
+  #dashboardTab .app-card-date{
+    display:block!important;
+    margin-top:3px!important;
+    color:#718398!important;
+    font-size:.5rem!important;
+  }
+
+  #dashboardTab .app-card-customer{
+    grid-area:customer!important;
+    text-align:right!important;
+    padding-top:0!important;
+  }
+
+  #dashboardTab .app-card-customer strong{
+    display:block!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:.76rem!important;
+    line-height:1.25!important;
+  }
+
+  #dashboardTab .app-card-customer span{
+    display:block!important;
+    margin-top:3px!important;
+    direction:ltr!important;
+    text-align:right!important;
+    color:#8c9bad!important;
+    font-size:.6rem!important;
+  }
+
+  #dashboardTab .app-card-quantity,
+  #dashboardTab .app-card-price-cell,
+  #dashboardTab .app-card-status,
+  #dashboardTab .app-card-actions{
+    border-top:1px solid rgba(0,112,209,.14)!important;
+    margin-top:4px!important;
+    padding-top:8px!important;
+  }
+
+  #dashboardTab .app-card-quantity{grid-area:quantity!important}
+  #dashboardTab .app-card-price-cell{grid-area:price!important}
+  #dashboardTab .app-card-status{grid-area:status!important}
+  #dashboardTab .app-card-actions{grid-area:actions!important}
+
+  #dashboardTab .app-card-metric{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    width:100%!important;
+  }
+
+  #dashboardTab .app-card-metric > span{
+    color:#7f91a5!important;
+    font-size:.6rem!important;
+  }
+
+  #dashboardTab .app-card-metric > strong{
+    color:#ffc107!important;
+    font-size:1.02rem!important;
+    font-weight:900!important;
+    line-height:1!important;
+  }
+
+  #dashboardTab .app-card-price strong,
+  #dashboardTab .app-card-price .order-price-stack strong{
+    color:#fff!important;
+  }
+
+  #dashboardTab .app-card-status .platform-status-badge,
+  #dashboardTab .app-card-status .status-badge{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-height:38px!important;
+    padding:6px 8px!important;
+    border-radius:10px!important;
+    font-size:.6rem!important;
+    line-height:1.35!important;
+    white-space:normal!important;
+  }
+
+  #dashboardTab .app-order-actions{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:6px!important;
+    width:100%!important;
+  }
+
+  #dashboardTab .app-order-actions .btn-action{
+    width:100%!important;
+    min-width:0!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    border-radius:10px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  /* Quick access becomes a proper mobile grid, never a side column. */
+  #dashboardTab .dashboard-shortcuts .panel-title{
+    margin-bottom:8px!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+    padding:10px!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .panel-title{
+    grid-column:1/-1!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action{
+    width:100%!important;
+    min-width:0!important;
+    min-height:78px!important;
+    padding:9px!important;
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;
+    gap:2px 7px!important;
+    align-items:center!important;
+    box-sizing:border-box!important;
+    border-radius:12px!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action > span{
+    grid-row:1/-1!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action > div{
+    min-width:0!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action b,
+  #dashboardTab .dashboard-shortcuts .quick-action small{
+    display:block!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action b{
+    font-size:.68rem!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action small{
+    font-size:.54rem!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action > i{
+    display:none!important;
+  }
+
+  /* Operational tables: keep horizontal scrolling local to the table only. */
+  #ordersTab .mobile-order-table-wrap,
+  #withdrawTab .mobile-order-table-wrap,
+  #transferAlertsTab .mobile-order-table-wrap{
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    width:100%!important;
+    max-width:100%!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    scrollbar-width:thin!important;
+    scrollbar-color:rgba(0,112,209,.72) transparent!important;
+  }
+
+  #ordersTab .mobile-order-table-wrap::-webkit-scrollbar,
+  #withdrawTab .mobile-order-table-wrap::-webkit-scrollbar,
+  #transferAlertsTab .mobile-order-table-wrap::-webkit-scrollbar{
+    height:5px!important;
+  }
+
+  #ordersTab .mobile-order-table-wrap table,
+  #withdrawTab .mobile-order-table-wrap table,
+  #transferAlertsTab .mobile-order-table-wrap table{
+    width:max-content!important;
+    min-width:1000px!important;
+    max-width:none!important;
+  }
+
+  #ordersTab .mobile-table-hint,
+  #withdrawTab .mobile-table-hint,
+  #transferAlertsTab .mobile-table-hint{
+    display:flex!important;
+    min-height:28px!important;
+    align-items:center!important;
+    gap:6px!important;
+    color:#7f91a5!important;
+    font-size:.57rem!important;
+  }
+
+  /* Bottom navigation: always visible and never covers the last card. */
+  .mobile-app-nav{
+    position:fixed!important;
+    right:8px!important;
+    left:8px!important;
+    bottom:8px!important;
+    z-index:1000!important;
+    height:62px!important;
+    padding:5px!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    gap:3px!important;
+    border-radius:17px!important;
+    background:rgba(4,12,21,.96)!important;
+    border:1px solid rgba(0,112,209,.22)!important;
+    box-shadow:0 12px 32px rgba(0,0,0,.42)!important;
+    backdrop-filter:blur(14px)!important;
+  }
+
+  .mobile-app-nav-item{
+    position:relative!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:5px 2px!important;
+    border-radius:12px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:2px!important;
+  }
+
+  .mobile-app-nav-item i{
+    font-size:.9rem!important;
+  }
+
+  .mobile-app-nav-item span{
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    font-size:.5rem!important;
+  }
+
+  .mobile-app-nav-item b{
+    position:absolute!important;
+    top:2px!important;
+    right:14%!important;
+    min-width:15px!important;
+    height:15px!important;
+    padding:0 3px!important;
+    border-radius:99px!important;
+    font-size:.48rem!important;
+    line-height:15px!important;
+  }
+
+  /* Mobile drawer remains a drawer, not a second visible content column. */
+  .sidebar{
+    max-width:min(300px,84vw)!important;
+  }
+
+  /* All generic panels must be allowed to shrink inside the viewport. */
+  .panel,
+  .card,
+  .workspace-header,
+  .page-head,
+  .stats-grid,
+  .dashboard-grid,
+  .table-wrap{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+}
+
+@media (max-width: 390px){
+  .main-wrapper{
+    padding-inline:8px!important;
+  }
+
+  #dashboardTab .dashboard-status-group{
+    gap:6px!important;
+  }
+
+  #dashboardTab .dashboard-status-card,
+  #dashboardTab .dashboard-stock-card{
+    padding:9px!important;
+  }
+
+  #dashboardTab .dashboard-status-card strong,
+  #dashboardTab .dashboard-stock-card strong{
+    font-size:1.12rem!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts{
+    gap:6px!important;
+    padding:8px!important;
+  }
+
+  #dashboardTab .dashboard-shortcuts .quick-action{
+    min-height:72px!important;
+    padding:8px!important;
+  }
+
+  #dashboardTab .app-order-actions{
+    gap:5px!important;
+  }
+
+  #dashboardTab .app-order-actions .btn-action{
+    height:36px!important;
+    min-height:36px!important;
+  }
+}
