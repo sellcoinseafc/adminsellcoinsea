@@ -7641,6 +7641,15 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 1300) {
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar?.classList.contains("mobile-open")) {
+      closeSidebar();
+    }
+  }
+});
+
 window.toggleSidebar =
   function () {
     const sidebar = document.getElementById("sidebar");
