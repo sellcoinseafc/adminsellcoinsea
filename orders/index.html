@@ -133,7 +133,7 @@
             <label class="field-label" data-i18n="eaEmail">البريد الإلكتروني لحساب EA</label>
             <div class="input-box-wrap"><input id="eaEmail" type="email" placeholder="example@email.com" autocomplete="off" inputmode="email"></div>
             <label class="field-label" data-i18n="eaPassword">كلمة مرور حساب EA</label>
-            <div class="input-box-wrap"><input id="eaPass" type="text" name="eaAccountSecret" placeholder="كلمة المرور" autocomplete="off" autocapitalize="off" data-lpignore="true" data-1p-ignore="true" spellcheck="false" pattern="(?=.*[A-Z]).*" aria-label="كلمة مرور حساب EA"></div>
+            <div class="input-box-wrap"><input id="eaPass" type="text" name="eaSecretText" placeholder="كلمة المرور" autocomplete="off" autocapitalize="off" spellcheck="false" pattern="(?=.*[A-Z]).*" aria-label="كلمة مرور حساب EA"></div>
             <div class="security-note"><i class="fa-solid fa-lock"></i><span data-i18n="encryptedData">يتم تشفير بيانات الحساب لحمايتها.</span></div>
           </div>
 
@@ -247,7 +247,7 @@
         <div class="review-card">
           <div class="card-heading"><span data-i18n="eaDataAndCodes">بيانات حساب EA والأكواد</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('ea')" data-i18n="edit">تعديل</button></div>
           <div id="eaViewMode"><div class="review-values"><span id="revEmail">--</span><span id="revPass">••••••••</span></div><div id="revCodes"></div></div>
-          <div id="eaEditMode" class="hidden"><label class="field-label" data-i18n="email">البريد الإلكتروني</label><div class="input-box-wrap"><input id="editEaEmail"></div><label class="field-label" data-i18n="password">كلمة المرور</label><div class="input-box-wrap password-wrap"><input id="editEaPass" class="masked-secret" type="text" name="eaAccountSecretEdit" autocomplete="off" autocapitalize="off" data-lpignore="true" data-1p-ignore="true" spellcheck="false" aria-label="كلمة مرور حساب EA"><i class="fa-solid fa-eye"></i></div><div class="code-input-row"><span>1</span><div class="input-box-wrap"><input id="editCode1"></div></div><div class="code-input-row"><span>2</span><div class="input-box-wrap"><input id="editCode2"></div></div><div class="code-input-row"><span>3</span><div class="input-box-wrap"><input id="editCode3"></div></div></div>
+          <div id="eaEditMode" class="hidden"><label class="field-label" data-i18n="email">البريد الإلكتروني</label><div class="input-box-wrap"><input id="editEaEmail"></div><label class="field-label" data-i18n="password">كلمة المرور</label><div class="input-box-wrap password-wrap"><input id="editEaPass" class="masked-secret" type="text" name="eaSecretTextEdit" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="كلمة مرور حساب EA"><i class="fa-solid fa-eye"></i></div><div class="code-input-row"><span>1</span><div class="input-box-wrap"><input id="editCode1"></div></div><div class="code-input-row"><span>2</span><div class="input-box-wrap"><input id="editCode2"></div></div><div class="code-input-row"><span>3</span><div class="input-box-wrap"><input id="editCode3"></div></div></div>
         </div>
 
         <div class="review-card">
