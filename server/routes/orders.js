@@ -3430,6 +3430,17 @@ router.post(
         }
 
         const freshOrder = freshSnap.data() || {};
+        const currentStatus =
+          String(freshOrder.status || "")
+            .trim()
+            .toLowerCase();
+
+        if (currentStatus !== "progress") {
+          const error = new Error("DRAWN_UPDATE_STATUS_NOT_ALLOWED");
+          error.code = "DRAWN_UPDATE_STATUS_NOT_ALLOWED";
+          throw error;
+        }
+
         const quantity = getOrderQuantity(freshOrder);
 
         if (quantity > 0 && value > quantity) {
@@ -3508,6 +3519,27 @@ router.post(
         "Update drawn error:",
         error?.message
       );
+
+      if (error?.code === "ORDER_NOT_FOUND") {
+        return res.status(404).json({
+          success: false,
+          message: "الطلب غير موجود."
+        });
+      }
+
+      if (error?.code === "DRAWN_UPDATE_STATUS_NOT_ALLOWED") {
+        return res.status(409).json({
+          success: false,
+          message: "لا يمكن تعديل الكمية المسحوبة إلا أثناء حالة سحب الكوينز."
+        });
+      }
+
+      if (error?.code === "DRAWN_QUANTITY_EXCEEDS_ORDER") {
+        return res.status(400).json({
+          success: false,
+          message: "الكمية المسحوبة لا يمكن أن تتجاوز كمية الطلب."
+        });
+      }
 
       return res.status(500).json({
         success: false,
