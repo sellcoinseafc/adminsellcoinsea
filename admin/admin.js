@@ -2501,7 +2501,7 @@ function renderOrderCardRow(order, mode = "standard") {
     : buildActionButtonsHTML(order);
 
   return `
-    <tr class="app-order-card ${meta.className}">
+    <tr class="app-order-card ${meta.className} order-status-${escapeAttribute(String(order?.status || "unknown").trim().toLowerCase() || "unknown")}">
       <td class="app-card-platform" data-label="المنصة">
         <span class="app-platform-icon ${meta.className}"
               title="${escapeAttribute(meta.label)}"
@@ -2537,7 +2537,6 @@ function renderOrderCardRow(order, mode = "standard") {
           ${escapeHtml(name)}
         </strong>
         <span>
-          <i class="fa-solid fa-phone" aria-hidden="true"></i>
           ${escapeHtml(phone)}
         </span>
       </td>
