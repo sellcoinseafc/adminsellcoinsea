@@ -12476,3 +12476,49 @@ display:flex!important;align-items:center!important;justify-content:center!impor
     width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;
   }
 }
+
+
+/* TABLET TOPBAR — final overflow guard */
+@media (min-width:601px) and (max-width:900px){
+  .topbar{
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    row-gap:8px!important;
+  }
+
+  .topbar-right{
+    flex:1 1 auto!important;
+    min-width:0!important;
+  }
+
+  .topbar-left{
+    flex:1 1 100%!important;
+    width:100%!important;
+    min-width:0!important;
+    flex-wrap:wrap!important;
+    justify-content:flex-end!important;
+  }
+
+  .global-search{
+    flex:1 1 220px!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+
+  #liveDatetime{
+    flex:0 1 auto!important;
+    min-width:0!important;
+  }
+
+  #liveDatetime .clock-stack{
+    width:min(100%,220px)!important;
+    min-width:0!important;
+  }
+}
+
+@media (min-width:601px) and (max-width:700px){
+  #liveDatetime .clock-stack{
+    width:min(100%,190px)!important;
+  }
+}
