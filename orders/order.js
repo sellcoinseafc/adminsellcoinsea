@@ -861,16 +861,16 @@ function applySettingsToUI() {
     setText("safeMethodText","آمنة 99%");
 
     setText(
-        "revWithdrawText",
+        "summaryWithdrawText",
         localizeSettingText(durations.withdraw)
     );
 
     setText(
-        "revTransferText",
+        "summaryTransferText",
         localizeSettingText(durations.transfer)
     );
 
-    setText("revSafeMethodText","آمنة 99%");
+    setText("summarySafeMethodText","آمنة 99%");
 
     setText(
         "successWithdrawText",
@@ -1430,12 +1430,15 @@ function calculateTotal() {
             `${totalSar.toFixed(2)} ${currentLanguage === "ar" ? "ر.س" : "SAR"}`;
     }
 
-    const reviewTotal =
-        $("revTotal");
+    const summaryTotal = $("summaryTotal");
+    const reviewTotal = $("revTotal");
+
+    if (summaryTotal) {
+        summaryTotal.textContent = totalEl.textContent;
+    }
 
     if (reviewTotal) {
-        reviewTotal.textContent =
-            totalEl.textContent;
+        reviewTotal.textContent = totalEl.textContent;
     }
 }
 
@@ -2045,6 +2048,11 @@ function buildSuccessPaymentDetailsHTML() {
 }
 
 function buildPaymentDetailsHTML() {
+    return buildSuccessPaymentDetailsHTML();
+}
+
+/*
+function buildPaymentDetailsHTMLLegacy() {
 
     const method =
         getSelectedPaymentCode();
@@ -2176,7 +2184,7 @@ function buildPaymentDetailsHTML() {
 
     return "";
 }
-
+*/
 
 // ==========================================================================
 // 23. تحديث منصة المراجعة
@@ -2187,25 +2195,38 @@ function updateReviewPlatformUI() {
     const box = $("revPlatformBoxTheme");
     const icon = $("revPlatformIcon");
     const name = $("revPlatformName");
+    const summaryBox = $("summaryPlatformBox");
+    const summaryIcon = $("summaryPlatformIcon");
+    const summaryName = $("summaryPlatformName");
 
     if (!box || !icon || !name) {
         return;
     }
 
+    if (summaryBox) summaryBox.classList.remove("ps-theme", "xbox-theme", "pc-theme");
     box.classList.remove("ps-theme", "xbox-theme", "pc-theme");
 
     if (selectedPlatform === "PlayStation") {
         box.classList.add("ps-theme");
         icon.className = "fa-brands fa-playstation";
         name.textContent = "PlayStation";
+        if (summaryBox) summaryBox.classList.add("ps-theme");
+        if (summaryIcon) summaryIcon.className = "fa-brands fa-playstation";
+        if (summaryName) summaryName.textContent = "PlayStation";
     } else if (selectedPlatform === "Xbox") {
         box.classList.add("xbox-theme");
         icon.className = "fa-brands fa-xbox";
         name.textContent = "Xbox";
+        if (summaryBox) summaryBox.classList.add("xbox-theme");
+        if (summaryIcon) summaryIcon.className = "fa-brands fa-xbox";
+        if (summaryName) summaryName.textContent = "Xbox";
     } else if (selectedPlatform === "PC") {
         box.classList.add("pc-theme");
         icon.className = "fa-solid fa-desktop";
         name.textContent = "PC";
+        if (summaryBox) summaryBox.classList.add("pc-theme");
+        if (summaryIcon) summaryIcon.className = "fa-solid fa-desktop";
+        if (summaryName) summaryName.textContent = "PC";
     }
 }
 
