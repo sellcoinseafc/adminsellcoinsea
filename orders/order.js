@@ -938,6 +938,9 @@ function selectPlatform(
     selectedPlatform =
         platform;
 
+    // بيانات حساب EA لا تظهر إلا بعد اختيار المنصة.
+    showElement("accountStage");
+
     document
         .querySelectorAll(".platform-btn")
         .forEach((button) => {
@@ -1921,8 +1924,9 @@ function validateAccountStep1() {
     if (!/^\S+@\S+\.\S+$/.test(String(email.value).trim())) { markInvalid(email,"أدخل بريدًا إلكترونيًا صحيحًا."); return false; }
     if (!/[A-Z]/.test(password.value)) { markInvalid(password,"يجب أن تحتوي كلمة المرور على حرف إنجليزي كبير واحد على الأقل."); return false; }
     const codes=[code1.value.trim(),code2.value.trim(),code3.value.trim()];
-    const bad=[code1,code2,code3].find(x=>{const v=String(x?.value||"").trim();return v.length<6||v.length>11;});
-    if(bad){markInvalid(bad,"الكود يجب أن يكون بين 6 و11 خانة.");return false;}
+    const codePattern=/^(?:[0-9]\.[0-9]{8}|[0-9]{8}|[0-9]{6})$/;
+    const bad=[code1,code2,code3].find(x=>!codePattern.test(String(x?.value||"").trim()));
+    if(bad){markInvalid(bad,"الكود يجب أن يكون 6 أو 8 أرقام، أو رقمًا واحدًا ثم نقطة ثم 8 أرقام.");return false;}
     if(new Set(codes).size!==3){markInvalid(code3,"يجب أن تكون الأكواد الثلاثة مختلفة.");return false;}
     return true;
 }
@@ -3796,6 +3800,38 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     setupSecretInput($("eaPass"));
     setupSecretInput($("editEaPass"));
+
+    // تنظيف أكواد EA فور الكتابة: أرقام إنجليزية فقط، ونقطة واحدة
+    // مسموحة فقط بعد أول رقم. المسافات والرموز غير المسموحة تزال فورًا.
+    const setupBackupCodeInput = (input) => {
+        if (!input) return;
+        input.addEventListener("input", () => {
+            let value = String(input.value || "")
+                .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+                .replace(/\s+/g, "")
+                .replace(/[^0-9.]/g, "");
+
+            const dotIndex = value.indexOf(".");
+            if (dotIndex >= 0) {
+                value =
+                    value.charAt(0).replace(/[^0-9]/g, "") +
+                    "." +
+                    value.slice(dotIndex + 1).replace(/\./g, "");
+                if (!/^[0-9]\./.test(value)) {
+                    value = value.replace(/\./g, "");
+                }
+            }
+
+            input.value = value.slice(0, 10);
+        });
+    };
+    setupBackupCodeInput($("code1"));
+    setupBackupCodeInput($("code2"));
+    setupBackupCodeInput($("code3"));
+    setupBackupCodeInput($("editCode1"));
+    setupBackupCodeInput($("editCode2"));
+    setupBackupCodeInput($("editCode3"));
+
     loadSettings();
     updateAppBackButton("step1Screen");
 });
