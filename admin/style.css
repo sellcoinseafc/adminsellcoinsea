@@ -12145,3 +12145,15 @@ display:flex!important;align-items:center!important;justify-content:center!impor
   direction:ltr!important;
   text-align:center!important;
 }
+
+
+/* Order number is the customer-facing identifier; FC-XXX-N remains the internal reference. */
+#orderDetailModal .order-basic-order-copy{
+  cursor:pointer!important;
+  user-select:none!important;
+}
+#orderDetailModal .order-basic-order-copy i{
+  font-size:.68em!important;
+  margin-inline-start:5px!important;
+  color:#ffd21a!important;
+}
