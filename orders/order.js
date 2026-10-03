@@ -609,6 +609,32 @@ function getSupportWhatsappNumber() {
     ).replace(/[^\d]/g, "");
 }
 
+function getConfiguredWallets(source = storeSettings) {
+    const raw = source && Array.isArray(source.wallets)
+        ? source.wallets
+        : [];
+
+    const wallets = raw
+        .map((wallet) => String(wallet ?? "").trim())
+        .filter(Boolean);
+
+    // Keep the store's configured list as the source of truth.
+    // Use the shared defaults only when Firestore has no usable wallet list.
+    if (wallets.length) {
+        return Array.from(new Set(wallets));
+    }
+
+    return [
+        "سلة",
+        "STC Pay",
+        "Barq",
+        "URPay",
+        "Mobily Pay",
+        "Tiqmo",
+        "Alinma Pay"
+    ];
+}
+
 
 // ==========================================================================
 function localizeSettingText(value) {
@@ -681,10 +707,10 @@ function startSettingsRealtime() {
                     pcMax: Number(settings.pcMax ?? storeSettings.limits.pcMax ?? 0)
                 },
                 banks: Array.isArray(settings.banks) ? settings.banks : storeSettings.banks,
-                wallets: Array.from(new Set([
-                    "سلة",
-                    ...(Array.isArray(settings.wallets) ? settings.wallets : storeSettings.wallets)
-                ])),
+                wallets: getConfiguredWallets({
+                    ...settings,
+                    wallets: settings.wallets
+                }),
                 terms: Array.isArray(settings.terms) ? settings.terms : storeSettings.terms,
                 termsEn: Array.isArray(settings.termsEn) ? settings.termsEn : storeSettings.termsEn,
                 termsEnabled: settings.termsEnabled !== false,
@@ -1510,10 +1536,7 @@ function renderStep2PaymentFields() {
 
     if (method === "wallet") {
 
-        const wallets = Array.from(new Set([
-            "سلة",
-            ...(Array.isArray(storeSettings.wallets) ? storeSettings.wallets : [])
-        ])).filter(Boolean);
+        const wallets = getConfiguredWallets();
 
         const options = wallets.map((wallet) =>
             `<option value="${escapeHtml(wallet)}">${escapeHtml(wallet)}</option>`
@@ -1525,7 +1548,10 @@ function renderStep2PaymentFields() {
                 <span class="required-star">*</span>
             </label>
             <div class="input-box-wrap">
-                <select id="walletTypeSelect" required autocomplete="off">
+                <select id="walletTypeSelect" name="walletName" required autocomplete="off">
+                    <option value="" disabled selected>
+                        ${currentLanguage === "ar" ? "اختر المحفظة الرقمية" : "Select digital wallet"}
+                    </option>
                     ${options}
                 </select>
             </div>
@@ -1534,7 +1560,17 @@ function renderStep2PaymentFields() {
                 <span class="required-star">*</span>
             </label>
             <div class="input-box-wrap">
-                <input type="tel" id="walletNumber" autocomplete="off" placeholder="9665xxxxxxxx" inputmode="numeric" oninput="convertArabicNumbersToEnglish(this)" required>
+                <input
+                    type="tel"
+                    id="walletNumber"
+                    name="walletNumber"
+                    autocomplete="off"
+                    placeholder="05xxxxxxxx"
+                    inputmode="numeric"
+                    maxlength="15"
+                    oninput="convertArabicNumbersToEnglish(this)"
+                    required
+                >
             </div>
         `;
         return;
