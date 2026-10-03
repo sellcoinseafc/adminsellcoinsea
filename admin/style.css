@@ -10228,3 +10228,262 @@ display:flex!important;align-items:center!important;justify-content:center!impor
   .review-data-card td:nth-child(6){display:none}
   .review-data-card td:nth-child(7){display:none}
 }
+
+
+/* ==========================================================================
+   STEP 4 — MOBILE APPROVED STRUCTURE / PASS 1
+   Reference: written mobile order-card blueprint.
+   Desktop is intentionally untouched.
+   ========================================================================== */
+@media (max-width:760px){
+
+  #ordersTab .orders-panel table,
+  #dashboardTab .dashboard-orders table,
+  #withdrawTab .table-wrap table,
+  #transferAlertsTab .table-wrap table,
+  #customerProfileTab .table-wrap table,
+  #reviewsTab .table-wrap table{
+    width:100%!important;
+  }
+
+  .app-order-card{
+    display:grid!important;
+    grid-template-columns:46px minmax(108px,1fr) minmax(128px,1.25fr) minmax(88px,.85fr)!important;
+    grid-template-rows:auto auto!important;
+    grid-template-areas:
+      "platform identity customer status"
+      "platform quantity price actions"!important;
+    gap:0!important;
+    min-height:128px!important;
+    margin:0 0 12px!important;
+    padding:5px!important;
+    border-radius:18px!important;
+    border-width:1px!important;
+    direction:ltr!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.22)!important;
+  }
+
+  .app-order-card td{
+    direction:rtl!important;
+    min-width:0!important;
+    padding:7px 6px!important;
+    border:0!important;
+    background:transparent!important;
+  }
+
+  .app-order-card .app-card-platform{
+    grid-area:platform!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:7px 3px!important;
+  }
+
+  .app-platform-icon{
+    width:42px!important;
+    height:42px!important;
+    border-radius:12px!important;
+    font-size:1.38rem!important;
+  }
+
+  .app-order-card .app-card-identity{
+    grid-area:identity!important;
+    align-self:center!important;
+  }
+
+  .app-order-main-line{gap:5px!important}
+
+  .app-order-number{
+    font-size:.84rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+  }
+
+  .app-order-number i{font-size:.65rem!important}
+
+  .app-reference-line{
+    margin-top:4px!important;
+    gap:4px!important;
+    font-size:.56rem!important;
+    line-height:1.1!important;
+  }
+
+  .app-reference-line b{
+    font-size:.59rem!important;
+    font-family:monospace!important;
+    font-weight:800!important;
+  }
+
+  .app-reference-line i{font-size:.58rem!important}
+
+  .app-card-date{
+    margin-top:4px!important;
+    font-size:.51rem!important;
+    line-height:1.25!important;
+  }
+
+  .app-order-card .app-card-customer{
+    grid-area:customer!important;
+    align-self:center!important;
+    border:0!important;
+    padding-right:7px!important;
+    padding-left:5px!important;
+  }
+
+  .app-card-customer strong{
+    font-size:.70rem!important;
+    line-height:1.2!important;
+    font-weight:850!important;
+  }
+
+  .app-card-customer span{
+    margin-top:5px!important;
+    font-size:.59rem!important;
+    line-height:1.2!important;
+  }
+
+  .app-card-customer i{width:13px!important}
+
+  .app-order-card .app-card-status{
+    grid-area:status!important;
+    align-self:center!important;
+    text-align:center!important;
+    padding:5px 4px!important;
+  }
+
+  .app-card-status .badge{
+    min-height:28px!important;
+    padding:5px 8px!important;
+    border-radius:999px!important;
+    font-size:.55rem!important;
+    font-weight:800!important;
+    max-width:100%!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-order-card .app-card-quantity{
+    grid-area:quantity!important;
+    align-self:center!important;
+  }
+
+  .app-card-metric>span{
+    font-size:.51rem!important;
+    margin-bottom:3px!important;
+  }
+
+  .app-card-metric>strong{
+    font-size:.77rem!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+  }
+
+  .app-card-metric>strong i{font-size:.65rem!important}
+
+  .app-card-quantity-progress small{
+    font-size:.48rem!important;
+  }
+
+  .app-progress-track{
+    height:3px!important;
+    margin:5px 0 3px!important;
+  }
+
+  .app-order-card .app-card-price-cell{
+    grid-area:price!important;
+    align-self:center!important;
+  }
+
+  .app-card-price strong{
+    font-size:.68rem!important;
+    line-height:1.2!important;
+  }
+
+  .app-order-card .app-card-actions{
+    grid-area:actions!important;
+    align-self:center!important;
+    border:0!important;
+    padding:4px 3px!important;
+  }
+
+  .app-order-actions{
+    gap:4px!important;
+    justify-content:flex-start!important;
+    flex-wrap:nowrap!important;
+  }
+
+  .app-order-actions .btn-action,
+  .app-order-actions .btn-custom{
+    min-width:27px!important;
+    min-height:28px!important;
+    padding:5px 6px!important;
+    border-radius:8px!important;
+    font-size:.55rem!important;
+    white-space:nowrap!important;
+  }
+
+  .app-order-actions .btn-action i{font-size:.62rem!important}
+
+  #customerProfileTab .client-row{
+    grid-template-columns:42px minmax(105px,1.15fr) minmax(105px,1fr) minmax(78px,.75fr)!important;
+    grid-template-areas:
+      "avatar name phone action"
+      "avatar orders quantity amount"!important;
+    min-height:108px!important;
+    margin-bottom:10px!important;
+    border-radius:18px!important;
+    padding:4px!important;
+  }
+
+  #customerProfileTab .client-row td{
+    padding:6px!important;
+    border:0!important;
+  }
+
+  #customerProfileTab .client-name-box:before{
+    width:38px!important;
+    height:38px!important;
+    margin-left:5px!important;
+  }
+
+  #customerProfileTab .client-field-label{
+    font-size:.49rem!important;
+    margin-bottom:3px!important;
+  }
+
+  #customerProfileTab .client-field-value{
+    font-size:.68rem!important;
+    line-height:1.2!important;
+  }
+
+  #customerProfileTab .client-history-btn{
+    min-height:29px!important;
+    font-size:.53rem!important;
+    padding:5px 6px!important;
+  }
+
+  #reviewsTab .review-data-card{
+    grid-template-columns:42px minmax(105px,1.15fr) minmax(92px,1fr) minmax(78px,.75fr)!important;
+    min-height:112px!important;
+    margin-bottom:10px!important;
+    border-radius:18px!important;
+    padding:4px!important;
+  }
+
+  #reviewsTab .review-data-card td{
+    padding:6px!important;
+    font-size:.62rem!important;
+  }
+
+  #reviewsTab .review-data-card td:first-child:before{
+    width:36px!important;
+    height:36px!important;
+    margin-left:4px!important;
+  }
+
+  #reviewsTab .review-data-card .badge{
+    font-size:.52rem!important;
+    padding:5px 7px!important;
+  }
+}
