@@ -49,10 +49,7 @@
         <div class="hero-card">
           <div class="hero-fc">FC <strong>27</strong></div>
           <div class="hero-media-slot" aria-hidden="true"></div>
-          <div class="hero-copy">
-            <h1 data-i18n="introTitle">اشتري كوينزك بسعر منافس وبطريقة سريعة وآمنة تضمن لك تجربة بيع مريحة</h1>
-            <p data-i18n="introText">اختر منصتك وكمية الكوينز لعرض المبلغ المستحق لك.</p>
-          </div>
+          <div class="hero-copy" aria-hidden="true"></div>
         </div>
 
         <div class="trust-row">
@@ -136,7 +133,7 @@
             <label class="field-label" data-i18n="eaEmail">البريد الإلكتروني لحساب EA</label>
             <div class="input-box-wrap"><input id="eaEmail" type="email" placeholder="example@email.com" autocomplete="off" inputmode="email"></div>
             <label class="field-label" data-i18n="eaPassword">كلمة مرور حساب EA</label>
-            <div class="input-box-wrap password-wrap"><input id="eaPass" class="masked-secret" type="text" name="eaAccountSecret" placeholder="كلمة المرور" autocomplete="off" autocapitalize="off" data-lpignore="true" data-1p-ignore="true" spellcheck="false" aria-label="كلمة مرور حساب EA"><i class="fa-solid fa-eye"></i></div>
+            <div class="input-box-wrap"><input id="eaPass" type="text" name="eaAccountSecret" placeholder="كلمة المرور" autocomplete="off" autocapitalize="off" data-lpignore="true" data-1p-ignore="true" spellcheck="false" pattern="(?=.*[A-Z]).*" aria-label="كلمة مرور حساب EA"></div>
             <div class="security-note"><i class="fa-solid fa-lock"></i><span data-i18n="encryptedData">يتم تشفير بيانات الحساب لحمايتها.</span></div>
           </div>
 
@@ -238,7 +235,7 @@
 
         <div class="review-card">
           <div class="card-heading"><span data-i18n="orderDetails">تفاصيل الطلب</span><button type="button" class="section-edit-btn" onclick="openReviewEditSection('platform')" data-i18n="edit">تعديل</button></div>
-          <div id="revPlatformBoxTheme" class="review-platform"><i id="revPlatformIcon" class="fa-brands fa-playstation"></i><div><small data-i18n="platform">المنصة</small><strong id="revPlatformName">--</strong></div><div><small data-i18n="quantity">الكمية</small><strong id="revQty">--</strong></div><div><small data-i18n="totalAmount">المبلغ</small><strong id="revTotal">--</strong></div></div>
+          <div id="revPlatformBoxTheme" class="review-platform"><i id="revPlatformIcon" class="fa-brands fa-playstation" aria-label="المنصة"></i><div><strong id="revQty">--</strong></div><div><strong id="revTotal">--</strong></div></div>
           <div class="mini-grid"><div class="mini-card"><span data-i18n="withdrawDuration">مدة السحب</span><strong id="revWithdrawText">--</strong></div><div class="mini-card"><span data-i18n="transferDuration">مدة التحويل</span><strong id="revTransferText">--</strong></div><div class="mini-card"><span data-i18n="safeMethod">طريقة النقل</span><strong id="revSafeMethodText">--</strong></div></div>
         </div>
 
@@ -274,16 +271,14 @@
           <div class="card-heading"><span data-i18n="invoiceDetails">تفاصيل طلبك</span></div>
           <div class="success-oval-grid">
             <div class="success-oval success-name-oval">
-              <small>الاسم</small>
               <strong id="billClientName">--</strong>
             </div>
             <div class="success-oval success-phone-oval">
-              <small>رقم التواصل واتساب</small>
               <strong id="billClientPhone">--</strong>
             </div>
             <div class="success-oval success-quantity-price-oval">
-              <div><small>الكمية</small><strong id="billQty">--</strong></div>
-              <div><small>السعر</small><strong id="billTotal">--</strong></div>
+              <div><strong id="billQty">--</strong></div>
+              <div><strong id="billTotal">--</strong></div>
             </div>
             <div class="success-oval success-platform-status-oval">
               <div class="platform-oval-main"><i id="billPlatformIcon" class="fa-brands fa-playstation"></i><strong id="billPlatform">--</strong></div>
