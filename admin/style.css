@@ -1068,7 +1068,7 @@ tbody tr:hover td{background:rgba(0,230,118,.035)!important}
 .topbar-page-title-hidden{display:none!important}
 
 .platform-toggle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.pc-toggle-grid{margin-bottom:14px}
+.pc-toggle-grid{grid-template-columns:1fr;margin-bottom:14px}
 .platform-toggle-card{min-height:62px}
 
 .order-modal{width:min(1040px,calc(100vw - 28px));padding:16px}
