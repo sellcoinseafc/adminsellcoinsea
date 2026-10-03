@@ -2122,7 +2122,6 @@ router.post(
             "progress",
             "finished",
             "pending_transfer",
-            "transferred",
             "completed"
           ];
           const input =
