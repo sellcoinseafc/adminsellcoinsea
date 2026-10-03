@@ -3599,6 +3599,19 @@ window.deleteReview =
 // 9) العملاء
 // ==========================================================================
 
+function formatClientCoinTotal(value) {
+  const amount = Math.max(0, Number(value) || 0);
+  if (amount >= 1000000) {
+    const millions = amount / 1000000;
+    return `${millions.toLocaleString("en-US", { maximumFractionDigits: 3 })}M`;
+  }
+  if (amount >= 1000) {
+    const thousands = amount / 1000;
+    return `${thousands.toLocaleString("en-US", { maximumFractionDigits: 1 })}K`;
+  }
+  return amount.toLocaleString("en-US");
+}
+
 window.renderClientsTable =
   function (searchQuery = "") {
     const tbody = document.getElementById("clientsTableBody");
@@ -3646,6 +3659,7 @@ window.renderClientsTable =
       <tr class="client-row">
         <td data-label="العميل" class="client-field-cell client-name-cell">
           <div class="client-field-box client-name-box">
+            <span class="client-avatar" aria-hidden="true"><i class="fa-solid fa-user"></i></span>
             <strong class="client-field-value">${escapeHtml(client.name)}</strong>
           </div>
         </td>
@@ -3664,7 +3678,7 @@ window.renderClientsTable =
         <td data-label="إجمالي الكمية" class="client-field-cell">
           <div class="client-field-box">
             <span class="client-field-label">إجمالي الكمية</span>
-            <strong class="client-field-value client-quantity-value">${formatCoinsNumber(client.totalCoins)}</strong>
+            <strong class="client-field-value client-quantity-value">${formatClientCoinTotal(client.totalCoins)}</strong>
           </div>
         </td>
         <td data-label="إجمالي المبلغ" class="client-field-cell">
