@@ -1774,6 +1774,7 @@ const SETTINGS_ACTIONS = new Set([
   "delete_payment_method",
   "add_term",
   "delete_term",
+  "ensure_catalog_defaults",
   "toggle_terms_enabled",
   "update_issue_messages",
   "update_status_messages",
@@ -1852,6 +1853,111 @@ router.post(
       }
 
       const settingsRef = db.collection("system").doc("settings");
+
+      if (action === "ensure_catalog_defaults") {
+        const requiredBanks = [
+          "مصرف الراجحي",
+          "البنك الأهلي السعودي",
+          "بنك الرياض",
+          "مصرف الإنماء",
+          "بنك البلاد",
+          "بنك الجزيرة",
+          "البنك الأول (SAB)",
+          "البنك العربي الوطني",
+          "البنك السعودي الفرنسي",
+          "البنك السعودي للاستثمار",
+          "STC Bank",
+          "D360 Bank",
+          "بنك الخليج الدولي"
+        ];
+
+        const requiredWallets = [
+          "STC Pay",
+          "Barq",
+          "URPay",
+          "Mobily Pay",
+          "Tiqmo",
+          "Alinma Pay"
+        ];
+
+        const migrationAuditRef = db.collection("audit_logs").doc();
+        let migrationResult = {
+          banksAdded: 0,
+          walletsAdded: 0
+        };
+
+        await db.runTransaction(async (transaction) => {
+          const snapshot = await transaction.get(settingsRef);
+          const current = snapshot.exists ? snapshot.data() || {} : {};
+
+          const banks = normalizeSettingArray(current.banks);
+          const wallets = normalizeSettingArray(current.wallets);
+
+          const nextBanks = [...banks];
+          const nextWallets = [...wallets];
+
+          for (const bank of requiredBanks) {
+            if (!nextBanks.includes(bank)) nextBanks.push(bank);
+          }
+
+          for (const wallet of requiredWallets) {
+            if (!nextWallets.includes(wallet)) nextWallets.push(wallet);
+          }
+
+          migrationResult = {
+            banksAdded: nextBanks.length - banks.length,
+            walletsAdded: nextWallets.length - wallets.length
+          };
+
+          const patch = {};
+
+          if (migrationResult.banksAdded > 0) {
+            patch.banks = nextBanks;
+          }
+
+          if (migrationResult.walletsAdded > 0) {
+            patch.wallets = nextWallets;
+          }
+
+          if (Object.keys(patch).length > 0) {
+            patch.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+
+            transaction.set(
+              settingsRef,
+              patch,
+              { merge: true }
+            );
+
+            transaction.set(
+              migrationAuditRef,
+              {
+                timestamp: admin.firestore.FieldValue.serverTimestamp(),
+                timeString: new Date().toLocaleString("en-GB", {
+                  timeZone: "Asia/Riyadh"
+                }),
+                user: String(req.admin?.name || req.admin?.email || "مشرف").slice(0, 200),
+                userId: String(req.admin?.uid || "").slice(0, 200),
+                action: "تهيئة كتالوجات النظام",
+                targetOrder: "الإعدادات",
+                details: JSON.stringify(migrationResult).slice(0, 1200),
+                userAgent: String(req.headers["user-agent"] || "").slice(0, 80),
+                source: "server"
+              }
+            );
+          }
+        });
+
+        return res.json({
+          success: true,
+          action,
+          result: migrationResult,
+          updatedFields: [
+            ...(migrationResult.banksAdded > 0 ? ["banks"] : []),
+            ...(migrationResult.walletsAdded > 0 ? ["wallets"] : [])
+          ]
+        });
+      }
+
       const snapshot = await settingsRef.get();
       const current = snapshot.exists ? snapshot.data() || {} : {};
       let patch = {};
