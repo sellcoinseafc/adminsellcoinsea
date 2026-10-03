@@ -2423,11 +2423,12 @@ function getStatusBadge(status) {
 function getOrderStatusBadge(order) {
   const meta = getPlatformMeta(order?.platform);
   const status = String(order?.status || "").trim().toLowerCase();
+  const displayStatus = getDisplayStatusKey(status) || "unknown";
   const label = order?.issue
     ? getIssueLabel(order.issue)
     : getStatusLabel(status) || "---";
   const icon = order?.issue ? '<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>' : '';
-  return `<span class="badge platform-status-badge status-${escapeAttribute(status || "unknown")} ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
+  return `<span class="badge platform-status-badge status-${escapeAttribute(displayStatus)} ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
 }
 
 
