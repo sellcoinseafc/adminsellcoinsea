@@ -7419,7 +7419,7 @@ window.toggleTermsEnabled =
     const normalized =
       typeof enabled === "boolean"
         ? enabled
-        : !Boolean(currentSettingsData?.termsEnabled);
+        : !(currentSettingsData?.termsEnabled !== false);
     try {
       await adminSettingsAction("toggle_terms_enabled", { enabled: normalized });
       currentSettingsData = { ...currentSettingsData, termsEnabled: normalized };
