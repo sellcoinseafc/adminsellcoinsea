@@ -4198,6 +4198,7 @@ window.openOrderModal = function (orderId) {
   const order=ordersData.find((item)=>item.id===orderId||item.referenceNumber===orderId||item.orderId===orderId);
   if(!order){showToast("لم يتم العثور على الطلب.");return;}
   const ref=order.referenceNumber||order.orderId||order.id;
+  const internalRef=order.internalReference||order.orderId||order.id||"---";
   const total=Math.max(0,Number(order.totalQty||0)||0);
   const withdrawn=Math.min(total,Math.max(0,Number(order.withdrawnQuantity??order.drawnCoins??0)||0));
   const remaining=Math.max(0,total-withdrawn);
@@ -4225,7 +4226,7 @@ window.openOrderModal = function (orderId) {
   const statusMessage=getStatusMessage(order.status,order);
   const statusBadgeClass = order.issue ? "status-problem" : "status-" + (order.status || "unknown");
   const waUrl=whatsapp?`https://wa.me/${whatsapp.replace(/^\+/,"")}?text=${encodeURIComponent(statusMessage)}`:"#";
-  if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${ref}`;
+  if(modalTitle)modalTitle.innerText=`تفاصيل الطلب #${internalRef}`;
   const statusOptions=STATUS_VALUES.map((s)=>`<option value="${s}" ${s===order.status?"selected":""}>${escapeHtml(STATUS_LABELS[s])}</option>`).join("");
   const issueOptions = ISSUE_VALUES.map((value) => '<option value="' + escapeAttribute(value) + '" ' + (value===order.issue?"selected":"") + '>' + escapeHtml(ISSUE_LABELS[value] || value) + '</option>').join("");
   modalBody.innerHTML=`
@@ -4238,10 +4239,26 @@ window.openOrderModal = function (orderId) {
           </button>
           <div class="order-detail-accordion-content">
             <div class="order-basic-grid">
-              <div class="order-basic-card order-basic-reference"><span>رقم الطلب</span><strong dir="ltr">#${escapeHtml(ref)}</strong></div>
-              <div class="order-basic-card order-basic-platform"><span>المنصة</span><div class="platform-pill platform-${escapeAttribute(platformClass)}"><span class="platform-logo"><i class="${platformIcon}"></i></span><strong>${escapeHtml(platform||"---")}</strong></div></div>
-              <div class="order-basic-card"><span>الكمية المباعة</span><strong dir="ltr">${formatCoinsNumber(total)}</strong></div>
-              <div class="order-basic-card order-basic-price"><span>سعر البيع</span>${getDisplayPriceMarkup(order)}</div>
+              <div class="order-basic-card order-basic-reference">
+                <span>رقم الطلب</span>
+                <strong dir="ltr">#\${escapeHtml(internalRef)}</strong>
+                <small class="order-basic-reference-sub" dir="ltr">\${escapeHtml(ref)}</small>
+              </div>
+              <div class="order-basic-card order-basic-platform">
+                <span>المنصة</span>
+                <div class="platform-detail-brand platform-\${escapeAttribute(platformClass)}">
+                  <i class="\${platformIcon}" aria-hidden="true"></i>
+                  <strong>\${escapeHtml(platform||"---")}</strong>
+                </div>
+              </div>
+              <div class="order-basic-card order-basic-quantity">
+                <span>الكمية المباعة</span>
+                <strong dir="ltr">\${formatCoinsNumber(total)}</strong>
+              </div>
+              <div class="order-basic-card order-basic-price">
+                <span>سعر البيع</span>
+                \${getDisplayPriceMarkup(order)}
+              </div>
             </div>
           </div>
         </section>
