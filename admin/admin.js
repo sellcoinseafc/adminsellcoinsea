@@ -995,22 +995,45 @@ function initAdminsListener() {
 
 window.copyReferenceNumber =
   async function (refCode) {
-    const value = String(refCode || "").trim();
-    if (!value || value === "---") return;
+    const value = String(refCode || '').trim();
+    if (!value || value === '---') return;
     try {
       await navigator.clipboard.writeText(value);
-      if (typeof showToast === "function") showToast("تم نسخ رقم المرجع.");
+      if (typeof showToast === 'function') showToast('تم نسخ رقم المرجع.');
     } catch {
-      const area = document.createElement("textarea");
+      const area = document.createElement('textarea');
       area.value = value;
-      area.setAttribute("readonly", "");
-      area.style.position = "fixed";
-      area.style.opacity = "0";
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
       document.body.appendChild(area);
       area.select();
-      document.execCommand("copy");
+      document.execCommand('copy');
       area.remove();
-      if (typeof showToast === "function") showToast("تم نسخ رقم المرجع.");
+      if (typeof showToast === 'function') showToast('تم نسخ رقم المرجع.');
+    }
+  };
+
+window.copyOrderNumberWithTracking =
+  async function (orderNumber) {
+    const value = String(orderNumber || '').trim();
+    if (!value || value === '---') return;
+    const url = window.location.origin + '/tracking/?ref=' + encodeURIComponent(value);
+    const copyValue = '#' + value + '\n' + url;
+    try {
+      await navigator.clipboard.writeText(copyValue);
+      if (typeof showToast === 'function') showToast('تم نسخ رقم الطلب مع رابط صفحة التتبع.');
+    } catch {
+      const area = document.createElement('textarea');
+      area.value = copyValue;
+      area.setAttribute('readonly', '');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand('copy');
+      area.remove();
+      if (typeof showToast === 'function') showToast('تم نسخ رقم الطلب مع رابط صفحة التتبع.');
     }
   };
 
@@ -2513,15 +2536,15 @@ function renderOrderCardRow(order, mode = "standard") {
       <td class="app-card-identity" data-label="رقم الطلب">
         <div class="app-order-main-line">
           <b class="app-order-number"
-             onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')"
-             title="نسخ رقم الطلب">
-            ${escapeHtml(internalRef)}
+             onclick="copyOrderNumberWithTracking('${escapeAttribute(ref)}')"
+             title="نسخ رقم الطلب مع رابط صفحة التتبع">
+            #${escapeHtml(ref)}
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
           </b>
         </div>
 
         <div class="app-reference-line">
-          <b onclick="copyReferenceNumber('${escapeAttribute(ref)}')"
+          <b onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')"
              title="نسخ رقم المرجع">
             ${escapeHtml(ref)}
             <i class="fa-solid fa-copy" aria-hidden="true"></i>
@@ -4241,8 +4264,8 @@ window.openOrderModal = function (orderId) {
             <div class="order-basic-grid">
               <div class="order-basic-card order-basic-reference">
                 <span>رقم الطلب</span>
-                <strong dir="ltr">#${escapeHtml(internalRef)}</strong>
-                <small class="order-basic-reference-sub" dir="ltr">${escapeHtml(ref)}</small>
+                <strong dir="ltr">#${escapeHtml(ref)}</strong>
+                <small class="order-basic-reference-sub" dir="ltr">${escapeHtml(internalRef)}</small>
               </div>
               <div class="order-basic-card order-basic-platform">
                 <span>المنصة</span>
