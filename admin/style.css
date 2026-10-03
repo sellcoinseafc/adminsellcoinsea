@@ -12621,337 +12621,252 @@ display:flex!important;align-items:center!important;justify-content:center!impor
 
 
 /* ==========================================================================
-   MOBILE — desktop/tablet visual geometry, scaled to fit the phone
-   Keep the same component structure; reduce sizing instead of rebuilding it.
+   MOBILE — same desktop/tablet design, scaled as one canvas
+   Do not create a separate mobile layout. Keep the same component geometry
+   and scale the whole admin workspace to the phone viewport.
    ========================================================================== */
 
 @media (max-width:600px){
+  html,body{overflow-x:hidden!important}
+
   .main-wrapper{
-    padding:10px 10px 82px!important;
+    zoom:.8!important;
+    width:125%!important;
+    max-width:none!important;
+    margin-right:0!important;
+    padding:20px 28px 110px!important;
+    box-sizing:border-box!important;
   }
 
   .topbar{
-    gap:8px!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:18px!important;
+    margin-bottom:16px!important;
   }
 
-  .topbar-right,
-  .topbar-left{
+  .topbar-right,.topbar-left{
     min-width:0!important;
+    flex-wrap:nowrap!important;
   }
 
-  .topbar h1,
-  #pageTitleHeading{
-    font-size:1.05rem!important;
-  }
+  .topbar h1,#pageTitleHeading{font-size:1.45rem!important}
 
   .global-search{
-    width:100%!important;
-    min-width:0!important;
+    order:initial!important;
+    width:min(300px,30vw)!important;
+    min-width:180px!important;
+    max-width:300px!important;
   }
+
+  .clock{display:block!important}
 
   .hero{
     display:flex!important;
-    align-items:center!important;
     justify-content:space-between!important;
-    gap:12px!important;
-    padding:16px!important;
-    border-radius:18px!important;
+    align-items:center!important;
+    gap:25px!important;
+    padding:28px!important;
+    border-radius:24px!important;
   }
 
-  .hero h2{
-    font-size:1.25rem!important;
-  }
-
-  .hero p{
-    font-size:.72rem!important;
-    line-height:1.65!important;
-  }
+  .hero h2{font-size:2rem!important}
+  .hero p{font-size:1rem!important}
 
   .hero-actions{
     display:flex!important;
-    flex:0 0 auto!important;
+    align-items:center!important;
+    gap:9px!important;
     margin-top:0!important;
-    gap:6px!important;
   }
 
   .hero-actions .btn-primary,
   .hero-actions .btn-secondary,
   .hero-actions .btn-warning,
   .hero-actions .btn-danger{
-    min-height:36px!important;
-    padding:7px 9px!important;
-    font-size:.68rem!important;
+    min-height:40px!important;
+    padding:9px 13px!important;
+    font-size:.8rem!important;
     white-space:nowrap!important;
   }
 
-  .stats-grid,
+  .stats-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+
   .stats-grid.four{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:8px!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
   }
 
   .stat-card{
-    min-height:88px!important;
-    padding:11px!important;
-    border-radius:14px!important;
+    min-height:120px!important;
+    padding:17px!important;
+    border-radius:18px!important;
   }
 
-  .stat-card span{
-    font-size:.64rem!important;
-  }
-
-  .stat-card strong{
-    font-size:1.15rem!important;
-    margin-top:8px!important;
-  }
-
-  .stat-card>i{
-    left:10px!important;
-    bottom:9px!important;
-    font-size:1.15rem!important;
-  }
+  .stat-card span{font-size:.78rem!important}
+  .stat-card strong{font-size:1.65rem!important;margin-top:12px!important}
 
   .panel{
-    padding:12px!important;
-    border-radius:15px!important;
+    padding:18px!important;
+    border-radius:20px!important;
   }
 
-  .panel-title,
-  .page-head{
-    gap:8px!important;
-    margin-bottom:11px!important;
-  }
-
-  .panel-title h3,
-  .page-head h2{
-    font-size:1rem!important;
+  .panel-title,.page-head{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:15px!important;
+    margin-bottom:15px!important;
   }
 
   .head-tools{
-    gap:6px!important;
-  }
-
-  .order-kpis{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    margin-top:0!important;
+    display:flex!important;
     gap:8px!important;
   }
 
-  .order-kpis>div{
-    padding:10px!important;
-    border-radius:12px!important;
-  }
-
-  .order-kpis b{
-    font-size:1.1rem!important;
+  .order-kpis{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
   }
 
   .form-grid{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:9px!important;
+    gap:14px!important;
   }
 
   .payment-columns{
-    grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:9px!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:14px!important;
   }
 
   .two{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:8px!important;
+    gap:10px!important;
   }
 
   .inventory-grid{
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
-    gap:9px!important;
+    gap:14px!important;
   }
 
-  .inventory-card{
-    padding:14px!important;
-    border-radius:15px!important;
+  .dashboard-grid{
+    grid-template-columns:minmax(0,1.65fr) minmax(260px,.75fr)!important;
+    gap:12px!important;
   }
 
-  .inventory-card strong{
-    font-size:1.35rem!important;
+  .dashboard-status-group{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+
+  .dashboard-stock-group{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:12px!important;
   }
 
   .inline-add{
     display:flex!important;
-    gap:7px!important;
+    gap:8px!important;
   }
 
-  .inline-add input{
-    min-width:0!important;
-  }
-
-  /* Orders: retain the same 7-column card geometry as tablet/desktop. */
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card{
+  /*
+   * Orders: keep the approved desktop/tablet seven-column card geometry.
+   * There is no separate mobile two-row redesign.
+   */
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card,
+  #dashboardTab .dashboard-orders .app-order-card{
     grid-template-columns:
-      38px
-      minmax(48px,.95fr)
-      minmax(58px,1.15fr)
-      minmax(48px,.8fr)
-      minmax(44px,.72fr)
-      minmax(56px,.9fr)
-      minmax(56px,.92fr)!important;
+      64px
+      minmax(150px,1.05fr)
+      minmax(175px,1.35fr)
+      minmax(115px,.9fr)
+      minmax(105px,.75fr)
+      minmax(125px,.9fr)
+      minmax(150px,1fr)!important;
     grid-template-rows:none!important;
     grid-template-areas:none!important;
-    min-height:96px!important;
-    margin:0 0 8px!important;
-    padding:2px!important;
-    border-radius:14px!important;
+    min-height:112px!important;
+    margin:0 0 10px!important;
+    padding:4px!important;
   }
 
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card td{
-    padding:7px 4px!important;
+  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card td,
+  #dashboardTab .dashboard-orders .app-order-card td{
+    padding:9px 7px!important;
     min-width:0!important;
     overflow:hidden!important;
   }
 
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-platform,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-identity,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-customer,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-quantity,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-price-cell,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-status,
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-card-actions{
-    grid-area:auto!important;
-    grid-column:auto!important;
+  #ordersTab .orders-page-master .app-order-number,
+  #dashboardTab .dashboard-orders .app-order-number{font-size:.92rem!important}
+
+  #ordersTab .orders-page-master .app-reference-line b,
+  #dashboardTab .dashboard-orders .app-reference-line b{font-size:.72rem!important}
+
+  #ordersTab .orders-page-master .app-card-customer strong,
+  #dashboardTab .dashboard-orders .app-card-customer strong{font-size:.8rem!important}
+
+  #ordersTab .orders-page-master .app-card-customer span,
+  #dashboardTab .dashboard-orders .app-card-customer span{font-size:.69rem!important}
+
+  #ordersTab .orders-page-master .app-card-metric>strong,
+  #dashboardTab .dashboard-orders .app-card-metric>strong{font-size:1.08rem!important}
+
+  #ordersTab .orders-page-master .app-card-price strong,
+  #dashboardTab .dashboard-orders .app-card-price strong{font-size:.92rem!important}
+
+  #ordersTab .orders-page-master .app-card-status .platform-status-badge,
+  #dashboardTab .dashboard-orders .app-card-status .platform-status-badge{
+    min-height:50px!important;
+    padding:7px 13px!important;
+    font-size:.68rem!important;
+    border-radius:13px!important;
   }
 
-  #ordersTab .orders-page-master .app-order-number{
-    font-size:.7rem!important;
+  #ordersTab .orders-page-master .app-platform-icon,
+  #dashboardTab .dashboard-orders .app-platform-icon{
+    width:56px!important;
+    height:56px!important;
+    border-radius:16px!important;
+    font-size:1.7rem!important;
   }
 
-  #ordersTab .orders-page-master .app-reference-line,
-  #ordersTab .orders-page-master .app-reference-line b{
-    font-size:.54rem!important;
-  }
+  #ordersTab .orders-page-master .app-order-actions,
+  #dashboardTab .dashboard-orders .app-order-actions{gap:8px!important}
 
-  #ordersTab .orders-page-master .app-card-customer strong{
-    font-size:.63rem!important;
-  }
-
-  #ordersTab .orders-page-master .app-card-customer span{
-    font-size:.52rem!important;
-    margin-top:3px!important;
-  }
-
-  #ordersTab .orders-page-master .app-card-metric>strong{
-    font-size:.82rem!important;
-  }
-
-  #ordersTab .orders-page-master .app-card-price strong{
-    font-size:.7rem!important;
-  }
-
-  #ordersTab .orders-page-master .app-card-status .platform-status-badge{
-    min-height:34px!important;
-    padding:4px 5px!important;
-    font-size:.48rem!important;
-    border-radius:9px!important;
-  }
-
-  #ordersTab .orders-page-master .app-platform-icon{
+  #ordersTab .orders-page-master .app-order-actions .btn-action,
+  #dashboardTab .dashboard-orders .app-order-actions .btn-action{
     width:38px!important;
+    min-width:38px!important;
     height:38px!important;
-    border-radius:10px!important;
-    font-size:1.15rem!important;
+    min-height:38px!important;
+    border-radius:12px!important;
+    font-size:.85rem!important;
   }
 
-  #ordersTab .orders-page-master .app-order-actions{
-    gap:3px!important;
-  }
+  .table-wrap{overflow-x:auto!important}
 
-  #ordersTab .orders-page-master .app-order-actions .btn-action{
-    width:29px!important;
-    min-width:29px!important;
-    height:29px!important;
-    min-height:29px!important;
-    border-radius:8px!important;
-    font-size:.62rem!important;
-  }
-
-  .modal-overlay{
-    padding:6px!important;
-  }
+  .modal-overlay{padding:12px!important}
 
   .modal-card{
-    width:100%!important;
+    width:min(900px,100%)!important;
     max-width:none!important;
-    border-radius:16px!important;
-    padding:11px!important;
+    border-radius:22px!important;
+    padding:18px!important;
   }
+
+  .order-modal{width:min(1050px,100%)!important}
+
+  /* Keep the desktop/tablet sidebar drawer; no separate bottom navigation. */
+  .mobile-app-nav{display:none!important}
 }
 
 @media (max-width:390px){
   .main-wrapper{
-    padding-left:7px!important;
-    padding-right:7px!important;
-  }
-
-  .hero{
-    gap:8px!important;
-    padding:13px!important;
-  }
-
-  .hero h2{
-    font-size:1.08rem!important;
-  }
-
-  .hero p{
-    font-size:.65rem!important;
-  }
-
-  .hero-actions .btn-primary,
-  .hero-actions .btn-secondary,
-  .hero-actions .btn-warning,
-  .hero-actions .btn-danger{
-    padding:6px 7px!important;
-    font-size:.6rem!important;
-  }
-
-  .stats-grid,
-  .stats-grid.four,
-  .order-kpis,
-  .inventory-grid{
-    gap:6px!important;
-  }
-
-  .stat-card{
-    min-height:82px!important;
-    padding:9px!important;
-  }
-
-  .stat-card strong{
-    font-size:1.02rem!important;
-  }
-
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card{
-    grid-template-columns:
-      34px
-      minmax(43px,.95fr)
-      minmax(52px,1.15fr)
-      minmax(43px,.8fr)
-      minmax(40px,.72fr)
-      minmax(50px,.9fr)
-      minmax(50px,.92fr)!important;
-    min-height:88px!important;
-  }
-
-  #ordersTab .orders-page-master #fullOrdersTableBody .app-order-card td{
-    padding:6px 3px!important;
-  }
-
-  #ordersTab .orders-page-master .app-platform-icon{
-    width:34px!important;
-    height:34px!important;
-    font-size:1rem!important;
-  }
-
-  #ordersTab .orders-page-master .app-order-actions .btn-action{
-    width:26px!important;
-    min-width:26px!important;
-    height:26px!important;
-    min-height:26px!important;
+    zoom:.74!important;
+    width:135.135%!important;
   }
 }
