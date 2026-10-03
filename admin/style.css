@@ -13870,6 +13870,7 @@ body:not(.light-mode) .mobile-app-nav{
 @media (max-width:390px){.main-wrapper{zoom:1!important;width:100%!important;}.mobile-order-table-wrap{margin-inline:0!important;}.mobile-order-table-wrap th{height:42px!important;padding-inline:10px!important;}.mobile-order-table-wrap td{height:56px!important;padding-inline:10px!important;}}
 
 
+
 /* ==========================================================================
    SAMI COINS — MOBILE UI FINAL PASS
    Scope: <= 767px only.
@@ -13884,9 +13885,7 @@ body:not(.light-mode) .mobile-app-nav{
     overflow-x:hidden!important;
   }
 
-  body{
-    padding-bottom:0!important;
-  }
+  body{padding-bottom:0!important;}
 
   .main-wrapper{
     width:100%!important;
@@ -13898,24 +13897,24 @@ body:not(.light-mode) .mobile-app-nav{
     box-sizing:border-box!important;
   }
 
-  /* Compact mobile header */
+  /* Compact header: title row + full-width usable search row. */
   .topbar{
     position:relative!important;
-    display:flex!important;
-    flex-direction:row!important;
-    align-items:center!important;
-    justify-content:space-between!important;
-    gap:8px!important;
-    min-height:52px!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    align-items:stretch!important;
+    gap:7px!important;
+    min-height:0!important;
     padding:7px 9px!important;
     margin:0 0 8px!important;
     border-radius:15px!important;
   }
 
   .topbar-right{
-    width:auto!important;
+    width:100%!important;
     min-width:0!important;
-    flex:1 1 auto!important;
+    display:flex!important;
+    align-items:center!important;
     justify-content:flex-start!important;
     gap:8px!important;
   }
@@ -13934,35 +13933,33 @@ body:not(.light-mode) .mobile-app-nav{
   }
 
   .topbar-left{
-    width:auto!important;
+    width:100%!important;
     min-width:0!important;
-    flex:0 0 auto!important;
     display:flex!important;
     align-items:center!important;
   }
 
   .global-search{
-    width:40px!important;
-    height:40px!important;
-    min-width:40px!important;
-    max-width:40px!important;
-    padding:0!important;
-    justify-content:center!important;
-    cursor:pointer!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:38px!important;
   }
 
   .global-search input{
-    display:none!important;
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    font-size:.67rem!important;
   }
 
   .global-search i{
-    margin:0!important;
-    font-size:.9rem!important;
+    flex:0 0 auto!important;
+    margin-inline-end:6px!important;
+    font-size:.82rem!important;
   }
 
-  .clock{
-    display:none!important;
-  }
+  .clock{display:none!important;}
 
   .mobile-only{
     display:grid!important;
@@ -13973,11 +13970,8 @@ body:not(.light-mode) .mobile-app-nav{
     border-radius:11px!important;
   }
 
-  .breadcrumb{
-    display:none!important;
-  }
+  .breadcrumb{display:none!important;}
 
-  /* Workspace headings */
   .workspace-header,
   .page-head{
     gap:7px!important;
@@ -14006,7 +14000,6 @@ body:not(.light-mode) .mobile-app-nav{
     font-size:.68rem!important;
   }
 
-  /* Dashboard status controls */
   #dashboardTab .store-control-card{
     margin-bottom:9px!important;
     padding:10px!important;
@@ -14017,9 +14010,7 @@ body:not(.light-mode) .mobile-app-nav{
     justify-content:space-between!important;
   }
 
-  #dashboardTab .store-command-side > span{
-    font-size:.65rem!important;
-  }
+  #dashboardTab .store-command-side > span{font-size:.65rem!important;}
 
   #dashboardTab .dashboard-stats-grid{
     display:grid!important;
@@ -14046,9 +14037,7 @@ body:not(.light-mode) .mobile-app-nav{
     border-radius:14px!important;
   }
 
-  #dashboardTab .dashboard-status-card span{
-    font-size:.58rem!important;
-  }
+  #dashboardTab .dashboard-status-card span{font-size:.58rem!important;}
 
   #dashboardTab .dashboard-status-card strong{
     margin-top:6px!important;
@@ -14061,11 +14050,9 @@ body:not(.light-mode) .mobile-app-nav{
     border-radius:14px!important;
   }
 
-  #dashboardTab .dashboard-stock-card strong{
-    font-size:1.22rem!important;
-  }
+  #dashboardTab .dashboard-stock-card strong{font-size:1.22rem!important;}
 
-  /* The dashboard must be one vertical flow on a phone. */
+  /* The dashboard is one vertical flow on a phone. */
   #dashboardTab .dashboard-grid{
     display:flex!important;
     flex-direction:column!important;
@@ -14082,10 +14069,10 @@ body:not(.light-mode) .mobile-app-nav{
     box-sizing:border-box!important;
   }
 
-  #dashboardTab .dashboard-orders{order:1!important}
-  #dashboardTab .dashboard-shortcuts{order:2!important}
+  #dashboardTab .dashboard-orders{order:1!important;}
+  #dashboardTab .dashboard-shortcuts{order:2!important;}
 
-  /* Recent orders: actual mobile cards, full width. */
+  /* Recent orders = full-width mobile cards. */
   #dashboardTab .mobile-order-table-wrap{
     overflow:visible!important;
     width:100%!important;
@@ -14095,9 +14082,7 @@ body:not(.light-mode) .mobile-app-nav{
     background:transparent!important;
   }
 
-  #dashboardTab .mobile-table-hint{
-    display:none!important;
-  }
+  #dashboardTab .mobile-table-hint{display:none!important;}
 
   #dashboardTab .mobile-order-table-wrap table{
     display:block!important;
@@ -14107,9 +14092,7 @@ body:not(.light-mode) .mobile-app-nav{
     border:0!important;
   }
 
-  #dashboardTab .mobile-order-table-wrap thead{
-    display:none!important;
-  }
+  #dashboardTab .mobile-order-table-wrap thead{display:none!important;}
 
   #dashboardTab .mobile-order-table-wrap tbody{
     display:grid!important;
@@ -14120,7 +14103,7 @@ body:not(.light-mode) .mobile-app-nav{
   #dashboardTab .mobile-order-table-wrap tbody tr.app-order-card{
     display:grid!important;
     grid-template-columns:46px minmax(0,1fr)!important;
-    grid-template-rows:auto auto auto auto auto!important;
+    grid-template-rows:auto auto auto auto auto auto!important;
     grid-template-areas:
       "platform identity"
       "platform customer"
@@ -14235,10 +14218,10 @@ body:not(.light-mode) .mobile-app-nav{
     padding-top:8px!important;
   }
 
-  #dashboardTab .app-card-quantity{grid-area:quantity!important}
-  #dashboardTab .app-card-price-cell{grid-area:price!important}
-  #dashboardTab .app-card-status{grid-area:status!important}
-  #dashboardTab .app-card-actions{grid-area:actions!important}
+  #dashboardTab .app-card-quantity{grid-area:quantity!important;}
+  #dashboardTab .app-card-price-cell{grid-area:price!important;}
+  #dashboardTab .app-card-status{grid-area:status!important;}
+  #dashboardTab .app-card-actions{grid-area:actions!important;}
 
   #dashboardTab .app-card-metric{
     display:flex!important;
@@ -14297,11 +14280,7 @@ body:not(.light-mode) .mobile-app-nav{
     place-items:center!important;
   }
 
-  /* Quick access becomes a proper mobile grid, never a side column. */
-  #dashboardTab .dashboard-shortcuts .panel-title{
-    margin-bottom:8px!important;
-  }
-
+  /* Quick access is a second full-width section, never a side column. */
   #dashboardTab .dashboard-shortcuts{
     display:grid!important;
     grid-template-columns:repeat(2,minmax(0,1fr))!important;
@@ -14311,6 +14290,7 @@ body:not(.light-mode) .mobile-app-nav{
 
   #dashboardTab .dashboard-shortcuts .panel-title{
     grid-column:1/-1!important;
+    margin-bottom:0!important;
   }
 
   #dashboardTab .dashboard-shortcuts .quick-action{
@@ -14331,9 +14311,7 @@ body:not(.light-mode) .mobile-app-nav{
     grid-row:1/-1!important;
   }
 
-  #dashboardTab .dashboard-shortcuts .quick-action > div{
-    min-width:0!important;
-  }
+  #dashboardTab .dashboard-shortcuts .quick-action > div{min-width:0!important;}
 
   #dashboardTab .dashboard-shortcuts .quick-action b,
   #dashboardTab .dashboard-shortcuts .quick-action small{
@@ -14343,19 +14321,11 @@ body:not(.light-mode) .mobile-app-nav{
     white-space:nowrap!important;
   }
 
-  #dashboardTab .dashboard-shortcuts .quick-action b{
-    font-size:.68rem!important;
-  }
+  #dashboardTab .dashboard-shortcuts .quick-action b{font-size:.68rem!important;}
+  #dashboardTab .dashboard-shortcuts .quick-action small{font-size:.54rem!important;}
+  #dashboardTab .dashboard-shortcuts .quick-action > i{display:none!important;}
 
-  #dashboardTab .dashboard-shortcuts .quick-action small{
-    font-size:.54rem!important;
-  }
-
-  #dashboardTab .dashboard-shortcuts .quick-action > i{
-    display:none!important;
-  }
-
-  /* Operational tables: keep horizontal scrolling local to the table only. */
+  /* Full operational tables: only the table scrolls horizontally. */
   #ordersTab .mobile-order-table-wrap,
   #withdrawTab .mobile-order-table-wrap,
   #transferAlertsTab .mobile-order-table-wrap{
@@ -14394,7 +14364,7 @@ body:not(.light-mode) .mobile-app-nav{
     font-size:.57rem!important;
   }
 
-  /* Bottom navigation: always visible and never covers the last card. */
+  /* Fixed mobile navigation. */
   .mobile-app-nav{
     position:fixed!important;
     right:8px!important;
@@ -14426,9 +14396,7 @@ body:not(.light-mode) .mobile-app-nav{
     gap:2px!important;
   }
 
-  .mobile-app-nav-item i{
-    font-size:.9rem!important;
-  }
+  .mobile-app-nav-item i{font-size:.9rem!important;}
 
   .mobile-app-nav-item span{
     max-width:100%!important;
@@ -14450,12 +14418,8 @@ body:not(.light-mode) .mobile-app-nav{
     line-height:15px!important;
   }
 
-  /* Mobile drawer remains a drawer, not a second visible content column. */
-  .sidebar{
-    max-width:min(300px,84vw)!important;
-  }
+  .sidebar{max-width:min(300px,84vw)!important;}
 
-  /* All generic panels must be allowed to shrink inside the viewport. */
   .panel,
   .card,
   .workspace-header,
@@ -14469,23 +14433,15 @@ body:not(.light-mode) .mobile-app-nav{
 }
 
 @media (max-width: 390px){
-  .main-wrapper{
-    padding-inline:8px!important;
-  }
+  .main-wrapper{padding-inline:8px!important;}
 
-  #dashboardTab .dashboard-status-group{
-    gap:6px!important;
-  }
+  #dashboardTab .dashboard-status-group{gap:6px!important;}
 
   #dashboardTab .dashboard-status-card,
-  #dashboardTab .dashboard-stock-card{
-    padding:9px!important;
-  }
+  #dashboardTab .dashboard-stock-card{padding:9px!important;}
 
   #dashboardTab .dashboard-status-card strong,
-  #dashboardTab .dashboard-stock-card strong{
-    font-size:1.12rem!important;
-  }
+  #dashboardTab .dashboard-stock-card strong{font-size:1.12rem!important;}
 
   #dashboardTab .dashboard-shortcuts{
     gap:6px!important;
@@ -14497,9 +14453,7 @@ body:not(.light-mode) .mobile-app-nav{
     padding:8px!important;
   }
 
-  #dashboardTab .app-order-actions{
-    gap:5px!important;
-  }
+  #dashboardTab .app-order-actions{gap:5px!important;}
 
   #dashboardTab .app-order-actions .btn-action{
     height:36px!important;
