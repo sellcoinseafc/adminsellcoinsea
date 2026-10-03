@@ -48,6 +48,7 @@ let storeSettings = {
     storeOpen: true,
     psEnabled: true,
     xboxEnabled: true,
+    pcEnabled: true,
     supportWhatsapp: ""
 };
 
@@ -736,6 +737,7 @@ function applyPublicSettingsSnapshot(settings) {
         storeOpen: settings.storeOpen !== false,
         psEnabled: settings.psEnabled !== false,
         xboxEnabled: settings.xboxEnabled !== false,
+        pcEnabled: settings.pcEnabled !== false,
         withdrawDays: settings.psWithdrawDuration ?? storeSettings.withdrawDays,
         transferHours: settings.psTransferDuration ?? storeSettings.transferHours,
         pcWithdrawDays: settings.pcWithdrawDuration ?? storeSettings.pcWithdrawDays,
@@ -864,7 +866,8 @@ function contactClosedStoreWhatsapp() {
 function isPlatformEnabled(platform) {
     if (platform === "PlayStation") return storeSettings.psEnabled !== false;
     if (platform === "Xbox") return storeSettings.xboxEnabled !== false;
-    return true;
+    if (platform === "PC") return storeSettings.pcEnabled !== false;
+    return false;
 }
 
 function showPlatformUnavailableMessage(platform) {
@@ -872,7 +875,9 @@ function showPlatformUnavailableMessage(platform) {
         ? "psUnavailableMessage"
         : platform === "Xbox"
             ? "xboxUnavailableMessage"
-            : "";
+            : platform === "PC"
+                ? "pcUnavailableMessage"
+                : "";
 
     if (!messageId) return;
 
@@ -893,7 +898,7 @@ function applyPlatformAvailabilityUI() {
     const states = {
         PlayStation: isPlatformEnabled("PlayStation"),
         Xbox: isPlatformEnabled("Xbox"),
-        PC: true
+        PC: isPlatformEnabled("PC")
     };
 
     Object.entries(states).forEach(([platform, enabled]) => {

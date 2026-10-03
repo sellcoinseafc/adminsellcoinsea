@@ -178,6 +178,9 @@ export const defaultSettings = {
     pcRate:
         150,
 
+    pcEnabled:
+        true,
+
     pcMin:
         100000,
 
