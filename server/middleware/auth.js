@@ -183,30 +183,16 @@ export async function requireAdmin(
     }
 
     /* =====================================================
-       3. Verify Firebase User State
+       3. Load Admin Document
     ===================================================== */
 
     /*
-     * verifyIdToken(..., true) checks revoked tokens, but
-     * disabled-account state must be checked explicitly.
+     * لا نستدعي getUser(uid) هنا.
+     * verifyIdToken(..., true) يتحقق من الـID Token وإلغائه،
+     * وadmins/{uid}.active هو حاجز صلاحية لوحة الإدارة.
+     * هذا يمنع اعتماد تسجيل الدخول على طلب إضافي إلى
+     * Firebase Identity Toolkit بعد نجاح التحقق من الـtoken.
      */
-    const firebaseUser =
-      await admin
-        .auth()
-        .getUser(uid);
-
-    if (
-      firebaseUser.disabled === true
-    ) {
-      return unauthorized(
-        res,
-        "حساب الإدارة غير صالح."
-      );
-    }
-
-    /* =====================================================
-       4. Load Admin Document
-    ===================================================== */
 
     const adminRef =
       db
