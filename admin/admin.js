@@ -6476,7 +6476,8 @@ window.toggleStoreStatus =
 function renderPlatformAvailabilityControls(config = {}) {
   const states = {
     PlayStation: config.psEnabled !== false,
-    Xbox: config.xboxEnabled !== false
+    Xbox: config.xboxEnabled !== false,
+    PC: config.pcEnabled !== false
   };
 
   Object.entries(states).forEach(([platform, enabled]) => {
@@ -6498,7 +6499,9 @@ window.togglePlatformEnabled = async function (platform) {
     ? "psEnabled"
     : platform === "Xbox"
       ? "xboxEnabled"
-      : null;
+      : platform === "PC"
+        ? "pcEnabled"
+        : null;
 
   if (!field) return;
 
@@ -6730,6 +6733,9 @@ window.saveProductsConfig =
 
       xboxEnabled:
         currentSettingsData?.xboxEnabled !== false,
+
+      pcEnabled:
+        currentSettingsData?.pcEnabled !== false,
 
       pcRate:
         Number(
