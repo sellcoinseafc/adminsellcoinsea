@@ -3131,26 +3131,18 @@ router.post(
       }
 
       /*
-       * Manual transfer status.
-       *
-       * The browser is never trusted for transfer timestamp/actor.
-       * The server is the authoritative source for these fields.
+       * Transfer completion is represented by the final canonical status.
+       * The server remains authoritative for transfer timestamp/actor.
        */
-      if (
-        nextStatus ===
-        "transferred"
-      ) {
-        updateData.transferredAt =
-          new Date();
-
+      if (nextStatus === "completed") {
+        updateData.transferredAt = current.transferredAt || new Date();
         updateData.transferredBy =
+          current.transferredBy ||
           req.admin?.email ||
           req.admin?.name ||
           req.admin?.uid ||
           "Admin";
-
-        updateData.transferCompleted =
-          true;
+        updateData.transferCompleted = true;
       }
 
       /*
@@ -3240,9 +3232,11 @@ router.post(
           delete transactionUpdateData.purgeDueAt;
         }
 
-        if (nextStatus === "transferred") {
-          transactionUpdateData.transferredAt = new Date();
+        if (nextStatus === "completed") {
+          transactionUpdateData.transferredAt =
+            freshData.transferredAt || new Date();
           transactionUpdateData.transferredBy =
+            freshData.transferredBy ||
             req.admin?.email ||
             req.admin?.name ||
             req.admin?.uid ||
@@ -3310,7 +3304,7 @@ router.post(
             : null,
 
         transferredAt:
-          nextStatus === "transferred"
+          nextStatus === "completed"
             ? (
                 updateData.transferredAt ||
                 current.transferredAt ||
@@ -3319,7 +3313,7 @@ router.post(
             : null,
 
         transferredBy:
-          nextStatus === "transferred"
+          nextStatus === "completed"
             ? (
                 updateData.transferredBy ||
                 current.transferredBy ||
@@ -3328,7 +3322,7 @@ router.post(
             : "",
 
         transferCompleted:
-          nextStatus === "transferred"
+          nextStatus === "completed"
             ? true
             : false,
 
