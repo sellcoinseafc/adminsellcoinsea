@@ -1167,22 +1167,6 @@ export function subscribeToInventory(
 
 /**
  * ============================================================================
- * 8. Issue messages
- * ============================================================================
- */
-
-export async function getIssueMessages() {
-    const settings =
-        await getSettings();
-
-    return normalizeIssueMessages(
-        settings.issueMessages
-    );
-}
-
-
-/**
- * ============================================================================
  * 11. Banks
  * ============================================================================
  */
