@@ -2437,222 +2437,187 @@ function getOrderStatusBadge(order) {
   return `<span class="badge platform-status-badge ${meta.className}" title="${escapeAttribute(label)}">${icon}${escapeHtml(label)}</span>`;
 }
 
-window.renderOrdersTables =
-  function () {
-    const tbody = document.getElementById("fullOrdersTableBody");
-    if (!tbody) return;
 
-    const filter = document.getElementById("orderStatusFilter")?.value || "all";
-    let filteredData = ordersData;
+function renderOrderCardRow(order, mode = "standard") {
+  const meta = getPlatformMeta(order?.platform);
+  const ref = order?.referenceNumber || "---";
+  const internalRef = order?.internalReference || order?.orderId || order?.id || "---";
+  const name = order?.name || "---";
+  const phone = order?.phone || "---";
+  const qty = Math.max(0, Number(order?.totalQty) || 0);
+  const price = getDisplayPriceMarkup(order);
+  const status = getOrderStatusBadge(order);
+  const updated = formatAdminLastUpdate(order?.lastUpdate || order?.updatedAt || order?.createdAt);
+  const actions = buildActionButtonsHTML(order);
 
-    if (filter !== "all") {
-      filteredData = ordersData.filter((order) => order.status === filter);
+  let quantityMarkup = `
+    <div class="app-card-metric">
+      <span>الكمية</span>
+      <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
+    </div>
+  `;
+
+  let extraMarkup = `
+    <div class="app-card-extra">
+      <span class="app-card-extra-label">آخر تحديث</span>
+      <span class="app-card-date">${updated}</span>
+    </div>
+  `;
+
+  if (mode === "withdraw") {
+    const withdrawn = Math.min(qty, Math.max(0, Number(order?.withdrawnQuantity ?? order?.drawnCoins ?? 0) || 0));
+    const remaining = Math.max(0, qty - withdrawn);
+    const progress = qty > 0 ? Math.round((withdrawn / qty) * 100) : 0;
+    quantityMarkup = `
+      <div class="app-card-metric app-card-quantity-progress">
+        <span>الكمية</span>
+        <strong><i class="fa-solid fa-coins" aria-hidden="true"></i> ${formatCoinsNumber(qty)}</strong>
+        <div class="app-progress-track"><span style="width:${progress}%"></span></div>
+        <small>مسحوب ${formatCoinsNumber(withdrawn)} · متبقي ${formatCoinsNumber(remaining)}</small>
+      </div>
+    `;
+  }
+
+  if (mode === "transfer") {
+    const amount = getDisplayPrice(order);
+    const createdAt = order?.createdAt
+      ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
+      : "---";
+    extraMarkup = `
+      <div class="app-card-extra app-card-transfer-extra">
+        <span><i class="fa-solid fa-wallet" aria-hidden="true"></i> ${escapeHtml(order?.paymentMethod || "---")}${order?.bankName ? " · " + escapeHtml(order.bankName) : ""}</span>
+        <strong>${escapeHtml(amount)}</strong>
+        <small>${escapeHtml(createdAt)}</small>
+      </div>
+    `;
+  }
+
+  const primaryPrice = mode === "transfer"
+    ? ""
+    : `<div class="app-card-metric app-card-price"><span>السعر</span><strong>${price}</strong></div>`;
+
+  const transferAction = mode === "transfer"
+    ? `<button class="btn-custom transfer-action-button" onclick="openOrderModal('${escapeAttribute(order.id)}')"><i class="fa-solid fa-arrow-left"></i> إتمام التحويل</button>`
+    : actions;
+
+  return `
+    <tr class="app-order-card ${meta.className}">
+      <td class="app-card-platform" data-label="المنصة">
+        <span class="app-platform-icon ${meta.className}" title="${escapeAttribute(meta.label)}" aria-label="${escapeAttribute(meta.label)}">
+          <i class="${meta.icon}" aria-hidden="true"></i>
+        </span>
+      </td>
+      <td class="app-card-identity" data-label="رقم الطلب">
+        <div class="app-order-main-line">
+          <b class="app-order-number" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+        </div>
+        <div class="app-reference-line">
+          <span>مرجع</span>
+          <b onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
+        </div>
+        <small class="app-card-date">${updated}</small>
+      </td>
+      <td class="app-card-customer" data-label="العميل">
+        <strong><i class="fa-solid fa-user" aria-hidden="true"></i> ${escapeHtml(name)}</strong>
+        <span><i class="fa-solid fa-phone" aria-hidden="true"></i> ${escapeHtml(phone)}</span>
+      </td>
+      <td class="app-card-quantity" data-label="الكمية">${quantityMarkup}</td>
+      <td class="app-card-price-cell" data-label="السعر">${primaryPrice || extraMarkup}</td>
+      <td class="app-card-status" data-label="الحالة">${status}</td>
+      <td class="app-card-actions" data-label="الإجراء">
+        <div class="app-order-actions">${transferAction}</div>
+      </td>
+    </tr>
+  `;
+}
+
+window.renderOrdersTables = function () {
+  const tbody = document.getElementById("fullOrdersTableBody");
+  if (!tbody) return;
+
+  const filter = document.getElementById("orderStatusFilter")?.value || "all";
+  let filteredData = ordersData;
+
+  if (filter !== "all") {
+    filteredData = ordersData.filter((order) => order.status === filter);
+  }
+
+  if (activeSearchQuery) {
+    filteredData = filteredData.filter((order) => {
+      const ref = String(order.referenceNumber || "").toLowerCase();
+      const name = String(order.name || "").toLowerCase();
+      const phone = String(order.phone || "").toLowerCase();
+      const orderId = String(order.orderId || "").toLowerCase();
+      return ref.includes(activeSearchQuery) || name.includes(activeSearchQuery) ||
+        phone.includes(activeSearchQuery) || orderId.includes(activeSearchQuery);
+    });
+  }
+
+  tbody.innerHTML = filteredData.length
+    ? filteredData.map((order) => renderOrderCardRow(order, "standard")).join("")
+    : '<tr><td colspan="10" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>';
+};
+
+window.renderRecentOrdersTable = function () {
+  const tbody = document.getElementById("recentOrdersTableBody");
+  if (!tbody) return;
+
+  const recentOrders = [...ordersData]
+    .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
+    .slice(0, 5);
+
+  tbody.innerHTML = recentOrders.length
+    ? recentOrders.map((order) => renderOrderCardRow(order, "standard")).join("")
+    : '<tr><td colspan="10" class="empty-row">لا توجد طلبات حديثة.</td></tr>';
+};
+
+window.renderWithdrawOrdersTable = function () {
+  const tbody = document.getElementById("withdrawOrdersTableBody");
+  if (!tbody) return;
+
+  let withdrawOrders = ordersData.filter((order) =>
+    ["new", "pending", "review", "progress"].includes(order.status)
+  );
+
+  const filter = document.getElementById("withdrawFilter")?.value || "all";
+  if (filter !== "all") withdrawOrders = withdrawOrders.filter((order) => order.status === filter);
+
+  const badge = document.getElementById("withdrawBadgeCount");
+  if (badge) badge.innerText = String(withdrawOrders.length);
+
+  const headerBadge = document.getElementById("withdrawHeaderBadge");
+  if (headerBadge) headerBadge.innerText = `${withdrawOrders.length} طلبات بانتظار الإجراء`;
+
+  tbody.innerHTML = withdrawOrders.length
+    ? withdrawOrders.map((order) => renderOrderCardRow(order, "withdraw")).join("")
+    : '<tr><td colspan="10" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>';
+};
+
+window.renderTransferAlertsTable = function () {
+  const tbody = document.getElementById("transferAlertsTableBody");
+  const banner = document.getElementById("urgentTransferBanner");
+  const bannerText = document.getElementById("bannerTransferText");
+
+  const transferOrders = ordersData.filter((order) => order.status === "pending_transfer");
+  const badgeCount = document.getElementById("transferBadgeCount");
+  if (badgeCount) badgeCount.innerText = String(transferOrders.length);
+
+  const headerBadge = document.getElementById("transferHeaderBadge");
+  if (headerBadge) headerBadge.innerText = `${transferOrders.length} طلبات بحاجة للتحويل`;
+
+  if (banner) {
+    banner.style.display = transferOrders.length > 0 ? "flex" : "none";
+    if (bannerText && transferOrders.length > 0) {
+      bannerText.innerText = `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
     }
+  }
 
-    if (activeSearchQuery) {
-      filteredData = filteredData.filter((order) => {
-        const ref = String(order.referenceNumber || "").toLowerCase();
-        const name = String(order.name || "").toLowerCase();
-        const phone = String(order.phone || "").toLowerCase();
-        const orderId = String(order.orderId || "").toLowerCase();
+  if (!tbody) return;
 
-        return (
-          ref.includes(activeSearchQuery) ||
-          name.includes(activeSearchQuery) ||
-          phone.includes(activeSearchQuery) ||
-          orderId.includes(activeSearchQuery)
-        );
-      });
-    }
-
-    if (filteredData.length === 0) {
-      tbody.innerHTML = `
-        <tr><td colspan="10" class="empty-row">لا توجد طلبات مسجلة مطابقة.</td></tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = filteredData.map((order) => {
-      const ref = order.referenceNumber || "---";
-      const internalRef = order.internalReference || order.orderId || order.id || "---";
-
-      return `
-        <tr class="full-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
-          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="ريال سعودي" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
-          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
-          <td data-label="آخر تحديث"><span class="last-update-value">${formatAdminLastUpdate(order.lastUpdate || order.updatedAt || order.createdAt)}</span></td>
-          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
-        </tr>
-      `;
-    }).join("");
-  };
-
-window.renderRecentOrdersTable =
-  function () {
-    const tbody = document.getElementById("recentOrdersTableBody");
-    if (!tbody) return;
-
-    const recentOrders = [...ordersData]
-      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0))
-      .slice(0, 5);
-
-    if (recentOrders.length === 0) {
-      tbody.innerHTML = `
-        <tr><td colspan="10" class="empty-row">لا توجد طلبات حديثة.</td></tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = recentOrders.map((order) => {
-      const ref = order.referenceNumber || "---";
-      const internalRef = order.internalReference || order.orderId || order.id || "---";
-
-      return `
-        <tr class="recent-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(internalRef)}')" title="نسخ رقم الطلب">${escapeHtml(internalRef)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="order-value-box recent-customer-name table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
-          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="order-value-box recent-quantity table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="ريال سعودي" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="order-value-box recent-price table-large-value">${getDisplayPriceMarkup(order)}</strong></td>
-          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
-          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
-        </tr>
-      `;
-    }).join("");
-  };
-
-window.renderWithdrawOrdersTable =
-  function () {
-    const tbody = document.getElementById("withdrawOrdersTableBody");
-    if (!tbody) return;
-
-    let withdrawOrders = ordersData.filter((order) =>
-      ["new", "pending", "review", "progress"].includes(order.status)
-    );
-
-    const filter = document.getElementById("withdrawFilter")?.value || "all";
-    if (filter !== "all") {
-      withdrawOrders = withdrawOrders.filter((order) => order.status === filter);
-    }
-
-    const badge = document.getElementById("withdrawBadgeCount");
-    if (badge) badge.innerText = String(withdrawOrders.length);
-
-    const headerBadge = document.getElementById("withdrawHeaderBadge");
-    if (headerBadge) headerBadge.innerText = `${withdrawOrders.length} طلبات بانتظار الإجراء`;
-
-    if (withdrawOrders.length === 0) {
-      tbody.innerHTML = `
-        <tr><td colspan="10" class="empty-row">لا توجد طلبات سحب مطابقة للفلتر المختار.</td></tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = withdrawOrders.map((order) => {
-      const total = Math.max(0, Number(order.totalQty) || 0);
-      const withdrawn = Math.min(
-        total,
-        Math.max(0, Number(order.withdrawnQuantity ?? order.drawnCoins ?? 0) || 0)
-      );
-      const remaining = Math.max(0, total - withdrawn);
-      const ref = order.referenceNumber || "---";
-
-      return `
-        <tr class="withdraw-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(order.internalReference || order.orderId || order.id || "---")}')" title="نسخ رقم الطلب">${escapeHtml(order.internalReference || order.orderId || order.id || "---")} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">اسم العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
-          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="المطلوب" class="order-data-cell"><span class="table-field-label">الكمية</span><strong class="recent-quantity table-large-value">${formatCoinsNumber(total)}</strong></td>
-          <td data-label="المسحوب" class="order-data-cell"><span class="table-field-label">المسحوب</span><strong class="withdrawn-value table-large-value">${formatCoinsNumber(withdrawn)}</strong></td>
-          <td data-label="المتبقي" class="order-data-cell"><span class="table-field-label">المتبقي</span><strong class="remaining-value table-large-value">${formatCoinsNumber(remaining)}</strong></td>
-          <td data-label="الحالة" class="order-data-cell"><span class="table-field-label">الحالة</span>${getOrderStatusBadge(order)}</td>
-          <td data-label="الإجراء" class="recent-actions-cell"><div class="recent-order-actions">${buildActionButtonsHTML(order)}</div></td>
-        </tr>
-      `;
-    }).join("");
-  };
-
-window.renderTransferAlertsTable =
-  function () {
-    const tbody = document.getElementById("transferAlertsTableBody");
-    const banner = document.getElementById("urgentTransferBanner");
-    const bannerText = document.getElementById("bannerTransferText");
-
-    const transferOrders = ordersData.filter(
-      (order) => order.status === "pending_transfer"
-    );
-
-    const badgeCount = document.getElementById("transferBadgeCount");
-    if (badgeCount) badgeCount.innerText = String(transferOrders.length);
-
-    const headerBadge = document.getElementById("transferHeaderBadge");
-    if (headerBadge) headerBadge.innerText = `${transferOrders.length} طلبات بحاجة للتحويل`;
-
-    if (banner) {
-      banner.style.display = transferOrders.length > 0 ? "flex" : "none";
-      if (bannerText && transferOrders.length > 0) {
-        bannerText.innerText = `لديك (${transferOrders.length}) طلبات مكتملة السحب بانتظار التحويل المالي للعملاء.`;
-      }
-    }
-
-    if (!tbody) return;
-
-    if (transferOrders.length === 0) {
-      tbody.innerHTML = `
-        <tr><td colspan="10" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = transferOrders.map((order) => {
-      const ref = order.referenceNumber || "---";
-      const amount = getDisplayPrice(order);
-      const createdAt = order.createdAt
-        ? order.createdAt.toLocaleString("en-GB", { timeZone: "Asia/Riyadh" })
-        : "---";
-
-      return `
-        <tr class="transfer-order-row platform-order-card ${getPlatformMeta(order.platform).className}">
-          <td data-label="رقم المرجع" class="order-data-cell order-reference-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(ref)}')" title="نسخ رقم المرجع">${escapeHtml(ref)} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="رقم الطلب" class="order-data-cell order-number-cell">
-            <b class="order-reference-value" onclick="copyReferenceNumber('${escapeAttribute(order.internalReference || order.orderId || order.id || "---")}')" title="نسخ رقم الطلب">${escapeHtml(order.internalReference || order.orderId || order.id || "---")} <i class="fa-solid fa-copy" aria-hidden="true"></i></b>
-          </td>
-          <td data-label="العميل" class="order-data-cell"><span class="table-field-label">العميل</span><strong class="table-primary-value">${escapeHtml(order.name || "---")}</strong></td>
-          <td data-label="الجوال" class="order-data-cell"><span class="table-field-label">رقم الجوال</span><span class="table-primary-value phone-value">${escapeHtml(order.phone || "---")}</span></td>
-          <td data-label="المنصة" class="order-data-cell"><span class="table-field-label">المنصة</span>${renderPlatformBadge(order.platform)}</td>
-          <td data-label="الكمية" class="order-data-cell"><span class="table-field-label">الكمية المباعة</span><strong class="table-large-value">${formatCoinsNumber(order.totalQty)}</strong></td>
-          <td data-label="المبلغ" class="order-data-cell"><span class="table-field-label">المبلغ</span><strong class="table-large-value">${escapeHtml(amount)}</strong></td>
-          <td data-label="طريقة الدفع" class="order-data-cell"><span class="table-field-label">طريقة الدفع</span><span class="badge badge-review transfer-payment-badge">${escapeHtml(order.paymentMethod || "---")}${order.bankName ? " - " + escapeHtml(order.bankName) : ""}</span></td>
-          <td data-label="تاريخ الطلب" class="order-data-cell"><span class="table-field-label">تاريخ الطلب</span><span class="last-update-value">${escapeHtml(createdAt)}</span></td>
-          <td data-label="الإجراء" class="recent-actions-cell"><span class="table-field-label">الإجراء</span><button class="btn-custom transfer-action-button" onclick="openOrderModal('${escapeAttribute(order.id)}')">معاينة وإتمام التحويل</button></td>
-        </tr>
-      `;
-    }).join("");
-  };
+  tbody.innerHTML = transferOrders.length
+    ? transferOrders.map((order) => renderOrderCardRow(order, "transfer")).join("")
+    : '<tr><td colspan="10" class="empty-row">لا توجد طلبات بحاجة للتحويل حالياً.</td></tr>';
+};
 
 // 7) قسم الإتلاف — بعد 5 أيام من completedAt
 // ==========================================================================
