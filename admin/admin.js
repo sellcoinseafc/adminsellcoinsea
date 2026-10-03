@@ -5,7 +5,6 @@ import { db, auth } from "../shared/firebase.js";
 import {
   collection,
   doc,
-  getDoc,
   onSnapshot,
   query,
   orderBy,
@@ -418,10 +417,7 @@ function initAuthGuard() {
   getRedirectResult(auth)
     .then((result) => {
       if (result?.user) {
-        console.log(
-          "Google Redirect Login Successful:",
-          result.user.email
-        );
+        // Authentication state is handled by onAuthStateChanged.
       }
     })
     .catch(() => {
@@ -2603,6 +2599,11 @@ window.renderOrdersTables = function () {
       return ref.includes(activeSearchQuery) || name.includes(activeSearchQuery) ||
         phone.includes(activeSearchQuery) || orderId.includes(activeSearchQuery);
     });
+  }
+
+  const resultCount = document.getElementById("ordersResultCount");
+  if (resultCount) {
+    resultCount.textContent = `${filteredData.length} ${filteredData.length === 1 ? "طلب" : "طلبات"}`;
   }
 
   tbody.innerHTML = filteredData.length
@@ -7624,6 +7625,7 @@ window.closeSidebar =
     const menuIcon = menuButton?.querySelector("i");
 
     if (sidebar) sidebar.classList.remove("mobile-open");
+    document.body.classList.remove("sidebar-drawer-open");
     if (overlay) {
       overlay.classList.remove("is-visible");
       overlay.setAttribute("aria-hidden", "true");
@@ -7637,6 +7639,15 @@ window.closeSidebar =
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar?.classList.contains("mobile-open")) {
+      closeSidebar();
+    }
+  }
+});
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 1300) {
     const sidebar = document.getElementById("sidebar");
     if (sidebar?.classList.contains("mobile-open")) {
       closeSidebar();
@@ -7660,6 +7671,7 @@ window.toggleSidebar =
     const menuIcon = menuButton?.querySelector("i");
 
     sidebar.classList.add("mobile-open");
+    document.body.classList.add("sidebar-drawer-open");
     if (overlay) {
       overlay.classList.add("is-visible");
       overlay.setAttribute("aria-hidden", "false");

@@ -327,18 +327,6 @@ export const defaultSettings = {
  * ============================================================================
  */
 
-function cleanString(
-    value,
-    fallback = ""
-) {
-    const text =
-        String(
-            value ?? ""
-        ).trim();
-
-    return text || fallback;
-}
-
 function normalizeStringArray(
     value
 ) {
@@ -765,38 +753,6 @@ function getRiyadhDateKey() {
 }
 
 /**
- * Legacy alias.
- */
-
-function getMakkahDateKey() {
-    return getRiyadhDateKey();
-}
-
-/**
- * ============================================================================
- * 3. Legacy daily codes
- * ============================================================================
- *
- * WARNING:
- *
- * هذه ليست مصدر الترقيم الجديد.
- *
- * المصدر الرسمي:
- *   server/services/orderNumber.js
- *
- * أبقيناها فقط حتى لا ينكسر أي كود قديم يعتمد عليها.
- * ============================================================================
- */
-
-function generate3DigitCode() {
-    return String(
-        Math.floor(
-            Math.random() * 900
-        ) + 100
-    );
-}
-
-/**
  * ============================================================================
  * 5. Get settings
  * ============================================================================
@@ -1207,126 +1163,6 @@ export function subscribeToInventory(
  * 7. Save pricing / general store settings
  * ============================================================================
  */
-
-
-/**
- * ============================================================================
- * 8. Issue messages
- * ============================================================================
- */
-
-export async function getIssueMessages() {
-    const settings =
-        await getSettings();
-
-    return normalizeIssueMessages(
-        settings.issueMessages
-    );
-}
-
-
-/**
- * ============================================================================
- * 11. Banks
- * ============================================================================
- */
-
-export async function getBanks() {
-    const settings =
-        await getSettings();
-
-    return Array.isArray(
-        settings.banks
-    )
-        ? [
-              ...settings.banks
-          ]
-        : [];
-}
-
-
-
-
-/**
- * ============================================================================
- * 12. Wallets
- * ============================================================================
- */
-
-export async function getWallets() {
-    const settings =
-        await getSettings();
-
-    return Array.isArray(
-        settings.wallets
-    )
-        ? [
-              ...settings.wallets
-          ]
-        : [];
-}
-
-
-
-
-/**
- * ============================================================================
- * 13. Payment methods
- * ============================================================================
- */
-
-export async function getPaymentMethods() {
-    const settings =
-        await getSettings();
-
-    if (
-        Array.isArray(
-            settings.paymentMethods
-        )
-    ) {
-        return [
-            ...settings.paymentMethods
-        ];
-    }
-
-    if (
-        settings.paymentMethods &&
-        typeof settings.paymentMethods ===
-            "object"
-    ) {
-        return normalizeStringArray(
-            Object.values(
-                settings.paymentMethods
-            )
-        );
-    }
-
-    return [];
-}
-
-
-
-
-/**
- * ============================================================================
- * 14. Terms
- * ============================================================================
- */
-
-export async function getTerms() {
-    const settings =
-        await getSettings();
-
-    return Array.isArray(
-        settings.terms
-    )
-        ? [
-              ...settings.terms
-          ]
-        : [];
-}
-
-
 
 
 /**
