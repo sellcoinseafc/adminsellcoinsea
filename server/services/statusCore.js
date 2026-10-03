@@ -23,7 +23,6 @@ export const ALLOWED_STATUS_TRANSITIONS = {
     "progress",
     "finished",
     "pending_transfer",
-    "transferred",
     "completed"
   ]),
   progress: new Set([
