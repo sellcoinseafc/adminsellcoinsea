@@ -875,7 +875,9 @@ function showPlatformUnavailableMessage(platform) {
         ? "psUnavailableMessage"
         : platform === "Xbox"
             ? "xboxUnavailableMessage"
-            : "";
+            : platform === "PC"
+                ? "pcUnavailableMessage"
+                : "";
 
     if (!messageId) return;
 
