@@ -3061,17 +3061,6 @@ async function submitOrderFinal() {
             generatedInternalReference || "--"
         );
 
-        const trackingUrl =
-            new URL(
-                "/tracking/?ref=" + encodeURIComponent(generatedReferenceNumber || ""),
-                window.location.origin
-            ).href;
-
-        setText(
-            "finalTrackingLink",
-            trackingUrl
-        );
-
         setText(
             "billClientName",
             orderData.customerName
