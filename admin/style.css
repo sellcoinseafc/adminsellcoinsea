@@ -8572,3 +8572,522 @@ textarea.form-control{
     font-size:.64rem!important;
   }
 }
+
+
+
+/* ==========================================================================
+   SAMI COINS — STEP 4 REFERENCE DESIGN / CUSTOMER-BOX SYSTEM
+   Source of truth: Customers reference screen supplied by the owner.
+   Rule: the customer-name box defines the shared size; every data field
+   uses the same full-width box, centered content, and white border.
+   ========================================================================== */
+
+/* -----------------------------
+   Shared operation-card geometry
+   Orders / Recent / Withdraw / Transfers
+   ----------------------------- */
+#fullOrdersTableBody,
+#recentOrdersTableBody,
+#withdrawOrdersTableBody,
+#transferAlertsTableBody{
+  width:100%!important;
+}
+
+#fullOrdersTableBody tr,
+#recentOrdersTableBody tr,
+#withdrawOrdersTableBody tr,
+#transferAlertsTableBody tr{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 14px!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+  border-radius:20px!important;
+  background:linear-gradient(145deg,rgba(7,25,43,.98),rgba(4,13,24,.99))!important;
+}
+
+#fullOrdersTableBody td.order-data-cell,
+#recentOrdersTableBody td.order-data-cell,
+#withdrawOrdersTableBody td.order-data-cell,
+#transferAlertsTableBody td.order-data-cell{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:76px!important;
+  height:76px!important;
+  margin:0 0 9px!important;
+  padding:8px 12px!important;
+  box-sizing:border-box!important;
+  border:1px solid #fff!important;
+  border-radius:15px!important;
+  background:linear-gradient(145deg,rgba(9,29,49,.96),rgba(5,17,30,.98))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 4px 14px rgba(0,0,0,.12)!important;
+  text-align:center!important;
+  gap:3px!important;
+  overflow:hidden!important;
+}
+
+#fullOrdersTableBody td.order-data-cell:last-of-type,
+#recentOrdersTableBody td.order-data-cell:last-of-type,
+#withdrawOrdersTableBody td.order-data-cell:last-of-type,
+#transferAlertsTableBody td.order-data-cell:last-of-type{
+  margin-bottom:9px!important;
+}
+
+/* The name itself is the centered content of its reference-sized box. */
+#fullOrdersTableBody td[data-label="العميل"] .table-field-label,
+#recentOrdersTableBody td[data-label="العميل"] .table-field-label,
+#withdrawOrdersTableBody td[data-label="العميل"] .table-field-label,
+#transferAlertsTableBody td[data-label="العميل"] .table-field-label,
+#transferAlertsTableBody td[data-label="العميل"] .table-field-label{
+  display:none!important;
+}
+
+#fullOrdersTableBody td.order-data-cell .table-field-label,
+#recentOrdersTableBody td.order-data-cell .table-field-label,
+#withdrawOrdersTableBody td.order-data-cell .table-field-label,
+#transferAlertsTableBody td.order-data-cell .table-field-label{
+  flex:0 0 auto!important;
+  width:auto!important;
+  margin:0!important;
+  color:#8ea1b5!important;
+  font-size:.62rem!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+}
+
+#fullOrdersTableBody td.order-data-cell .table-primary-value,
+#recentOrdersTableBody td.order-data-cell .table-primary-value,
+#withdrawOrdersTableBody td.order-data-cell .table-primary-value,
+#transferAlertsTableBody td.order-data-cell .table-primary-value,
+#fullOrdersTableBody td.order-data-cell .table-large-value,
+#recentOrdersTableBody td.order-data-cell .table-large-value,
+#withdrawOrdersTableBody td.order-data-cell .table-large-value,
+#transferAlertsTableBody td.order-data-cell .table-large-value{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  color:#fff!important;
+  text-align:center!important;
+  font-size:1.02rem!important;
+  line-height:1.2!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  box-sizing:border-box!important;
+}
+
+#fullOrdersTableBody td[data-label="العميل"] .table-primary-value,
+#recentOrdersTableBody td[data-label="العميل"] .table-primary-value,
+#withdrawOrdersTableBody td[data-label="العميل"] .table-primary-value,
+#transferAlertsTableBody td[data-label="العميل"] .table-primary-value{
+  font-size:1.05rem!important;
+}
+
+#fullOrdersTableBody td[data-label="الجوال"] .phone-value,
+#recentOrdersTableBody td[data-label="الجوال"] .phone-value,
+#withdrawOrdersTableBody td[data-label="الجوال"] .phone-value,
+#transferAlertsTableBody td[data-label="الجوال"] .phone-value{
+  direction:ltr!important;
+  unicode-bidi:plaintext!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+#fullOrdersTableBody td[data-label="الكمية"] .table-large-value,
+#recentOrdersTableBody td[data-label="الكمية"] .table-large-value,
+#withdrawOrdersTableBody td[data-label="الكمية"] .table-large-value,
+#transferAlertsTableBody td[data-label="الكمية"] .table-large-value,
+#withdrawOrdersTableBody td[data-label="المطلوب"] .table-large-value,
+#withdrawOrdersTableBody td[data-label="المسحوب"] .table-large-value,
+#withdrawOrdersTableBody td[data-label="المتبقي"] .table-large-value{
+  color:#00e88a!important;
+  font-size:1.12rem!important;
+}
+
+/* Reference field: same box, centered reference and copy icon. */
+#fullOrdersTableBody .order-ref-stack,
+#recentOrdersTableBody .order-ref-stack,
+#withdrawOrdersTableBody .order-ref-stack,
+#transferAlertsTableBody .order-ref-stack{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  gap:2px!important;
+}
+
+#fullOrdersTableBody .order-ref-stack small,
+#recentOrdersTableBody .order-ref-stack small,
+#withdrawOrdersTableBody .order-ref-stack small{
+  display:none!important;
+}
+
+#fullOrdersTableBody .order-reference-value,
+#recentOrdersTableBody .order-reference-value,
+#withdrawOrdersTableBody .order-reference-value,
+#transferAlertsTableBody .order-reference-value{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  font-size:1.03rem!important;
+  line-height:1.15!important;
+  font-weight:900!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+#fullOrdersTableBody .order-reference-value i,
+#recentOrdersTableBody .order-reference-value i,
+#withdrawOrdersTableBody .order-reference-value i,
+#transferAlertsTableBody .order-reference-value i{
+  color:#aebdcd!important;
+  font-size:.72rem!important;
+  flex:0 0 auto!important;
+}
+
+/* Platform becomes the same centered reference-size field. */
+#fullOrdersTableBody td[data-label="المنصة"] .platform-badge,
+#recentOrdersTableBody td[data-label="المنصة"] .platform-badge,
+#withdrawOrdersTableBody td[data-label="المنصة"] .platform-badge,
+#transferAlertsTableBody td[data-label="المنصة"] .platform-badge{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  width:100%!important;
+  max-width:220px!important;
+  min-width:0!important;
+  min-height:39px!important;
+  padding:6px 12px!important;
+  margin:0!important;
+  border-radius:11px!important;
+  box-sizing:border-box!important;
+}
+
+#fullOrdersTableBody td[data-label="المنصة"] .platform-badge-name,
+#recentOrdersTableBody td[data-label="المنصة"] .platform-badge-name,
+#withdrawOrdersTableBody td[data-label="المنصة"] .platform-badge-name,
+#transferAlertsTableBody td[data-label="المنصة"] .platform-badge-name{
+  display:inline!important;
+  font-size:.70rem!important;
+  font-weight:900!important;
+}
+
+/* Status sits inside its own white field without a second competing border. */
+#fullOrdersTableBody td[data-label="الحالة"] .platform-status-badge,
+#recentOrdersTableBody td[data-label="الحالة"] .platform-status-badge,
+#withdrawOrdersTableBody td[data-label="الحالة"] .platform-status-badge{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-height:39px!important;
+  padding:6px 10px!important;
+  margin:0!important;
+  border:0!important;
+  background:rgba(0,255,135,.08)!important;
+  border-radius:9px!important;
+  color:#fff!important;
+  font-size:.67rem!important;
+  line-height:1.35!important;
+  text-align:center!important;
+  white-space:normal!important;
+  word-break:keep-all!important;
+  box-sizing:border-box!important;
+}
+
+/* Transfer-only fields use the same box rule. */
+#transferAlertsTableBody td[data-label="طريقة الدفع"] .transfer-payment-badge,
+#transferAlertsTableBody td[data-label="تاريخ الطلب"] .last-update-value{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-height:39px!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  box-sizing:border-box!important;
+  text-align:center!important;
+}
+
+/* Action controls stay outside the data-box system. */
+#fullOrdersTableBody td.recent-actions-cell,
+#recentOrdersTableBody td.recent-actions-cell,
+#withdrawOrdersTableBody td.recent-actions-cell,
+#transferAlertsTableBody td.recent-actions-cell{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:4px 0 0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  gap:6px!important;
+}
+
+#fullOrdersTableBody td.recent-actions-cell .table-field-label,
+#recentOrdersTableBody td.recent-actions-cell .table-field-label,
+#withdrawOrdersTableBody td.recent-actions-cell .table-field-label,
+#transferAlertsTableBody td.recent-actions-cell .table-field-label{
+  display:block!important;
+  width:100%!important;
+  color:#8ea1b5!important;
+  font-size:.62rem!important;
+  text-align:center!important;
+}
+
+#fullOrdersTableBody .recent-order-actions,
+#recentOrdersTableBody .recent-order-actions,
+#withdrawOrdersTableBody .recent-order-actions{
+  width:100%!important;
+  max-width:none!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+  gap:7px!important;
+}
+
+/* -----------------------------
+   Customers reference screen
+   ----------------------------- */
+#customerProfileTab .panel{
+  padding:12px!important;
+}
+
+#customerProfileTab .table-wrap{
+  width:100%!important;
+  overflow:visible!important;
+  margin:0!important;
+  padding:0!important;
+}
+
+#customerProfileTab table{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+}
+
+#customerProfileTab thead{
+  display:none!important;
+}
+
+#customerProfileTab tbody{
+  display:block!important;
+  width:100%!important;
+}
+
+#customerProfileTab .client-row{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0 0 14px!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(21,156,255,.36)!important;
+  border-radius:20px!important;
+  background:linear-gradient(145deg,rgba(7,27,47,.98),rgba(4,15,27,.98))!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
+}
+
+#customerProfileTab .client-row>td.client-field-cell{
+  display:flex!important;
+  width:100%!important;
+  min-width:0!important;
+  height:76px!important;
+  min-height:76px!important;
+  margin:0 0 9px!important;
+  padding:0!important;
+  border:0!important;
+  box-sizing:border-box!important;
+}
+
+#customerProfileTab .client-field-box{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:76px!important;
+  min-height:76px!important;
+  padding:8px 12px!important;
+  box-sizing:border-box!important;
+  border:1px solid #fff!important;
+  border-radius:15px!important;
+  background:linear-gradient(145deg,rgba(9,29,49,.96),rgba(5,17,30,.98))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 4px 14px rgba(0,0,0,.12)!important;
+  gap:3px!important;
+  overflow:hidden!important;
+}
+
+#customerProfileTab .client-field-label{
+  color:#8ea1b5!important;
+  font-size:.62rem!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  text-align:center!important;
+}
+
+#customerProfileTab .client-field-value{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  color:#fff!important;
+  font-size:1.04rem!important;
+  line-height:1.2!important;
+  font-weight:900!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  box-sizing:border-box!important;
+}
+
+#customerProfileTab .client-name-box .client-field-value{
+  font-size:1.08rem!important;
+}
+
+#customerProfileTab .client-field-value.phone-value{
+  direction:ltr!important;
+  unicode-bidi:plaintext!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+#customerProfileTab .client-quantity-value{
+  color:#00e88a!important;
+  font-size:1.12rem!important;
+}
+
+#customerProfileTab .client-amount-value{
+  color:#fff!important;
+  font-size:1.10rem!important;
+}
+
+#customerProfileTab .client-count-box{
+  border-color:#fff!important;
+}
+
+#customerProfileTab .client-count-value{
+  color:#73c4ff!important;
+  gap:7px!important;
+  font-size:1.08rem!important;
+}
+
+#customerProfileTab .client-count-value i{
+  color:#73c4ff!important;
+  font-size:1rem!important;
+}
+
+#customerProfileTab .client-action-cell{
+  display:flex!important;
+  width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+}
+
+#customerProfileTab .client-history-btn{
+  width:100%!important;
+  min-height:44px!important;
+  border-radius:13px!important;
+  font-size:.76rem!important;
+  font-weight:900!important;
+}
+
+/* Empty customer state must remain a normal single message. */
+#customerProfileTab .empty-row{
+  display:block!important;
+  width:100%!important;
+  padding:24px 10px!important;
+  border:0!important;
+  text-align:center!important;
+}
+
+@media(max-width:600px){
+  #fullOrdersTableBody tr,
+  #recentOrdersTableBody tr,
+  #withdrawOrdersTableBody tr,
+  #transferAlertsTableBody tr,
+  #customerProfileTab .client-row{
+    padding:10px!important;
+    border-radius:18px!important;
+  }
+
+  #fullOrdersTableBody td.order-data-cell,
+  #recentOrdersTableBody td.order-data-cell,
+  #withdrawOrdersTableBody td.order-data-cell,
+  #transferAlertsTableBody td.order-data-cell,
+  #customerProfileTab .client-field-box{
+    height:74px!important;
+    min-height:74px!important;
+    border-radius:14px!important;
+  }
+
+  #fullOrdersTableBody td.order-data-cell .table-primary-value,
+  #recentOrdersTableBody td.order-data-cell .table-primary-value,
+  #withdrawOrdersTableBody td.order-data-cell .table-primary-value,
+  #transferAlertsTableBody td.order-data-cell .table-primary-value,
+  #customerProfileTab .client-field-value{
+    font-size:1rem!important;
+  }
+
+  #fullOrdersTableBody td[data-label="العميل"] .table-primary-value,
+  #recentOrdersTableBody td[data-label="العميل"] .table-primary-value,
+  #withdrawOrdersTableBody td[data-label="العميل"] .table-primary-value,
+  #transferAlertsTableBody td[data-label="العميل"] .table-primary-value,
+  #customerProfileTab .client-name-box .client-field-value{
+    font-size:1.03rem!important;
+  }
+
+  #fullOrdersTableBody td[data-label="الكمية"] .table-large-value,
+  #recentOrdersTableBody td[data-label="الكمية"] .table-large-value,
+  #withdrawOrdersTableBody td[data-label="الكمية"] .table-large-value,
+  #transferAlertsTableBody td[data-label="الكمية"] .table-large-value,
+  #withdrawOrdersTableBody td[data-label="المطلوب"] .table-large-value,
+  #withdrawOrdersTableBody td[data-label="المسحوب"] .table-large-value,
+  #withdrawOrdersTableBody td[data-label="المتبقي"] .table-large-value,
+  #customerProfileTab .client-quantity-value{
+    font-size:1.06rem!important;
+  }
+
+  #customerProfileTab .client-amount-value{
+    font-size:1.04rem!important;
+  }
+}
