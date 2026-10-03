@@ -677,8 +677,16 @@ function renderTrackingExtras(order,statusMessage,issueMessage){
  if(action)action.style.display=needs?'block':'none';
  if(needs){setElementText('customerActionTitle',getIssueTitle(order.issue));setElementText('customerActionMessage',issueMessage||order?.issueMessage||'');setElementText('customerActionState','حالة الطلب: بانتظار إجراء العميل');}
  const key=String(order?.transferStatusKey||'pending');
- const labels={pending:'قيد التحويل',completed:'تم التحويل — مكتمل'};
- const messages={pending:'جاري تجهيز وتحويل المبلغ.',completed:'تم تحويل المبلغ وإغلاق الطلب بنجاح.'};
+ const labels={
+   pending:'قيد التحويل',
+   transferred:'تم التحويل لحسابك',
+   completed:'تم التنفيذ'
+ };
+ const messages={
+   pending:'جاري تجهيز وتحويل المبلغ.',
+   transferred:'تم تحويل المبلغ إلى حسابك.',
+   completed:'تم تنفيذ الطلب وإغلاقه بنجاح.'
+ };
  setElementText('transferStatusLabel',labels[key]||labels.pending);
  setElementText('transferStatusMessage',messages[key]||messages.pending);
  const tr=document.getElementById('transferCompletionRow'),cr=document.getElementById('completedAtRow');
