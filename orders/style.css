@@ -1755,3 +1755,124 @@ html[data-theme="light"] .brand-logo-mark,html[data-theme="light"] .brand-logo-e
   #step4SuccessScreen .platform-oval-main strong{font-size:11px;white-space:normal;overflow-wrap:anywhere}
   #step4SuccessScreen .invoice-card .success-oval{padding:11px 13px}
 }
+
+
+/* ==========================================================================
+   ORDERS — requested visual refinements
+   Presentation only; order flow/data logic remains unchanged.
+   ========================================================================== */
+
+/* Step 1: compact trust row */
+#step1Screen .trust-row{
+  gap:6px!important;
+  margin-bottom:12px!important;
+}
+#step1Screen .trust-row div{
+  padding:6px 4px!important;
+  gap:2px!important;
+  font-size:8px!important;
+  border-radius:10px!important;
+}
+#step1Screen .trust-row i{
+  font-size:14px!important;
+}
+
+/* Step 1: keep the FC27 hero empty except for the FC27 mark */
+#step1Screen .hero-copy{
+  display:none!important;
+}
+
+/* Step 2: plain EA password text field — no password-manager styling */
+#step1Screen #eaPass{
+  -webkit-text-security:none!important;
+  text-security:none!important;
+}
+#step1Screen #eaPass::-ms-reveal,
+#step1Screen #eaPass::-ms-clear{
+  display:none!important;
+}
+
+/* Step 2: wallet method and wallet number */
+#step2Screen #walletTypeSelect,
+#step2Screen #walletNumber{
+  min-height:45px;
+}
+#step2Screen #walletTypeSelect{
+  font-weight:800;
+}
+#step2Screen #walletNumber{
+  direction:ltr;
+  text-align:right;
+}
+
+/* Step 3: order details = platform icon + quantity + total on one line */
+#step3ReviewScreen #revPlatformBoxTheme.review-platform{
+  grid-template-columns:52px minmax(0,1fr) minmax(0,1fr)!important;
+  min-height:82px!important;
+  padding:12px 16px!important;
+  align-items:center!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.review-platform>i{
+  font-size:32px!important;
+  width:auto!important;
+  height:auto!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.review-platform>div{
+  min-width:0!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.review-platform strong{
+  font-size:20px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+#step3ReviewScreen #revPlatformBoxTheme.review-platform>div:first-of-type,
+#step3ReviewScreen #revPlatformBoxTheme.review-platform>div:last-of-type{
+  text-align:center!important;
+}
+
+/* Step 4: invoice values — no Arabic field labels, larger values */
+#step4SuccessScreen .success-name-oval strong,
+#step4SuccessScreen .success-phone-oval strong{
+  font-size:18px!important;
+  font-weight:900!important;
+}
+#step4SuccessScreen .success-quantity-price-oval>div{
+  text-align:center!important;
+}
+#step4SuccessScreen .success-quantity-price-oval strong{
+  font-size:19px!important;
+  font-weight:900!important;
+}
+#step4SuccessScreen .success-platform-status-oval .platform-oval-main strong{
+  font-size:13px!important;
+}
+
+/* Ensure invoice labels are absent if an older cached DOM is served. */
+#step4SuccessScreen .success-name-oval small,
+#step4SuccessScreen .success-phone-oval small,
+#step4SuccessScreen .success-quantity-price-oval small,
+#step4SuccessScreen .success-platform-status-oval small{
+  display:none!important;
+}
+
+@media(max-width:720px){
+  #step3ReviewScreen #revPlatformBoxTheme.review-platform{
+    grid-template-columns:42px minmax(0,1fr) minmax(0,1fr)!important;
+    min-height:76px!important;
+    padding:10px 12px!important;
+    border-radius:24px!important;
+  }
+  #step3ReviewScreen #revPlatformBoxTheme.review-platform>i{
+    font-size:27px!important;
+  }
+  #step3ReviewScreen #revPlatformBoxTheme.review-platform strong{
+    font-size:17px!important;
+  }
+  #step4SuccessScreen .success-name-oval strong,
+  #step4SuccessScreen .success-phone-oval strong{
+    font-size:17px!important;
+  }
+  #step4SuccessScreen .success-quantity-price-oval strong{
+    font-size:18px!important;
+  }
+}
