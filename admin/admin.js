@@ -418,10 +418,7 @@ function initAuthGuard() {
   getRedirectResult(auth)
     .then((result) => {
       if (result?.user) {
-        console.log(
-          "Google Redirect Login Successful:",
-          result.user.email
-        );
+        // Authentication state is handled by onAuthStateChanged.
       }
     })
     .catch(() => {
